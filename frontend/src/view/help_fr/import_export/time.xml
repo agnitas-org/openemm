@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Temps</title>
+	<content><![CDATA[Le temps r&eacute;gl&eacute; donne le temps de traitement le plus court. En raison d'&eacute;ventuels processus d'importation parall&eacute;le, les retards peuvent atteindre 30 minutes au maximum.]]></content>
+</HelpBalloon>

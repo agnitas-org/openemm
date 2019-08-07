@@ -1,0 +1,10 @@
+<HelpBalloon>
+	<title>null values</title>
+	<content><![CDATA[Import control is also effected via the drop-down list Null values in the csv file. This concerns recipients already registered in your database. The E-Marketing Manager considers two recipients to be identical if they have the same e-mail address.<br>
+Suppose Heiner Müller has registered in your database with the title Dr.. The csv file also contains an entry for Heiner Müller, but without a title. The corresponding field is empty. The drop-down list is used to select what to do in such a case.
+      <ul type="disc">
+         <li>The default setting is to Overwrite existing values with null values. This means that when importing the csv file into your database, you will lose the corresponding field entry. This usually makes sense, since you want to update your database by importing new data.</li>
+         <li>The second option, Ignore null values for existing data, is only used in special cases, when for instance you know exactly that changes were made in the database which are not included in the import file.</li>
+      </ul>
+E-Marketing Manager uses a so-called key field to check whether two entries are exactly the same. This field is selected in the Key column drop-down list (see next chapter). The default setting is the EMAIL field.]]></content>
+</HelpBalloon>

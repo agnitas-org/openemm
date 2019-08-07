@@ -1,0 +1,12 @@
+.l-main-view {
+  height: 100%;
+  padding: 80px 20px 20px 20px;
+
+  @media (min-width:$screen-md-min) {
+    padding-left: 260px;
+  }
+
+  .sub-navigation {
+    margin-top: -20px;
+  }
+}

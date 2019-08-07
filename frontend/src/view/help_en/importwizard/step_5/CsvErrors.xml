@@ -1,0 +1,8 @@
+<HelpBalloon>
+	<title><![CDATA[Analysing the import file for
+potential errors]]></title>
+	<content><![CDATA[On the next page, the csv file is checked for errors. The system checks for faulty e-mail addresses, matches with the blacklist, duplicate addresses, faulty numerical values as well as faulty MAILTYPE, GENDER and date formats. The system also checks the csv file for correct line structure.<br>
+Any errors are highlighted with the disk symbol. If you click on the symbol, the E-Marketing Manager offers to download a csv file. This error log can then easily be checked for errors. You can then amend the import file, for instance by deleting recipients with faulty profile data.<br>
+If there really is an error, data in the csv file must be amended. The E-Marketing Manager is able to import faulty csv files. It will simply skip faulty lines. However, it is always a good idea to correct all errors in the csv file fully before importing the data. Otherwise you never know whether or not the recipient data were imported by clicking on the Process button..
+]]></content>
+</HelpBalloon>

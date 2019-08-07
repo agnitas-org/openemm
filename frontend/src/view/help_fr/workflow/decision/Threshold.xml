@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Seuil]]></title>
+    <content><![CDATA[Vous pouvez nommer une valeur sp&eacute;cifique pour la zone Seuil. Si cette valeur est atteinte par l'un des mailings test, cet envoi sera envoy&eacute; avant la date d'envoi finale. Pour ce fichier, seuls les nombres absolus sont autoris&eacute;s, aucune valeur en pourcentage n'est autoris&eacute;e.]]></content>
+</HelpBalloon>

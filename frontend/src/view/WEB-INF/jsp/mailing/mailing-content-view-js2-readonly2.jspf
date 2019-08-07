@@ -1,0 +1,11 @@
+{{ if (id==0) { }}
+    <button type="button" class="btn btn-primary btn-large" data-sync-from="#modalTextArea" data-sync-to="\#{{= target }}" data-dismiss="modal" data-form-target="#mailingContentForm" data-form-action="${ACTION_ADD_TEXTBLOCK}">
+        <i class="icon icon-plus"></i>
+        <span class="text"><bean:message key="button.Add"/></span>
+    </button>
+{{ } else { }}
+    <button type="button" class="btn btn-primary btn-large" data-sync-from="#modalTextArea" data-sync-to="\#{{= target }}" data-dismiss="modal" data-form-target="#mailingContentForm" data-form-action="${ACTION_SAVE_TEXTBLOCK}">
+        <i class="icon icon-save"></i>
+        <span class="text"><bean:message key="button.Save"/></span>
+    </button>
+{{ } }}

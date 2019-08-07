@@ -1,0 +1,15 @@
+# Path to local java installation (use ${user.home} for users home directory in path, hint for other default path: /usr/lib/jvm/java-8-openjdk-amd64)
+JAVA_HOME=/opt/agnitas.com/software/java
+
+# Path to local tomcat installation
+CATALINA_HOME=/opt/agnitas.com/software/tomcat
+
+# Main directory, to put webapplications in, mostly "/home/<username>/webapps"
+deploydir=${user.home}/webapps
+
+# Webapplication directory name (may contain version tag info like "/css_8.10.334-hf1" to be seen in GUI, mostly for localhost tests "/ws")
+# Buildname example: agnitas-live-webservices_13.4.100-hf1
+appname=/ws
+
+# Deploytarget:
+deploytarget=openemm.ws

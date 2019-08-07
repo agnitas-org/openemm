@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Extended search]]></title>
+	<content><![CDATA[It is possible to search in the fields first name, last name and e-mail with help of wildcards. The wildcards * and % stay for any number of characters. The wildcards _ and ? represent only one variable character. Unless using wildcards the exact entry will be searched.]]></content>
+</HelpBalloon>

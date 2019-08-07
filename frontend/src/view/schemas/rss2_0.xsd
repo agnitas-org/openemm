@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="rss">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="channel" type="RssChannel" />
+				<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:decimal" use="required" fixed="2.0" />
+			<xs:anyAttribute namespace="##any" />
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:complexType name="RssItem">
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="title" type="xs:string" minOccurs="0" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="contentEncoded" type="xs:string" minOccurs="0" />
+				<xs:element name="image" type="xs:string" minOccurs="0" />
+				<xs:element name="link" type="xs:anyURI" minOccurs="0" />
+				<xs:element name="author" type="EmailAddress" minOccurs="0" />
+				<xs:element name="category" type="Category" minOccurs="0" />
+				<xs:element name="comments" type="xs:anyURI" minOccurs="0" />
+				<xs:element name="enclosure" type="Enclosure" minOccurs="0" />
+				<xs:element name="enclosure_square_720" type="Enclosure" minOccurs="0" />
+				<xs:element name="guid" type="Guid" minOccurs="0" />
+				<xs:element name="pubDate" type="Rfc822FormatDate" minOccurs="0" />
+				<xs:element name="source" type="Source" minOccurs="0" />
+				<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded">
+				</xs:any>
+			</xs:choice>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" />
+	</xs:complexType>
+	
+	<xs:complexType name="RssChannel">
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="title" type="xs:string" />
+				<xs:element name="link" type="xs:anyURI" />
+				<xs:element name="description" type="xs:string" />
+				<xs:element name="language" type="xs:language" minOccurs="0" />
+				<xs:element name="copyright" type="xs:string" minOccurs="0" />
+				<xs:element name="managingEditor" type="EmailAddress" minOccurs="0" />
+				<xs:element name="webMaster" type="EmailAddress" minOccurs="0" />
+				<xs:element name="pubDate" type="Rfc822FormatDate" minOccurs="0" />
+				
+				<!--xs:element name="lastBuildDate" type="Rfc822FormatDate" minOccurs="0" /-->
+				<xs:element name="lastBuildDate" type="xs:string" minOccurs="0" />
+				
+				<xs:element name="category" type="Category" minOccurs="0" />
+				<xs:element name="generator" type="xs:string" minOccurs="0" />
+				<xs:element name="docs" type="xs:anyURI" minOccurs="0" />
+				<xs:element name="cloud" type="Cloud" minOccurs="0" />
+				<xs:element name="ttl" type="xs:nonNegativeInteger" minOccurs="0" />
+				<xs:element name="image" type="Image" minOccurs="0" />
+				<xs:element name="rating" type="xs:string" minOccurs="0" />
+				<xs:element name="textInput" type="TextInput" minOccurs="0" />
+				<xs:element name="skipHours" type="SkipHoursList" minOccurs="0" />
+				<xs:element name="skipDays" type="SkipDaysList" minOccurs="0" />
+				<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+			</xs:choice>
+			<xs:element name="item" type="RssItem" minOccurs="1" maxOccurs="unbounded" />
+			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded">
+			</xs:any>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" />
+	</xs:complexType>
+	
+	<xs:simpleType name="SkipHour">
+		<xs:restriction base="xs:nonNegativeInteger">
+			<xs:minInclusive value="0" />
+			<xs:maxInclusive value="23" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="SkipHoursList">
+		<xs:sequence>
+			<xs:element name="hour" type="SkipHour" minOccurs="0" maxOccurs="24" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:simpleType name="SkipDay">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Monday" />
+			<xs:enumeration value="Tuesday" />
+			<xs:enumeration value="Wednesday" />
+			<xs:enumeration value="Thursday" />
+			<xs:enumeration value="Friday" />
+			<xs:enumeration value="Saturday" />
+			<xs:enumeration value="Sunday" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="SkipDaysList">
+		<xs:sequence>
+			<xs:element name="day" type="SkipDay" minOccurs="0" maxOccurs="7" />
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="Category">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="domain" type="xs:string" use="optional" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="Image">
+		<xs:all>
+			<xs:element name="url" type="xs:anyURI" />
+			<xs:element name="title" type="xs:string" />
+			<xs:element name="link" type="xs:anyURI" />
+			<xs:element name="width" type="ImageWidth" default="88" minOccurs="0" />
+			<xs:element name="height" type="ImageHeight" default="31" minOccurs="0" />
+			<xs:element name="description" type="xs:string" minOccurs="0" />
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:simpleType name="ImageHeight">
+		<xs:restriction base="xs:positiveInteger">
+			<xs:maxInclusive value="400" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="ImageWidth">
+		<xs:restriction base="xs:positiveInteger">
+			<xs:maxInclusive value="144" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="Cloud">
+		<xs:attribute name="domain" type="xs:string" use="required" />
+		<xs:attribute name="port" type="xs:positiveInteger" use="required" />
+		<xs:attribute name="path" type="xs:string" use="required" />
+		<xs:attribute name="registerProcedure" type="xs:string" use="required" />
+		<xs:attribute name="protocol" type="CloudProtocol" use="required" />
+	</xs:complexType>
+	
+	<xs:simpleType name="CloudProtocol">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="xml-rpc" />
+			<xs:enumeration value="http-post" />
+			<xs:enumeration value="soap" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="TextInput">
+		<xs:all>
+			<xs:element name="title" type="xs:string" />
+			<xs:element name="description" type="xs:string" />
+			<xs:element name="name" type="xs:string" />
+			<xs:element name="link" type="xs:anyURI" />
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:simpleType name="EmailAddress">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="([a-zA-Z0-9_\-])([a-zA-Z0-9_\-\.]*)@(\[((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}|((([a-zA-Z0-9\-]+)\.)+))([a-zA-Z]{2,}|(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\])" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="Rfc822FormatDate">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(((Mon)|(Tue)|(Wed)|(Thu)|(Fri)|(Sat)|(Sun)), *)?\d\d? +((Jan)|(Feb)|(Mar)|(Apr)|(May)|(Jun)|(Jul)|(Aug)|(Sep)|(Oct)|(Nov)|(Dec)) +\d\d(\d\d)? +\d\d:\d\d(:\d\d)? +(([+\-]?\d\d\d\d)|(UT)|(GMT)|(EST)|(EDT)|(CST)|(CDT)|(MST)|(MDT)|(PST)|(PDT)|\w)" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="Source">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="url" type="xs:anyURI" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="Enclosure">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="url" type="xs:anyURI" use="required">
+				</xs:attribute>
+				<xs:attribute name="length" type="xs:nonNegativeInteger" use="required">
+				</xs:attribute>
+				<xs:attribute name="type" type="xs:string" use="required">
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	
+	<xs:complexType name="Guid">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="isPermaLink" type="xs:boolean" use="optional" default="true" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

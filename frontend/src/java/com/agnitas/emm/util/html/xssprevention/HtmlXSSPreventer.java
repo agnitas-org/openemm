@@ -1,0 +1,127 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.util.html.xssprevention;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+import java.util.stream.Stream;
+
+import au.id.jericho.lib.html.Attribute;
+import au.id.jericho.lib.html.Attributes;
+import au.id.jericho.lib.html.EndTag;
+import au.id.jericho.lib.html.Source;
+import au.id.jericho.lib.html.StartTag;
+import au.id.jericho.lib.html.Tag;
+
+/**
+ * Code to check a String for forbidden tags and attributes and unclosed / unopened tags.
+ *
+ */
+public final class HtmlXSSPreventer {
+	
+	/*
+	 * IMPORTANT: Keep this class stateless!!!
+	 */
+	
+    public static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
+	
+	public final void checkString(final String string) throws XSSHtmlException {
+		final Source source = new Source(string);
+		final Stack<String> openedTags = new Stack<>();
+		final Set<HtmlCheckError> errors = new HashSet<>();
+
+		@SuppressWarnings("unchecked")
+		final List<Tag> tags = source.findAllTags();
+
+		// Perform checks on each tag
+		for(final Tag tag : tags) {
+			if(tag instanceof StartTag) {
+				checkStartTag(tag, openedTags, errors);
+			} else if(tag instanceof EndTag) {
+				checkEndTag(tag, openedTags, errors);
+			}
+		}
+		
+		checkUnclosedTags(openedTags, errors);
+		
+		// Found at least one error? Throw an exception
+		if(!errors.isEmpty()) {
+			throw new XSSHtmlException(errors);
+		}
+	}
+	
+	// -------------------------------------------------------------------------------------------------------- Start tag related tests
+	private final void checkStartTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+		openedTags.push(tag.getName());
+		
+		checkWhitelistedTag(tag, errors);
+		checkTagAttributes(tag, errors);
+	}
+	
+	private final void checkWhitelistedTag(final Tag tag, final Set<HtmlCheckError> errors) {
+		if(!isWhitelisted(tag)) {
+			errors.add(new ForbiddenTagError(tag.getName()));
+		}
+	}
+	
+	private final void checkTagAttributes(final Tag tag, final Set<HtmlCheckError> errors) {
+		final Attributes attributes = tag.parseAttributes();
+		
+		if(attributes.size() > 0) {
+			((Stream<?>)attributes.stream())
+					.map(attr -> ((Attribute)attr).getName())
+					.forEach(name -> errors.add(new ForbiddenTagAttributeError(tag.getName(), name)));
+		}
+	}
+	
+	// -------------------------------------------------------------------------------------------------------- End tag related tests
+	private final void checkEndTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+		checkOpenedTag(tag, openedTags, errors);
+	}
+	
+	private final void checkOpenedTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+		if(openedTags.isEmpty()) {
+			errors.add(new UnopenedTagError(tag.getName()));
+		} else {
+			final String lastOpenedTag = openedTags.peek();
+			
+			if(!lastOpenedTag.equals(tag.getName()) ) {
+				errors.add( new UnopenedTagError(tag.getName()));
+			} else {
+				openedTags.pop();
+			}
+		}
+	}
+	
+	// -------------------------------------------------------------------------------------------------------- Checks related to start and end tags
+	private final void checkUnclosedTags(final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+		if(!openedTags.isEmpty()) {
+			for(final String tagName : openedTags) {
+				errors.add(new UnclosedTagError(tagName));
+			}
+		}
+	}
+	
+	// -------------------------------------------------------------------------------------------------------- Utility methods
+	private final boolean isWhitelisted(final Tag tag) {
+		final String tagName = tag.getName();
+
+		for(final String allowedTag : ALLOWED_HTML_TAGS) {
+			if(allowedTag.equalsIgnoreCase(tagName)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+}

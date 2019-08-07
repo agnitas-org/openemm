@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Date format</title>
+	<content><![CDATA[Select the date format you use for formatting your date fields.<br>The specification of the date format for your import profile is made by the JAVA SimpleDateFormat. For example the following strings are possible: YYYY (year, e.g. 1986), MM (month, e.g. 07), dd (day within a month, e.g. 10), HH (hour within a day, e.g. 04), mm (minutes within a hour, e.g. 30), ss (seconds within a minute, e.g. 20) or also for am and pm. The specification YYYY-MM-dd, HH:mm could be used for the following date 2017-01-10, 08:30.]]></content>
+</HelpBalloon>

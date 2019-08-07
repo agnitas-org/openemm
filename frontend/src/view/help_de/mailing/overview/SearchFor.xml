@@ -1,0 +1,24 @@
+<HelpBalloon>
+	<title>Mailing-Suche</title>
+	<content><![CDATA[Mit der Mailing-Suche können Sie verschiedene Felder des Mailings durchsuchen. Möchten Sie dabei mehrere Begriffe gleichzeitig eingeben gibt es folgende Verknüpfungsmöglichkeiten:<br><br>
+<b>Verknüpfung durch Fragezeichen</b><br>
+Zum Beispiel: „Wir wünschen Frau Renate M?ier"<br><br>
+Wenn, wie im obigen Beispiel zu sehen, nicht klar ist ob der Name Meier mit ai oder ei geschrieben wird und der unbekannte Buchstabe durch ein Fragezeichen ersetzt wird, dann zeigt der <%PRODUKTNAME%> alle vorhandenen Treffer, die sich innerhalb der angegebenen Buchstabenfolge befinden, an. Es können auch mehrere Fragezeichen innerhalb eines Begriffes auftauchen. Beispielsweise wenn nicht bekannt ist ob der Name Meier mit ei, ai, ey oder ay geschrieben wird. Die Ergebnisse müssen aber zwingend die Wortfolge „Wir wünschen Frau Renate" enthalten.<br><br>
+<b>Suche durch Sternchen und Prozentzeichen</b><br>
+Zum Beispiel: „Wir wünschen */% "<br><br>
+Das Sternchen bzw. Prozentzeichen steht für beliebig viele Zeichen und kann auch mehrere Wörter umfassen. Das gezeigte Beispiel würde alle Treffer anzeigen, die die Wortfolge „Wir wünschen" beinhalten. Mit der Mailing-Suche können Sie verschiedene Felder des Mailings durchsuchen. Möchten Sie dabei mehrere Begriffe gleichzeitig eingeben gibt es folgende Verknüpfungsmöglichkeiten:<br><br>
+<b>Exakte Suche durch Anführungszeichen</b><br>
+Zum Beispiel: „Wir wünschen“<br><br>
+Stehen zwei oder mehr Begriffe innerhalb von Anführungszeichen, dann durchsucht der EMM die Felder nach genau dieser Wortfolge. Er wird keine Ergebnisse anzeigen, die nur einen der Begriffe enthalten.<br><br>
+<b>Verknüpfung durch Pluszeichen</b><br>
+Zum Beispiel: „Wir wünschen“ + Geburtstag<br><br>
+Werden zwei oder mehr Begriffe mit einem Pluszeichen verknüpft, so werden nur Ergebnisse angezeigt, die alle Begriffe enthalten.<br><br>
+<b>Verknüpfung durch Leerzeichen</b><br>
+Zum Beispiel: Geburtstag Namenstag<br><br>
+Sind zwei oder mehr Begriffe durch ein Leerzeichen getrennt so handelt es sich um eine ODER-Suche. Es werden alle Treffer angezeigt, die mindestens einen der gesuchten Begriffe enthalten.<br><br>
+<b>Begriffe klammern</b><br>
+Zum Beispiel: „Wir wünschen“ + (Geburtstag Namenstag)<br><br>
+Das gezeigte Beispiel würde alle Treffer anzeigen, die zum einen die Wortfolge „Wir wünschen“ enthält und zum anderen entweder Geburtstag oder Namenstag. Es muss aber mindestens einer der Begriffe in der Klammer im Ergebnis enthalten sein, da dazwischen ein Pluszeichen steht.<br><br>
+Es ist erlaubt die verschiedenen Möglichkeiten beliebig ineinander zu verschachteln.<br><br>
+Zum Beispiel: „Wir wünschen“ + („alles Gute“ „alles Liebe“) + (Geburtstag Namenstag)]]></content>
+</HelpBalloon>

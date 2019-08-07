@@ -1,0 +1,18 @@
+@mixin notification-variant($state, $color) {
+  .notification-#{$state} {
+    border-color: $color;
+
+    .notification-header {
+      color: $color;
+    }
+
+    .close-icon {
+      &:hover,
+      &:focus {
+        color: darken($color, 10%);
+      }
+    }
+  }
+
+
+}

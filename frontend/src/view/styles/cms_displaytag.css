@@ -1,0 +1,18 @@
+.head_cm_template_name {  width: 200px; padding-left: 5px; overflow:hidden; }
+.head_cm_template_description {  width: 400px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.head_cm_template_preview {  width: 560px; padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+.head_cm_template_assignment { padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+.head_cm_template_assigned {  width: 200px; padding-left: 5px; overflow:hidden;}
+.head_cm_template_edit { padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.head_cm_moduletype_preview {  width: 550px; padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+
+.cm_template_preview { padding: 5px; text-align: center; overflow:hidden;}
+.cm_template_name {  width: 200px; vertical-align: middle; padding-left: 5px; overflow:hidden; white-space: nowrap;}
+.cm_template_edit {  width: 60px; padding-left: 5px; vertical-align: top; overflow:hidden;}
+.cm_moduletype_preview {  width: 550px; padding: 5px; text-align: center; overflow:hidden;}
+
+.cm_template_mailing_id {  width: 100px; vertical-align: top; padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+.cm_template_other_templates {  width: 190px; vertical-align: top; padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+.cm_template_assigned {  text-align: center; vertical-align: top; padding-left: 5px;  -moz-user-select:none; -khtml-user-select: none; unselectable: on;}
+
+.targets_head_bulk {  width: 30px; padding-left: 5px; overflow:hidden; }

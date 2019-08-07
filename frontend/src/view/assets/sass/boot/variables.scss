@@ -1,0 +1,345 @@
+$REPLACEME: red;
+
+/*
+=================================================================
+  Typography
+=================================================================
+*/
+
+  $ff-regular : 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+
+//
+// Font-Sizes
+// --------------------------------------------------
+
+  $fs-xtiny   : 10px;
+  $fs-tiny    : 11px;
+  $fs-small   : 13px;
+  $fs-regular : 14px;
+  $fs-large   : 15px;
+  $fs-xlarge  : 18px;
+  $fs-xxlarge : 20px;
+
+// --------------------------------------------------
+// [END/Font-Sizes]
+
+//
+// Font-Weights
+// --------------------------------------------------
+
+  $fw-regular : 400;
+  $fw-semi    : 600;
+  $fw-bold    : 700;
+
+// --------------------------------------------------
+// [END/Font-Weights]
+
+//
+// Line-Heights
+// --------------------------------------------------
+
+  // $lh-small  : 1.2;
+  // $lh-smaller: 1.33;
+  // $lh-regular: 1.5;
+
+// --------------------------------------------------
+// [END/Line-Heights]
+
+/*
+=================================================================
+  Colors
+=================================================================
+*/
+
+// btn bgc
+$c-transparent: rgba(0,0,0,0);
+
+// btn-inverse bgc
+$c-white: #fff;
+
+$c-black: #000;
+
+// menu dropdown open bg
+$c-black-82: #2d2d2f;
+
+// menu bg
+$c-black-85: #222326;
+
+// calendar prev/next month bg, table striped bg
+$c-gray-02: #faf9f9;
+
+// btn border, main-view bg, calendar pagination border
+$c-gray-11:  #e2e3e3;
+
+// table border
+$c-gray-20: #cccdcd;
+
+// menu item, menu arrow on dark - WCAG AAA contrast
+$c-gray-27: #bbbbbb;
+
+// calendar prev/next month label
+$c-gray-33: #a9aaab;
+
+// mailings list item comment, form badge, dropdown item
+$c-gray-44: #8d8d8f;
+
+// btn text
+$c-gray-55: #707173;
+
+// mailings list item hover bg, dropdown item hover
+$c-blue-03: #e5f1f8;
+
+// mailing content block target group bg
+$c-blue-20: #30c0db;
+
+$c-blue-21: #30aadb;
+
+// btn-info bgc
+$c-blue-22: #338dc7;
+
+// btn-primary bgc
+$c-blue-27: #0071b9;
+
+// btn-secondary bgc
+$c-blue-56: #004470;
+
+// calendar today bg
+$c-green-02: #f1f9e6;
+
+// btn-success bgc, toastr success
+$c-green-38: #109e4d;
+
+// btn-alert badge-alert
+$c-red-02: #fa6861;
+
+// btn-warning badge-warning
+$c-orange: #ffa300;
+
+// comments
+$c-brown-58: #6b6850;
+$c-ochre-0: #fffcdf;
+$c-ochre-10: #e5e1c6;
+
+
+// mailings preview shades of blue
+$c-blue-01: #f5f9fc;
+$c-blue-02: #edf7ff;
+$c-blue-05: #cce3f1;
+$c-blue-11: #99c6e3;
+
+/**
+ * Browser colors for inbox preview
+ */
+$c-inbox-ie: #0cf;
+$c-inbox-ff: #f15c22;
+$c-inbox-opera: #cc0f16;
+$c-inbox-safari: #08c;
+$c-inbox-chrome: #ffb402;
+$c-inbox-desktop: #23caa5;
+$c-inbox-mobile: #22c266;
+$c-inbox-spam: $c-gray-44;
+
+$preview-clients:(
+  internet-explorer $c-inbox-ie,
+  firefox           $c-inbox-ff,
+  opera             $c-inbox-opera,
+  safari            $c-inbox-safari,
+  chrome            $c-inbox-chrome,
+  desktop           $c-inbox-desktop,
+  mobile            $c-inbox-mobile,
+  spam              $c-inbox-spam
+);
+
+
+// mailings
+$c-mailing-new          : #66aad5;
+$c-mailing-active       : #64a70b;
+$c-mailing-canceled     : $c-red-02;
+$c-mailing-disable      : $c-gray-44;
+$c-mailing-edit         : #66aad5;
+$c-mailing-ready        : #aacf79;
+$c-mailing-scheduled    : #83b93c;
+$c-mailing-sending      : #64a70b;
+$c-mailing-sent         : #387c00;
+$c-mailing-norecipients : $c-gray-44;
+$c-mailing-test         : #7f51b2;
+$c-mailing-admin        : #5e2b9c;
+
+
+$i-mailing-new          : $fa-var-file-o;
+$i-mailing-active       : $fa-var-play;
+$i-mailing-canceled     : $fa-var-minus-circle;
+$i-mailing-disable      : $fa-var-ban;
+$i-mailing-edit         : $fa-var-pencil;
+$i-mailing-ready        : $fa-var-check;
+$i-mailing-scheduled    : $fa-var-history;
+$i-mailing-sending      : $fa-var-paper-plane-o;
+$i-mailing-sent         : $fa-var-paper-plane;
+$i-mailing-norecipients : $fa-var-paper-plane;
+$i-mailing-test         : $fa-var-flask;
+$i-mailing-admin        : $fa-var-lightbulb-o;
+
+$mailing-states:(
+  new          $c-mailing-new,
+  active       $c-mailing-active,
+  canceled     $c-mailing-canceled,
+  disable      $c-mailing-disable,
+  edit         $c-mailing-edit,
+  ready        $c-mailing-ready,
+  scheduled    $c-mailing-scheduled,
+  sending      $c-mailing-sending,
+  sent         $c-mailing-sent,
+  norecipients $c-mailing-norecipients,
+  test         $c-mailing-test,
+  admin        $c-mailing-admin
+);
+
+$message-states:(
+
+  new $c-mailing-new,
+  scheduled    $c-mailing-scheduled,
+  sending   $c-mailing-sending,
+  sent    $c-mailing-sent,
+);
+
+$message-state-icons:(
+  new $i-mailing-new,
+  scheduled    $i-mailing-scheduled,
+  sending   $i-mailing-sending,
+  sent    $i-mailing-sent,
+);
+
+$mailing-state-icons:(
+  new          $i-mailing-new,
+  active       $i-mailing-active,
+  canceled     $i-mailing-canceled,
+  disable      $i-mailing-disable,
+  edit         $i-mailing-edit,
+  ready        $i-mailing-ready,
+  scheduled    $i-mailing-scheduled,
+  sending      $i-mailing-sending,
+  sent         $i-mailing-sent,
+  norecipients $i-mailing-norecipients,
+  test         $i-mailing-test,
+  admin        $i-mailing-admin
+);
+
+// Push Notifications
+$c-push-new               : #66aad5;
+$c-push-active            : #64a70b;
+$c-push-canceled          : $c-red-02;
+$c-push-disable           : $c-gray-44;
+$c-push-edit              : #66aad5;
+$c-push-ready             : #aacf79;
+$c-push-scheduled         : #83b93c;
+$c-push-sending           : #64a70b;
+$c-push-sent              : #387c00;
+$c-push-test              : #7f51b2;
+$c-push-admin             : #5e2b9c;
+
+$push-states:(
+  new       $c-push-new,
+  active    $c-push-active,
+  canceled  $c-push-canceled,
+  disable   $c-push-disable,
+  edit      $c-push-edit,
+  ready     $c-push-ready,
+  scheduled $c-push-scheduled,
+  sending   $c-push-sending,
+  sent      $c-push-sent,
+  test      $c-push-test,
+  admin     $c-push-admin
+);
+
+$push-state-icons:(
+  new       $i-mailing-new,
+  active    $i-mailing-active,
+  canceled  $i-mailing-canceled,
+  disable   $i-mailing-disable,
+  edit      $i-mailing-edit,
+  ready     $i-mailing-ready,
+  scheduled $i-mailing-scheduled,
+  sending   $i-mailing-sending,
+  sent      $i-mailing-sent,
+  test      $i-mailing-test,
+  admin     $i-mailing-admin
+);
+
+// Auto optimization
+$c-auto-optimization-notstarted   : #aacf79;
+$c-auto-optimization-scheduled    : #83b93c;
+$c-auto-optimization-finished     : #387c00;
+
+$auto-optimization-states:(
+  notstarted    $c-auto-optimization-notstarted,
+  scheduled     $c-auto-optimization-scheduled,
+  finished      $c-auto-optimization-finished
+);
+
+$auto-optimization-state-icons:(
+  notstarted   $i-mailing-new,
+  scheduled    $i-mailing-scheduled,
+  finished     $i-mailing-sent
+);
+
+// Campaigns (Workflow Manager)
+$c-campaign-open             : #66aad5;
+$c-campaign-active           : #109e4d;
+$c-campaign-inactive         : #707173;
+$c-campaign-completed        : #387c00;
+$c-campaign-tested           : #7f51b2;
+$c-campaign-testing          : #109e4d;
+
+$i-campaign-open             : $fa-var-check;
+$i-campaign-active           : $fa-var-paper-plane;
+$i-campaign-inactive         : $fa-var-ban;
+$i-campaign-completed        : $fa-var-check;
+$i-campaign-tested           : $fa-var-flask;
+$i-campaign-testing          : $fa-var-flask;
+
+$campaign-states:(
+  open        $c-campaign-open,
+  active      $c-campaign-active,
+  inactive    $c-campaign-inactive,
+  completed   $c-campaign-completed,
+  tested      $c-campaign-tested,
+  testing     $c-campaign-testing
+);
+
+$campaign-state-icons:(
+  open        $i-campaign-open,
+  active      $i-campaign-active,
+  inactive    $i-campaign-inactive,
+  completed   $i-campaign-completed,
+  tested      $i-campaign-tested,
+  testing     $i-campaign-testing
+);
+
+$linkage-action            : #338599;
+$linkage-campaignmanager   : #33b0b8;
+$linkage-site              : #33627d;
+
+// states
+$c-state-success : $c-green-38;
+$c-state-info    : $c-blue-22;
+$c-state-warning : $c-orange;
+$c-state-alert   : $c-red-02;
+
+$states: (
+  success $c-state-success,
+  info    $c-state-info,
+  warning $c-state-warning,
+  alert   $c-state-alert
+);
+
+$shadow-soft    : 0 1px 5px 0 rgba(0, 23, 39, 0.3);
+$shadow-regular : 0 1px 3px 0 rgba(0, 23, 39, 0.4);
+$shadow-hard    : 0 4px 10px 0 rgba(34, 35, 38, 0.6); // Popovers, Dropdowns
+$shadow-hardest : 0 5px 15px 0 rgba(0, 0, 0, 0.6);
+
+$shadows: (
+  soft    '#{$shadow-soft}',
+  regular '#{$shadow-regular}',
+  hard    '#{$shadow-hard}',
+  hardest '#{$shadow-hardest}'
+);

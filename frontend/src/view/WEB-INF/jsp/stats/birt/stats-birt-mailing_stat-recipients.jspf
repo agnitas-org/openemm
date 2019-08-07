@@ -1,0 +1,4 @@
+<c:set var="isBouncesExportAllowed" value="true"/>
+<c:if test="${birtStatForm.reportName eq 'mailing_bounces.rptdesign'}">
+	<c:set var="isBouncesExportAllowed" value="false"/>
+</c:if>

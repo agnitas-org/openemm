@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Separators</title>
+	<content><![CDATA[If you store recipient data in a spreadsheet software such as Excel and save them in a csv file, data is usually separated by a semicolon. Other programs may use different separators. You can, however, specify a different separator in the drop-down list.]]></content>
+</HelpBalloon>

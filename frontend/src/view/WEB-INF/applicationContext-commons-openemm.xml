@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Application context definition for beans used across layers.
+
+	No DAOs, service layer classes, actions or endpoints here!
+-->
+<beans
+		xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:util="http://www.springframework.org/schema/util"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<context:component-scan base-package="org.agnitas" />
+	<context:component-scan base-package="com.agnitas" />
+
+<!-- ============================================================================================================================== Misc. -->
+	<bean id="beanLookupFactory" class="com.agnitas.beans.BeanLookupFactory">
+		<lookup-method name="getBeanMailing" bean="Mailing"/>
+		<lookup-method name="getBeanTrackableLink" bean="TrackableLink"/>
+		<lookup-method name="getBeanMailingComponent" bean="MailingComponent"/>
+		<lookup-method name="getBeanDynamicTag" bean="DynamicTag"/>
+		<lookup-method name="getBeanDynamicTagContent" bean="DynamicTagContent"/>
+		<lookup-method name="getBeanMediatypeEmail" bean="MediatypeEmail"/>
+		<lookup-method name="getBeanRecipient" bean="Recipient"/>
+		<lookup-method name="getBeanVelocityWrapperFactory" bean="VelocityWrapperFactory"/>
+		<lookup-method name="getBeanDatasourceDescription" bean="DatasourceDescription"/>
+		<lookup-method name="getBeanExtensibleUIDService" bean="ExtensibleUIDService"/>
+		<lookup-method name="getBeanBindingEntry" bean="BindingEntry"/>
+		<lookup-method name="getBeanScriptHelper" bean="ScriptHelper"/>
+		<lookup-method name="getBeanTarget" bean="Target"/>
+		<lookup-method name="getBeanMailinglist" bean="Mailinglist"/>
+		<lookup-method name="getBeanJavaMailService" bean="JavaMailService"/>
+		<lookup-method name="getBeanConfigService" bean="ConfigService"/>
+		<lookup-method name="getBeanWorkflowReportScheduleDao" bean="WorkflowReportScheduleDao"/>
+	</bean>
+
+<!-- ============================================================================================================================== Hash tags -->
+	<bean id="ProfileFieldHashTagSupport" class="com.agnitas.emm.core.hashtag.tags.ProfileFieldHashTagSupport">
+		<constructor-arg ref="RecipientFactory" />
+	</bean>
+		  	
+<!-- ============================================================================================================================== EQL -->
+	<bean id="EqlSqlDialect" class="com.agnitas.emm.core.target.eql.emm.sql.MysqlDialect" />
+
+	<bean id="EqlCodeGenerator" class="com.agnitas.emm.core.target.eql.codegen.CodeGenerator" />
+
+	<bean id="EqlTargetRepresentationToEqlConverter" class="com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConverter">
+		<constructor-arg ref="ProfileFieldDao"/>
+	</bean>
+	
+	<bean id="QueryBuilderConfiguration" class="com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderConfiguration">
+		<property name="profileFieldResolverFactory" ref="ProfileFieldResolverFactory"/>
+	</bean>
+	
+	<bean id="EqlToTargetRepresentationConverterFactory" class="com.agnitas.emm.core.target.eql.emm.legacy.OpenEmmEqlToTargetRepresentationConverterFactory">
+		<constructor-arg ref="ProfileFieldResolverFactory" />
+		<constructor-arg ref="MailingTypeResolverFactory" />
+		<constructor-arg ref="EqlSqlDialect" />
+	</bean>
+	
+	<bean id="SqlCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.DefaultCommonSqlCodeGeneratorCallbackFactory">
+		<constructor-arg ref="ProfileFieldResolverFactory" />
+		<constructor-arg ref="EqlMailingIdValidator" />
+		<constructor-arg ref="MailingTypeResolverFactory" />
+		<constructor-arg ref="EqlLinkIdValidator" />
+		<constructor-arg ref="EqlSqlDialect" />
+	</bean>
+
+	<bean id="TargetNodeValidatorKit" class="org.agnitas.target.impl.TargetNodeValidatorKitImpl">
+		<property name="dateNodeValidator" ref="NonValidatingTargetNodeValidator" />
+		<property name="mailingClickedNodeValidator" ref="MailingIdTargetNodeValidator" />
+		<property name="mailingSpecificLinkClickNodeValidator" ref="MailingSpecificLinkClickNodeValidator" />
+		<property name="mailingOpenedNodeValidator" ref="MailingIdTargetNodeValidator" />
+		<property name="mailingReceivedNodeValidator" ref="MailingIdTargetNodeValidator" />
+		<property name="mailingRevenueNodeValidator" ref="MailingIdTargetNodeValidator" />
+		<property name="numericNodeValidator" ref="NonValidatingTargetNodeValidator" />
+		<property name="stringNodeValidator" ref="NonValidatingTargetNodeValidator" />
+	</bean>
+
+	<bean name="EqlToQueryBuilderParserConfiguration" class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlToQueryBuilderParserConfiguration">
+		<property name="parserMapping">
+			<map>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.BinaryOperatorBooleanParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.BinaryOperatorRelationalParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.ClickedInMailingRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.ClickedInMailingParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.OpenedMailingRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.OpenedMailingParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.ReceivedMailingParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.NotOperatorBooleanEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.NotOperatorBooleanParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.RelationalBooleanEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.RelationalBooleanParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.NumericConstantAtomEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.NumericConstantParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.ProfileFieldAtomParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.StringConstantsWithEscapeCharsParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.AtomExpressionalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.AtomExpressionalParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.LikeRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.LikeRelationalConverter">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.ContainsRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.ContainsRelationalConverter">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.StartsWithRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.StartsWithRelationalConverter">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.BinaryOperatorExpressionalParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.AnnotationBooleanEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.AnnotationBooleanParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.EmptyRelationalEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EmptyRelationalParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+				<entry>
+					<key>
+						<value type="java.lang.Class">com.agnitas.emm.core.target.eql.ast.TodayAtomEqlNode</value>
+					</key>
+					<bean class="com.agnitas.emm.core.target.eql.emm.querybuilder.parser.TodayAtomParser">
+						<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="PermissionFilter" class="com.agnitas.emm.core.admin.service.OpenemmPermissionFilter" />
+
+	<bean id="RecipientQueryBuilder" class="org.agnitas.service.impl.RecipientQueryBuilderImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="targetDao" ref="TargetDao" />
+		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="eqlFacade" ref="EqlFacade" />
+		<property name="mailinglistService" ref="mailinglistService"/>
+		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+	</bean>
+	
+</beans>

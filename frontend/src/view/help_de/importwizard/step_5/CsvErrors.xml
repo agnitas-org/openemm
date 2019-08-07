@@ -1,0 +1,6 @@
+<HelpBalloon>
+	<title><![CDATA[Analyse der Adressqualit&auml;t]]></title>
+	<content><![CDATA[Das System sucht fehlerhafte E-Mail-Adressen, &uuml;bereinstimmungen mit der Blacklist, doppelte Adressen, fehlerhafte numerische Werte sowie falsche Werte bei MAILTYPE, GENDER und in Datumsfeldern. Auch die korrekte Zeilenstruktur der CSV-Datei kontrolliert das System.<br>
+Fehler sind durch ein Diskettensymbol markiert. Klicken Sie das Symbol an, so bietet der E-Marketing Manager eine CSV-Datei zum Download an. So k&ouml;nnen Sie die Fehlerliste leicht durchgehen und die Importdaten entsprechend anpassen, zum Beispiel die Empf&auml;nger mit fehlerhaften Daten l&ouml;schen.<br>
+Tritt tats&auml;chlich ein Fehler auf, m&uuml;ssen Sie die Daten in der CSV-Datei korrigieren. Grunds&auml;tzlich kann der E-Marketing Manager auch fehlerhafte CSV-Dateien importieren. Die fehlerhaften Zeilen werden beim Import &uuml;bersprungen. Es ist aber eine gute Idee, zun&auml;chst alle Fehler in der CSV-Datei auszumerzen. Sonst wissen Sie nie genau, ob die gew&uuml;nschten Empf&auml;ngerdaten importiert wurden oder nicht.]]></content>
+</HelpBalloon>

@@ -1,0 +1,115 @@
+.errorTable tr.odd {
+background-color: #fdedec;
+}
+
+.errorTable tr.tableRowEven,.errorTable tr.even {
+background-color: #FFFFFF;
+}
+
+.error_message {
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:14px;
+font-weight:bold;
+color:#FF0000;
+}
+
+#reportRow {
+margin-bottom:12px;
+}
+
+.errorTable .head_name
+{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+padding: 2px;
+font-size:12px;
+font-weight:bold;
+background-color:#ff0000;
+color:#FFFFFF;
+}
+
+.errorTable td {
+font-family:Verdana, Arial, Helvetica, sans-serif;
+padding:2px;
+font-size:12px;
+
+} 
+
+.dataTable {  text-align: left; table-layout:fixed; width:800px; }
+.cmsPreviewTable {  text-align: left; width:800px; }
+.head_action {  width: 15px; padding-left: 5px; overflow:hidden; }
+.head_status {  width: 60px; padding-left: 5px; overflow:hidden; }
+.head_mailing {  width: 160px; padding-left: 5px;overflow:hidden;  }
+.head_description {  width: 160px; padding-left: 5px;overflow:hidden;}
+.head_error {  width: 160px; padding-left: 5px;}
+.head_mailinglist {  width: 160px; padding-left: 5px; overflow:hidden; }
+.head_name {  width: 160px; padding-left: 5px; overflow:hidden; }
+.head_email {  width: 160px; padding-left: 5px; overflow:hidden; }
+.head_senddate { width: 120px; padding-left: 5px;overflow:hidden; }
+.head_edit {  width: 50px; padding-left: 5px;overflow:hidden; }
+.head_count { width: 60px; padding-left: 5px; overflow:hidden; }
+
+.t_head_zg {  width: 390px; padding-left: 5px; overflow:hidden; }
+.t_head_desc {  width: 350px; padding-left: 5px; overflow:hidden; }
+.t_head_edit {  width: 50px; padding-left: 5px; overflow:hidden; }
+
+.action {  width: 15px; padding-left: 5px; overflow:hidden; white-space: nowrap;  }
+.status {  width: 60px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.mailing {  width: 20px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.description {  width: 160px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.error {  width: 160px; padding-left: 5px; white-space: nowrap; }
+.mailinglist {  width: 160px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.name {  width: 160px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.email {  width: 160px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.senddate {  width: 120px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.edit { width: 50px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+.count { width: 60px; padding-left: 5px; overflow:hidden; white-space: nowrap; }
+
+.ie7hack { overflow:hidden; white-space:nowrap;  }
+
+iframe { border:0px; frameborder:no; }
+
+thead tr {
+background-color:#D9E6F3;
+}
+
+th {
+	font-weight: bold;
+	font-size: 12px;	
+}
+
+th.sorted {
+background-color:#D9E6F3;
+
+}
+th.sorted a, th.sortable a {
+background-position:right center;
+display:inline;
+width:100%;
+font-weight:bold;
+padding-right: 10px;
+}
+th.sortable a {
+background-image:url(../assets/core/images/table_sort_icon.png);
+background-position: right;
+background-repeat: no-repeat;
+font-weight:bold;
+}
+th.order1 a {
+background-image:url(../assets/core/images/sort_down.png);
+background-position: right;
+background-repeat: no-repeat;
+font-weight:bold;
+}
+th.order2 a {
+background-image:url(../assets/core/images/sort_up.png);
+background-position: right;
+background-repeat: no-repeat;
+font-weight:bold;
+}
+tr.odd {
+background-color:#FFFFFF;
+}
+tr.tableRowEven, tr.even {
+	background-color: #D2D7D2;
+
+}

@@ -1,0 +1,322 @@
+/*!
+ * jQuery UI Bootstrap v1.0 Alpha
+ *
+ * jQuery UI Dialog 1.10.3
+ * http://docs.jquery.com/UI/Dialog#theming
+ *
+ * Portions copyright Addy Osmani jQuery UI & Twitter, Inc.
+ * Created the LESS version by @dharapvj
+ * Released under MIT
+ */
+
+ body {
+
+  .ui-dialog {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0;
+    // min-width: 650px;
+    // max-width: 650px;
+    overflow: hidden;
+    outline: 0;
+    background-clip: padding-box;
+    background-color: #ffffff;
+
+    border: none;
+    border-radius: 0;
+    @include shadow-variant(hardest);
+
+    outline: medium none;
+    z-index: 1050;
+
+    hr {
+      border: none;
+      border-bottom: 1px solid $c-gray-11;
+      margin: 10px 0 10px -15px;
+      width: 650px;
+    }
+
+    // .btn {
+    //   @include button-variant($c-gray-55, $c-transparent, $c-gray-11);
+    // }
+
+    // .btn-primary {
+    //   @include button-variant($c-white, $c-blue-27);
+    // }
+
+    // .btn-secondary {
+    //   @include button-variant($c-white, $c-blue-56);
+    // }
+
+    // // contextual variants
+    // @each $conf in $states {
+    //   $state: nth($conf, 1);
+    //   $color: nth($conf, 2);
+
+    //   .btn-#{$state} {
+    //     @include button-variant($c-white, $color);
+    //   }
+    // }
+
+    .btn-group {
+      text-align: right;
+    }
+
+    .editor-main-content {
+      margin-left: 0;
+      margin-top: 0;
+    }
+
+    .decision-type-container, .start-type-container {
+      margin-top: 0;
+    }
+
+    .campaign-mailing-sort {
+      padding: 0;
+    }
+
+
+    .ui-dialog-titlebar {
+      position: relative;
+
+      height: 50px;
+      padding: 0 0 0 10px;
+      font-size: 18px;
+      text-decoration: none;
+
+      background-image: none;
+      background-color: $c-white;
+
+
+      border: none;
+      border-bottom: 1px solid $c-gray-11;
+      border-radius: 0;
+
+    }
+    .ui-dialog-title {
+      float: left;
+
+      margin: 10px 20px 0 0;
+      max-width: 90%;
+      font-size: 18px;
+      line-height: 32px;
+      height: 32px;
+
+      color: $c-black-85;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dialog-title-image {
+      padding-left: 40px;
+      padding-top: 0px;
+      height: 32px;
+      background-repeat: no-repeat;
+      background-position: center left;
+    }
+
+    .ui-dialog-titlebar-close {
+      position: absolute;
+      top: 50%;
+      margin-top: -6px;
+      right: 15px;
+
+      font-size: 14px;
+      line-height: 1;
+
+      background: none;
+      border-width: 0;
+      border: none;
+
+      cursor: pointer;
+    }
+
+    .ui-dialog-titlebar-close .ui-icon {
+      display: block;
+      margin: 1px;
+      text-indent: 0;
+      background: none;
+      color: transparent;
+
+      &:before {
+        display: inline-block;
+        font-family: FontAwesome;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        content: $fa-var-times-circle;
+        color: $c-gray-55;
+      }
+
+      &:hover,
+      &:focus {
+        &:before {
+          color: darken($c-gray-55, 10%);
+        }
+      }
+
+    }
+
+    .ui-dialog-titlebar-close .ui-button-text {
+      display: none;
+    }
+
+    .ui-dialog-content {
+      position: relative;
+      border: 0;
+      padding: 15px 15px 0 15px;
+      background: none;
+      overflow: auto;
+    }
+
+    .ui-dialog-buttonpane {
+      text-align: left;
+      border-width: 1px 0 0 0;
+      background-image: none;
+      margin: .5em 0 0 0;
+      background-color: $c-white;
+      padding: 5px 15px 5px;
+      border-top: 1px solid $c-gray-11;
+      #ui-border-radius {
+        border-radius:  0 0 6px 6px;
+      }
+      @include box-shadow(none);
+      margin-bottom: 0;
+    }
+    .ui-dialog-buttonpane .ui-dialog-buttonset {
+      float: right;
+    }
+    .ui-dialog-buttonpane button {
+      margin: .5em .4em .5em 0;
+      cursor: pointer;
+    }
+
+    .ui-resizable-handle {
+      cursor: pointer;
+
+      &.ui-resizable-se.ui-icon {
+        position: absolute;
+        width: 20px; height: 20px;
+        right: -9px; bottom: -8px;
+
+        font-family: 'FontAwesome';
+        font-size: 16px;
+        text-align: center;
+        @include rotate(45deg);
+
+        &:after {
+          content: $fa-var-caret-right;
+        }
+      }
+    }
+
+  }
+  .ui-draggable .ui-dialog-titlebar { cursor: move; }
+
+  .ui-dialog-buttonpane .ui-dialog-buttonset .ui-button {
+      color: #ffffff;
+      background-color: #428bca;
+      border-color: #357ebd;
+    &.ui-state-hover{
+      color: #ffffff;
+      background-color: #3276b1;
+      border-color: #285e8e;
+    }
+  }
+
+  /***Dialog fixes**/
+  .ui-dialog-buttonset .ui-button:not(:first-child) {
+      cursor: pointer;
+      display: inline-block;
+      color: #333333;
+      background-color: #ffffff;
+      border: 1px solid #cccccc;
+      /* .ui-transition( 0.1s linear all); */
+      overflow: visible;
+    &.ui-state-hover{
+      color: #333333;
+      background-color: #ebebeb;
+      border-color: #adadad;
+      text-decoration: none;
+    }
+  }
+
+  .ui-dialog-buttonset .ui-button{
+    /* ui-dialog-buttonset UI info */
+    &.ui-button-info{
+      color: #ffffff;
+      background-color: #5bc0de;
+      border-color: #46b8da;
+      &.ui-state-hover{
+        color: #ffffff;
+        background-color: #39b3d7;
+        border-color: #269abc;
+      }
+    }
+    /* ui-dialog-buttonset UI success */
+    &.ui-button-success{
+      color: #ffffff;
+      background-color: #5cb85c;
+      border-color: #4cae4c;
+      &.ui-state-hover{
+        color: #ffffff;
+        background-color: #47a447;
+          border-color: #398439;
+      }
+    }
+    /* ui-dialog-buttonset UI warning */
+    &.ui-button-warning{
+      color: #ffffff;
+      background-color: #f0ad4e;
+      border-color: #eea236;
+      &.ui-state-hover{
+        color: #ffffff;
+        background-color: #ed9c28;
+        border-color: #d58512;
+      }
+    }
+    /* ui-dialog-buttonset UI Danger */
+    &.ui-button-danger{
+      color: #ffffff;
+      background-color: #d9534f;
+      border-color: #d43f3a;
+      &.ui-state-hover{
+        color: #ffffff;
+        background-color: #d2322d;
+        border-color: #ac2925;
+      }
+    }
+    /* ui-dialog-buttonset UI Inverse */
+    &.ui-button-inverse{
+      color: #ffffff;
+      background-color: #222222;
+      border-color: #080808;
+      &.ui-state-hover{
+        color: #ffffff;
+        background-color: #363636;
+        border-color: #000000;
+      }
+    }
+
+  }
+
+  .ui-widget {
+    font-family: $ff-regular;
+  }
+
+  .ui-widget-overlay.ui-front {
+    position: absolute;
+    top: 0; bottom: 0;
+    right: 0; left: 0;
+    background: rgba(13,13,13,0.5);
+  }
+
+  .ui-widget-overlay.ui-front ~ .ui-widget-overlay.ui-front {
+    background: transparent;
+  }
+
+}

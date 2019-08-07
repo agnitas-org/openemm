@@ -1,0 +1,68 @@
+.table-list {
+  width: 100%;
+
+  font-size: $fs-small;
+
+  td, th {
+    display: block;
+    width: 100%;
+    font-weight: normal;
+    word-break: break-all;
+    white-space: normal;
+  }
+
+  th {
+    color: $c-gray-44;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    color: $c-black-82;
+  }
+
+  .select2-choice {
+    padding-left: 0;
+  }
+
+
+  select {
+    height: 28px;
+    border: 0;
+  }
+
+  a {
+    color: $c-black;
+  }
+
+  @media (min-width: $screen-sm-min) {
+    th, td {
+      display: table-cell;
+    }
+
+    th {
+      text-align: right;
+      width: 1%;
+    }
+
+    td {
+      text-align: left;
+      padding-left: 10px;
+    }
+
+    td select {
+      margin-left: -4px;
+    }
+  }
+}
+
+.recipientsTable-odd {
+  td {
+    background-color: #fff;
+  }
+}
+.recipientsTable-even {
+  td {
+    background-color: #e4e3e3;
+  }
+}

@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Mail-Format</title>
+	<content><![CDATA[Mit der Voreinstellung "Normales Mailing" erzeugen Sie einen einfachen Newsletter. Ein datumsgesteuertes Mailing f&uuml;hrt zum Versand zu einem bestimmten Datum, z.B. dem Geburtstag des Abonnenten. Ein aktionsgesteuertes Mailing f&uuml;hrt zum Versand auf eine bestimmte Aktion hin, z.B. wenn der Abonnent auf einen bestimmten Link in einem Mailing geklickt hat. Ein Followup-Mailing versendet ein Mailing an Abonnenten, die auf ein vorhergehendes Mailing nicht reagiert haben.]]></content>
+</HelpBalloon>

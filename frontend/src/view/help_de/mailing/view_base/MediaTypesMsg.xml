@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title><![CDATA[Media-Typen]]></title>
+	<content><![CDATA[Der E-Marketing Manager kann nicht nur E-Mails versenden, sondern auch Faxe, gedruckte Briefe sowie an Handys MMS und SMS. Über die Kontrollk&auml;sten unter Medien-Typen legen Sie fest, welche Art Nachrichten das System verschicken soll. Beachten Sie, dass die Profildatenbank mit den Empf&auml;ngern nat&uuml;rlich die jeweils erforderlichen Daten wie Postanschrift oder Handynummer enthalten muss.
+Wenn Sie mehrere Medien-Typen aktivieren, schickt der E-Marketing Manager trotzdem nur eine Nachricht an jeden Empf&auml;nger. Dabei entscheidet die Reihenfolge in der Auflistung der Medien-Typen, &uuml;ber welchen Weg ein Empf&auml;nger die Nachricht erh&auml;lt. Standardm&auml;ßig steht E-Mail ganz oben, gefolgt von Fax und Print (normale Briefpost). Über die kleinen Pfeilsymbole rechts &auml;ndern Sie die Reihenfolge. Wenn Sie etwa wollen, dass die Empf&auml;nger bevorzugt ein Fax erhalten, so setzen Sie den Eintrag Fax mit dem Symbol Pfeil-nach-oben an die erste Stelle.]]></content>
+</HelpBalloon>

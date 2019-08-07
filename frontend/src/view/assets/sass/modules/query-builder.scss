@@ -1,0 +1,213 @@
+.query-builder {
+
+  dd {
+    margin-left: 0;
+  }
+
+  .rules-group-header {
+    margin-bottom: 10px;
+    @include clearfix();
+  }
+
+  .rules-group-container {
+    background-color: #f9f9f9;
+    border-color: transparent;
+    @include box-shadow($shadow-soft);
+
+    .rules-group-container {
+      background-color: #f3f3f3;
+    }
+  }
+
+  .rule-container {
+    background-color: #fefefe;
+    border-color: transparent;
+    @include box-shadow($shadow-soft);
+
+    &.has-error {
+      background-color: #f9dcdd;
+      border-color: transparent;
+      @include box-shadow(inset 0 0 1px 1px #f09796);
+    }
+  }
+
+  // added small button
+  .btn-xs {
+    padding: 1px 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 400;
+    border-radius: 3px;
+    z-index: 2;
+  }
+
+  // overwrite group button to grey
+  .group-conditions {
+    .btn-xs {
+      background-color: $c-gray-44;
+
+      &.active, &:hover {
+        background-color: $c-blue-56;
+      }
+    }
+  }
+
+  // fix btn groups 
+  .btn-group {
+
+    & > .btn {
+      float: left;
+      border-radius: 0;
+    }
+
+    & > .btn:first-child {
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+    }
+
+    & > .btn:last-child {
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
+    }
+
+    & > .btn:first-child {
+      margin-left: 0;
+    }
+
+    & .btn + .btn,
+    & .btn + .btn-group{
+      margin-left: -1px;
+    }
+
+  }
+
+  // adapt vertical container spacing
+  .rule-container, .rule-placeholder, .rules-group-container {
+    margin: 10px 0;
+  }
+
+  // adapt connecting lines to spacing
+  .rules-list > ::after, .rules-list > ::before {
+    height: calc(50% + 10px);
+    width: 9px;
+  }
+
+  .rules-list > :first-child::before {
+    top: -11px;
+  }
+
+  // Flex Layout
+  .rule-container {
+    display: flex;
+    flex: 1 0 auto;
+    flex-flow: row nowrap;
+    justify-content: left;
+    align-items: center;
+  }
+
+  // Flex Children
+  .rule-header {
+    order: 99;
+    flex-grow: 0;
+    margin-left: auto;
+  }
+
+  .error-container {
+    flex-grow: 0;
+
+    padding: 7px;
+  }
+
+  .rule-filter-container {
+    flex-grow: 0;
+  }
+
+  .rule-operator-container {
+    flex-grow: 0;
+
+    &:empty {
+      margin: 0;
+    }
+  }
+
+  // Flex Layout for value Elements
+  .rule-container .rule-value-container {
+    display: flex;
+    flex-direction: row;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+
+    padding-left: 0;
+
+    // fix alignment
+    margin-bottom: -10px;
+    border-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 10px, #DDD 10px, #DDD 100%) 1 100%;
+  }
+
+  // Flex value children
+  .qb-input-element {
+    flex-grow: 0;
+
+    display: inline-block;
+    margin-left: 7px;
+    margin-bottom: 10px; 
+  }
+
+  .qb-input-element-select, .rule-value-container > .form-control {
+    width: auto;
+    flex-grow: 1;
+
+    display: inline-block;
+    margin-left: 7px;
+    margin-bottom: 10px; 
+  }
+
+  .qb-input-negate {
+    flex-grow: 0;
+
+    display: inline-block;
+    margin-left: 7px;
+    margin-bottom: 10px; 
+  }
+
+  .qb-input-label {
+    flex-grow: 0;
+
+    display: inline-block;
+    margin-left: 7px;
+    margin-bottom: 10px; 
+
+    .text {
+      color: $c-black;
+    }
+
+    .qb-input-inner {
+      margin-top: 6px;
+      white-space: nowrap;
+    }
+  }
+
+  @media screen and (max-width: $screen-sm-min) {
+    .rule-container {
+      display: block;
+
+      .rule-header, .rule-filter-container, .rule-operator-container, .rule-value-container  {
+        display: block;
+        margin: 10px 0;
+      }
+    }
+
+    .rule-container .rule-value-container{
+      display: block;
+      border: 0;
+      margin: 0;
+      border-top: 1px solid #DDD;
+
+      > * {
+        display: block;
+        margin: 10px 0;
+      }
+    }
+  }
+
+}

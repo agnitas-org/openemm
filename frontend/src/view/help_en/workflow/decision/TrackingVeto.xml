@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Tracking Veto]]></title>
+    <content><![CDATA[If you activate this option, recipients who have objected to tracking will also be e-mailed as the campaign proceeds. Since response data from these recipients is only recorded anonymously, those recipients automatically fall into the no-path of your campaign.]]></content>
+</HelpBalloon>

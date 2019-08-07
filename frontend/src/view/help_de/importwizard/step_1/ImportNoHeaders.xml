@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Importieren CSV Dateien ohne Spaltenheader</title>
+	<content><![CDATA[Der Import von CSV Dateien ohne Spalten&uuml;berschriften ist zwar m&ouml;glich, beinhaltet aber das Risiko des Verwechselns von Spalten, sollte sich deren Reihenfolge f&uuml;r sp&auml;tere Import ver&auml;ndern.]]></content>
+</HelpBalloon>

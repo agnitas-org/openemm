@@ -1,0 +1,6 @@
+<HelpBalloon>
+	<title><![CDATA[Im Online-Archiv anzeigen]]></title>
+	<content><![CDATA[Die Checkbox Im Online-Archiv anzeigen sorgt dafür, dass das Mailing in der Übersicht von personalisierten Archiven erscheint. Sobald die Checkbox aktiviert wurde, werden ein Link auf die Fullview dieses Mailings und der Mailing-Name im Online-Archiv hinzugefügt.<br/><br/>
+<b>Beachten Sie</b>: Durch das Aktivieren wird das Mailing unabhängig vom Mailing-Status im Online-Archiv angezeigt.<br/><br/>
+		<a href="javascript:void(0);" data-popup="https://emm.agnitas.de/manual/de/html/index.html?entering_basic_mailing_data.htm">Mehr Informationen finden Sie im Kapitel „Fullview: HTML-Mails immer korrekt angezeigt“ unter Absatz „Personalisiertes Archiv für Empfänger erstellen“</a>]]></content>
+</HelpBalloon>

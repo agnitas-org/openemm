@@ -1,0 +1,9 @@
+{
+  "assets": "assets",
+  "dist": "assets",
+  "dummy": "dummy",
+  "jsp": ".",
+  "webinf": "WEB-INF",
+  "tomcat": "/opt/emm/tomcat/webapps/css",
+  "docs": "../../docs"
+}

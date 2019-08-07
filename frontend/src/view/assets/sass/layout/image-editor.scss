@@ -1,0 +1,60 @@
+#l-img-editor-tools {
+  width: 135px;
+  float: left;
+}
+
+#canvas-editor-area {
+  display: inline-block;
+}
+
+#l-img-editor-tools input {
+  width: 65px;
+  margin-bottom: 10px;
+}
+
+#l-img-editor-tools {
+  list-style-type: none;
+}
+
+#l-img-editor-tools  button {
+  width: 35px;
+}
+
+#l-editor-img-width {
+  display: inline;
+  margin-right: 10px;
+}
+
+#l-editor-save-btns {
+  display: block;
+  width: 100%;
+  margin-top:10px;
+  padding-bottom: 10px;
+}
+
+#editor-canvas {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+#canvas-editor-area {
+  min-width: 360px;
+  text-align: center;
+}
+
+#l-editor-save-btns button {
+  float: right;
+  margin-left: 5px;
+}
+
+#l-editor-form {
+  min-width: 560px;
+  min-height: 255px;
+}
+
+#l-img-editor {
+  min-height: 240px;
+}

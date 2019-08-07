@@ -1,0 +1,58 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.company.service;
+
+import java.util.List;
+import java.util.Set;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.company.dto.CompanyInfoDto;
+import com.agnitas.emm.core.company.form.CompanyCreateForm;
+import com.agnitas.emm.core.company.form.CompanyViewForm;
+import com.agnitas.web.mvc.Popups;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
+public interface ComCompanyService {
+
+    boolean initTables(int companyID);
+
+	List<ComCompany> listActiveCompanies();
+
+	ComCompany getCompany(int companyID);
+
+	CompanyInfoDto getLight(int companyID);
+
+	boolean addExecutiveAdmin(int companyID, int executiveAdminID);
+
+	int getPriorityCount(@VelocityCheck int companyId);
+
+	void setPriorityCount(@VelocityCheck int companyId, int value);
+
+    Set<Permission> getCompanyPermissions(int companyID);
+
+    PaginatedListImpl<CompanyInfoDto> getCompanyList(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
+
+	CompanyViewForm getCompanyForm(int companyId);
+
+	List<AdminEntry> getAdmins(int companyId);
+
+	int save(ComAdmin comAdmin, CompanyCreateForm form, Popups popups) throws Exception;
+
+	int update(ComAdmin comAdmin, CompanyViewForm form) throws Exception;
+
+    boolean deleteCompany(int companyIdForRemove);
+
+	boolean isCompanyNameUnique(int companyId, String shortname);
+}

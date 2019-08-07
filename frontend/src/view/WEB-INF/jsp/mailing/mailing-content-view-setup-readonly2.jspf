@@ -1,0 +1,10 @@
+        	<emm:instantiate var="element2" type="java.util.LinkedHashMap">
+            	<c:set target="${itemActionsSettings}" property="1" value="${element2}"/>
+            	<c:set target="${element2}" property="btnCls" value="btn btn-secondary btn-regular"/>
+            	<c:set target="${element2}" property="extraAttributes" value="data-form-target='#mailingContentForm' data-form-submit='' data-controls-group='save' data-form-set='action:${ACTION_SAVE_TEXTBLOCK_AND_BACK}'"/>
+
+            	<c:set target="${element2}" property="iconBefore" value="icon-save"/>
+            	<c:set target="${element2}" property="name">
+                	<bean:message key="button.SaveAndBack"/>
+            	</c:set>
+        	</emm:instantiate>

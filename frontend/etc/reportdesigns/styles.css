@@ -1,0 +1,252 @@
+.chart-color-blue {
+	color: #61aee4;
+}
+.chart-color-blue2 {
+	color: #8ea4e6;
+}
+.chart-color-blue3 {
+	color: #8ec9f2;
+}
+.chart-color-green {
+	color: #a8d85e;
+}
+.chart-color-orange {
+	color: #ffd05e;
+}
+.chart-color-red {
+	color: #d8606d;
+}
+.chart-color-violet {
+	color: #c3b1a8;
+}
+.chart-color-yellow {
+	color: #fcf15c;
+}
+
+.chart-color-greengrey {
+    color: #b8d8b4;
+}
+
+.chart-color-lightgrey {
+	background-color: #d3d3d3;
+}
+
+.chart-color-sent-mails {
+	color: #FFFFFF;
+}	
+
+.chart-color-clicking-recipients {
+	color: #8EC9F2;
+}	
+
+.chart-color-hardbounces {
+	color: #EAA48F;
+}
+
+.chart-color-openings {
+	color: #A8D85E;
+}	
+
+.chart-color-optout {
+	color: #FCF15C;
+}	
+
+.datatable {
+	border-color: #d3d3d3;
+	font-family: tahoma, sans-serif;
+	font-size: 10px;
+}
+
+.monthtable {
+    border: thin solid #D3D3D3;
+	font-family: tahoma, sans-serif;
+	font-size: 10px;
+}
+
+.ReportText {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+}
+
+.parametersheadline {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+	font-weight: bold;
+}
+
+.parameterstext {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+	text-decoration: none;
+	color: #000000;
+}
+
+.LegendTableText {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+}
+
+.LegendTableHeadLine {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+	font-weight: bold;
+}
+
+.textBlue {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+	color: #0c4065;
+}
+
+.textBlueSmall {
+	font-family: tahoma, sans-serif;
+	font-size: 10px;
+	color: #0c4065;
+}
+
+.blueHeadline{
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+	font-weight: bold;
+	color: #0c4065;
+}
+
+.odd {
+	background-color: #f6f6f6;
+}
+
+.even {
+	background-color: #FFFFFF;
+}
+
+.chartLabel {
+	font-family: tahoma, sans-serif;
+	font-size: 11px;
+}
+
+.hidden {
+    display: none;
+}
+
+.noTopBorder {
+    border-top: none;
+}
+
+.birt-individual-report {
+    font-family: arial, sans-serif;
+}
+
+.recipientStatistics {
+    font-family: Arial;
+    font-size: 8pt;
+    color: #000000;
+}
+
+.recipientStatistics-hedlines {
+    font-size: 18pt;
+    font-weight: bold;
+}
+
+.recipientStatistics-table-hedlines {
+    color: #FFFFFF;
+    background-color: #0071B9;
+    font-weight: bold;
+}
+
+.birt-report-text {
+    font-family: arial, sans-serif;
+    font-size: 8pt;
+    font-weight: normal;
+    color: #000000;
+}
+
+.birt-report-headline {
+    font-family: arial, sans-serif;
+    font-size: 18pt;
+    font-weight: bold;
+    color: #000000;
+}
+
+.birt-report-table-headline {
+    font-family: arial, sans-serif;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.birt-report-header,
+.birt-report-footer {
+    font-family: arial, sans-serif;
+}
+
+.birt-report-header {
+    font-weight: bold;
+}
+
+.birt-report-chart {
+    font-family: arial, sans-serif;
+    font-size: 8pt;
+}
+
+.color-dark-blue {
+    color: #00558A;
+}
+
+.color-light-blue {
+	color: #009bff;
+}
+
+.color-pure-blue {
+	color: #64c3ff;
+}
+
+.color-blue {
+    color: #0071B9;
+}
+
+.color-light-green {
+    color: #92D050;
+}
+
+.color-middle-green {
+    color: #69A129;
+}
+
+.color-dark-green {
+    color: #41641A;
+}
+
+.color-dark-petrol {
+	color: #006464;
+}
+
+.color-petrol {
+    color: #009999;
+}
+
+.color-dark-violet {
+	color: #7c00a8;
+}
+
+.color-bright-red {
+	color: #df3939;
+}
+
+.color-red {
+    color: #A91B1B;
+}
+
+.color-vivid-orange {
+	color: #f5770f;
+}
+
+.color-orange {
+    color: #FFC000;
+}
+
+.color-yellow {
+    color: #FFFF00;
+}
+
+.color-light-grey {
+    color: #D6D6D6;
+}

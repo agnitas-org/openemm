@@ -1,0 +1,1049 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <list-property name="userProperties">
+        <structure>
+            <property name="name">Data Cube - ClickingTargetGroupsDataSet.ClickingTargetGroupsDataSet.x</property>
+            <property name="type">integer</property>
+            <property name="isVisible">false</property>
+        </structure>
+        <structure>
+            <property name="name">Data Cube - ClickingTargetGroupsDataSet.ClickingTargetGroupsDataSet.y</property>
+            <property name="type">integer</property>
+            <property name="isVisible">false</property>
+        </structure>
+    </list-property>
+    <property name="Data Cube - ClickingTargetGroupsDataSet.ClickingTargetGroupsDataSet.x">135</property>
+    <property name="Data Cube - ClickingTargetGroupsDataSet.ClickingTargetGroupsDataSet.y">80</property>
+    <simple-property-list name="includeResource">
+        <value>WEB-INF/classes/messages</value>
+    </simple-property-list>
+    <property name="units">in</property>
+    <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.java.lang);
+
+if(reportContext.getOutputFormat() != "csv" ) {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("csvData").drop();
+}
+
+if(reportContext.getOutputFormat() == "csv" ) {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("generalElements").drop();
+}
+]]></method>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="layoutPreference">auto layout</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <list-property name="cssStyleSheets">
+        <structure>
+            <property name="useExternalCss">true</property>
+            <property name="externalCssURI">/birt/webcontent/birt/styles/redesign_style.css</property>
+        </structure>
+    </list-property>
+    <parameters>
+        <scalar-parameter name="formID" id="50">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">38102</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="companyID" id="51">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">282</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="language" id="852">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">EN</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="emmsession" id="100">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">;jsessionid=12345</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="targetbaseurl" id="101">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">http://localhost:8080/css</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <script-data-source name="UserFormulaUrlClicksScriptedDataSource" id="17"/>
+    </data-sources>
+    <data-sets>
+        <script-data-set name="UrlClicksDataSet" id="18">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">URL</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">URL_ID</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">clicks_gros</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">clicks_net</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">clicks_unique</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">clicks_mobile_gross</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">clicks_mobile_net</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">clicks_anonym</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">URL</property>
+                </structure>
+                <structure>
+                    <property name="columnName">URL_ID</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_gros</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_net</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_unique</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_mobile_gross</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_mobile_net</property>
+                </structure>
+                <structure>
+                    <property name="columnName">clicks_anonym</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">URL</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">URL_ID</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">clicks_gros</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">clicks_net</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">clicks_unique</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">clicks_mobile_gross</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">clicks_mobile_net</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">clicks_anonym</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">UserFormulaUrlClicksScriptedDataSource</property>
+            <method name="open"><![CDATA[userFormulaClickDataSetClass = new Packages.com.agnitas.reporting.birt.external.dataset.UserFormulaClicksDataSet();
+userFormulaClickList = userFormulaClickDataSetClass.getClicksPerUrl(params["formID"].value, params["companyID"].value);
+totalrows = userFormulaClickList.size();
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < userFormulaClickList.size() ){
+	row["URL"]=  userFormulaClickList.get(currentrow).getUrl();
+	row["URL_ID"]= userFormulaClickList.get(currentrow).getUrl_id();
+	row["clicks_gros"]= userFormulaClickList.get(currentrow).getClicks_gros();
+	row["clicks_net"]= userFormulaClickList.get(currentrow).getClicks_net();
+	row["clicks_unique"]= userFormulaClickList.get(currentrow).getClicks_unique();
+	row["clicks_mobile_gross"]= userFormulaClickList.get(currentrow).getClicks_gross_mobile();
+	row["clicks_mobile_net"]= userFormulaClickList.get(currentrow).getClicks_net_mobile();
+	row["clicks_anonym"]= userFormulaClickList.get(currentrow).getClicks_anonymous();
+	currentrow++ ;
+	return  true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="CompanyDescriptionDateSet" id="1912">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">0</property>
+                    <property name="name">company_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">company_name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">company_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">UserFormulaUrlClicksScriptedDataSource</property>
+            <method name="open"><![CDATA[companyDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.CompanyDescriptionDataSet();
+companyDescription = companyDescriptionDataSet.getCompanyDescription(params["companyID"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < companyDescription.size() ) {
+	row["company_name"] = companyDescription.get(currentrow);
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="FormulaDescription" id="1959">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">0</property>
+                    <property name="name">formula_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">formula_name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">formula_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">UserFormulaUrlClicksScriptedDataSource</property>
+            <method name="open"><![CDATA[formulaDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.UserFormulaDescriptionDataSet();
+formulaDescription = formulaDescriptionDataSet.getUserFormulaDescription(params["formID"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < formulaDescription.size() ) {
+	row["formula_name"] = formulaDescription.get(currentrow);
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">a4</property>
+            <property name="orientation">landscape</property>
+            <property name="topMargin">0.25in</property>
+            <property name="leftMargin">0.25in</property>
+            <property name="bottomMargin">0.25in</property>
+            <property name="rightMargin">0.25in</property>
+            <property name="borderBottomColor">white</property>
+            <property name="borderLeftColor">white</property>
+            <property name="borderLeftStyle">none</property>
+            <property name="borderLeftWidth">thin</property>
+            <property name="borderRightColor">white</property>
+            <property name="borderRightStyle">none</property>
+            <property name="borderRightWidth">thin</property>
+            <property name="borderTopColor">white</property>
+            <property name="borderTopWidth">thin</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid name="generalElements" id="1863">
+            <property name="style">block-table</property>
+            <column id="1864"/>
+            <column id="2158"/>
+            <row id="1867">
+                <property name="style">header</property>
+                <cell id="1868">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <property name="style">full-width</property>
+                    <grid id="2051">
+                        <property name="style">table table-striped</property>
+                        <column id="2052"/>
+                        <column id="2053"/>
+                        <row id="2054">
+                            <property name="style">table-head</property>
+                            <cell id="2055">
+                                <property name="colSpan">2</property>
+                                <property name="rowSpan">1</property>
+                                <text-data id="2063">
+                                    <property name="paddingTop">2pt</property>
+                                    <property name="paddingLeft">2pt</property>
+                                    <property name="paddingBottom">2pt</property>
+                                    <property name="paddingRight">2pt</property>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("ClickStat", reportContext.getLocale())</expression>
+                                </text-data>
+                            </cell>
+                        </row>
+                        <row id="2057">
+                            <cell id="2058">
+                                <text-data id="2064">
+                                    <property name="fontWeight">normal</property>
+                                    <property name="paddingTop">2pt</property>
+                                    <property name="paddingLeft">2pt</property>
+                                    <property name="paddingBottom">2pt</property>
+                                    <property name="paddingRight">2pt</property>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.Company", reportContext.getLocale())</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="2059">
+                                <data id="2068">
+                                    <property name="paddingTop">2pt</property>
+                                    <property name="paddingLeft">2pt</property>
+                                    <property name="paddingBottom">2pt</property>
+                                    <property name="paddingRight">2pt</property>
+                                    <property name="dataSet">CompanyDescriptionDateSet</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">company_name</property>
+                                            <text-property name="displayName">company_name</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["company_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">company_name</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="2060">
+                            <cell id="2061">
+                                <text-data id="2067">
+                                    <property name="fontWeight">normal</property>
+                                    <property name="paddingTop">2pt</property>
+                                    <property name="paddingLeft">2pt</property>
+                                    <property name="paddingBottom">2pt</property>
+                                    <property name="paddingRight">2pt</property>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Form", reportContext.getLocale())</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="2062">
+                                <data id="2069">
+                                    <property name="paddingTop">2pt</property>
+                                    <property name="paddingLeft">2pt</property>
+                                    <property name="paddingBottom">2pt</property>
+                                    <property name="paddingRight">2pt</property>
+                                    <property name="dataSet">FormulaDescription</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">formula_name</property>
+                                            <text-property name="displayName">formula_name</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["formula_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">formula_name</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+            <row id="2162">
+                <property name="style">header</property>
+                <cell id="2163">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <property name="style">full-width</property>
+                    <table id="1871">
+                        <property name="style">table table-striped</property>
+                        <property name="dataSet">UrlClicksDataSet</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">URL</property>
+                                <expression name="expression" type="javascript">dataSetRow["URL"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">URL_ID</property>
+                                <expression name="expression" type="javascript">dataSetRow["URL_ID"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_gros</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_gros"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_net</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_net"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_unique</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_unique"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_mobile_gross</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_gros"] - dataSetRow["clicks_anonym"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_mobile_net</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_mobile_net"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">total_gross</property>
+                                <property name="dataType">integer</property>
+                                <property name="aggregateFunction">SUM</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">row["clicks_gros"] + row["clicks_anonym"]</expression>
+                                    </structure>
+                                </list-property>
+                            </structure>
+                            <structure>
+                                <property name="name">total_gross_bind</property>
+                                <expression name="expression" type="javascript">row["total_gross"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">total_net</property>
+                                <property name="dataType">integer</property>
+                                <property name="aggregateFunction">SUM</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">row["clicks_net"]</expression>
+                                    </structure>
+                                </list-property>
+                            </structure>
+                            <structure>
+                                <property name="name">total_net_bind</property>
+                                <expression name="expression" type="javascript">row["total_net"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">clicks_anonym</property>
+                                <text-property name="displayName">clicks_anonym</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_anonym"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">measured_gross</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_gros"] - dataSetRow["clicks_anonym"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">measured_net</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_net"] - dataSetRow["clicks_anonym"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">gross_total</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_gros"] + dataSetRow["clicks_anonym"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">net_total</property>
+                                <expression name="expression" type="javascript">dataSetRow["clicks_net"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">zero</property>
+                                <expression name="expression" type="javascript">0</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                        </list-property>
+                        <column id="1887"/>
+                        <column id="2036"/>
+                        <column id="1888"/>
+                        <column id="1889"/>
+                        <header>
+                            <row id="1872">
+                                <property name="style">table-head</property>
+                                <cell id="1873">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">1px</property>
+                                    <text-data id="1891">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("URL", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="2032">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">1px</property>
+                                    <label id="2041">
+                                        <property name="fontWeight">normal</property>
+                                    </label>
+                                </cell>
+                                <cell id="1874">
+                                    <property name="style">textBlue</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">1px</property>
+                                    <text-data id="1893">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Brutto", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="1875">
+                                    <property name="style">textBlue</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">1px</property>
+                                    <text-data id="1895">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Netto", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                            </row>
+                        </header>
+                        <group id="2014">
+                            <property name="groupName">urlGroup</property>
+                            <property name="interval">none</property>
+                            <property name="sortDirection">asc</property>
+                            <expression name="keyExpr" type="javascript">row["URL_ID"]</expression>
+                            <structure name="toc">
+                                <expression name="expressionValue" type="javascript">row["URL"]</expression>
+                            </structure>
+                            <property name="repeatHeader">true</property>
+                            <property name="hideDetail">false</property>
+                            <property name="pageBreakAfter">auto</property>
+                            <property name="pageBreakBefore">auto</property>
+                            <property name="pageBreakInside">auto</property>
+                            <header>
+                                <row id="2015">
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="backgroundColor">#F6F6F6</property>
+                                            <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">1</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <cell id="2016">
+                                        <property name="borderLeftColor">#D3D3D3</property>
+                                        <property name="borderLeftStyle">solid</property>
+                                        <property name="borderLeftWidth">1px</property>
+                                        <property name="borderRightColor">#D3D3D3</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">1px</property>
+                                        <data id="2027">
+                                            <property name="marginTop">0px</property>
+                                            <property name="marginLeft">0px</property>
+                                            <property name="marginBottom">0px</property>
+                                            <property name="marginRight">0px</property>
+                                            <property name="paddingTop">2pt</property>
+                                            <property name="paddingLeft">2pt</property>
+                                            <property name="paddingBottom">2pt</property>
+                                            <property name="paddingRight">2pt</property>
+                                            <property name="resultSetColumn">URL</property>
+                                        </data>
+                                    </cell>
+                                    <cell id="2033">
+                                        <property name="fontWeight">bold</property>
+                                        <property name="borderRightColor">#D3D3D3</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">1px</property>
+                                        <text-data id="2037">
+                                            <property name="fontWeight">normal</property>
+                                            <property name="marginTop">0px</property>
+                                            <property name="marginLeft">0px</property>
+                                            <property name="marginBottom">0px</property>
+                                            <property name="marginRight">0px</property>
+                                            <property name="paddingTop">2pt</property>
+                                            <property name="paddingLeft">2pt</property>
+                                            <property name="paddingBottom">2pt</property>
+                                            <property name="paddingRight">2pt</property>
+                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                        </text-data>
+                                    </cell>
+                                    <cell id="2017">
+                                        <property name="fontWeight">bold</property>
+                                        <property name="borderRightColor">#D3D3D3</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">1px</property>
+                                        <property name="textAlign">right</property>
+                                        <data id="2122">
+                                            <property name="fontWeight">normal</property>
+                                            <property name="paddingTop">2pt</property>
+                                            <property name="paddingLeft">2pt</property>
+                                            <property name="paddingBottom">2pt</property>
+                                            <property name="paddingRight">2pt</property>
+                                            <property name="resultSetColumn">gross_total</property>
+                                        </data>
+                                    </cell>
+                                    <cell id="2018">
+                                        <property name="fontWeight">bold</property>
+                                        <property name="borderRightColor">#D3D3D3</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">1px</property>
+                                        <data id="2123">
+                                            <property name="fontWeight">normal</property>
+                                            <property name="paddingTop">2pt</property>
+                                            <property name="paddingLeft">2pt</property>
+                                            <property name="paddingBottom">2pt</property>
+                                            <property name="paddingRight">2pt</property>
+                                            <property name="textAlign">right</property>
+                                            <property name="resultSetColumn">net_total</property>
+                                        </data>
+                                    </cell>
+                                </row>
+                            </header>
+                        </group>
+                        <detail>
+                            <row id="1877">
+                                <list-property name="highlightRules">
+                                    <structure>
+                                        <property name="operator">eq</property>
+                                        <property name="backgroundColor">#F6F6F6</property>
+                                        <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
+                                        <simple-property-list name="value1">
+                                            <value type="javascript">1</value>
+                                        </simple-property-list>
+                                    </structure>
+                                </list-property>
+                                <cell id="1878">
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                </cell>
+                                <cell id="2034">
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <text-data id="2038">
+                                        <property name="marginTop">0px</property>
+                                        <property name="marginLeft">0px</property>
+                                        <property name="marginBottom">0px</property>
+                                        <property name="marginRight">0px</property>
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.measured", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="1879">
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <data id="2120">
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">clicks_gros</property>
+                                    </data>
+                                </cell>
+                                <cell id="1880">
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <data id="2121">
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">clicks_net</property>
+                                    </data>
+                                </cell>
+                            </row>
+                            <row id="2104">
+                                <list-property name="highlightRules">
+                                    <structure>
+                                        <property name="operator">eq</property>
+                                        <property name="backgroundColor">#F6F6F6</property>
+                                        <expression name="testExpr" type="javascript">row.__rownum % 2</expression>
+                                        <simple-property-list name="value1">
+                                            <value type="javascript">1</value>
+                                        </simple-property-list>
+                                    </structure>
+                                </list-property>
+                                <cell id="2105">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                </cell>
+                                <cell id="2106">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <text-data id="2111">
+                                        <property name="marginTop">0px</property>
+                                        <property name="marginLeft">0px</property>
+                                        <property name="marginBottom">0px</property>
+                                        <property name="marginRight">0px</property>
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.anonym", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="2107">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <data id="2109">
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">clicks_anonym</property>
+                                    </data>
+                                </cell>
+                                <cell id="2108">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <label id="2154">
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="pageBreakAfter">auto</property>
+                                        <text-property name="text">0*</text-property>
+                                    </label>
+                                </cell>
+                            </row>
+                        </detail>
+                        <footer>
+                            <row id="2042">
+                                <cell id="2043">
+                                    <property name="colSpan">2</property>
+                                    <property name="rowSpan">1</property>
+                                    <property name="fontWeight">normal</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <text-data id="2047">
+                                        <property name="style">textBlue</property>
+                                        <property name="fontWeight">normal</property>
+                                        <property name="marginTop">0px</property>
+                                        <property name="marginLeft">0px</property>
+                                        <property name="marginBottom">0px</property>
+                                        <property name="marginRight">0px</property>
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("GrandTotal", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="2045">
+                                    <property name="fontWeight">normal</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <data id="2048">
+                                        <property name="marginTop">0px</property>
+                                        <property name="marginLeft">0px</property>
+                                        <property name="marginBottom">0px</property>
+                                        <property name="marginRight">0px</property>
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">total_gross_bind</property>
+                                    </data>
+                                </cell>
+                                <cell id="2046">
+                                    <property name="fontWeight">normal</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">1px</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">1px</property>
+                                    <data id="2050">
+                                        <property name="fontWeight">normal</property>
+                                        <property name="marginTop">0px</property>
+                                        <property name="marginLeft">0px</property>
+                                        <property name="marginBottom">0px</property>
+                                        <property name="marginRight">0px</property>
+                                        <property name="paddingTop">2pt</property>
+                                        <property name="paddingLeft">2pt</property>
+                                        <property name="paddingBottom">2pt</property>
+                                        <property name="paddingRight">2pt</property>
+                                        <property name="textAlign">right</property>
+                                        <property name="resultSetColumn">total_net_bind</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </footer>
+                    </table>
+                </cell>
+            </row>
+            <row id="2159">
+                <property name="style">header</property>
+                <cell id="2160">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <text-data id="2137">
+                        <property name="style">footnote</property>
+                        <property name="fontSize">11px</property>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("AnonymousTrackedMess", reportContext.getLocale())</expression>
+                    </text-data>
+                </cell>
+            </row>
+        </grid>
+        <table name="csvData" id="2070">
+            <property name="dataSet">UrlClicksDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">URL</property>
+                    <expression name="expression" type="javascript">dataSetRow["URL"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">clicks_gros</property>
+                    <expression name="expression" type="javascript">dataSetRow["clicks_gros"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">clicks_net</property>
+                    <expression name="expression" type="javascript">dataSetRow["clicks_net"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">clicks_anonym</property>
+                    <text-property name="displayName">clicks_anonym</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["clicks_anonym"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">total_gross</property>
+                    <expression name="expression" type="javascript">row["clicks_gros"] + row["clicks_anonym"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">total_net</property>
+                    <expression name="expression" type="javascript">row["clicks_net"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <column id="2086"/>
+            <column id="2087"/>
+            <column id="2088"/>
+            <column id="2114"/>
+            <column id="2129"/>
+            <column id="2126"/>
+            <header>
+                <row id="2071">
+                    <cell id="2072">
+                        <text-data id="2094">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("URL", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="2073">
+                        <text-data id="2095">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.measuredGross", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="2074">
+                        <text-data id="2096">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.measuredNet", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="2112">
+                        <text-data id="2117">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.anonym", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="2127">
+                        <text-data id="2130">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.totalGross", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="2124">
+                        <text-data id="2131">
+                            <property name="fontWeight">bold</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.form.totalNet", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="2076">
+                    <cell id="2077">
+                        <data id="2099">
+                            <property name="resultSetColumn">URL</property>
+                        </data>
+                    </cell>
+                    <cell id="2078">
+                        <data id="2100">
+                            <property name="resultSetColumn">clicks_gros</property>
+                        </data>
+                    </cell>
+                    <cell id="2079">
+                        <data id="2101">
+                            <property name="resultSetColumn">clicks_net</property>
+                        </data>
+                    </cell>
+                    <cell id="2113">
+                        <data id="2116">
+                            <property name="resultSetColumn">clicks_anonym</property>
+                        </data>
+                    </cell>
+                    <cell id="2128">
+                        <data id="2132">
+                            <property name="resultSetColumn">total_gross</property>
+                        </data>
+                    </cell>
+                    <cell id="2125">
+                        <data id="2133">
+                            <property name="resultSetColumn">total_net</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

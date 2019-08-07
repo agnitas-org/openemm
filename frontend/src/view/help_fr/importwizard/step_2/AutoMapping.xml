@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Cartographie automatique</title>
+	<content><![CDATA[Avec l'option Mappage automatique, l'EMM fera correspondre automatiquement les colonnes du fichier csv avec les champs de profil existants. Par cons&eacute;quent, les en-t&ecirc;tes du fichier csv doivent correspondre aux noms des champs de la base de donn&eacute;es dans lesquels les donn&eacute;es doivent &ecirc;tre import&eacute;es. Les majuscules et minuscules ne sont pas pertinentes.]]></content>
+</HelpBalloon>

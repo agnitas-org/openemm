@@ -1,0 +1,5 @@
+(c) 2010, Sebastian Tschan
+Licensed under the MIT license:
+http://www.opensource.org/licenses/MIT
+
+https://github.com/blueimp/jQuery-File-Upload

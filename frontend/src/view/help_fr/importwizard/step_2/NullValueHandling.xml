@@ -1,0 +1,10 @@
+<HelpBalloon>
+	<title>null values</title>
+	<content><![CDATA[Le contr&ocirc;le des importations s'effectue &eacute;galement via la liste d&eacute;roulante Valeurs nulles dans le fichier csv. Cela concerne les destinataires d&eacute;j&agrave; enregistr&eacute;s dans votre base de donn&eacute;es. Le responsable E-Marketing considère que deux destinataires sont identiques s'ils ont la même adresse e-mail.<br>.
+Supposons que Heiner Müller se soit inscrit dans votre base de donn&eacute;es sous le titre Dr... Le fichier csv contient &eacute;galement une entr&eacute;e pour Heiner Müller, mais sans titre. Le champ correspondant est vide. La liste d&eacute;roulante permet de s&eacute;lectionner ce qu'il faut faire dans un tel cas.
+      <ul type="disc">
+         <li>Le r&eacute;glage par d&eacute;faut est de remplacer les valeurs existantes par des valeurs nulles. Cela signifie qu'en important le fichier csv dans votre base de donn&eacute;es, vous perdrez l'entr&eacute;e de champ correspondante. Ceci est g&eacute;n&eacute;ralement utile, car vous souhaitez mettre &agrave; jour votre base de donn&eacute;es en important de nouvelles donn&eacute;es.</li>
+         <li>La deuxi&egrave;me option, Ignorer les valeurs nulles pour les donn&eacute;es existantes, n'est utilis&eacute;e que dans des cas particuliers, par exemple lorsque vous savez exactement que des modifications ont &eacute;t&eacute; apport&eacute;es &agrave; la base de donn&eacute;es qui ne sont pas incluses dans le fichier d'importation.</li>
+      </ul>
+E-Marketing Manager utilise un champ cl&eacute; pour v&eacute;rifier si deux entr&eacute;es sont exactement les mêmes. Ce champ est s&eacute;lectionn&eacute; dans la liste d&eacute;roulante de la colonne Cl&eacute; (voir chapitre suivant). Le param&egrave;tre par d&eacute;faut est le champ EMAIL.]]></content>
+</HelpBalloon>

@@ -1,0 +1,89 @@
+@mixin mailing-badge-variant($state, $background) {
+
+  background-color: $background;
+  border: 1px solid $background;
+
+  @each $conf in $mailing-state-icons {
+    $iconstate: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $iconstate {
+      &:before {
+        content: $icon;
+      }
+    }
+  }
+
+}
+@mixin message-badge-variant($state, $background) {
+
+  background-color: $background;
+  border: 1px solid $background;
+
+  @each $conf in $message-state-icons {
+    $iconstate: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $iconstate {
+      &:before {
+        content: $icon;
+      }
+    }
+  }
+
+}
+
+@mixin push-badge-variant($state, $color) {
+
+  background-color: $c-white;
+  color: $color;
+  border: 1px solid $color;
+
+  @each $conf in $mailing-state-icons {
+    $iconstate: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $iconstate {
+      &:before {
+        content: $icon;
+      }
+    }
+  }
+
+}
+
+@mixin auto-optimization-badge-variant($state, $color) {
+
+  background-color: $color;
+  border: 1px solid $color;
+
+  @each $conf in $auto-optimization-state-icons {
+    $iconstate: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $iconstate {
+      &:before {
+        content: $icon;
+      }
+    }
+  }
+
+}
+
+@mixin campaign-badge-variant($state, $background) {
+
+  background-color: $background;
+  border: 1px solid $background;
+
+  @each $conf in $campaign-state-icons {
+    $iconstate: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $iconstate {
+      &:before {
+        content: $icon;
+      }
+    }
+  }
+
+}

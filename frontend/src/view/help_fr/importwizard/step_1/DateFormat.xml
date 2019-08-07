@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Format de date</title>
+	<content><![CDATA[S&eacute;lectionnez le format de date que vous utilisez pour formater vos champs de date.<br>La sp&eacute;cification du format de date pour votre profil d'importation est effectu&eacute;e par le JAVA SimpleDateFormat. Par exemple, les cha&icirc;nes suivantes sont possibles : AAAA (ann&eacute;e, par exemple 1986), MM (mois, par exemple 07), jj (jour dans un mois, par exemple 10), HH (heure dans un jour, par exemple 04), mm (minutes dans une heure, par exemple 30), ss (secondes dans une minute, par exemple 20) ou aussi pour am et pm. La sp&eacute;cification AAAA-MM-jjj, HH:mm pourrait &ecirc;tre utilis&eacute;e pour la date suivante 2017-01-10, 08:30.]></content>
+</HelpBalloon>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+	xmlns:agn="http://agnitas.com/ws/schemas"
+	targetNamespace="http://agnitas.com/ws/schemas" 
+	elementFormDefault="qualified"
+	jaxb:version="2.0">
+	
+	<xs:element name="SetSubscriberBindingWithActionRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="mediatype" type="xs:int" />
+				<xs:element name="status" type="xs:int" />
+				<xs:element name="bindingType" type="xs:string" />
+				<xs:element name="remark" type="xs:string" />
+				<xs:element name="exitMailingID" type="xs:int" />
+				<xs:element name="actionID" type="xs:int" />
+				<xs:element name="runActionAsynchronous" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SetSubscriberBindingWithActionResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+
+	
+	<xs:complexType name="StatisticValue" >
+		<xs:all>
+			<xs:element name="value" type="xs:int" />
+			<xs:element name="quotient" type="xs:decimal" />
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="StatisticEntry" >
+		<xs:all>
+			<xs:element name="token" type="xs:string" />
+			<xs:element name="value" type="agn:StatisticValue" />
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="GroupStatisticInfo">
+		<xs:all>
+			<xs:element name="targetGroupId" type="xs:int" />
+			<xs:element name="items">
+				<xs:complexType>
+					<xs:sequence maxOccurs="unbounded">
+						<xs:element name="value" type="agn:StatisticEntry" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:simpleType name="TargetGroups">
+		<xs:list itemType="xs:int"/>
+	</xs:simpleType>
+	
+	<xs:element name="MailingSummaryStatisticJobRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="targetGroups" type="agn:TargetGroups" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="MailingSummaryStatisticJobResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="statisticJobID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="MailingSummaryStatisticResultRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="statisticJobID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="MailingSummaryStatisticResultResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="statisticJobStatus" type="xs:int" />
+				<xs:element name="statisticJobStatusDescription" type="xs:string" />
+				<xs:element name="timestamp" type="xs:dateTime" />
+				<xs:element name="items">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="item" type="agn:GroupStatisticInfo" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	
+	<xs:complexType name="MailingContent">
+		<xs:all>
+			<xs:element name="name" type="xs:string" />
+			<xs:element name="content" type="xs:string" />
+		</xs:all>
+	</xs:complexType>
+	<xs:element name="GetMailingContentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingId" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="GetMailingContentResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="items">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="item" type="agn:MailingContent" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateMailingContentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="componentName" type="xs:string" />
+				<xs:element name="newContent" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateMailingContentResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<xs:element name="CreateDataSourceRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="description" type="xs:string" />
+				<xs:element name="url" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="CreateDataSourceResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="id" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="SendServiceMailRequest">
+	   <xs:complexType>
+	       <xs:all>
+	           <xs:element name="actionID" type="xs:int" />
+	           <xs:element name="customerID" type="xs:int" />
+	       </xs:all>
+	   </xs:complexType>
+	</xs:element>
+	
+    <xs:element name="SendServiceMailResponse">
+        <xs:complexType />
+    </xs:element>
+
+	
+
+	<xs:element name="UpdateTargetGroupRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="targetID" type="xs:int" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="targetName" type="xs:string" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="eql" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateTargetGroupResponse">
+		<xs:complexType/>
+	</xs:element>
+	
+	<xs:element name="CopyMailingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingId" type="xs:int" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="nameOfCopy" type="xs:string" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="descriptionOfCopy" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="CopyMailingResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="copyId"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddTargetGroupRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="eql" type="xs:string" minOccurs="1" maxOccurs="1"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddTargetGroupResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="targetId" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="GetFullviewUrlRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="formName" type="xs:string" minOccurs="0" maxOccurs="1" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="GetFullviewUrlResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="url" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+</xs:schema>

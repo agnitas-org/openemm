@@ -1,0 +1,161 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<%--@elvariable id="recipientBulkForm" type="com.agnitas.emm.core.recipient.forms.RecipientBulkForm"--%>
+<%--@elvariable id="mailingLists" type="java.util.List"--%>
+<%--@elvariable id="targetGroups" type="java.util.List"--%>
+<%--@elvariable id="hasAnyDisabledMailingLists" type="java.lang.Boolean"--%>
+<%--@elvariable id="calculatedRecipients" type="java.lang.Integer"--%>
+<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
+
+<c:set var="SIMPLE_DATE_TYPE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
+<c:set var="localeDateHint" value="(${localeDatePattern})"/>
+
+<mvc:form servletRelativeAction="/recipient/bulkView.action"
+          modelAttribute="recipientBulkForm"
+          id="recipientBulkForm"
+          data-form="resource">
+
+    <div class="tile">
+        <div class="tile-header">
+			<a href="#" class="headline" data-toggle-tile="#tile-changes-common-settings">
+				<i class="tile-toggle icon icon-angle-up"></i>
+				<mvc:message code="report.mailing.filter" />
+			</a>
+		</div>
+
+        <div id="tile-changes-common-settings" class="tile-content tile-content-forms">
+			<div class="form-group">
+				<div class="col-sm-2">
+					<label class="control-label"><mvc:message code="Mailinglist" /></label>
+				</div>
+                <div class="col-sm-10">
+                    <mvc:select path="mailinglistId" size="1" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
+                        <c:if test="${not hasAnyDisabledMailingLists}">
+                            <mvc:option value="-1"><mvc:message code="No_Mailinglist"/></mvc:option>
+                        </c:if>
+                        <c:forEach items="${mailingLists}" var="mailinglist">
+                            <mvc:option value="${mailinglist.id}">${mailinglist.shortname} (${mailinglist.id})</mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2">
+					<label class="control-label"><mvc:message code="Target" /></label>
+				</div>
+				<div class="col-sm-10">
+                    <mvc:select path="targetId" size="1" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
+                        <c:forEach items="${targetGroups}" var="targetGroup">
+                            <mvc:option value="${targetGroup.id}">${targetGroup.targetName} (${targetGroup.id})</mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2">
+					<label class="control-label"><mvc:message code="report.numberRecipients"/></label>
+				</div>
+				<div class="col-sm-10">
+					<label class="inline-tile inline-tile-footer">${calculatedRecipients}</label>
+					<c:url var="calculateUrl" value="/recipient/calculate.action"/>
+					<button type="button" class="btn btn-regular" id="calculateBtn"
+							data-form-url="${calculateUrl}"
+							data-target-form="#recipientBulkForm">
+						<span><mvc:message code="button.Calculate"/></span>
+					</button>
+				</div>
+			</div>
+		</div>
+    </div>
+
+	<div class="tile">
+		<div class="tile-header">
+			<a href="#" class="headline" data-toggle-tile="#tile-recipient-fields-changes">
+				<i class="tile-toggle icon icon-angle-up"></i>
+				<mvc:message code="Values" />
+			</a>
+		</div>
+		<div id="tile-recipient-fields-changes" class="tile-content tile-content-forms">
+			<div class="table-wrapper">
+                <display:table class="table table-bordered table-striped js-table"
+							   id="column" name="recipientColumns"
+							   sort="page"
+							   partialList="false"
+							   excludedParams="*">
+
+					 <%-- Prevent table controls/headers collapsing when the table is empty --%>
+                    <display:setProperty name="basic.empty.showtable" value="true"/>
+
+                    <display:setProperty name="basic.msg.empty_list_row" value=" "/>
+
+					<display:column headerClass="js-table-sort" class="field_shortname"
+                                    property="shortname" titleKey="settings.FieldName"
+                                    sortable="true" sortProperty="shortname"/>
+
+					<display:column headerClass="js-table-sort" class="field_type"
+                                    titleKey="default.Type"
+                                    sortable="false">
+						<c:set var="columnDataType" value="${column.simpleDataType}"/>
+						<%--@elvariable id="columnDataType" type="org.agnitas.util.DbColumnType.SimpleDataType"--%>
+                    	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE ? localeDateHint : ''}
+                    </display:column>
+
+					<display:column headerClass="js-table-sort" class="js-checkable field_newValue"
+                                    titleKey="recipient.history.newvalue"
+                                    sortable="false">
+						<mvc:hidden path="recipientFieldChanges[${column.column}].shortname" value="${column.column}"/>
+						<mvc:hidden path="recipientFieldChanges[${column.column}].type" value="${column.simpleDataType}"/>
+						<mvc:text path="recipientFieldChanges[${column.column}].newValue" cssClass="form-control"/>
+					</display:column>
+
+					<display:column headerClass="js-table-sort" class="field_allowed_values"
+									titleKey="settings.FieldFixedValue"
+									sortable="false">
+						<c:if test="${not empty column.allowedValues}">
+							${fn:join(column.allowedValues, '; ')}
+						</c:if>
+					</display:column>
+
+					<display:column headerClass="js-table-sort" class="js-checkable field_isClear"
+                                    titleKey="EmptyField"
+                                    sortable="false">
+						<label class="toggle">
+							<mvc:checkbox path="recipientFieldChanges[${column.column}].clear" value="on"/>
+							<div class="toggle-control"></div>
+						</label>
+					</display:column>
+
+				</display:table>
+            </div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		AGN.Lib.Action.new({'click': '#calculateBtn'}, function() {
+		    var btn = this.el;
+			var url = btn.data('form-url');
+			var form = AGN.Lib.Form.get($(btn.data('target-form')));
+			var label = $(btn).prev('label');
+
+			$.ajax({
+				url: url,
+				data: form.data()
+			}).success(function(data) {
+				var value = 0;
+				if(data.count) {
+					value = data.count;
+				}
+				label.html(value);
+			}).error(function(){
+				label.html(0);
+			})
+		});
+	</script>
+</mvc:form>

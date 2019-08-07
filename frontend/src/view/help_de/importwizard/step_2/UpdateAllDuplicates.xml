@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Alle Dubletten aktualisieren</title>
+	<content><![CDATA[Im Normalfall wird bei mehreren Empf&auml;ngern, die in der Schl&uuml;sselspalte den selben Wert haben, nur der erste, den das System findet, aktualisiert. Die weiteren Empf&auml;nger bleiben unber&uuml;cksichtigt. Wenn die Option Alle Dupletten aktualisieren (nicht nur die erste) aktiviert ist, werden alle Empf&auml;nger mit der passenden Schl&uuml;sselspalte mit den Inhalten aus der CSV-Datei aktualisiert.]]></content>
+</HelpBalloon>

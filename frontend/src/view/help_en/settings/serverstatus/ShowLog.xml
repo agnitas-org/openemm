@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Show EMM-Logfile]]></title>
+    <content><![CDATA[With this function you can display the log file "Catalina.out" of the Tomcat for today completely in the browser. The log file gives information about errors.]]></content>
+</HelpBalloon>

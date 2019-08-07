@@ -1,0 +1,415 @@
+/*doc
+---
+title: List Groups
+name: list_groups
+category: Components - List groups
+---
+
+List groups are highly flexible as to the content they support - as such it depends heavily on the underlying html structure.
+
+*/
+
+/*doc
+---
+title: Example
+name: list_groups_01_example
+parent: list_groups
+---
+
+A most basic example is an unordered list `<ul>` as `.list-group` and `<li>` as `.list-group-item`s.
+
+```htmlexample
+<ul class="list-group">
+    <li class="list-group-item">Cras justo odio</li>
+    <li class="list-group-item">Dapibus ac facilisis in</li>
+    <li class="list-group-item">Morbi leo risus</li>
+    <li class="list-group-item">Porta ac consectetur ac</li>
+    <li class="list-group-item">Vestibulum at eros</li>
+</ul>
+```
+
+*/
+
+/*doc
+---
+title: Badges
+name: list_groups_02_badges
+parent: list_groups
+---
+
+You can add a `.badge` to any `.list-group-item` and it will automatically be positioned.
+
+```htmlexample
+<ul class="list-group">
+    <li class="list-group-item">
+        <span class="badge">22</span>
+        Cras justo odio
+    </li>
+    <li class="list-group-item">
+        <span class="badge">17</span>
+        Dapibus ac facilisis in
+    </li>
+    <li class="list-group-item">
+        <span class="badge">1</span>
+        Morbi leo risus
+    </li>
+</ul>
+```
+
+*/
+
+/*doc
+---
+title: Linked items
+name: list_groups_03_links
+parent: list_groups
+---
+
+In the case of a linked list, there is no need for an `<ul>` and individual wrapping `<li>` elements, just a `<div>` with `<a>` elements will do.
+
+In case of mixed `.list-group`s note that this means for normal items `.list-group-item` will also have to be applied to something different than a `<li>`.
+
+```htmlexample
+<div class="list-group">
+    <a href="#" class="list-group-item">Cras justo odio</a>
+    <a href="#" class="list-group-item">Dapibus ac facilisis in</a>
+    <a href="#" class="list-group-item">Morbi leo risus</a>
+    <a href="#" class="list-group-item">Porta ac consectetur ac</a>
+    <a href="#" class="list-group-item">Vestibulum at eros</a>
+    <div class="list-group-item">Normal item, not a link</div>
+</div>
+```
+
+*/
+
+
+/*doc
+---
+title: Form controls
+name: list_groups_04_form_controls
+parent: list_groups
+---
+
+List groups support `.checkbox`, `.checkbox-inline`, `.radio` and `.radio-inline` elements.
+
+```htmlexample
+<ul class="list-group">
+    <li class="list-group-item">
+        <label class="checkbox-inline">
+            <input type="checkbox"> checkbox-inline
+        </label>
+    </li>
+    <li class="list-group-item">
+        <label class="radio-inline">
+            <input type="radio"> radio-inline
+        </label>
+    </li>
+    <li class="list-group-item">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox"> checkbox
+            </label>
+        </div>
+    </li>
+    <li class="list-group-item">
+        <div class="radio">
+            <label>
+                <input type="radio"> radio
+            </label>
+        </div>
+    </li>
+</ul>
+```
+*/
+
+/*doc
+---
+title: Disabled & Active items
+name: list_groups_05_modifiers
+parent: list_groups
+---
+
+`.list-group-item`s support the `.active` and `.disabled` modifiers.
+
+`.active` will visually mark the item, so they could also work as tabs or toggles.
+
+`.disabled` will effectively disable all `<a>`, `<label>` and `<input>` elements within so they can't be interacted with as well as gray them out visually.
+
+Caution: Please note that you should not rely on this behaviour alone to disable critical functionality as this will be ignored by IE8-10. In this case a global js listener on `.disabled` elements and their children with `preventDefault` as well as `stopPropagation` would be needed.
+
+```htmlexample
+<div class="list-group">
+    <a href="#" class="list-group-item active">Active item</a>
+    <a href="#" class="list-group-item disabled">Disabled link</a>
+
+    <div class="list-group-item disabled">
+        <label class="checkbox-inline">
+            <input type="checkbox"> disabled checkbox-inline
+        </label>
+    </div>
+
+    <a href="#" class="list-group-item">Porta ac consectetur ac</a>
+    <a href="#" class="list-group-item">Vestibulum at eros</a>
+</div>
+```
+
+*/
+
+
+/*doc
+---
+title: States
+name: list_groups_06_states
+parent: list_groups
+---
+
+Contextual variants are supported, add the appropriate modifier to denote the context. This works for both basic lists as well as lists containing links.
+
+### Basic list example
+
+```htmlexample
+<ul class="list-group">
+    <li class="list-group-item list-group-item-success">Cras justo odio</li>
+    <li class="list-group-item list-group-item-info">Dapibus ac facilisis in</li>
+    <li class="list-group-item list-group-item-warning">Morbi leo risus</li>
+    <li class="list-group-item list-group-item-alert">Porta ac consectetur ac</li>
+</ul>
+```
+
+### Linked list example
+
+```htmlexample
+<div class="list-group">
+    <a href="#" class="list-group-item list-group-item-success">Cras justo odio</a>
+    <a href="#" class="list-group-item list-group-item-info">Dapibus ac facilisis in</a>
+    <a href="#" class="list-group-item list-group-item-warning">Morbi leo risus</a>
+    <a href="#" class="list-group-item list-group-item-alert">Porta ac consectetur ac</a>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Custom Content
+name: list_groups_07_custom
+parent: list_groups
+---
+
+`.list-group-item`s also support almost any custom html. For convenience `.list-group-item-heading` for headings and `.list-group-item-text` for paragraphs are provided.
+
+```htmlexample
+<div class="list-group">
+    <a href="#" class="list-group-item">
+        <h2 class="list-group-item-heading">List group item heading</h2>
+        <p class="list-group-item-text">Lorem ipsum generators are the best invention ever.</p>
+    </a>
+</div>
+```
+
+*/
+
+
+
+
+
+//
+// List groups
+// --------------------------------------------------
+
+
+// Base class
+//
+// Easily usable on <ul>, <ol>, or <div>.
+
+.list-group {
+  // No need to set list-style: none; since .list-group-item is block level
+  margin-bottom: 20px;
+  padding-left: 0; // reset padding because ul and ol
+}
+
+
+// Individual list items
+//
+// Use on `li`s or `div`s within the `.list-group` parent.
+
+.list-group-item {
+  position: relative;
+  display: block;
+  padding: 4px 8px;
+  // Place the border on the list items and negative margin up for better styling
+  margin-bottom: -1px;
+  background-color: $c-white;
+  border: 1px solid $c-gray-20;
+
+  // Round the first and last items
+  &:first-child {
+    @include border-top-radius(2px);
+  }
+  &:last-child {
+    margin-bottom: 0;
+    @include border-bottom-radius(2px);
+  }
+
+  // Align badges within list items
+  > .badge {
+    float: right;
+  }
+  > .badge + .badge {
+    margin-right: 5px;
+  }
+}
+
+.list-group-item-nested {
+  padding-left: 26px;
+}
+
+
+// Linked list items
+//
+// Use anchor elements instead of `li`s or `div`s to create linked list items.
+// Includes an extra `.active` modifier class for showing selected items.
+
+a.list-group-item {
+  color: $c-black-82;
+
+  .list-group-item-heading {
+    color: $c-black-85;
+  }
+
+  // Hover state
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    // color: $list-group-link-hover-color;
+    background-color: $c-blue-03;
+  }
+}
+
+.list-group-item {
+  // Disabled state
+  &.disabled,
+  &.disabled:hover,
+  &.disabled:focus {
+    background-color: $c-gray-11;
+    color: $c-gray-55;
+
+    // Force color to inherit for custom content
+    .list-group-item-heading {
+      color: inherit;
+    }
+    .list-group-item-text {
+      color: $c-gray-55;
+    }
+
+    .list-group-item-controls a {
+      color: $c-gray-20;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    label, input {
+      color: $c-gray-33;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+  }
+
+  // Active class on item itself, not parent
+  &.active,
+  &.active:hover,
+  &.active:focus {
+    z-index: 2; // Place active items above their siblings for proper border styling
+    color: $c-white;
+    background-color: $c-blue-27;
+    border-color: $c-blue-27;
+
+    // Force color to inherit for custom content
+    .list-group-item-heading,
+    .list-group-item-heading > small,
+    .list-group-item-heading > .small {
+      color: inherit;
+    }
+    .list-group-item-text {
+      color: $c-white;
+    }
+  }
+}
+
+// Contextual variants
+//
+// Add modifier classes to change text and background color on individual items.
+// Organizationally, this must come after the `:hover` states.
+//
+//list-group-item-variant($state, $background, $color)
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include list-group-item-variant($state, $color, $c-white);
+}
+
+
+// Custom content options
+//
+// Extra classes for creating well-formatted content within `.list-group-item`s.
+
+.list-group-item-heading {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+.list-group-item-heading:last-child {
+  margin-bottom: 0;
+}
+.list-group-item-text {
+  margin-bottom: 0;
+  line-height: 1.3;
+}
+
+
+a.list-group-item {
+  &.disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.list-group-item {
+  font-size: $fs-regular;
+  line-height: 20px;
+
+  .radio, .checkbox {
+    min-height: initial;
+  }
+
+  .radio,
+  .radio-inline,
+  .checkbox,
+  .checkbox-inline {
+    padding-top: 0;
+  }
+}
+
+.list-group-item-controls,
+.list-group-item-controls-right {
+  float: right;
+
+  a{
+    color: $c-black-85;
+  }
+}
+
+.list-group-item-controls-left {
+  float: left;
+
+  a{
+    color: $c-black-85;
+  }
+}
+
+.list-group-item-controls-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

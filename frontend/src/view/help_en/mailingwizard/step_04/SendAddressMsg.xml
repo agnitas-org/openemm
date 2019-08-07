@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Sender-address</title>
+	<content><![CDATA[The Sender's address is the address shown as sender of the e-mail. You should therefore use a meaningful address, such as newsroom@yourcompany.com, which does in fact exist. The Reply-to E-Mail is the e-mail address for replies. It is possible to assign different names to the Sender's Full name and Reply-to Full Name respectively. If you enter only one name, e.g. into the Sender's Full name field, it will be used as the Reply-to Full Name.]]></content>
+</HelpBalloon>

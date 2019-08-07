@@ -1,0 +1,410 @@
+/*doc
+---
+title: Inline Tiles
+name: inline_tiles
+category: Components - Inline tiles
+---
+
+An `.inline-tile` is a minimalistic, compact close cousin of the `.tile` to be used primarily within a `.tile` - although it can be used anywhere.
+
+The basic structure is as follows:
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">...</div>
+    <div class="inline-tile-content">...</div>
+    <div class="inline-tile-footer">...</div>
+</div>
+```
+*/
+
+
+/*doc
+---
+title: Full Example
+name: inline_tiles_01_example
+parent: inline_tiles
+---
+
+The main content area is usually used for editors / textareas, but you are free to use any html content inside.
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">
+        <h2 class="headline">Headline</h2>
+        <ul class="inline-tile-header-nav">
+            <li class="active">
+                <a href="#">These</a>
+            </li>
+            <li>
+                <a href="#"><i class="icon icon-arrow-down"></i> are</a>
+            </li>
+            <li>
+                <a href="#"><i class="icon icon-arrow-up"></i> tabs</a>
+            </li>
+        </ul>
+        <ul class="inline-tile-header-actions">
+            <li>
+              <button class="btn btn-secondary btn-regular">action</button>
+            </li>
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-question-circle"></i>
+                <span class="text">Help</span>
+              </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="inline-tile-content">
+        <p>some text content</p>
+    </div>
+    <div class="inline-tile-footer">
+      <button type="button" class="btn btn-regular">button</button>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Inline Tile Elements
+name: inline_tiles_02_elements
+parent: inline_tiles
+---
+*/
+
+/*doc
+---
+title: Inline Tile Header
+name: inline_tiles_03_header
+parent: inline_tiles_02_elements
+---
+
+The inline tile header is the most complex component of an `.inline-tile`.
+
+It consists of 3 main areas: a headline, a nav / tab area and additional actions.
+
+The headline is always at the left, followed by the nav, while the actions are right aligned.
+*/
+
+/*doc
+---
+title: Headline
+name: inline_tiles_04_headline
+parent: inline_tiles_03_header
+---
+
+The headline is usually any heading element like `<h1>, <h2>, <h3>, <h4> ...` with the class `.headline`.
+
+There's also a headline variant `.headline-static` which occupies block level and forces the nav and actions into their own line.
+
+#### `.headline`
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">
+        <h2 class="headline">Headline</h2>
+
+        <ul class="inline-tile-header-nav">
+            <li class="active">
+                <a href="#">tab</a>
+            </li>
+        </ul>
+        <ul class="inline-tile-header-actions">
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-question-circle"></i>
+                <span class="text">Help</span>
+              </a>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+
+#### `.headline-static`
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">
+        <h2 class="headline-static">Headline</h2>
+
+        <ul class="inline-tile-header-nav">
+            <li class="active">
+                <a href="#">tab</a>
+            </li>
+        </ul>
+        <ul class="inline-tile-header-actions">
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-question-circle"></i>
+                <span class="text">Help</span>
+              </a>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Nav / Tabs
+name: inline_tiles_05_nav
+parent: inline_tiles_03_header
+---
+
+The nav / tab area is a `<ul>` with class `.inline-tile-header-nav` and should only contain `<a>`, each with their own `<li>`.
+
+The `<li>` elements support `.active` to denote the currently active item.
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">
+        <ul class="inline-tile-header-nav">
+            <li class="active">
+                <a href="">tab 1</a>
+            </li>
+            <li>
+                <a href="">tab 2</a>
+            </li>
+            <li>
+                <a href="">tab 3</a>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Actions
+name: inline_tiles_06_actions
+parent: inline_tiles_03_header
+---
+
+The action area is the most flexible and supports a wide range of elements.
+
+Each element should be wrapped in their own `<li>` with the exception of the divider element, which is a `<li>` with class `.divider`.
+
+`a.link` for text links, `.btn`, `.dropdown`s and also `.pagination`.
+
+*It is not suggested to use anything other than `.btn-regular` for `.btn` and the default pagination*
+
+##### Text link, divider, regular button, default pagination, dropdown
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-header">
+        <ul class="inline-tile-header-actions">
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-arrow-left"></i>
+                <span class="text">Textlinks</span>
+              </a>
+            </li>
+            <li class="divider"></li>
+            <li>
+              <button class="btn btn-regular btn-secondary" type="button">regular</button>
+            </li>
+            <li>
+                <ul class="pagination">
+                    <li><a href="#"><i class="icon icon-angle-left"></i> Previous</a></li>
+                    <li><a href="#">1</a></li>
+                    <li><a href="#">2</a></li>
+                    <li class="active"><a href="#">3</a></li>
+                    <li><a href="#">4</a></li>
+                    <li class="disabled"><a href="#">5</a></li>
+                    <li><a href="#">Next <i class="icon icon-angle-right"></i></a></li>
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="icon icon-eye"></i>
+                    <span class="text">Dropdown</span>
+                    <i class="icon icon-caret-down"></i>
+                </a>
+
+                <ul class="dropdown-menu">
+                    <li class="dropdown-header">Dropdown header</li>
+                    <li>
+                        <a tabindex="-1" href="#">Link</a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Inline Tile Content
+name: inline_tiles_07_content
+parent: inline_tiles_02_elements
+---
+
+Anything goes. It's a blank wrapper without any styling.
+*/
+
+/*doc
+---
+title: Inline Tile Footer
+name: inline_tiles_08_footer
+parent: inline_tiles_02_elements
+---
+
+The `.inline-tile-footer` is mostly used for buttons, but as with the content anything goes.
+
+Every `inline` and `inline-block` element is right-aligned.
+
+```htmlexample
+<div class="inline-tile">
+    <div class="inline-tile-footer">
+        <button type="button" class="btn btn-primary btn-regular">button</button>
+        <i class="icon icon-check"></i>
+        some text
+    </div>
+</div>
+```
+*/
+
+
+.inline-tile {
+  background-color: $c-white;
+
+  margin-bottom: 10px;
+}
+
+.inline-tile-header {
+  height: 30px;
+  padding: 0;
+  background-color: $c-white;
+
+  @include clearfix();
+
+  .headline {
+    float: left;
+    margin: 0;
+    margin-right: 20px;
+    line-height: 22px;
+    margin-top: 4px;
+    font-size: $fs-xlarge;
+    font-weight: $fw-semi;
+    color: $c-black-85;
+
+    max-width: 50%;
+    @include text-overflow();
+  }
+
+  .headline-static {
+    margin: 0;
+    font-size: $fs-xlarge;
+    line-height: 22px;
+    font-weight: $fw-semi;
+    color: $c-black-85;
+    word-break: break-all;
+  }
+
+  .headline-small {
+    font-size: $fs-regular;
+  }
+
+  .headline-static + .form-control {
+    margin: 5px 0;
+  }
+
+  .select2-container-active {
+    .select2-choice {
+      color: $c-blue-27;
+      outline: 0;
+
+      @include box-shadow(none);
+    }
+  }
+
+}
+
+.inline-tile-footer {
+  padding: 5px;
+  text-align: right;
+}
+
+
+.inline-tile-header-nav, .inline-tile-header-actions {
+  height: 100%;
+
+}
+
+.inline-tile-header-actions {
+  float: right;
+  margin-right: 5px;
+
+  > li {
+    float: left;
+  }
+
+  > li + li {
+    margin-left: 10px;
+  }
+
+  > li > a {
+    display: block;
+    line-height: 20px;
+    margin-top: 5px;
+    color: $c-gray-55;
+
+    &.disabled {
+      color: $c-gray-33;
+      text-decoration: none;
+      pointer-events: none;
+      cursor: pointer;
+    }
+  }
+
+  > .divider {
+    height: 100%;
+    width: 1px;
+    overflow: hidden;
+    background-color: $c-gray-11;
+  }
+}
+
+.inline-tile-header-nav {
+  float: left;
+
+  > li {
+    float: left;
+
+    + li {
+      margin-left: 20px;
+    }
+
+    > a {
+      display: block;
+      padding: 5px 0;
+      line-height: 18px;
+      color: $c-gray-55;
+
+      border-bottom: 2px solid $c-transparent;
+
+      @include transition(all .25s ease-in-out);
+    }
+
+    &:hover,
+    &:active,
+    &:focus,
+    &.active {
+      > a {
+        color: $c-blue-27;
+        border-bottom-color: $c-blue-27;
+      }
+    }
+  }
+}
+

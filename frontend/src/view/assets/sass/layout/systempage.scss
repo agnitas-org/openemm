@@ -1,0 +1,23 @@
+.systempage {
+  padding-top: 15%;
+
+  #notifications-container {
+    position: relative;
+    width: 98%;
+
+    margin: 0 auto;
+
+    @media (min-width: $screen-sm-min) {
+      max-width: 550px;
+    }
+  }
+
+  .notification {
+    @include shadow-variant(regular);
+  }
+
+  .input-group-btn {
+    vertical-align: top;
+  }
+
+}

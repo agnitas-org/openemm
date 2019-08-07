@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<emm.license>
+	<licenseID>xxx</licenseID>
+	<licenseHolder>Template</licenseHolder>
+	<licenseType>SaaS</licenseType>
+	<expirationDate>dd.mm.yyyy</expirationDate>
+	<maximumNumberOfCompanies>xxx</maximumNumberOfCompanies>
+	<maximumNumberOfSupervisors>xxx</maximumNumberOfSupervisors>
+	<maximumNumberOfAdmins>xxx</maximumNumberOfAdmins>
+	<maximumNumberOfWebserviceUsers>xxx</maximumNumberOfWebserviceUsers>
+	<maximumNumberOfCustomers>xxx</maximumNumberOfCustomers>
+	<maximumNumberOfProfileFields>xxx</maximumNumberOfProfileFields>
+	<allowedPremiumFeatures></allowedPremiumFeatures><!-- Value "ALL" for all premium features allowed-->
+	<maximumNumberOfReferenceTables>xxx</maximumNumberOfReferenceTables>
+	<allowMailingSendForMasterCompany>false</allowMailingSendForMasterCompany>
+</emm.license>

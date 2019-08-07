@@ -1,0 +1,25 @@
+.l-news-logo {
+  position: relative;
+  float:left;
+  width: 200px;
+  padding: 10px 0px 10px 10px;
+  height: 60px;
+
+  background-color: $c-white;
+
+  @media (min-width: $screen-md-min) {
+    left: 0; top: 0;
+    z-index: 1001;
+  }
+
+
+  .logo {
+    width: auto;
+  }
+
+  .headline, .version {
+    width: 115px;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}

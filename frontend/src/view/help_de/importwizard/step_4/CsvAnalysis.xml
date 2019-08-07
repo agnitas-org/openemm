@@ -1,0 +1,12 @@
+<HelpBalloon>
+	<title>Analyse der CSV-Datei</title>
+	<content><![CDATA[Hier zeigt das System eine Analyse der CSV-Datei sowie eine Vorschau der zu importierenden Empf&auml;nger an.
+Im oberen Inhaltsbereich finden Sie einen Vergleich der Felder aus der CSV-Datei mit den vorhandenen Feldern der Empf&auml;ngerdatenbank:
+      <ul type="disc">
+         <li>Unter Spalten f&uuml;r Import zeigt der E-Marketing Manager an, welche Felder vom Import betroffen sind.</li>
+         <li>Die Spalte unbenutzte Spalten (CSV) zeigt, welche Daten in der CSV-Datei zwar vorhanden sind, jedoch nicht in der Empf&auml;ngerdatenbank. Sie sollten dann pr&uuml;fen, ob Schreibfehler in der Spalten&uuml;berschrift enthalten sind. Gibt es die Spalte in der Profildatenbank nicht, so legen Sie ein entsprechendes Feld in der Datenbank an, bevor Sie den Import neu starten. N&auml;here Informationen zum Thema Anlegen von Feldern in der Datenbank finden Sie im Kapitel . Es kann nat&uuml;rlich auch passieren, dass Sie diese Felder gar nicht importieren wollen. Dann k&ouml;nnen Sie fortfahren; das System &uuml;bergeht die &uuml;berfl&uuml;ssigen Felder in der CSV-Importdatei.</li>
+         <li>Bei unbenutzte Spalten (Profil-DB) zeigt der E-Marketing Manager an, welche Felder zwar in der Empf&auml;ngerdatenbank vorhanden sind, jedoch keine entsprechenden Daten in der CSV-Datei enthalten sind.</li>
+      </ul>
+Darunter zeigt der E-Marketing Manager eine Vorschau der zu importierenden Daten. Dabei erscheinen genau die Spalten, die tats&auml;chlich importiert werden sollen. Beachten Sie, dass es sich lediglich um eine Vorschau handelt, die Daten lassen sich nicht &auml;ndern. Falls Sie hier Fehler entdecken, m&uuml;ssen Sie diese in der Originaldatei &auml;ndern und eine neue CSV-Datei f&uuml;r den Import bereitstellen.<br>
+Achtung: Sie sollten beim Import nicht nur die ersten Empf&auml;ngerprofile durchsehen, sondern die ganze Liste durchgehen. Die Erfahrung zeigt, dass in Importdateien oft fehlerhafte Daten enthalten sind. Diese machen nach dem Import teils erhebliche Probleme. Sind solche fehlerhaften Empf&auml;ngerdaten erst einmal in der Datenbank des E-Marketing Manager gespeichert, ist das Aufsp&uuml;ren schwierig und mit viel Aufwand verbunden. Gerade umfangreiche Importe bergen oft viel Konfliktpotential.]]></content>
+</HelpBalloon>

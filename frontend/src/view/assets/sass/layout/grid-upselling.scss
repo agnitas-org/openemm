@@ -1,0 +1,46 @@
+.grid-upselling {
+  background-color: $c-blue-27;
+  background-image: url('core/images/facelift/grid-upselling.png');
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: contain;
+
+  position: relative;
+}
+
+.grid-upselling--desc {
+  position: absolute;
+  width: 385px;
+  top: 50%; left: 100px;
+  margin-top: -200px;
+
+  h1,h3,p {
+    color: $c-white;
+  }
+
+  h1 {
+    font-size: 50px;
+    font-weight: 300;
+    line-height: 55px;
+
+    margin-bottom: 25px;
+  }
+
+  h3 {
+    font-size: 15px;
+    line-height: 35px;
+    text-transform: uppercase;
+  }
+
+  p {
+    font-size: 15px;
+    line-height: 20px;
+
+    margin-bottom: 40px;
+  }
+
+  .btn-primary {
+    @include button-variant($c-blue-27, $c-white);
+  }
+
+}

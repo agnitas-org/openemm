@@ -1,0 +1,4 @@
+(c) 2014 David J. Bradshaw - dave@bradshaw.net
+Licensed under MIT
+
+https://davidjbradshaw.github.io/iframe-resizer/

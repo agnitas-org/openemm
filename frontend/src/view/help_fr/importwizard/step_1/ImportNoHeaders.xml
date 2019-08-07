@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Importation de fichiers CSV sans en-t&ecirc;te de colonne.</title>
+	<content><![CDATA[L'importation de fichiers CSV sans en-t&ecirc;tes de colonnes est possible, mais risque de cr&eacute;er de la confusion dans l'ordre des colonnes si leur ordre est modifi&eacute; pour une importation ult&eacute;rieure.]]></content>
+</HelpBalloon>

@@ -1,0 +1,5 @@
+@mixin preview-client-badge-variant(
+  $color
+) {
+  background-color: $color;
+}

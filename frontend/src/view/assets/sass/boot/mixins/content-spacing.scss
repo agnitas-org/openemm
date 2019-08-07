@@ -1,0 +1,20 @@
+@mixin content-spacing(
+  $iconClass: "icon",
+  $textClass: "text",
+  $spacing: 5px,
+  $orientation: "horizontal"
+) {
+
+  .#{$iconClass} + .#{$textClass},
+  .#{$textClass} + .#{$iconClass},
+  .#{$iconClass} + .#{$iconClass},
+  .#{$textClass} + .#{$textClass} {
+    @if $orientation == vertical {
+      margin-top: $spacing;
+      margin-left: 0;
+    } @else {
+      margin-top: 0;
+      margin-left: $spacing;
+    }
+  }
+}

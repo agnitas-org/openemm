@@ -1,0 +1,86 @@
+body {
+    Margin: 0;
+    padding: 0;
+    min-width: 100%;
+    mso-line-height-rule:exactly;
+}
+
+.wrapper {
+    width: 100%;
+    table-layout: fixed;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+
+    background-color: #d3d3d3;
+}
+
+.content {
+    Margin: 0 auto;
+    width: 100%;
+    max-width: ${GRID_TEMPLATE_WIDTH}px;
+
+    background-color: #e0e0e0;
+}
+
+.webkit {
+    width: 100%;
+    max-width: ${GRID_TEMPLATE_WIDTH}px;
+}
+
+#set ($GRID_TEMPLATE_WIDTH_PLUS = $GRID_TEMPLATE_WIDTH + 1)
+
+/* Max Width Apple Hack */
+@media only screen and (min-width: ${GRID_TEMPLATE_WIDTH_PLUS}px) {
+    .webkit {
+        width: ${GRID_TEMPLATE_WIDTH}px !important;
+    }
+}
+
+table {
+    border-spacing: 0;
+    font-family: sans-serif;
+    color: #f6f6f6;
+}
+
+td {
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto;
+    border-collapse: collapse !important;
+}
+
+.grid-columns {
+    text-align: center;
+    font-size: 0px;
+    line-height: 0px;
+}
+
+.grid-columns .column {
+    width: 100%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.left .grid-columns {
+    text-align: left;
+}
+
+.right .grid-columns {
+    text-align: right;
+}
+
+.div-container {
+    display: inline-block;
+    background-color: #626364;
+}
+
+.empty-cell {
+    background-color: #cccccc;
+}
+
+.inner {
+    font-size: 0;
+    line-height: 0;
+}
+

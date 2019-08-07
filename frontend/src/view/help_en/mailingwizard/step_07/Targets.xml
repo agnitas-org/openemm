@@ -1,0 +1,18 @@
+<HelpBalloon>
+	<title>Target groups</title>
+	<content><![CDATA[<P STYLE="margin-bottom: 0in"><SPAN LANG="en-GB">It does not always
+makes sense to send a mailing to all recipients on a mailing list.
+The </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-US">Target
+groups </SPAN></FONT><SPAN LANG="en-GB">functional area contains
+various options for narrowing down your list of mailing recipients
+further. In order to be able to work with target groups, you have to
+define your target groups. Further information can be found in
+chapter 5. The default setting is „no target groups“. In order to
+limit the mailing to a certain target group, select the required
+target group from the drop-down list and click on the </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-US">Add</SPAN></FONT><SPAN LANG="en-GB">
+button. Now, the E-Marketing Manager will show that target group
+above the relevant drop-down list. Using the </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-US">Delete
+</SPAN></FONT><SPAN LANG="en-GB">symbol behind the selection will
+remove the selected target group. It is also possible to combine
+various target groups.</SPAN></P>]]></content>
+</HelpBalloon>

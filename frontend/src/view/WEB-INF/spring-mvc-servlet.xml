@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+    <mvc:annotation-driven validator="validator" message-codes-resolver="directMessageCodeResolver">
+        <mvc:argument-resolvers>
+            <bean class="com.agnitas.web.perm.AdminArgumentResolver" lazy-init="false"/>
+            <bean class="com.agnitas.web.mvc.PopupsArgumentResolver" lazy-init="true"/>
+            <bean class="com.agnitas.web.mvc.AdminPreferencesArgumentResolver" lazy-init="false"/>
+            <bean class="com.agnitas.web.mvc.LogonArgumentResolver" lazy-init="true"/>
+            <bean class="com.agnitas.emm.extension.web.ExtensionSystemArgumentResolver" lazy-init="true"/>
+            <bean class="com.agnitas.emm.core.workflow.web.WorkflowParametersArgumentResolver" lazy-init="true"/>
+        </mvc:argument-resolvers>
+        <mvc:return-value-handlers>
+            <bean class="com.agnitas.web.mvc.PollableMethodReturnValueHandler"/>
+        </mvc:return-value-handlers>
+    </mvc:annotation-driven>
+
+    <context:property-placeholder location="classpath:emm.properties"/>
+    <context:component-scan base-package="com.agnitas"/>
+
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/assets/**"/>
+            <bean class="com.agnitas.web.perm.AuthorizationInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/assets/**"/>
+            <bean class="com.agnitas.emm.core.workflow.web.WorkflowParamsRedirectionInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+
+    <bean class="com.agnitas.web.mvc.ConverterRegistrationPostProcessor">
+        <constructor-arg ref="conversionService"/>
+    </bean>
+
+    <bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.tiles.TilesView"/>
+        <property name="order" value="#{T(org.springframework.core.Ordered).HIGHEST_PRECEDENCE}"/>
+    </bean>
+    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles.TilesConfigurer">
+        <property name="definitions">
+            <list>
+                <value>/WEB-INF/tiles-defs.xml</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="messageSource" class="com.agnitas.messages.DBMessageSource"/>
+
+    <bean id="validator"  class="com.agnitas.web.mvc.CustomValidatorFactoryBean">
+        <property name="validationMessageSource" ref="messageSource"/>
+    </bean>
+
+    <bean id="directMessageCodeResolver" class="com.agnitas.web.mvc.DirectMessageCodeResolver"/>
+
+    <bean id="localeResolver" class="com.agnitas.web.mvc.AdminLocaleResolver"/>
+
+</beans>

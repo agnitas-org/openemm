@@ -1,0 +1,16 @@
+# 
+# MIME types
+#
+# Format:
+# <mimetype> <space separated file extensions>
+#
+
+image/jpeg jpg jpeg JPG JPEG
+image/png png PNG
+image/gif gif GIF
+image/tiff tif tiff TIF TIFF
+image/bmp bmp BMP
+image/svg+xml svg SVG
+application/zip zip ZIP
+text/comma-separated-values csv CSV
+text/plain txt TXT

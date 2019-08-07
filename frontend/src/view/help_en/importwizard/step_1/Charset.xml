@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Character set</title>
+	<content><![CDATA[The default value is the Western European character set ISO 8859-1, which you might as well use. You should only select a different character set if your csv file also uses that character set.]]></content>
+</HelpBalloon>

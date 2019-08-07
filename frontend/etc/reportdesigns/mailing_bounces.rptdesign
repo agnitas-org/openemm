@@ -1,0 +1,3340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0</property>
+    <simple-property-list name="includeResource">
+        <value>WEB-INF/classes/messages</value>
+    </simple-property-list>
+    <property name="units">in</property>
+    <method name="initialize"><![CDATA[importPackage(Packages.java.lang);
+importPackage ( Packages.com.agnitas.reporting.birt.external.dataset );
+
+if(reportContext.getOutputFormat()!="pdf") {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
+}
+if(reportContext.getOutputFormat()!="csv") {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("csvExport").drop();
+}
+if(reportContext.getOutputFormat()=="csv") {
+	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("graphicalReport").drop();
+}
+
+reportContext.getDesignHandle().addCss("styles.css");
+
+reportContext.setPersistentGlobalVariable("bouncesInitSum", new Integer(0));
+
+bouncesDataSet = new MailingBouncesDataSet();
+bouncesExpired = bouncesDataSet.isMailingBouncesExpire(params["companyID"], params["mailingID"]);
+reportContext.setPersistentGlobalVariable("bouncesExpired", new Boolean(bouncesExpired));
+successTableActivated = bouncesDataSet.successTableActivated(params["companyID"]);
+reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(successTableActivated));]]></method>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="layoutPreference">auto layout</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <list-property name="cssStyleSheets">
+        <structure>
+            <property name="fileName">WebContent/styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+        <structure>
+            <property name="useExternalCss">true</property>
+            <property name="externalCssURI">/birt/webcontent/birt/styles/redesign_style.css</property>
+        </structure>
+        <structure>
+            <property name="fileName">styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+        <structure>
+            <property name="fileName">styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+    </list-property>
+    <parameters>
+        <scalar-parameter name="companyID" id="129">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">8</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="mailingID" id="131">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="language" id="134">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">DE</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="uid" id="388">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">1</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="emmsession" id="100">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">;jsessionid=12345</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="targetbaseurl" id="101">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">http://localhost:8080/css</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="bouncetype" id="414">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">xxx</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="selectedTargets" id="417">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">1</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <script-data-source name="DummyDataSource" id="259"/>
+    </data-sources>
+    <data-sets>
+        <script-data-set name="CompanyDescriptionDataSet" id="248">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[companyDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.CompanyDescriptionDataSet();
+
+
+valueList = companyDescriptionDataSet.getCompanyDescription (params["companyID"]);
+currentRow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentRow < valueList.size() ) {
+	row["name"] = valueList.get(currentRow);
+	currentRow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="TargetDescriptionDataset" id="257">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">0</property>
+                    <property name="name">shortname</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">shortname</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">shortname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[targetDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.TargetDescriptionDataSet();
+targetID = null; 
+if (params["targetID"].value != null &amp;&amp; params["targetID"].value != "0"){
+	targetID = params["targetID"];
+}
+
+valueList = targetDescriptionDataSet.getTargetDescription (targetID,  params["language"]);
+currentRow = 0;
+]]></method>
+            <method name="fetch"><![CDATA[if( currentRow < valueList.size() ) {
+	row["shortname"] = valueList.get(currentRow);
+	currentRow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="BouncesDataSet" id="29">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">COUNT</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">DETAIL</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">DETAILSTRING</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">COUNTPERCENT</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">encoded_uid</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">COUNT</property>
+                </structure>
+                <structure>
+                    <property name="columnName">DETAIL</property>
+                </structure>
+                <structure>
+                    <property name="columnName">DETAILSTRING</property>
+                </structure>
+                <structure>
+                    <property name="columnName">COUNTPERCENT</property>
+                </structure>
+                <structure>
+                    <property name="columnName">encoded_uid</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">COUNT</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">DETAIL</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">DETAILSTRING</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">COUNTPERCENT</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">encoded_uid</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[importPackage ( Packages.com.agnitas.reporting.birt.external.dataset );
+bouncesDataSet = new MailingBouncesDataSet();
+encoder = new Packages.com.agnitas.reporting.birt.util.URLUtils();
+statList = bouncesDataSet.getBouncesWithDetail(params["companyID"], params["mailingID"],params["language"],params["selectedTargets"], MailingBouncesDataSet.BounceType.getByName(params["bouncetype"]));
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < statList.size() ) {
+	row["DETAILSTRING"] = statList.get(currentrow).getDetailstring();
+	row["DETAIL"] = statList.get(currentrow).getDetail();
+	row["COUNT"] = statList.get(currentrow).getCount();
+	row["COUNTPERCENT"] = statList.get(currentrow).getCountPercent();
+	row["encoded_uid"] = encoder.encodeURL(params["uid"]);
+	
+	if (row["DETAIL"] == 33) {
+		reportContext.setPersistentGlobalVariable("bouncesInitSum", new Integer(-row["COUNT"]));
+	}
+	
+	currentrow++;
+	return true;
+} 
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="MailingDescriptionDataSet" id="407">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">mailing_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">mailing_name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">mailing_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[mailingDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingDescriptionDataSet();
+mailingDescription = mailingDescriptionDataSet.getMailingDescription(params["mailingID"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < mailingDescription.size() ) {
+	row["mailing_name"] = mailingDescription.get(currentrow);
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="BouncesCSVDataSet" id="382">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">detail</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">email</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">customer_id</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">gender</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">firstname</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">lastname</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">detail</property>
+                </structure>
+                <structure>
+                    <property name="columnName">email</property>
+                </structure>
+                <structure>
+                    <property name="columnName">customer_id</property>
+                </structure>
+                <structure>
+                    <property name="columnName">index</property>
+                </structure>
+                <structure>
+                    <property name="columnName">gender</property>
+                </structure>
+                <structure>
+                    <property name="columnName">firstname</property>
+                </structure>
+                <structure>
+                    <property name="columnName">lastname</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">detail</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">email</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">customer_id</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">gender</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">firstname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">lastname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[bouncesDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet();
+statList = bouncesDataSet.getBouncesWithDetailAndEmail(params["companyID"], params["mailingID"], params["language"], params["selectedTargets"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < statList.size() ) {
+	row["detail"] = statList.get(currentrow).getDetail();
+	row["email"] = statList.get(currentrow).getEmail();
+	row["customer_id"] = statList.get(currentrow).getCustomerID();
+	row["index"] = statList.get(currentrow).getIndex();
+	row["gender"] = statList.get(currentrow).getGender();
+	row["firstname"] = statList.get(currentrow).getFirstname();
+	row["lastname"] = statList.get(currentrow).getLastname();
+	currentrow++;
+	return true;
+} 
+return false;]]></method>
+        </script-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="topMargin">0.25in</property>
+            <property name="leftMargin">0.25in</property>
+            <property name="bottomMargin">0.25in</property>
+            <property name="rightMargin">0.25in</property>
+            <property name="showHeaderOnFirst">false</property>
+            <property name="showFooterOnLast">false</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid name="reportParameters" id="145">
+            <property name="height">2.46875in</property>
+            <property name="width">5.166666666666667in</property>
+            <column id="146">
+                <property name="width">1.96875in</property>
+            </column>
+            <column id="147">
+                <property name="width">3.1979166666666665in</property>
+            </column>
+            <row id="148">
+                <cell id="149">
+                    <text-data id="163">
+                        <property name="fontWeight">bold</property>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.parameters", reportContext.getLocale())</expression>
+                    </text-data>
+                </cell>
+                <cell id="150"/>
+            </row>
+            <row id="244">
+                <cell id="245">
+                    <text-data id="247">
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.Company", reportContext.getLocale())</expression>
+                    </text-data>
+                </cell>
+                <cell id="246">
+                    <data id="249">
+                        <property name="dataSet">CompanyDescriptionDataSet</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">name</property>
+                                <text-property name="displayName">name</text-property>
+                                <expression name="expression">dataSetRow["name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">name</property>
+                    </data>
+                </cell>
+            </row>
+            <row id="151">
+                <cell id="152">
+                    <text-data id="164">
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailing", reportContext.getLocale())</expression>
+                    </text-data>
+                </cell>
+                <cell id="153">
+                    <data id="410">
+                        <property name="dataSet">MailingDescriptionDataSet</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">mailing_name</property>
+                                <text-property name="displayName">mailing_name</text-property>
+                                <expression name="expression">dataSetRow["mailing_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">mailing_name</property>
+                    </data>
+                </cell>
+            </row>
+            <row id="279">
+                <cell id="280">
+                    <text-data id="282">
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("CreationDate", reportContext.getLocale())</expression>
+                    </text-data>
+                </cell>
+                <cell id="281">
+                    <text-data id="284">
+                        <expression name="valueExpr">BirtDateTime.day(new Date()) + "." + BirtDateTime.month(new Date()) + "." + BirtDateTime.year(new Date())</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+        </grid>
+        <grid name="graphicalReport" id="332">
+            <property name="style">block-table</property>
+            <property name="width">100%</property>
+            <property name="dataSet">BouncesDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">COUNT</property>
+                    <expression name="expression">dataSetRow["COUNT"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">DETAIL</property>
+                    <expression name="expression">dataSetRow["DETAIL"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">DETAILSTRING</property>
+                    <expression name="expression">dataSetRow["DETAILSTRING"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">COUNTPERCENT</property>
+                    <expression name="expression">dataSetRow["COUNTPERCENT"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">encoded_uid</property>
+                    <expression name="expression">dataSetRow["encoded_uid"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Column Binding</property>
+                    <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired")</expression>
+                    <property name="dataType">boolean</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="333">
+                <property name="width">3in</property>
+            </column>
+            <column id="719">
+                <property name="width">3in</property>
+            </column>
+            <row id="715">
+                <property name="verticalAlign">middle</property>
+                <cell id="716">
+                    <property name="style">half-width</property>
+                    <grid id="761">
+                        <column id="762"/>
+                        <row id="763">
+                            <cell id="764">
+                                <table name="Legend Table111" id="463">
+                                    <property name="style">table table-striped</property>
+                                    <method name="onCreate"><![CDATA[importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+colorArray = new Array();
+tableRowCount=0;
+totalCount=0;
+
+	
+addColor(colorArray,"color-blue");
+addColor(colorArray,"color-light-green");
+addColor(colorArray,"color-orange");
+addColor(colorArray,"color-yellow");
+addColor(colorArray,"color-dark-blue");
+addColor(colorArray,"color-dark-green"); 
+
+
+function addColor( colorArray, styleName ) {
+	var color = ColorUtil.format(reportContext.getDesignHandle().findStyle(styleName).getColor().getRGB(),ColorUtil.HTML_FORMAT);
+	colorArray.push(color);
+}
+]]></method>
+                                    <list-property name="sort">
+                                        <structure>
+                                            <expression name="key" type="javascript">row["DETAIL"]</expression>
+                                            <property name="direction">desc</property>
+                                            <property name="strength">-1</property>
+                                        </structure>
+                                    </list-property>
+                                    <list-property name="filter">
+                                        <structure>
+                                            <property name="operator">lt</property>
+                                            <expression name="expr" type="javascript">row["DETAIL"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>510</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <column id="493"/>
+                                    <column id="494">
+                                        <property name="textAlign">right</property>
+                                    </column>
+                                    <column id="495">
+                                        <property name="textAlign">right</property>
+                                    </column>
+                                    <header>
+                                        <row id="464">
+                                            <property name="verticalAlign">middle</property>
+                                            <cell id="466">
+                                                <property name="style">table-head</property>
+                                                <property name="paddingLeft">3pt</property>
+                                                <property name="textAlign">left</property>
+                                                <text-data id="467">
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("bounces.softbounce", reportContext.getLocale())</expression>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="468">
+                                                <property name="style">table-head</property>
+                                                <property name="paddingRight">3pt</property>
+                                                <text-data id="469">
+                                                    <property name="textAlign">left</property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Amount", reportContext.getLocale())</expression>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="470">
+                                                <property name="style">table-head</property>
+                                                <property name="fontWeight">normal</property>
+                                                <property name="paddingRight">3pt</property>
+                                                <text-data id="471">
+                                                    <property name="textAlign">left</property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("image.editor.inpercent", reportContext.getLocale())</expression>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </header>
+                                    <detail>
+                                        <row id="472">
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <expression name="testExpr" type="javascript">row.__rownum%2</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
+                                            <list-property name="visibility">
+                                                <structure>
+                                                    <property name="format">all</property>
+                                                    <expression name="valueExpr" type="javascript">row["DETAIL"] == 33</expression>
+                                                </structure>
+                                            </list-property>
+                                            <cell id="478">
+                                                <property name="paddingLeft">3pt</property>
+                                                <property name="verticalAlign">middle</property>
+                                                <grid id="731">
+                                                    <column id="732">
+                                                        <property name="width">10px</property>
+                                                    </column>
+                                                    <column id="733"/>
+                                                    <row id="734">
+                                                        <property name="verticalAlign">middle</property>
+                                                        <cell id="735">
+                                                            <grid id="474">
+                                                                <property name="marginLeft">2pt</property>
+                                                                <property name="height">10px</property>
+                                                                <property name="width">10px</property>
+                                                                <list-property name="visibility">
+                                                                    <structure>
+                                                                        <property name="format">all</property>
+                                                                        <expression name="valueExpr" type="javascript">row["DETAIL"] == 33</expression>
+                                                                    </structure>
+                                                                </list-property>
+                                                                <column id="475"/>
+                                                                <row id="476">
+                                                                    <cell id="477">
+                                                                        <method name="onCreate"><![CDATA[this.getStyle().setBackgroundColor(colorArray[(tableRowCount++)%colorArray.length]);]]></method>
+                                                                    </cell>
+                                                                </row>
+                                                            </grid>
+                                                        </cell>
+                                                        <cell id="736">
+                                                            <text-data id="479">
+                                                                <expression name="valueExpr">row["DETAILSTRING"]</expression>
+                                                                <property name="contentType">html</property>
+                                                            </text-data>
+                                                        </cell>
+                                                    </row>
+                                                </grid>
+                                            </cell>
+                                            <cell id="480">
+                                                <property name="paddingRight">3pt</property>
+                                                <property name="verticalAlign">middle</property>
+                                                <text-data id="481">
+                                                    <expression name="valueExpr">row["COUNT"]</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="482">
+                                                <property name="paddingRight">3pt</property>
+                                                <property name="verticalAlign">middle</property>
+                                                <text-data id="483">
+                                                    <list-property name="visibility">
+                                                        <structure>
+                                                            <property name="format">all</property>
+                                                            <expression name="valueExpr" type="javascript">row["DETAIL"] == 33</expression>
+                                                        </structure>
+                                                    </list-property>
+                                                    <expression name="valueExpr">row["COUNTPERCENT"]+"%"</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </detail>
+                                    <footer>
+                                        <row id="484">
+                                            <property name="verticalAlign">middle</property>
+                                            <cell id="486">
+                                                <property name="paddingLeft">3pt</property>
+                                                <property name="textAlign">left</property>
+                                                <text-data id="487">
+                                                    <property name="fontWeight">normal</property>
+                                                    <property name="paddingLeft">1pt</property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.qualified.softbounces", reportContext.getLocale())</expression>
+                                                    <property name="contentType">auto</property>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="488">
+                                                <property name="paddingBottom">1pt</property>
+                                                <property name="paddingRight">3pt</property>
+                                                <text-data id="662">
+                                                    <list-property name="visibility">
+                                                        <structure>
+                                                            <property name="format">all</property>
+                                                            <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == false</expression>
+                                                        </structure>
+                                                    </list-property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                                </text-data>
+                                                <text-data id="489">
+                                                    <list-property name="visibility">
+                                                        <structure>
+                                                            <property name="format">all</property>
+                                                            <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == true</expression>
+                                                        </structure>
+                                                    </list-property>
+                                                    <expression name="valueExpr">Total.count() &lt; 1 ? 0+"" : (Total.sum(row["COUNT"]) + parseInt(reportContext.getPersistentGlobalVariable("bouncesInitSum"))) + ""</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="490">
+                                                <property name="paddingBottom">1pt</property>
+                                                <property name="paddingRight">3pt</property>
+                                                <text-data id="663">
+                                                    <list-property name="visibility">
+                                                        <structure>
+                                                            <property name="format">all</property>
+                                                            <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == false</expression>
+                                                        </structure>
+                                                    </list-property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                                </text-data>
+                                                <text-data id="491">
+                                                    <list-property name="visibility">
+                                                        <structure>
+                                                            <property name="format">all</property>
+                                                            <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == true</expression>
+                                                        </structure>
+                                                    </list-property>
+                                                    <expression name="valueExpr">100+ "%"</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </footer>
+                                </table>
+                            </cell>
+                        </row>
+                        <row id="765">
+                            <cell id="766">
+                                <property name="paddingTop">20pt</property>
+                                <table id="812">
+                                    <property name="style">table table-striped</property>
+                                    <property name="textAlign">left</property>
+                                    <list-property name="visibility">
+                                        <structure>
+                                            <property name="format">all</property>
+                                            <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("successTableActivated") != true</expression>
+                                        </structure>
+                                    </list-property>
+                                    <column id="822"/>
+                                    <column id="823">
+                                        <property name="textAlign">right</property>
+                                    </column>
+                                    <header>
+                                        <row id="826">
+                                            <property name="verticalAlign">middle</property>
+                                            <cell id="827">
+                                                <property name="style">table-head</property>
+                                                <text-data id="829">
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("bounces.softbounce", reportContext.getLocale())</expression>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="828">
+                                                <property name="style">table-head</property>
+                                                <text-data id="830">
+                                                    <property name="textAlign">left</property>
+                                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Amount", reportContext.getLocale())</expression>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </header>
+                                    <detail>
+                                        <row id="816">
+                                            <list-property name="visibility">
+                                                <structure>
+                                                    <property name="format">all</property>
+                                                    <expression name="valueExpr" type="javascript">row["DETAIL"] != 33</expression>
+                                                </structure>
+                                            </list-property>
+                                            <cell id="817">
+                                                <text-data id="824">
+                                                    <property name="textAlign">left</property>
+                                                    <expression name="valueExpr">row["DETAILSTRING"]</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                            <cell id="818">
+                                                <text-data id="825">
+                                                    <expression name="valueExpr">row["COUNT"]</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </detail>
+                                </table>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+                <cell id="717">
+                    <property name="style">half-width</property>
+                    <grid id="723">
+                        <property name="style">table</property>
+                        <column id="724"/>
+                        <row id="725">
+                            <cell id="726">
+                                <property name="textAlign">center</property>
+                                <extended-item extensionName="Chart" name="bouncesChart" id="364">
+                                    <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
+  <Version>2.6.1</Version>
+  <Type>Pie Chart</Type>
+  <SubType>Standard</SubType>
+  <Block>
+    <Children xsi:type="layout:TitleBlock">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <Label>
+        <Caption>
+          <Value>Pie Chart Title</Value>
+          <Font>
+            <Size>16.0</Size>
+            <Bold>true</Bold>
+            <Alignment>
+              <horizontalAlignment>Center</horizontalAlignment>
+              <verticalAlignment>Center</verticalAlignment>
+            </Alignment>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>true</Visible>
+      </Label>
+    </Children>
+    <Children xsi:type="layout:Plot">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>true</Visible>
+      <HorizontalSpacing>5</HorizontalSpacing>
+      <VerticalSpacing>5</VerticalSpacing>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>0.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>0.0</Right>
+        </Insets>
+      </ClientArea>
+    </Children>
+    <Children xsi:type="layout:Legend">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>2.0</Top>
+          <Left>2.0</Left>
+          <Bottom>2.0</Bottom>
+          <Right>2.0</Right>
+        </Insets>
+      </ClientArea>
+      <Text>
+        <Value></Value>
+        <Font>
+          <Alignment/>
+        </Font>
+      </Text>
+      <Orientation>Vertical</Orientation>
+      <Direction>Top_Bottom</Direction>
+      <Separator>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>true</Visible>
+      </Separator>
+      <Position>Right</Position>
+      <ItemType>Categories</ItemType>
+      <Title>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Title>
+      <TitlePosition>Above</TitlePosition>
+    </Children>
+    <Bounds>
+      <Left>0.0</Left>
+      <Top>0.0</Top>
+      <Width>273.59999999999997</Width>
+      <Height>273.59999999999997</Height>
+    </Bounds>
+    <Insets>
+      <Top>3.0</Top>
+      <Left>3.0</Left>
+      <Bottom>3.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Row>-1</Row>
+    <Column>-1</Column>
+    <Rowspan>-1</Rowspan>
+    <Columnspan>-1</Columnspan>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>false</Visible>
+    </Outline>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>255</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Visible>true</Visible>
+  </Block>
+  <Dimension>Two_Dimensional</Dimension>
+  <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+
+function beforeGeneration( chart, icsc )
+{
+	reportContext = icsc.getExternalContext().getObject();
+	
+    chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
+	
+	sd = chart.getSeriesDefinitions( ).get( 0 );
+	sd.getSeriesPalette( ).getEntries( ).clear( );
+
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-blue&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-light-green&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-orange&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-yellow&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-blue&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));
+
+	chart.setSeriesThickness(30);
+}
+
+function getColorDefinition( styleName ) {
+	var color = ColorUtil.format(this.getDesignHandle().findStyle(styleName).getColor().getRGB(),ColorUtil.HTML_FORMAT);
+	var red = &quot;0x&quot;+color.substr(1,2);
+	var green =  &quot;0x&quot;+color.substr(3,2);
+	var blue =  &quot;0x&quot;+color.substr(5,2);
+	return ColorDefinitionImpl.create(red,green,blue);
+}
+
+/**
+ * Called before rendering the label for each datapoint.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{
+	//if (dph.getOrthogonalValue() &lt; 5){
+	//	label.setVisible(false);
+	//}
+}
+</Script>
+  <Units>Points</Units>
+  <SeriesThickness>10.0</SeriesThickness>
+  <GridColumnCount>0</GridColumnCount>
+  <ExtendedProperties>
+    <Name>enable.area.alt</Name>
+    <Value>false</Value>
+  </ExtendedProperties>
+  <SampleData>
+    <BaseSampleData>
+      <DataSetRepresentation>'A','B','C','D','E'</DataSetRepresentation>
+    </BaseSampleData>
+    <OrthogonalSampleData>
+      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
+      <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
+    </OrthogonalSampleData>
+  </SampleData>
+  <Interactivity>
+    <Enable>true</Enable>
+    <LegendBehavior>None</LegendBehavior>
+  </Interactivity>
+  <EmptyMessage>
+    <Caption>
+      <Value></Value>
+      <Font>
+        <Alignment>
+          <horizontalAlignment>Center</horizontalAlignment>
+          <verticalAlignment>Center</verticalAlignment>
+        </Alignment>
+      </Font>
+    </Caption>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>0</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>true</Visible>
+    </Outline>
+    <Insets>
+      <Top>0.0</Top>
+      <Left>2.0</Left>
+      <Bottom>0.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Visible>true</Visible>
+  </EmptyMessage>
+  <SeriesDefinitions>
+    <Query>
+      <Definition></Definition>
+    </Query>
+    <SeriesPalette>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>166</Green>
+        <Blue>218</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>242</Red>
+        <Green>88</Green>
+        <Blue>106</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>232</Red>
+        <Green>172</Green>
+        <Blue>57</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>64</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>170</Red>
+        <Green>85</Green>
+        <Blue>85</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>192</Red>
+        <Green>192</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>192</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>7</Red>
+        <Green>146</Green>
+        <Blue>94</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>64</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>240</Green>
+        <Blue>120</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>0</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+    </SeriesPalette>
+    <SeriesDefinitions>
+      <Query>
+        <Definition></Definition>
+      </Query>
+      <SeriesPalette>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>166</Green>
+          <Blue>218</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>242</Red>
+          <Green>88</Green>
+          <Blue>106</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>232</Red>
+          <Green>172</Green>
+          <Blue>57</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>64</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>170</Red>
+          <Green>85</Green>
+          <Blue>85</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>192</Red>
+          <Green>192</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>192</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>7</Red>
+          <Green>146</Green>
+          <Blue>94</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>64</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>240</Green>
+          <Blue>120</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>0</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+      </SeriesPalette>
+      <Series xsi:type="type:PieSeries">
+        <Visible>true</Visible>
+        <Label>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Name>Arial</Name>
+              <Size>10.0</Size>
+              <Bold>false</Bold>
+              <Alignment/>
+            </Font>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>45</Red>
+              <Green>45</Green>
+              <Blue>47</Blue>
+            </Color>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+            <Visible>false</Visible>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Label>
+        <DataDefinition>
+          <Definition>row[&quot;COUNTPERCENT&quot;]</Definition>
+        </DataDefinition>
+        <SeriesIdentifier></SeriesIdentifier>
+        <DataPoint>
+          <Components>
+            <Type>Orthogonal_Value</Type>
+          </Components>
+          <Suffix>%</Suffix>
+          <Separator>, </Separator>
+        </DataPoint>
+        <LabelPosition>Outside</LabelPosition>
+        <Stacked>false</Stacked>
+        <Explosion>0</Explosion>
+        <Title>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Size>16.0</Size>
+              <Bold>true</Bold>
+              <Alignment/>
+            </Font>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Title>
+        <TitlePosition>Below</TitlePosition>
+        <LeaderLineAttributes>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>45</Red>
+            <Green>45</Green>
+            <Blue>47</Blue>
+          </Color>
+          <Visible>true</Visible>
+        </LeaderLineAttributes>
+        <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
+        <LeaderLineLength>0.0</LeaderLineLength>
+        <Ratio>1.0</Ratio>
+        <Rotation>0.0</Rotation>
+        <InnerRadius>60.0</InnerRadius>
+      </Series>
+      <Grouping>
+        <Enabled>false</Enabled>
+        <GroupingInterval>1.0</GroupingInterval>
+        <GroupType>Text</GroupType>
+        <AggregateExpression>Sum</AggregateExpression>
+      </Grouping>
+    </SeriesDefinitions>
+    <Series>
+      <Visible>true</Visible>
+      <Label>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Label>
+      <DataDefinition>
+        <Definition>row[&quot;DETAILSTRING&quot;]</Definition>
+      </DataDefinition>
+      <SeriesIdentifier></SeriesIdentifier>
+      <DataPoint>
+        <Components>
+          <Type>Orthogonal_Value</Type>
+        </Components>
+        <Separator>, </Separator>
+      </DataPoint>
+      <LabelPosition>Outside</LabelPosition>
+      <Stacked>false</Stacked>
+    </Series>
+    <Grouping>
+      <Enabled>false</Enabled>
+      <GroupingInterval>1.0</GroupingInterval>
+      <GroupType>Text</GroupType>
+      <AggregateExpression>Sum</AggregateExpression>
+    </Grouping>
+    <Sorting>Descending</Sorting>
+    <SortKey>
+      <Definition>row[&quot;DETAIL&quot;]</Definition>
+    </SortKey>
+  </SeriesDefinitions>
+  <Coverage>0.65</Coverage>
+</model:ChartWithoutAxes>
+]]></xml-property>
+                                    <property name="outputFormat">SVG</property>
+                                    <list-property name="filter">
+                                        <structure>
+                                            <property name="operator">lt</property>
+                                            <expression name="expr" type="javascript">row["DETAIL"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>510</value>
+                                            </simple-property-list>
+                                        </structure>
+                                        <structure>
+                                            <property name="operator">ne</property>
+                                            <expression name="expr" type="javascript">row["DETAIL"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>33</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <property name="inheritColumns">true</property>
+                                    <property name="fontFamily">"Arial"</property>
+                                    <property name="color">#707173</property>
+                                    <property name="marginTop">0pt</property>
+                                    <property name="marginBottom">0pt</property>
+                                    <property name="marginLeft">0pt</property>
+                                    <property name="height">320px</property>
+                                    <property name="width">668px</property>
+                                </extended-item>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+            <row id="720">
+                <property name="verticalAlign">middle</property>
+                <cell id="721">
+                    <property name="style">half-width</property>
+                    <table name="Legend Table11" id="338">
+                        <property name="style">table table-striped</property>
+                        <property name="verticalAlign">middle</property>
+                        <method name="onCreate"><![CDATA[importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+colorArray = new Array();
+tableRowCount=0;
+totalCount=0;
+	
+addColor(colorArray,"color-middle-green");
+addColor(colorArray,"color-red"); 
+addColor(colorArray,"color-petrol");
+addColor(colorArray,"color-dark-blue");
+addColor(colorArray,"color-yellow");
+addColor(colorArray,"color-dark-green");
+addColor(colorArray,"color-orange");
+
+
+function addColor( colorArray, styleName ) {
+	var color = ColorUtil.format(reportContext.getDesignHandle().findStyle(styleName).getColor().getRGB(),ColorUtil.HTML_FORMAT);
+	colorArray.push(color);
+}
+]]></method>
+                        <list-property name="sort">
+                            <structure>
+                                <expression name="key" type="javascript">row["DETAIL"]</expression>
+                                <property name="direction">desc</property>
+                                <property name="strength">-1</property>
+                            </structure>
+                        </list-property>
+                        <list-property name="filter">
+                            <structure>
+                                <property name="operator">ge</property>
+                                <expression name="expr" type="javascript">row["DETAIL"]</expression>
+                                <simple-property-list name="value1">
+                                    <value>510</value>
+                                </simple-property-list>
+                            </structure>
+                        </list-property>
+                        <column id="362"/>
+                        <column id="363">
+                            <property name="textAlign">right</property>
+                        </column>
+                        <column id="393">
+                            <property name="textAlign">right</property>
+                        </column>
+                        <header>
+                            <row id="339">
+                                <property name="verticalAlign">middle</property>
+                                <cell id="341">
+                                    <property name="style">table-head</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingLeft">3pt</property>
+                                    <property name="textAlign">left</property>
+                                    <text-data id="396">
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hardbounce", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="343">
+                                    <property name="style">table-head</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <text-data id="395">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Amount", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                                <cell id="390">
+                                    <property name="style">table-head</property>
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <text-data id="394">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("image.editor.inpercent", reportContext.getLocale())</expression>
+                                    </text-data>
+                                </cell>
+                            </row>
+                        </header>
+                        <detail>
+                            <row id="345">
+                                <list-property name="highlightRules">
+                                    <structure>
+                                        <property name="operator">eq</property>
+                                        <expression name="testExpr" type="javascript">row.__rownum%2</expression>
+                                        <simple-property-list name="value1">
+                                            <value type="javascript">1</value>
+                                        </simple-property-list>
+                                    </structure>
+                                </list-property>
+                                <cell id="351">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingLeft">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <grid id="738">
+                                        <column id="739">
+                                            <property name="width">10px</property>
+                                        </column>
+                                        <column id="740"/>
+                                        <row id="741">
+                                            <property name="verticalAlign">middle</property>
+                                            <cell id="742">
+                                                <grid id="347">
+                                                    <property name="marginLeft">2pt</property>
+                                                    <property name="height">10px</property>
+                                                    <property name="width">10px</property>
+                                                    <column id="348"/>
+                                                    <row id="349">
+                                                        <cell id="350">
+                                                            <method name="onCreate"><![CDATA[this.getStyle().setBackgroundColor(colorArray[(tableRowCount++)%colorArray.length]);]]></method>
+                                                        </cell>
+                                                    </row>
+                                                </grid>
+                                            </cell>
+                                            <cell id="743">
+                                                <text-data id="399">
+                                                    <expression name="valueExpr">row["DETAILSTRING"]</expression>
+                                                    <property name="contentType">html</property>
+                                                </text-data>
+                                            </cell>
+                                        </row>
+                                    </grid>
+                                </cell>
+                                <cell id="353">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <text-data id="400">
+                                        <expression name="valueExpr">row["COUNT"]</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="391">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <text-data id="401">
+                                        <expression name="valueExpr">row["COUNTPERCENT"]+"%"</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                            </row>
+                        </detail>
+                        <footer>
+                            <row id="355">
+                                <property name="verticalAlign">middle</property>
+                                <cell id="357">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingLeft">3pt</property>
+                                    <property name="textAlign">left</property>
+                                    <text-data id="358">
+                                        <property name="fontWeight">normal</property>
+                                        <property name="paddingLeft">1pt</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                        <property name="contentType">auto</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="359">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingBottom">1pt</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <text-data id="661">
+                                        <list-property name="visibility">
+                                            <structure>
+                                                <property name="format">all</property>
+                                                <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == false</expression>
+                                            </structure>
+                                        </list-property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    </text-data>
+                                    <text-data id="403">
+                                        <list-property name="visibility">
+                                            <structure>
+                                                <property name="format">all</property>
+                                                <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == true</expression>
+                                            </structure>
+                                        </list-property>
+                                        <expression name="valueExpr">Total.count() &lt; 1 ? 0+"" : Total.sum(row["COUNT"]) + ""</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="392">
+                                    <property name="borderBottomColor">#D3D3D3</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#D3D3D3</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#D3D3D3</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#D3D3D3</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingBottom">1pt</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <text-data id="664">
+                                        <list-property name="visibility">
+                                            <structure>
+                                                <property name="format">all</property>
+                                                <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == false</expression>
+                                            </structure>
+                                        </list-property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    </text-data>
+                                    <text-data id="406">
+                                        <list-property name="visibility">
+                                            <structure>
+                                                <property name="format">all</property>
+                                                <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("bouncesExpired") == true</expression>
+                                            </structure>
+                                        </list-property>
+                                        <expression name="valueExpr">100+ "%"</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                            </row>
+                        </footer>
+                    </table>
+                </cell>
+                <cell id="722">
+                    <property name="style">half-width</property>
+                    <grid id="727">
+                        <property name="style">table</property>
+                        <column id="728"/>
+                        <row id="729">
+                            <cell id="730">
+                                <property name="textAlign">center</property>
+                                <extended-item extensionName="Chart" name="bouncesChart1" id="656">
+                                    <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
+  <Version>2.6.1</Version>
+  <Type>Pie Chart</Type>
+  <SubType>Standard</SubType>
+  <Block>
+    <Children xsi:type="layout:TitleBlock">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <Label>
+        <Caption>
+          <Value>Pie Chart Title</Value>
+          <Font>
+            <Size>16.0</Size>
+            <Bold>true</Bold>
+            <Alignment>
+              <horizontalAlignment>Center</horizontalAlignment>
+              <verticalAlignment>Center</verticalAlignment>
+            </Alignment>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>true</Visible>
+      </Label>
+    </Children>
+    <Children xsi:type="layout:Plot">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>true</Visible>
+      <HorizontalSpacing>5</HorizontalSpacing>
+      <VerticalSpacing>5</VerticalSpacing>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>0.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>0.0</Right>
+        </Insets>
+      </ClientArea>
+    </Children>
+    <Children xsi:type="layout:Legend">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>2.0</Top>
+          <Left>2.0</Left>
+          <Bottom>2.0</Bottom>
+          <Right>2.0</Right>
+        </Insets>
+      </ClientArea>
+      <Text>
+        <Value></Value>
+        <Font>
+          <Alignment/>
+        </Font>
+      </Text>
+      <Orientation>Vertical</Orientation>
+      <Direction>Top_Bottom</Direction>
+      <Separator>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>true</Visible>
+      </Separator>
+      <Position>Right</Position>
+      <ItemType>Categories</ItemType>
+      <Title>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Title>
+      <TitlePosition>Above</TitlePosition>
+    </Children>
+    <Bounds>
+      <Left>0.0</Left>
+      <Top>0.0</Top>
+      <Width>273.59999999999997</Width>
+      <Height>273.59999999999997</Height>
+    </Bounds>
+    <Insets>
+      <Top>3.0</Top>
+      <Left>3.0</Left>
+      <Bottom>3.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Row>-1</Row>
+    <Column>-1</Column>
+    <Rowspan>-1</Rowspan>
+    <Columnspan>-1</Columnspan>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>false</Visible>
+    </Outline>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>255</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Visible>true</Visible>
+  </Block>
+  <Dimension>Two_Dimensional</Dimension>
+  <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+
+function beforeGeneration( chart, icsc )
+{
+	reportContext = icsc.getExternalContext().getObject();
+	
+    chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
+	
+	sd = chart.getSeriesDefinitions( ).get( 0 );
+	sd.getSeriesPalette( ).getEntries( ).clear( );
+
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-middle-green&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-red&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-petrol&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-blue&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-yellow&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-dark-green&quot;));
+	sd.getSeriesPalette().getEntries().add(getColorDefinition(&quot;color-orange&quot;));
+
+	chart.setSeriesThickness(30);
+}
+
+function getColorDefinition( styleName ) {
+	var color = ColorUtil.format(this.getDesignHandle().findStyle(styleName).getColor().getRGB(),ColorUtil.HTML_FORMAT);
+	var red = &quot;0x&quot;+color.substr(1,2);
+	var green =  &quot;0x&quot;+color.substr(3,2);
+	var blue =  &quot;0x&quot;+color.substr(5,2);
+	return ColorDefinitionImpl.create(red,green,blue);
+}
+
+/**
+ * Called before rendering the label for each datapoint.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{
+	//if (dph.getOrthogonalValue() &lt; 5){
+	//	label.setVisible(false);
+	//}
+}
+</Script>
+  <Units>Points</Units>
+  <SeriesThickness>10.0</SeriesThickness>
+  <GridColumnCount>0</GridColumnCount>
+  <ExtendedProperties>
+    <Name>enable.area.alt</Name>
+    <Value>false</Value>
+  </ExtendedProperties>
+  <SampleData>
+    <BaseSampleData>
+      <DataSetRepresentation>'A','B','C','D','E'</DataSetRepresentation>
+    </BaseSampleData>
+    <OrthogonalSampleData>
+      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
+      <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
+    </OrthogonalSampleData>
+  </SampleData>
+  <Interactivity>
+    <Enable>true</Enable>
+    <LegendBehavior>None</LegendBehavior>
+  </Interactivity>
+  <EmptyMessage>
+    <Caption>
+      <Value></Value>
+      <Font>
+        <Alignment>
+          <horizontalAlignment>Center</horizontalAlignment>
+          <verticalAlignment>Center</verticalAlignment>
+        </Alignment>
+      </Font>
+    </Caption>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>0</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>true</Visible>
+    </Outline>
+    <Insets>
+      <Top>0.0</Top>
+      <Left>2.0</Left>
+      <Bottom>0.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Visible>true</Visible>
+  </EmptyMessage>
+  <SeriesDefinitions>
+    <Query>
+      <Definition></Definition>
+    </Query>
+    <SeriesPalette>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>166</Green>
+        <Blue>218</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>242</Red>
+        <Green>88</Green>
+        <Blue>106</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>232</Red>
+        <Green>172</Green>
+        <Blue>57</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>64</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>170</Red>
+        <Green>85</Green>
+        <Blue>85</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>192</Red>
+        <Green>192</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>192</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>7</Red>
+        <Green>146</Green>
+        <Blue>94</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>64</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>240</Green>
+        <Blue>120</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>0</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+    </SeriesPalette>
+    <SeriesDefinitions>
+      <Query>
+        <Definition></Definition>
+      </Query>
+      <SeriesPalette>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>166</Green>
+          <Blue>218</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>242</Red>
+          <Green>88</Green>
+          <Blue>106</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>232</Red>
+          <Green>172</Green>
+          <Blue>57</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>64</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>170</Red>
+          <Green>85</Green>
+          <Blue>85</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>192</Red>
+          <Green>192</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>192</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>7</Red>
+          <Green>146</Green>
+          <Blue>94</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>64</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>240</Green>
+          <Blue>120</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>0</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+      </SeriesPalette>
+      <Series xsi:type="type:PieSeries">
+        <Visible>true</Visible>
+        <Label>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Name>Arial</Name>
+              <Size>10.0</Size>
+              <Bold>false</Bold>
+              <Alignment/>
+            </Font>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>45</Red>
+              <Green>45</Green>
+              <Blue>47</Blue>
+            </Color>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+            <Visible>false</Visible>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Label>
+        <DataDefinition>
+          <Definition>row[&quot;COUNTPERCENT&quot;]</Definition>
+        </DataDefinition>
+        <SeriesIdentifier></SeriesIdentifier>
+        <DataPoint>
+          <Components>
+            <Type>Orthogonal_Value</Type>
+          </Components>
+          <Suffix>%</Suffix>
+          <Separator>, </Separator>
+        </DataPoint>
+        <LabelPosition>Outside</LabelPosition>
+        <Stacked>false</Stacked>
+        <Explosion>0</Explosion>
+        <Title>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Size>16.0</Size>
+              <Bold>true</Bold>
+              <Alignment/>
+            </Font>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Title>
+        <TitlePosition>Below</TitlePosition>
+        <LeaderLineAttributes>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>45</Red>
+            <Green>45</Green>
+            <Blue>47</Blue>
+          </Color>
+          <Visible>true</Visible>
+        </LeaderLineAttributes>
+        <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
+        <LeaderLineLength>0.0</LeaderLineLength>
+        <Ratio>1.0</Ratio>
+        <Rotation>0.0</Rotation>
+        <InnerRadius>60.0</InnerRadius>
+      </Series>
+      <Grouping>
+        <Enabled>false</Enabled>
+        <GroupingInterval>1.0</GroupingInterval>
+        <GroupType>Text</GroupType>
+        <AggregateExpression>Sum</AggregateExpression>
+      </Grouping>
+    </SeriesDefinitions>
+    <Series>
+      <Visible>true</Visible>
+      <Label>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Label>
+      <DataDefinition>
+        <Definition>row[&quot;DETAILSTRING&quot;]</Definition>
+      </DataDefinition>
+      <SeriesIdentifier></SeriesIdentifier>
+      <DataPoint>
+        <Components>
+          <Type>Orthogonal_Value</Type>
+        </Components>
+        <Separator>, </Separator>
+      </DataPoint>
+      <LabelPosition>Outside</LabelPosition>
+      <Stacked>false</Stacked>
+    </Series>
+    <Grouping>
+      <Enabled>false</Enabled>
+      <GroupingInterval>1.0</GroupingInterval>
+      <GroupType>Text</GroupType>
+      <AggregateExpression>Sum</AggregateExpression>
+    </Grouping>
+    <Sorting>Descending</Sorting>
+    <SortKey>
+      <Definition>row[&quot;DETAIL&quot;]</Definition>
+    </SortKey>
+  </SeriesDefinitions>
+  <Coverage>0.65</Coverage>
+</model:ChartWithoutAxes>
+]]></xml-property>
+                                    <property name="outputFormat">SVG</property>
+                                    <list-property name="filter">
+                                        <structure>
+                                            <property name="operator">ge</property>
+                                            <expression name="expr" type="javascript">row["DETAIL"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>510</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <property name="inheritColumns">true</property>
+                                    <property name="fontFamily">"Arial"</property>
+                                    <property name="color">#707173</property>
+                                    <property name="marginTop">0pt</property>
+                                    <property name="marginLeft">0pt</property>
+                                    <property name="height">320px</property>
+                                    <property name="width">668px</property>
+                                </extended-item>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <table name="csvExport" id="383">
+            <property name="pageBreakAfter">avoid</property>
+            <property name="pageBreakBefore">avoid</property>
+            <property name="pageBreakInside">avoid</property>
+            <property name="width">100%</property>
+            <property name="dataSet">BouncesCSVDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">detail</property>
+                    <expression name="expression" type="javascript">dataSetRow["detail"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">email</property>
+                    <expression name="expression" type="javascript">dataSetRow["email"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">customer_id</property>
+                    <expression name="expression" type="javascript">dataSetRow["customer_id"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">index</property>
+                    <expression name="expression" type="javascript">if (dataSetRow["index"]&lt;3) {
+Packages.com.agnitas.messages.I18nString.getLocaleString("bounces.softbounce", reportContext.getLocale())
+}
+else {
+Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hardbounce", reportContext.getLocale())
+}</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">gender</property>
+                    <expression name="expression" type="javascript">dataSetRow["gender"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">firstname</property>
+                    <expression name="expression" type="javascript">dataSetRow["firstname"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">lastname</property>
+                    <expression name="expression" type="javascript">dataSetRow["lastname"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <property name="repeatHeader">false</property>
+            <property name="pageBreakInterval">2147483647</property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key" type="javascript">row["detail"]</expression>
+                    <property name="direction">asc</property>
+                    <property name="strength">-1</property>
+                </structure>
+            </list-property>
+            <list-property name="filter">
+                <structure>
+                    <property name="operator">ge</property>
+                    <expression name="expr" type="javascript">row["detail"]</expression>
+                    <simple-property-list name="value1">
+                        <value>510</value>
+                    </simple-property-list>
+                </structure>
+            </list-property>
+            <column id="428">
+                <property name="width">40px</property>
+            </column>
+            <column id="419">
+                <property name="width">40px</property>
+            </column>
+            <column id="416"/>
+            <column id="413"/>
+            <column id="439"/>
+            <column id="641"/>
+            <column id="440"/>
+            <header>
+                <row id="384">
+                    <cell id="426">
+                        <text-data id="429">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Customer_ID", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="430">
+                        <text-data id="420">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Gender", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="431">
+                        <text-data id="422">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.Firstname", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="411">
+                        <text-data id="424">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.Lastname", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="385">
+                        <text-data id="432">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.MediaType.0", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="639">
+                        <text-data id="642">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.bounce.type", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="386">
+                        <text-data id="433">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.bounce.reason", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="389">
+                    <cell id="427">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="434">
+                            <property name="resultSetColumn">customer_id</property>
+                        </data>
+                    </cell>
+                    <cell id="418">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="421">
+                            <property name="resultSetColumn">gender</property>
+                        </data>
+                    </cell>
+                    <cell id="415">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="423">
+                            <property name="resultSetColumn">firstname</property>
+                        </data>
+                    </cell>
+                    <cell id="412">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="425">
+                            <property name="resultSetColumn">lastname</property>
+                        </data>
+                    </cell>
+                    <cell id="435">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="436">
+                            <property name="resultSetColumn">email</property>
+                        </data>
+                    </cell>
+                    <cell id="640">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="643">
+                            <property name="resultSetColumn">index</property>
+                        </data>
+                    </cell>
+                    <cell id="437">
+                        <property name="paddingTop">1px</property>
+                        <property name="paddingLeft">2px</property>
+                        <property name="paddingBottom">1px</property>
+                        <property name="paddingRight">2px</property>
+                        <data id="438">
+                            <property name="resultSetColumn">detail</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

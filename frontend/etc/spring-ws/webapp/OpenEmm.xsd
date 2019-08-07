@@ -1,0 +1,1173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+	xmlns:agn="http://agnitas.org/ws/schemas"
+	targetNamespace="http://agnitas.org/ws/schemas" 
+	elementFormDefault="qualified"
+	jaxb:version="2.0"
+	jaxb:extensionBindingPrefixes="xjc">
+
+<!-- 
+	<xs:annotation>
+  		<xs:appinfo>
+    		<jaxb:schemaBindings>
+      			<jaxb:package name="org.agnitas.emm.springws.jaxb"/>
+    		</jaxb:schemaBindings>
+    		<jaxb:globalBindings>
+    			<xjc:javaType adapter="org.agnitas.emm.springws.jaxb.DateAdapter"
+                          name="java.util.Date" xmlType="xs:dateTime" />
+    		</jaxb:globalBindings>
+  		</xs:appinfo>
+	</xs:annotation>
+-->
+
+    <xs:simpleType name="dateTimeISO">
+    <!-- 
+        <xs:annotation>
+            <xs:appinfo>
+                <xjc:javaType adapter="org.agnitas.emm.springws.jaxb.DateISOAdapter"
+                              name="java.util.Date"/>
+            </xs:appinfo>
+        </xs:annotation>
+-->        
+        <xs:restriction base="xs:dateTime"/>
+    </xs:simpleType>
+
+    <!-- Utility element used for Map type -->
+	<xs:complexType name="MapItem">
+		<xs:all>      
+			<xs:element name="key" type="xs:anyType" />      
+			<xs:element name="value" type="xs:anyType" />     
+		</xs:all>
+	</xs:complexType>
+	<!-- Utility element used for sending map collections -->
+	<xs:complexType name="Map">
+		<xs:sequence>
+			<xs:element name="item" type="agn:MapItem" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="Equals">
+		<xs:all>
+			<xs:element name="profilefield" type="xs:string" />
+			<xs:element name="value" type="xs:string" />
+			<xs:element name="dateformat" type="xs:string" minOccurs="0" />
+		</xs:all>
+	</xs:complexType>
+
+	<xs:complexType name="Criteria">
+		<xs:sequence>
+			<xs:element name="equals" type="agn:Equals" minOccurs="0" maxOccurs="unbounded" />
+			<xs:element name="matchAll" type="xs:boolean" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:element name="Error" type="xs:string" />
+
+	<xs:element name="AddAttachmentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="mimeType" type="xs:string" />
+				<xs:element name="componentName" type="xs:string" />
+				<xs:element name="data" type="xs:base64Binary" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddAttachmentResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="componentID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddBlacklistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="email" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddBlacklistResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- true when email is added to blacklist -->
+				<!-- false when email is already blacklisted (emm only) or email is blank -->
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="AddContentBlockRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="blockName" type="xs:string" />
+				<xs:element name="targetID" type="xs:int" />
+				<xs:element name="content" type="xs:string" />
+				<xs:element name="order" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddContentBlockResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- dynContent id -->
+				<xs:element name="contentID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Add mailinglist to mailinglist table. -->
+	<xs:element name="AddMailinglistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddMailinglistResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Mailinglist id -->
+				<xs:element name="mailinglistID" type="xs:int" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddMailingFromTemplateRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="templateID" type="xs:int" />
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="autoUpdate" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddMailingFromTemplateResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddMailingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="targetIDList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="targetID" type="xs:int" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="matchTargetGroups" type="xs:string" /><!-- "all" or "one" -->
+				<xs:element name="mailingType" type="xs:string" /><!-- 	"regular", "action-based" or "rule-based" -->
+				<xs:element name="subject" type="xs:string" />
+				<xs:element name="senderName" type="xs:string" minOccurs="0" />
+				<xs:element name="senderAddress" type="xs:string" />
+				<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+				<xs:element name="replyToAddress" type="xs:string" />
+				<xs:element name="charset" type="xs:string" />
+				<xs:element name="linefeed" type="xs:int" />
+				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
+				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
+<!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddMailingResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Mailinglist id -->
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+
+	<!-- Add subscriber to subscriber table. -->
+	<xs:element name="AddSubscriberRequest">
+		<xs:complexType>
+			<xs:all>
+				<!-- Indicates the existance check by key column is required before insert -->
+				<xs:element name="doubleCheck" type="xs:boolean" />
+				<xs:element name="keyColumn" type="xs:string" />
+				<!-- Indicates that the data will be overwritten if doubleCheck is true and the data exist -->
+				<xs:element name="overwrite" type="xs:boolean" />
+				<xs:element name="parameters" type="agn:Map" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddSubscriberResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- Subscriber id or 0 if insert/update not performed -->
+				<xs:element name="customerID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	
+
+	<xs:element name="AddTemplateRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="targetIDList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="targetID" type="xs:int" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="matchTargetGroups" type="xs:string" /><!-- "all" or "one" -->
+				<xs:element name="mailingType" type="xs:string" /><!-- 	"regular", "action-based" or "rule-based" -->
+				<xs:element name="subject" type="xs:string" />
+				<xs:element name="senderName" type="xs:string" minOccurs="0" />
+				<xs:element name="senderAddress" type="xs:string" />
+				<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+				<xs:element name="replyToAddress" type="xs:string" />
+				<xs:element name="charset" type="xs:string" />
+				<xs:element name="linefeed" type="xs:int" />
+				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
+				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
+<!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="AddTemplateResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="templateID" type="xs:int" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+
+	<!-- Check email address exist in blacklist table. -->
+	<xs:element name="CheckBlacklistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="email" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="CheckBlacklistResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- true if email address exist in blacklist table. -->
+				<!-- false otherwise -->
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="DeleteAttachmentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="componentID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteAttachmentResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<!-- Remove email address from blacklist table. -->
+	<xs:element name="DeleteBlacklistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="email" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteBlacklistResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- true if email address deleted -->
+				<!-- false if email is blank or not exist in the table -->
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Remove content block. -->
+	<xs:element name="DeleteContentBlockRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="contentID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteContentBlockResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- true if content deleted -->
+				<!-- false otherwise -->
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Remove mailinglist from mailinglist table and bindings from binding table. -->
+	<xs:element name="DeleteMailinglistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailinglistID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteMailinglistResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- true if mailinglist and bindings deleted -->
+				<!-- false if mailinglist or bindings not deleted -->
+				<xs:element name="value" type="xs:boolean" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="DeleteMailingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteMailingResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<!-- Delete subscriber binding from binding table by subscriber id, mailinglist id and mediatype -->
+	<xs:element name="DeleteSubscriberBindingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="mediatype" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteSubscriberBindingResponse">
+		<xs:complexType/>
+	</xs:element>
+	
+	
+
+	<!-- Remove subscriber from subscriber table. -->
+	<xs:element name="DeleteSubscriberRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteSubscriberResponse">
+		<xs:complexType />
+	</xs:element>
+
+	
+	
+	<xs:element name="DeleteTemplateRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="templateID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DeleteTemplateResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<!-- Find subscriber by key column in subscriber table. -->
+	<xs:element name="FindSubscriberRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="keyColumn" type="xs:string" />
+				<xs:element name="value" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="FindSubscriberResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- subscriber id or 0 if subscriber not exist or exception occurs (dao implementation) -->
+				<xs:element name="value" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- get attachment -->
+	<xs:element name="GetAttachmentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="componentID" type="xs:int" />
+                <xs:element name="useISODateFormat" type="xs:boolean" default="false" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="GetAttachmentResponse" type="agn:Attachment" />
+	<xs:complexType name="Attachment" abstract="true">
+		<xs:sequence>
+			<xs:element name="componentID" type="xs:int" />
+			<xs:element name="mimeType" type="xs:string" />
+			<xs:element name="componentType" type="xs:int" />
+			<xs:element name="componentName" type="xs:string" />
+			<xs:element name="size" type="xs:int" />
+			<xs:element name="data" type="xs:base64Binary" minOccurs="0" />
+		</xs:sequence>
+	</xs:complexType>
+    <xs:element name="AttachmentDateTimeDefault" type="agn:AttachmentDateTimeDefault" substitutionGroup="agn:GetAttachmentResponse"/>
+    <xs:complexType name="AttachmentDateTimeDefault">
+        <xs:complexContent>
+            <xs:extension base="agn:Attachment">
+                <xs:sequence>
+                    <xs:element name="timestamp" type="xs:dateTime" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="AttachmentDateTimeISO" type="agn:AttachmentDateTimeISO" substitutionGroup="agn:GetAttachmentResponse"/>
+    <xs:complexType name="AttachmentDateTimeISO">
+        <xs:complexContent>
+            <xs:extension base="agn:Attachment">
+                <xs:sequence>
+                    <xs:element name="timestamp" type="agn:dateTimeISO" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+	<!-- Get all email in blacklist table for authenticated user's company -->
+	<xs:element name="GetBlacklistItemsRequest">
+		<xs:complexType />
+	</xs:element>
+	<xs:element name="GetBlacklistItemsResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="email" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- get content block -->
+	<xs:element name="GetContentBlockRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="contentID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="GetContentBlockResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="contentID" type="xs:int" />
+				<xs:element name="name" type="xs:string" />
+				<xs:element name="targetID" type="xs:int" />
+				<xs:element name="order" type="xs:int" />
+				<xs:element name="content" type="xs:string" />
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+    <!-- Get mailing -->
+    <xs:element name="GetMailingRequest">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="mailingID" type="xs:int" />
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="GetMailingResponse" type="agn:Mailing" />
+	<xs:complexType name="Mailing">
+		<xs:all>
+			<xs:element name="mailingID" type="xs:int" />
+			<xs:element name="shortname" type="xs:string" />
+			<xs:element name="description" type="xs:string" />
+			<xs:element name="mailinglistID" type="xs:int" />
+			<xs:element name="targetIDList">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="targetID" type="xs:int" minOccurs="0"
+							maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="mailingType" type="xs:string" />
+			<xs:element name="subject" type="xs:string" />
+			<xs:element name="senderName" type="xs:string" minOccurs="0" />
+			<xs:element name="senderAddress" type="xs:string" />
+			<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+			<xs:element name="replyToAddress" type="xs:string" />
+			<xs:element name="charset" type="xs:string" />
+			<xs:element name="linefeed" type="xs:int" />
+			<xs:element name="formats">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="format" type="xs:string" minOccurs="1"
+							maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="onePixel" type="xs:string" />
+			<xs:element name="autoUpdate" type="xs:boolean" />
+		</xs:all>
+	</xs:complexType>
+
+    <!-- Get mailing list -->
+    <xs:element name="GetMailinglistRequest">
+        <xs:complexType>
+            <xs:all>
+				<xs:element name="mailinglistID" type="xs:int" />
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="GetMailinglistResponse" type="agn:Mailinglist" />
+    <xs:complexType name="Mailinglist">
+        <xs:all>
+            <xs:element name="id" type="xs:int" />
+            <xs:element name="shortname" type="xs:string" />
+            <xs:element name="description" type="xs:string" />
+        </xs:all>
+    </xs:complexType>
+
+    <xs:element name="GetTemplateRequest">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="templateID" type="xs:int" />
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="GetTemplateResponse" type="agn:Template" />
+	<xs:complexType name="Template">
+		<xs:all>
+			<xs:element name="templateID" type="xs:int" />
+            <xs:element name="shortname" type="xs:string" />
+            <xs:element name="description" type="xs:string" />
+			<xs:element name="mailinglistID" type="xs:int" />
+			<xs:element name="targetIDList">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="targetID" type="xs:int" minOccurs="0" maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="mailingType" type="xs:string" />
+			<xs:element name="subject" type="xs:string" />
+			<xs:element name="senderName" type="xs:string" minOccurs="0" />
+			<xs:element name="senderAddress" type="xs:string" />
+			<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+			<xs:element name="replyToAddress" type="xs:string" />
+			<xs:element name="charset" type="xs:string" />
+			<xs:element name="linefeed" type="xs:int" />
+			<xs:element name="formats">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="format" type="xs:string" minOccurs="1"
+							maxOccurs="unbounded" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="onePixel" type="xs:string" />
+			<xs:element name="autoUpdate" type="xs:boolean" />
+        </xs:all>
+    </xs:complexType>
+
+	<!-- Get subscriber from subscriber table by id -->
+	<xs:element name="GetSubscriberRequest">
+		<xs:complexType>
+			<xs:all>
+				<!-- Subscriber id -->
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="profilefields" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="name" minOccurs="0" maxOccurs="unbounded" type="xs:string" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="GetSubscriberResponse">
+		<xs:complexType>
+			<xs:all>
+				<!-- Map with Key/Value-Pairs of customer data -->
+				<xs:element name="parameters" type="agn:Map" />
+				<!-- Subscriber id or 0 if not exist-->
+				<xs:element name="customerID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Get subscribers from subscriber table by criteria -->
+	<xs:element name="ListSubscribersRequest">
+		<xs:complexType>
+			<xs:all>
+				<!-- Map with Key/Value-Pairs of criteria -->
+				<xs:element name="criteria" type="agn:Criteria" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListSubscribersResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="customerID" type="xs:int" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	
+
+	<!-- Get subscriber binding from binding table by subscriber id, mailinglist id and mediatype -->
+	<xs:element name="GetSubscriberBindingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="mediatype" type="xs:int" />
+                <xs:element name="useISODateFormat" type="xs:boolean" default="false" minOccurs="0"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="GetSubscriberBindingResponse" type="agn:Binding" />
+	<xs:complexType name="Binding" abstract="true">
+		<xs:sequence>
+			<xs:element name="customerID" type="xs:int"/>
+			<xs:element name="mailinglistID" type="xs:int"/>
+			<xs:element name="mediatype" type="xs:int"/>
+			<xs:element name="status" type="xs:int"/>
+			<xs:element name="userType" type="xs:string"/>
+			<xs:element name="remark" type="xs:string"/>
+			<xs:element name="exitMailingID" type="xs:int"/>
+		</xs:sequence>
+	</xs:complexType>
+    <xs:element name="BindingDateTimeDefault" type="agn:BindingDateTimeDefault" substitutionGroup="agn:GetSubscriberBindingResponse"/>
+    <xs:complexType name="BindingDateTimeDefault">
+        <xs:complexContent>
+            <xs:extension base="agn:Binding">
+                <xs:sequence>
+                    <xs:element name="changeDate" type="xs:dateTime"/>
+                    <xs:element name="creationDate" type="xs:dateTime"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="BindingDateTimeISO" type="agn:BindingDateTimeISO" substitutionGroup="agn:GetSubscriberBindingResponse"/>
+    <xs:complexType name="BindingDateTimeISO">
+        <xs:complexContent>
+            <xs:extension base="agn:Binding">
+                <xs:sequence>
+                    <xs:element name="changeDate" type="agn:dateTimeISO"/>
+                    <xs:element name="creationDate" type="agn:dateTimeISO"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+	
+
+	<!-- list sent mailings by customer id -->
+	<xs:element name="ListSubscriberMailingsRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListSubscriberMailingsResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="items">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="item" type="agn:Map" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- list attachments by mailing id -->
+	<xs:element name="ListAttachmentsRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+                <xs:element name="useISODateFormat" type="xs:boolean" default="false" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListAttachmentsResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Attachment" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<!-- list content block names by mailing id -->
+	<xs:element name="ListContentBlockNamesRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListContentBlockNamesResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ContentBlockName" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="nameID" type="xs:int" />
+							<xs:element name="name" type="xs:string" />
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- list content blocks by mailing id -->
+	<xs:element name="ListContentBlocksRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListContentBlocksResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ContentBlock" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="contentID" type="xs:int" />
+							<xs:element name="name" type="xs:string" />
+							<xs:element name="targetID" type="xs:int" />
+							<xs:element name="order" type="xs:int" />
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListMailinglistsRequest">
+		<xs:complexType />
+	</xs:element>
+	<xs:element name="ListMailinglistsResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Mailinglist" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListMailingsInMailinglistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailinglistID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListMailingsInMailinglistResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Mailing" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListMailingsRequest">
+		<xs:complexType />
+	</xs:element>
+	<xs:element name="ListMailingsResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Mailing" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListTemplatesRequest">
+		<xs:complexType />
+	</xs:element>
+	<xs:element name="ListTemplatesResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Template" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListSubscriberBindingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+                <xs:element name="useISODateFormat" type="xs:boolean" default="false" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ListSubscriberBindingResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" type="agn:Binding" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="SendMailingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="recipientsType" type="xs:string" />
+				<xs:element name="sendDate" type="xs:dateTime" />
+				<xs:element name="blocksize" type="xs:int" minOccurs="0" />
+				<xs:element name="stepping" type="xs:int" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SendMailingResponse">
+		<xs:complexType/>
+	</xs:element>
+
+	<!-- Add or update subscriber binding -->
+	<xs:element name="SetSubscriberBindingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="mediatype" type="xs:int" />
+				<xs:element name="status" type="xs:int" />
+				<xs:element name="userType" type="xs:string" />
+				<xs:element name="remark" type="xs:string" />
+				<xs:element name="exitMailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SetSubscriberBindingResponse">
+		<xs:complexType/>
+	</xs:element>
+
+	
+
+	<xs:element name="UpdateAttachmentRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="componentID" type="xs:int" />
+				<xs:element name="mimeType" type="xs:string" />
+				<xs:element name="componentName" type="xs:string" />
+				<xs:element name="data" type="xs:base64Binary" minOccurs="0" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateAttachmentResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<xs:element name="UpdateContentBlockRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="contentID" type="xs:int" />
+				<xs:element name="targetID" type="xs:int" />
+				<xs:element name="content" type="xs:string" />
+				<xs:element name="order" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateContentBlockResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<xs:element name="UpdateMailingRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="targetIDList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="targetID" type="xs:int" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="matchTargetGroups" type="xs:string" /><!-- "all" or "one" -->
+				<xs:element name="mailingType" type="xs:string" /><!-- 	"regular", "action-based" or "rule-based" -->
+				<xs:element name="subject" type="xs:string" />
+				<xs:element name="senderName" type="xs:string" minOccurs="0" />
+				<xs:element name="senderAddress" type="xs:string" />
+				<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+				<xs:element name="replyToAddress" type="xs:string" />
+				<xs:element name="charset" type="xs:string" />
+				<xs:element name="linefeed" type="xs:int" />
+				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
+				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
+<!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateMailingResponse">
+		<xs:complexType />
+	</xs:element>
+
+    <!-- Update mailing list  -->
+	<xs:element name="UpdateMailinglistRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingListId" type="xs:int" />
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateMailinglistResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<!-- Update subscriber in subscriber table -->
+	<xs:element name="UpdateSubscriberRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="customerID" type="xs:int" />
+				<xs:element name="parameters" type="agn:Map" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateSubscriberResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="value" type="xs:boolean" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	
+
+	<xs:element name="UpdateTemplateRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="templateID" type="xs:int" />
+				<xs:element name="shortname" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0" />
+				<xs:element name="mailinglistID" type="xs:int" />
+				<xs:element name="targetIDList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="targetID" type="xs:int" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="matchTargetGroups" type="xs:string" /><!-- "all" or "one" -->
+				<xs:element name="mailingType" type="xs:string" /><!-- 	"regular", "action-based" or "rule-based" -->
+				<xs:element name="subject" type="xs:string" />
+				<xs:element name="senderName" type="xs:string" minOccurs="0" />
+				<xs:element name="senderAddress" type="xs:string" />
+				<xs:element name="replyToName" type="xs:string" minOccurs="0" />
+				<xs:element name="replyToAddress" type="xs:string" />
+				<xs:element name="charset" type="xs:string" />
+				<xs:element name="linefeed" type="xs:int" />
+				<xs:element name="format" type="xs:string" /><!-- "text", "online-html" or "offline-html" -->
+				<xs:element name="onePixel" type="xs:string" /><!-- "top", "bottom" or "none" -->
+<!-- 				<xs:element name="autoUpdate" type="xs:boolean" /> -->
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="UpdateTemplateResponse">
+		<xs:complexType />
+	</xs:element>
+	
+	<xs:element name="DecryptLinkDataRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="linkparam" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DecryptLinkDataResponse">		
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="companyID" type="xs:int" />
+				<xs:element name="mailingID" type="xs:int" />
+				<xs:element name="urlID" type="xs:int" />
+				<xs:element name="customerID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Get trackable links-->
+	<xs:element name="ListTrackableLinksRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="ListTrackableLinksResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="TrackableLink" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="urlID" type="xs:int"/>
+							<xs:element name="url" type="xs:string" />
+							<xs:element name="shortname" type="xs:string" />
+							<xs:element name="altText" type="xs:string" />
+							<xs:element name="originalUrl" type="xs:string" />
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Get trackable link settings -->
+	<xs:element name="GetTrackableLinkSettingsRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="urlID" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetTrackableLinkSettingsResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="urlID" type="xs:int"/>
+				<xs:element name="url" type="xs:string"/>
+				<xs:element name="actionID" type="xs:int"/>
+				<xs:element name="shortname" type="xs:string"/>
+				<xs:element name="deepTracking" type="xs:int"/>
+				<xs:element name="relevance" type="xs:int"/>
+				<xs:element name="altText" type="xs:string"/>
+				<xs:element name="originalUrl" type="xs:string"/>
+				<xs:element name="isAdminLink" type="xs:boolean"/>
+				<xs:element name="linkExtensions">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="linkExtension" minOccurs="0" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:all>
+										<xs:element name="name" type="xs:string"/>
+										<xs:element name="value" type="xs:string"/>
+									</xs:all>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="tracking" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Update Trackable Link Settings -->
+	<xs:element name="UpdateTrackableLinkSettingsRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="urlID" type="xs:int"/>
+				<xs:element name="url" type="xs:string" minOccurs="0"/>
+				<xs:element name="actionID" type="xs:int" minOccurs="0"/>
+				<xs:element name="shortname" type="xs:string" minOccurs="0"/>
+				<xs:element name="deepTracking" type="xs:int" minOccurs="0"/>
+				<xs:element name="relevance" type="xs:int" minOccurs="0"/>
+				<xs:element name="altText" type="xs:string" minOccurs="0"/>
+				<xs:element name="isAdminLink" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="linkExtensions" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="linkExtension" minOccurs="0" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:all>
+										<xs:element name="name" type="xs:string"/>
+										<xs:element name="value" type="xs:string"/>
+									</xs:all>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="tracking" type="xs:int" minOccurs="0"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="UpdateTrackableLinkSettingsResponse">
+		<xs:complexType />
+	</xs:element>
+
+	<!-- Get target groups-->
+	<xs:element name="ListTargetgroupsRequest">
+		<xs:complexType/>
+	</xs:element>
+
+	<xs:element name="ListTargetgroupsResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="id" type="xs:int"/>
+							<xs:element name="name" type="xs:string" />
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Add mailing images -->
+	<xs:element name="AddMailingImageRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int"/>
+				<xs:element name="content" type="xs:string"/>
+				<xs:element name="fileName" type="xs:string"/>
+				<xs:element name="description" type="xs:string" minOccurs="0"/>
+				<xs:element name="URL" type="xs:string" minOccurs="0"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="AddMailingImageResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="ID" type="xs:int"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetMailingStatusRequest">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="mailingID" type="xs:int" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:element name="GetMailingStatusResponse">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="status" type="xs:string" />
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+
+	
+</xs:schema>

@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[EMM-Logdatei herunterladen]]></title>
+    <content><![CDATA[Mit dieser Funktion können Sie die Logdatei "Catalina.out" des Tomcat für den heutigen Tag vollständig downloaden. Die Logdatei gibt Auskunft über Fehler.]]></content>
+</HelpBalloon>

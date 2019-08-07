@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+	<logging>
+		<rootLogLevel>WARN</rootLogLevel>
+		<applicationLogLevel>WARN</applicationLogLevel>
+		<applicationLogFile>${HOME}/logs/webapps/jobqueue.log</applicationLogFile>
+		<applicationErrorLogFile>${HOME}/logs/webapps/jobqueue_error.log</applicationErrorLogFile>
+		<velocitySecurityLogFile>${HOME}/logs/webapps/jobqueue_velocity-security.log</velocitySecurityLogFile>
+		<thirdPartyLogFile>${HOME}/logs/third-party.log</thirdPartyLogFile>
+		<thirdPartyLogLevel>WARN</thirdPartyLogLevel>
+	</logging>
+	
+	<server>
+		<url>https://xxx</url>
+	</server>
+	
+	<rdir>
+		<hostedImage>
+			<maxCache>500</maxCache>
+			<maxCacheTimeMillis>300000</maxCacheTimeMillis>
+		</hostedImage>
+		<urls>
+			<maxCache>500</maxCache>
+			<maxCacheTimeMillis>300000</maxCacheTimeMillis>
+		</urls>
+	</rdir>
+	
+	<reporting>
+		<birt>
+			<!-- birt.url must have context "/birt", because of css-definitions in rptdesign-files -->
+			<url>https://xxx/birt</url>
+			<drilldownurl>https://xxx</drilldownurl>
+			<publickeyfile>${HOME}/conf/keys/birt_public.pem</publickeyfile>
+		</birt>
+	</reporting>
+	
+	<mailaddresses>
+		<sender>jobqueue@xxx</sender>
+		<sender_name>EMM-JOBQUEUE</sender_name>
+		<replyto>assistance@xxx</replyto>
+		<replyto_name>EMM-JOBQUEUE</replyto_name>
+		<bounce>assistance@xxx</bounce>
+		
+		<frontend>assistance@xxx</frontend>
+		<support>support@xxx</support>
+		<error>error@xxx</error>
+	</mailaddresses>
+	
+	<smtp>
+		<host>localhost</host>
+	</smtp>
+	
+	<htmlPdfConverter>/opt/agnitas.com/software/wkhtmltox/bin/wkhtmltopdf</htmlPdfConverter>
+	<htmlImageConverter>/opt/agnitas.com/software/wkhtmltox/bin/wkhtmltoimage</htmlImageConverter>
+	
+	<directory>
+		<velocity_log>${HOME}/logs/velocity</velocity_log>
+		<component>${HOME}/components/</component>
+	</directory>
+	
+	<security>
+		<salt-file>${HOME}/conf/keys/emm.salt</salt-file>
+	</security>
+</properties>

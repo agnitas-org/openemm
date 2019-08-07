@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Activity analysis]]></title>
+	<content><![CDATA[The activity analysis only takes into recipients who have not activated tracking veto, since no reactions can be assigned to the tracking veto recipients.]]></content>
+</HelpBalloon>

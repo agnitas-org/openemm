@@ -1,0 +1,14 @@
+<HelpBalloon>
+	<title>Analysing the csv file</title>
+	<content><![CDATA[The system shows a csv file analysis as well as a preview of new recipients to be imported.The upper part of the contents area shows a comparison between fields from the csv file and existing database fields.
+      <ul type="disc">
+         <li>The column Columns for Import shows which fields are to be imported into the E-Marketing Manager.</li>
+         <li>The column Unused columns (CSV) shows which data exist in the csv file but not in the database. You should first check the column heading for typing errors. If the column really does not exist in the profile database, you need to create a field before continuing the import procedure. More information on creating database fields can be found in chapter 7.5. However, you may not want to import those fields at all. In this case you can just continue the import procedure. The system will ignore redundant fields from the csv file.</li>
+         <li>Under Unused Columns (Profile DB) the E-Marketing Manager displays which fields are contained in the database without corresponding data being included in the csv file.
+</li>
+      </ul>
+Below that, the E-Marketing Manager will display a preview of data to be imported. All columns to be imported are displayed. Some information in the csv-file is transformed by OpenEMM automatically: m/Herr for german gender male or w/Frau for german gender female is automatically transformed in 0 for male and 1 for female and 2 or unknown gender.<br>
+Using the arrow symbols to the right of the preview, you can browse the data by scrolling to the next page. Please note that this is a preview only. Data may not be changed in this view. If you find errors in the preview, you must change the original file and create a new csv file for import.<br>
+Please note: Before importing data, you should check every single recipient profile. Experience shows that skimming the first few entries is simply not enough. Many import files contain faulty data which will cause problems after importing them into the database. Once you have saved faulty data in the E-Marketing Manager database, it is far more difficult and time-consuming to detect errors and to correct them. Large import files also have a large conflict potential.
+]]></content>
+</HelpBalloon>

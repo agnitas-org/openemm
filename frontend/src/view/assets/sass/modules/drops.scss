@@ -1,0 +1,96 @@
+/*doc
+---
+title: Drops
+name: drops
+category: CSS - Drops
+---
+
+Drops are small indicators, mostly used to communicate a certain status.
+*/
+
+/*doc
+---
+title: Basic Example
+name: drops_01_example
+parent: drops
+---
+
+```htmlexample
+<span class="drop"></span>
+```
+*/
+
+/*doc
+---
+title: States
+name: drops_02_states
+parent: drops
+---
+
+Drops support all contextual states as `.drop-success`, `.drop-info`, `.drop-warning` or `.drop-alert`.
+
+```htmlexample
+<span class="drop drop-success"></span>
+<span class="drop drop-info"></span>
+<span class="drop drop-warning"></span>
+<span class="drop drop-alert"></span>
+```
+*/
+
+/*doc
+---
+title: Variants
+name: drops_03_variants
+parent: drops
+---
+
+Drops come in a solid or shell form. The default is solid - use `.drop-shell` to only have a shell.
+
+```htmlexample
+<span class="drop drop-shell"></span>
+<span class="drop drop-success drop-shell"></span>
+<span class="drop drop-info drop-shell"></span>
+<span class="drop drop-warning drop-shell"></span>
+<span class="drop drop-alert drop-shell"></span>
+```
+*/
+
+.drop {
+  display: inline-block;
+  font-family: FontAwesome;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  color: $c-black;
+
+  @include user-select(none);
+
+  &:before {
+    content: $fa-var-circle;
+  }
+}
+
+.drop-shell {
+  &:before {
+    content: $fa-var-circle-o;
+  }
+}
+
+.drop-success {
+  color: $c-state-success;
+}
+
+.drop-info {
+  color: $c-state-info;
+}
+
+.drop-warning {
+  color: $c-state-warning;
+}
+
+.drop-alert {
+  color: $c-state-alert;
+}

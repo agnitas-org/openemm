@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:oxm="http://www.springframework.org/schema/oxm"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+					http://www.springframework.org/schema/oxm http://www.springframework.org/schema/oxm/spring-oxm.xsd">
+
+	<import resource="spring-ws-common.xml" />
+	
+	<!-- Service Request/Response Marshalling -->
+	<bean id="marshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+		<property name="contextPaths">
+			<list>
+				<value>org.agnitas.emm.springws.jaxb</value>
+				<value>com.agnitas.emm.springws.jaxb</value>
+			</list>
+		</property>
+		
+		<property name="validationEventHandler" ref="validationHandler" />
+	</bean>
+
+	<bean id="validationHandler" class="org.agnitas.emm.springws.handlers.ValidationHandler"/>
+
+	<bean id="emmservices" class="org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition">
+        <property name="schemaCollection">
+        	<bean class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
+        		<property name="xsds">
+        			<list>
+        				<value>OpenEmm.xsd</value>
+        				<value>Emm.xsd</value>
+        			</list>
+        		</property>
+        	</bean>
+        </property>
+        <property name="portTypeName" value="${portTypeName}"/>
+        <property name="locationUri" value="${wsdlLocationUri}"/>
+        <property name="targetNamespace" value="http://agnitas.com/ws/definitions"/>
+    </bean>
+	
+    <import resource="spring-ws-mapping-openemm.xml" />
+    <import resource="spring-ws-mapping-emm.xml" />
+    
+	<bean id="payloadMapping"
+		class="org.springframework.ws.server.endpoint.mapping.PayloadRootQNameEndpointMapping">
+		<property name="endpointMap" ref="comEndpointMap" />
+		<property name="interceptors">
+			<list>
+        		<bean class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
+        		<ref bean="wsSecurityInterceptor"/>
+        		<ref bean="throttlingInterceptor"/>
+        		<ref bean="usageInterceptor" />
+        	</list>
+    	</property>
+	</bean>
+    
+    
+</beans>

@@ -1,0 +1,109 @@
+.l-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  z-index: 1001;
+
+  padding: 0 20px 0 0;
+
+  background-color: $c-blue-27;
+
+  .menu-is-active & {
+    padding-left: 240px;
+  }
+
+  @media (min-width:$screen-md-min) {
+    padding-left: 240px;
+  }
+
+  @include clearfix();
+  @include transition(padding 0.35s);
+
+  .header-menu {
+    float: left;
+    display: inline-block;
+    border-right: 1px solid rgba(255,255,255,0.3);
+
+    .menu-is-active & {
+      display: none;
+      width: 0;
+    }
+
+    @media (min-width:$screen-md-min) {
+      display: none;
+    }
+
+    li {
+      width: 60px;
+      height: 60px;
+      display: block;
+    }
+
+    a {
+      color: $c-white;
+      padding: 20px;
+      display: block;
+
+      &:hover {
+        i {
+          @include rotate(90deg);
+        }
+      }
+    }
+
+    i {
+      font-size: $fs-xxlarge;
+      line-height: $fs-xxlarge;
+      @include transition-transform(0.8s);
+    }
+  }
+
+  .header-nav {
+    display: inline-block;
+    white-space: nowrap;
+    margin-left: 20px;
+    padding: 18px 0;
+
+    .headline {
+      font-size: $fs-xxlarge;
+      line-height: 24px;
+    }
+
+    > li:last-child .headline {
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+  }
+
+  .header-actions {
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-right: 20px;
+    background-color: $c-blue-27;
+    padding-left: 20px;
+
+    > li {
+      float: left;
+    }
+
+    > li + li {
+      margin-left: 10px;
+    }
+
+    .btn {
+      margin-top: 20px;
+    }
+
+    .btn-regular {
+      margin-top: 15px;
+    }
+
+    .btn-large {
+      margin-top: 10px;
+    }
+  }
+
+}

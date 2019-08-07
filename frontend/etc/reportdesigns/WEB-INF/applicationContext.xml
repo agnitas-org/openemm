@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:component-scan base-package="org.agnitas" />
+	<context:component-scan base-package="com.agnitas" />
+	
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:emm.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" />
+
+	<!-- thread pool for asynchronous calls -->
+	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
+		<constructor-arg value="10" type="int" />
+	</bean>
+
+	<!-- public key for encryption, especially for birt report uid-parameter -->
+	<bean id="publickeyfile" class="java.lang.String">
+		<constructor-arg value="${birt.publickeyfile}" />
+	</bean>
+</beans>

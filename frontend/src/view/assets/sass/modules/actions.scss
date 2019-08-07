@@ -1,0 +1,24 @@
+.actions {
+  padding: 10px;
+
+  @include clearfix();
+
+  &.actions-top {
+    border-top: 1px solid $c-gray-20;
+  }
+
+  &.actions-bottom {
+    border-bottom: 1px solid $c-gray-20;
+  }
+
+}
+
+.action-left {
+  float: left;
+  text-align: left;
+}
+
+.action-right {
+  float: right;
+  text-align: right;
+}

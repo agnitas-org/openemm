@@ -1,0 +1,3956 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="units">in</property>
+    <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.com.agnitas.emm.core.mobile.service);
+importPackage(Packages.com.agnitas.emm.core.mobile.bean);
+
+var designHandle = reportContext.getReportRunnable().designHandle.getDesignHandle();
+
+if (reportContext.getOutputFormat() == "csv") {
+	designHandle.findElement("graphicalReport").drop();
+} else {
+	designHandle.findElement("csvData").drop();
+}
+
+designHandle.addCss("styles.css");
+
+devicesStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.DevicesStatDataSet();
+dataList = devicesStatDataSet.getMailingDevicesStat(params["companyID"], params["selectedTargets"], params["mailingID"], params["maxdevices"], params["language"]);
+
+reportContext.setPersistentGlobalVariable("dataList", dataList);
+
+reportContext.setGlobalVariable("hideDesktopTable", true);
+reportContext.setGlobalVariable("hideMobileTable", true);
+reportContext.setGlobalVariable("hideTabletTable", true);
+reportContext.setGlobalVariable("hideSmartTVTable", true);
+
+for (i = 0; i < dataList.size(); i++) {
+	if (dataList.get(i).getDeviceClassId() == DeviceClass.DESKTOP.getId()) {
+		reportContext.setGlobalVariable("hideDesktopTable", false);
+	} else if (dataList.get(i).getDeviceClassId() == DeviceClass.MOBILE.getId()) {
+		reportContext.setGlobalVariable("hideMobileTable", false);
+	} else if (dataList.get(i).getDeviceClassId() == DeviceClass.TABLET.getId()) {
+		reportContext.setGlobalVariable("hideTabletTable", false);
+	} else if (dataList.get(i).getDeviceClassId() == DeviceClass.SMARTTV.getId()) {
+		reportContext.setGlobalVariable("hideSmartTVTable", false);
+	}
+}
+]]></method>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="layoutPreference">auto layout</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <list-property name="cssStyleSheets">
+        <structure>
+            <property name="fileName">WebContent/styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+        <structure>
+            <property name="useExternalCss">true</property>
+            <property name="externalCssURI">/birt/webcontent/birt/styles/redesign_style.css</property>
+        </structure>
+        <structure>
+            <property name="fileName">styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+    </list-property>
+    <parameters>
+        <scalar-parameter name="maxdevices" id="203">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">10</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="companyID" id="129">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">8</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="selectedTargets" id="130">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="mailingID" id="131">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">0</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="language" id="134">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">DE</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <script-data-source name="DummyDataSource" id="259"/>
+    </data-sources>
+    <data-sets>
+        <script-data-set name="DevicesStatDataSet" id="578">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">device_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">device_openings</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">device_clicks</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">device_openings_rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">device_clicks_rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">category_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">target_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">target_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">device_class_id</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">device_name</property>
+                    <text-property name="displayName">Device Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_openings</property>
+                    <text-property name="displayName">Openings Count</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_clicks</property>
+                    <text-property name="displayName">Clicks Count</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_openings_rate</property>
+                    <text-property name="displayName">Openings Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_clicks_rate</property>
+                    <text-property name="displayName">Clicks Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">category_index</property>
+                    <text-property name="displayName">Category Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">target_index</property>
+                    <text-property name="displayName">Target Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">target_name</property>
+                    <text-property name="displayName">Target Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">device_class_id</property>
+                    <text-property name="displayName">Device Class ID</text-property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">device_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">device_openings</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">device_clicks</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">device_openings_rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">device_clicks_rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">category_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">target_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">target_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">device_class_id</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[valueList = reportContext.getPersistentGlobalVariable("dataList");
+currentrow = 0;
+]]></method>
+            <method name="fetch"><![CDATA[if (currentrow < valueList.size()) {
+	row["device_name"] = valueList.get(currentrow).getDeviceName();
+	row["device_openings"] = valueList.get(currentrow).getOpeningsCount();
+	row["device_clicks"] = valueList.get(currentrow).getClicksCount();
+	row["device_openings_rate"] = valueList.get(currentrow).getOpeningsRate();
+	row["device_clicks_rate"] = valueList.get(currentrow).getClicksRate();
+	row["category_index"] = valueList.get(currentrow).getCategoryIndex();
+	row["target_index"] = valueList.get(currentrow).getTargetIndex();
+	row["target_name"] = valueList.get(currentrow).getTargetName();
+	row["device_class_id"] = valueList.get(currentrow).getDeviceClassId();
+
+	currentrow++;
+	return true;
+}
+return false;
+]]></method>
+        </script-data-set>
+    </data-sets>
+    <cubes>
+        <tabular-cube name="DevicesStatCube" id="716">
+            <property name="dimensions">
+                <tabular-dimension name="TargetGroup" id="717">
+                    <property name="isTimeType">false</property>
+                    <property name="defaultHierarchy">NewTabularHierarchy</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy" id="718">
+                            <property name="levels">
+                                <tabular-level name="Target Index" id="722">
+                                    <property name="dataType">integer</property>
+                                    <property name="levelType">dynamic</property>
+                                    <property name="columnName">target_index</property>
+                                </tabular-level>
+                                <tabular-level name="Target Name" id="721">
+                                    <property name="dataType">string</property>
+                                    <property name="levelType">dynamic</property>
+                                    <list-property name="attributes">
+                                        <structure>
+                                            <property name="name">target_name</property>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="columnName">target_name</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="Device Name" id="723">
+                    <property name="defaultHierarchy">NewTabularHierarchy1</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy1" id="724">
+                            <property name="levels">
+                                <tabular-level name="Device Name" id="725">
+                                    <property name="dataType">string</property>
+                                    <property name="levelType">dynamic</property>
+                                    <list-property name="attributes">
+                                        <structure>
+                                            <property name="name">device_name</property>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">device_openings</property>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="columnName">device_name</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="CategoryGroup" id="733">
+                    <property name="defaultHierarchy">NewTabularHierarchy2</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy2" id="734">
+                            <property name="levels">
+                                <tabular-level name="Category Index" id="735">
+                                    <property name="dataType">integer</property>
+                                    <property name="columnName">category_index</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+                <tabular-dimension name="DeviceClassGroup" id="736">
+                    <property name="defaultHierarchy">NewTabularHierarchy3</property>
+                    <property name="hierarchies">
+                        <tabular-hierarchy name="NewTabularHierarchy3" id="737">
+                            <property name="levels">
+                                <tabular-level name="Device Class ID" id="738">
+                                    <property name="dataType">integer</property>
+                                    <property name="levelType">dynamic</property>
+                                    <property name="columnName">device_class_id</property>
+                                </tabular-level>
+                            </property>
+                        </tabular-hierarchy>
+                    </property>
+                </tabular-dimension>
+            </property>
+            <property name="measureGroups">
+                <tabular-measure-group name="Summary Field" id="728">
+                    <property name="measures">
+                        <tabular-measure name="Openings Count" id="729">
+                            <property name="function">sum</property>
+                            <property name="isCalculated">false</property>
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_openings"]</expression>
+                            <property name="dataType">integer</property>
+                            <property name="isVisible">true</property>
+                        </tabular-measure>
+                        <tabular-measure name="Openings Rate" id="730">
+                            <property name="function">sum</property>
+                            <property name="isCalculated">false</property>
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_openings_rate"]</expression>
+                            <property name="dataType">float</property>
+                            <property name="isVisible">true</property>
+                        </tabular-measure>
+                        <tabular-measure name="Clicks Count" id="731">
+                            <property name="function">sum</property>
+                            <property name="isCalculated">false</property>
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_clicks"]</expression>
+                            <property name="dataType">integer</property>
+                            <property name="isVisible">true</property>
+                        </tabular-measure>
+                        <tabular-measure name="Clicks Rate" id="732">
+                            <property name="function">sum</property>
+                            <property name="isCalculated">false</property>
+                            <expression name="measureExpression" type="javascript">dataSetRow["device_clicks_rate"]</expression>
+                            <property name="dataType">float</property>
+                            <property name="isVisible">true</property>
+                        </tabular-measure>
+                    </property>
+                </tabular-measure-group>
+            </property>
+            <property name="dataSet">DevicesStatDataSet</property>
+        </tabular-cube>
+    </cubes>
+    <styles>
+        <style name="chart-color-blue" id="332">
+            <property name="color">#61AEE4</property>
+        </style>
+        <style name="chart-color-blue2" id="333">
+            <property name="color">#8EA4E6</property>
+        </style>
+        <style name="chart-color-blue3" id="334">
+            <property name="color">#8EC9F2</property>
+        </style>
+        <style name="chart-color-green" id="335">
+            <property name="color">#A8D85E</property>
+        </style>
+        <style name="chart-color-orange" id="336">
+            <property name="color">#FFD05E</property>
+        </style>
+        <style name="chart-color-red" id="337">
+            <property name="color">#D8606D</property>
+        </style>
+        <style name="chart-color-violet" id="338">
+            <property name="color">#C3B1A8</property>
+        </style>
+        <style name="chart-color-yellow" id="339">
+            <property name="color">#FCF15C</property>
+        </style>
+        <style name="chart-color-lightgrey" id="340">
+            <property name="backgroundColor">#D3D3D3</property>
+        </style>
+        <style name="chart-color-sent-mails" id="341">
+            <property name="color">#FFFFFF</property>
+        </style>
+        <style name="chart-color-clicking-recipients" id="342">
+            <property name="color">#8EC9F2</property>
+        </style>
+        <style name="chart-color-hardbounces" id="343">
+            <property name="color">#EAA48F</property>
+        </style>
+        <style name="chart-color-openings" id="344">
+            <property name="color">#A8D85E</property>
+        </style>
+        <style name="chart-color-optout" id="345">
+            <property name="color">#FCF15C</property>
+        </style>
+        <style name="datatable" id="346">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">10px</property>
+            <property name="borderBottomColor">#D3D3D3</property>
+            <property name="borderLeftColor">#D3D3D3</property>
+            <property name="borderRightColor">#D3D3D3</property>
+            <property name="borderTopColor">#D3D3D3</property>
+        </style>
+        <style name="ReportText" id="347">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+        </style>
+        <style name="parametersheadline" id="348">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+            <property name="fontWeight">bold</property>
+        </style>
+        <style name="parameterstext" id="349">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+            <property name="color">#000000</property>
+        </style>
+        <style name="LegendTableText" id="350">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+        </style>
+        <style name="LegendTableHeadLine" id="351">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+            <property name="fontWeight">bold</property>
+        </style>
+        <style name="textBlue" id="352">
+            <property name="fontFamily">"tahoma", sans-serif</property>
+            <property name="fontSize">11px</property>
+            <property name="color">#0C4065</property>
+        </style>
+        <style name="odd" id="353">
+            <property name="backgroundColor">#F6F6F6</property>
+        </style>
+        <style name="even" id="354">
+            <property name="backgroundColor">#FFFFFF</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="topMargin">0.25in</property>
+            <property name="leftMargin">0.25in</property>
+            <property name="bottomMargin">0.25in</property>
+            <property name="rightMargin">0.25in</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <label id="547">
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">true</expression>
+                </structure>
+            </list-property>
+            <text-property name="text">// HTML Data</text-property>
+        </label>
+        <grid name="graphicalReport" id="513">
+            <property name="style">block-table</property>
+            <property name="width">100%</property>
+            <structure name="toc"/>
+            <column id="514"/>
+            <column id="515"/>
+            <row id="662">
+                <list-property name="visibility">
+                    <structure>
+                        <property name="format">all</property>
+                        <expression name="valueExpr" type="javascript">reportContext.getGlobalVariable("hideDesktopTable")</expression>
+                    </structure>
+                </list-property>
+                <cell id="663">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <property name="style">full-width</property>
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="837">
+                        <property name="cube">DevicesStatCube</property>
+                        <property name="measures">
+                            <extended-item extensionName="MeasureView" id="838">
+                                <property name="measure">Openings Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="839">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="840">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="841">
+                                        <property name="content">
+                                            <text-data id="842">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.openings", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="843">
+                                <property name="measure">Openings Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="844">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="845">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="846">
+                                        <property name="content">
+                                            <text-data id="847">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("workflow.decision.OpeningRate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="848">
+                                <property name="measure">Clicks Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="849">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="850">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="851">
+                                        <property name="content">
+                                            <text-data id="852">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="853">
+                                <property name="measure">Clicks Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="854">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="855">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="856">
+                                        <property name="content">
+                                            <text-data id="857">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("benchmark.clickrate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="rows">
+                            <extended-item extensionName="CrosstabView" id="858">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="859">
+                                        <property name="dimension">Device Name</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View11" id="860">
+                                                <property name="level">Device Name/Device Name</property>
+                                                <property name="sort">
+                                                    <sort-element>
+                                                        <expression name="key" type="javascript">dimension["Device Name"]["Device Name"]["device_openings"]</expression>
+                                                        <property name="direction">desc</property>
+                                                        <property name="strength">-1</property>
+                                                    </sort-element>
+                                                </property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="861">
+                                                        <property name="content">
+                                                            <data name="device_name1" id="862">
+                                                                <property name="textAlign">left</property>
+                                                                <property name="resultSetColumn">device_name</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="columns">
+                            <extended-item extensionName="CrosstabView" id="863">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="864">
+                                        <property name="dimension">TargetGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View2" id="865">
+                                                <property name="level">TargetGroup/Target Name</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="866">
+                                                        <property name="content">
+                                                            <data name="target_name1" id="867">
+                                                                <property name="textAlign">center</property>
+                                                                <property name="resultSetColumn">target_name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="textAlign">center</property>
+                                                        <property name="style">table-head</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="header">
+                            <extended-item extensionName="CrosstabCell" id="868">
+                                <property name="content">
+                                    <text-data id="951">
+                                        <property name="fontSize">10pt</property>
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("PC", reportContext.getLocale())</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </property>
+                                <property name="style">table-head</property>
+                            </extended-item>
+                        </property>
+                        <property name="emptyCellValue"></property>
+                        <property name="filter">
+                            <filter-condition-element>
+                                <expression name="expr" type="javascript">dimension["CategoryGroup"]["Category Index"] == 1 &amp;&amp; dimension["DeviceClassGroup"]["Device Class ID"] == 1</expression>
+                                <property name="operator">is-true</property>
+                            </filter-condition-element>
+                        </property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">Target Name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_index</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_index"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Device Name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">device_name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]["device_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="style">table table-striped</property>
+                    </extended-item>
+                </cell>
+            </row>
+            <row id="709">
+                <list-property name="visibility">
+                    <structure>
+                        <property name="format">all</property>
+                        <expression name="valueExpr" type="javascript">reportContext.getGlobalVariable("hideMobileTable")</expression>
+                    </structure>
+                </list-property>
+                <cell id="710">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <property name="style">full-width</property>
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="778">
+                        <property name="cube">DevicesStatCube</property>
+                        <property name="measures">
+                            <extended-item extensionName="MeasureView" id="787">
+                                <property name="measure">Openings Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="788">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="789">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="790">
+                                        <property name="content">
+                                            <text-data id="814">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.openings", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="794">
+                                <property name="measure">Openings Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="795">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="796">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="797">
+                                        <property name="content">
+                                            <text-data id="813">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("workflow.decision.OpeningRate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="799">
+                                <property name="measure">Clicks Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="800">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="801">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="802">
+                                        <property name="content">
+                                            <text-data id="815">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="804">
+                                <property name="measure">Clicks Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="805">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="806">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="807">
+                                        <property name="content">
+                                            <text-data id="816">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("benchmark.clickrate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="rows">
+                            <extended-item extensionName="CrosstabView" id="817">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="818">
+                                        <property name="dimension">Device Name</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View1" id="819">
+                                                <property name="level">Device Name/Device Name</property>
+                                                <property name="sort">
+                                                    <sort-element>
+                                                        <expression name="key" type="javascript">dimension["Device Name"]["Device Name"]["device_openings"]</expression>
+                                                        <property name="direction">desc</property>
+                                                        <property name="strength">-1</property>
+                                                    </sort-element>
+                                                </property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="820">
+                                                        <property name="content">
+                                                            <data name="device_name" id="824">
+                                                                <property name="textAlign">left</property>
+                                                                <property name="resultSetColumn">device_name</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="columns">
+                            <extended-item extensionName="CrosstabView" id="780">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="781">
+                                        <property name="dimension">TargetGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View" id="782">
+                                                <property name="level">TargetGroup/Target Name</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="783">
+                                                        <property name="content">
+                                                            <data name="target_name" id="825">
+                                                                <property name="textAlign">center</property>
+                                                                <property name="resultSetColumn">target_name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="textAlign">center</property>
+                                                        <property name="style">table-head</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="header">
+                            <extended-item extensionName="CrosstabCell" id="779">
+                                <property name="content">
+                                    <text-data id="952">
+                                        <property name="fontSize">10pt</property>
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mobile", reportContext.getLocale())</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </property>
+                                <property name="style">table-head</property>
+                            </extended-item>
+                        </property>
+                        <property name="emptyCellValue"></property>
+                        <property name="filter">
+                            <filter-condition-element>
+                                <expression name="expr" type="javascript">dimension["CategoryGroup"]["Category Index"] == 1 &amp;&amp; dimension["DeviceClassGroup"]["Device Class ID"] == 2</expression>
+                                <property name="operator">is-true</property>
+                            </filter-condition-element>
+                        </property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">Target Name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_index</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_index"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Device Name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">device_name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]["device_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="style">table table-striped</property>
+                    </extended-item>
+                </cell>
+            </row>
+            <row id="714">
+                <list-property name="visibility">
+                    <structure>
+                        <property name="format">all</property>
+                        <expression name="valueExpr" type="javascript">reportContext.getGlobalVariable("hideTabletTable")</expression>
+                    </structure>
+                </list-property>
+                <cell id="715">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <property name="style">full-width</property>
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="870">
+                        <property name="cube">DevicesStatCube</property>
+                        <property name="measures">
+                            <extended-item extensionName="MeasureView" id="871">
+                                <property name="measure">Openings Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="872">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="873">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="874">
+                                        <property name="content">
+                                            <text-data id="875">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.openings", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="876">
+                                <property name="measure">Openings Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="877">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="878">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="879">
+                                        <property name="content">
+                                            <text-data id="880">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("workflow.decision.OpeningRate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="881">
+                                <property name="measure">Clicks Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="882">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="883">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="884">
+                                        <property name="content">
+                                            <text-data id="885">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="886">
+                                <property name="measure">Clicks Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="887">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="888">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="889">
+                                        <property name="content">
+                                            <text-data id="890">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("benchmark.clickrate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="rows">
+                            <extended-item extensionName="CrosstabView" id="891">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="892">
+                                        <property name="dimension">Device Name</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View12" id="893">
+                                                <property name="level">Device Name/Device Name</property>
+                                                <property name="sort">
+                                                    <sort-element>
+                                                        <expression name="key" type="javascript">dimension["Device Name"]["Device Name"]["device_openings"]</expression>
+                                                        <property name="direction">desc</property>
+                                                        <property name="strength">-1</property>
+                                                    </sort-element>
+                                                </property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="894">
+                                                        <property name="content">
+                                                            <data name="device_name2" id="895">
+                                                                <property name="textAlign">left</property>
+                                                                <property name="resultSetColumn">device_name</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="columns">
+                            <extended-item extensionName="CrosstabView" id="896">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="897">
+                                        <property name="dimension">TargetGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View3" id="898">
+                                                <property name="level">TargetGroup/Target Name</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="899">
+                                                        <property name="content">
+                                                            <data name="target_name2" id="900">
+                                                                <property name="textAlign">center</property>
+                                                                <property name="resultSetColumn">target_name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="textAlign">center</property>
+                                                        <property name="style">table-head</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="header">
+                            <extended-item extensionName="CrosstabCell" id="901">
+                                <property name="content">
+                                    <text-data id="953">
+                                        <property name="fontSize">10pt</property>
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.opens.tablet.chartLabel", reportContext.getLocale())</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </property>
+                                <property name="style">table-head</property>
+                            </extended-item>
+                        </property>
+                        <property name="emptyCellValue"></property>
+                        <property name="filter">
+                            <filter-condition-element>
+                                <expression name="expr" type="javascript">dimension["CategoryGroup"]["Category Index"] == 1 &amp;&amp; dimension["DeviceClassGroup"]["Device Class ID"] == 3</expression>
+                                <property name="operator">is-true</property>
+                            </filter-condition-element>
+                        </property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">Target Name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_index</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_index"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Device Name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">device_name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]["device_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="style">table table-striped</property>
+                    </extended-item>
+                </cell>
+            </row>
+            <row id="903">
+                <list-property name="visibility">
+                    <structure>
+                        <property name="format">all</property>
+                        <expression name="valueExpr" type="javascript">reportContext.getGlobalVariable("hideSmartTVTable")</expression>
+                    </structure>
+                </list-property>
+                <cell id="904">
+                    <property name="style">full-width</property>
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="906">
+                        <property name="cube">DevicesStatCube</property>
+                        <property name="measures">
+                            <extended-item extensionName="MeasureView" id="907">
+                                <property name="measure">Openings Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="908">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="909">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="910">
+                                        <property name="content">
+                                            <text-data id="911">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.openings", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="912">
+                                <property name="measure">Openings Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="913">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="914">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="915">
+                                        <property name="content">
+                                            <text-data id="916">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("workflow.decision.OpeningRate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="917">
+                                <property name="measure">Clicks Count</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="918">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="919">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Fixed</property>
+                                                    <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="920">
+                                        <property name="content">
+                                            <text-data id="921">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                            <extended-item extensionName="MeasureView" id="922">
+                                <property name="measure">Clicks Rate</property>
+                                <property name="detail">
+                                    <extended-item extensionName="AggregationCell" id="923">
+                                        <property name="aggregationOnRow">Device Name/Device Name</property>
+                                        <property name="aggregationOnColumn">TargetGroup/Target Name</property>
+                                        <property name="content">
+                                            <data id="924">
+                                                <structure name="numberFormat">
+                                                    <property name="category">Percent</property>
+                                                    <property name="pattern">###0.0%{RoundingMode=HALF_UP}</property>
+                                                </structure>
+                                                <property name="textAlign">right</property>
+                                                <property name="resultSetColumn">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                            </data>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                                <property name="header">
+                                    <extended-item extensionName="CrosstabCell" id="925">
+                                        <property name="content">
+                                            <text-data id="926">
+                                                <property name="textAlign">center</property>
+                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("benchmark.clickrate", reportContext.getLocale())</expression>
+                                                <property name="contentType">html</property>
+                                            </text-data>
+                                        </property>
+                                        <property name="style">table-head</property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="rows">
+                            <extended-item extensionName="CrosstabView" id="927">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="928">
+                                        <property name="dimension">Device Name</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View13" id="929">
+                                                <property name="level">Device Name/Device Name</property>
+                                                <property name="sort">
+                                                    <sort-element>
+                                                        <expression name="key" type="javascript">dimension["Device Name"]["Device Name"]["device_openings"]</expression>
+                                                        <property name="direction">desc</property>
+                                                        <property name="strength">-1</property>
+                                                    </sort-element>
+                                                </property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="930">
+                                                        <property name="content">
+                                                            <data name="device_name3" id="931">
+                                                                <property name="textAlign">left</property>
+                                                                <property name="resultSetColumn">device_name</property>
+                                                            </data>
+                                                        </property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="columns">
+                            <extended-item extensionName="CrosstabView" id="932">
+                                <property name="views">
+                                    <extended-item extensionName="DimensionView" id="933">
+                                        <property name="dimension">TargetGroup</property>
+                                        <property name="levels">
+                                            <extended-item extensionName="LevelView" name="NewLevel View4" id="934">
+                                                <property name="level">TargetGroup/Target Name</property>
+                                                <property name="member">
+                                                    <extended-item extensionName="CrosstabCell" id="935">
+                                                        <property name="content">
+                                                            <data name="target_name3" id="936">
+                                                                <property name="textAlign">center</property>
+                                                                <property name="resultSetColumn">target_name</property>
+                                                            </data>
+                                                        </property>
+                                                        <property name="textAlign">center</property>
+                                                        <property name="style">table-head</property>
+                                                    </extended-item>
+                                                </property>
+                                            </extended-item>
+                                        </property>
+                                    </extended-item>
+                                </property>
+                            </extended-item>
+                        </property>
+                        <property name="header">
+                            <extended-item extensionName="CrosstabCell" id="937">
+                                <property name="content">
+                                    <text-data id="954">
+                                        <property name="fontSize">10pt</property>
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.smarttv", reportContext.getLocale())</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </property>
+                                <property name="style">table-head</property>
+                            </extended-item>
+                        </property>
+                        <property name="emptyCellValue"></property>
+                        <property name="filter">
+                            <filter-condition-element>
+                                <expression name="expr" type="javascript">dimension["CategoryGroup"]["Category Index"] == 1 &amp;&amp; dimension["DeviceClassGroup"]["Device Class ID"] == 4</expression>
+                                <property name="operator">is-true</property>
+                            </filter-condition-element>
+                        </property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">Target Name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_index</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_index"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">sum</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Device Name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Openings Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Openings Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Count_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Count"]</expression>
+                                <property name="dataType">integer</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Clicks Rate_Device Name/Device Name_TargetGroup/Target Name</property>
+                                <expression name="expression">measure["Clicks Rate"]</expression>
+                                <property name="dataType">float</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>Device Name/Device Name</value>
+                                    <value>TargetGroup/Target Name</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">SUM</property>
+                            </structure>
+                            <structure>
+                                <property name="name">device_name</property>
+                                <expression name="expression">dimension["Device Name"]["Device Name"]["device_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">target_name</property>
+                                <expression name="expression">dimension["TargetGroup"]["Target Name"]["target_name"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="style">table table-striped</property>
+                    </extended-item>
+                </cell>
+                <cell id="905">
+                    <property name="style">full-width</property>
+                </cell>
+            </row>
+            <row id="516">
+                <cell id="517">
+                    <property name="style">half-width</property>
+                    <grid id="669">
+                        <property name="style">table</property>
+                        <column id="670"/>
+                        <row id="677">
+                            <cell id="678">
+                                <property name="textAlign">left</property>
+                                <text-data id="679">
+                                    <property name="fontWeight">bold</property>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.openings_by_device', reportContext.getLocale())</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
+                        <row id="671">
+                            <cell id="672">
+                                <property name="textAlign">center</property>
+                                <extended-item extensionName="Chart" name="NewChart1" id="673">
+                                    <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
+  <Version>2.6.1</Version>
+  <Type>Pie Chart</Type>
+  <SubType>Standard</SubType>
+  <Block>
+    <Children xsi:type="layout:TitleBlock">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <Label>
+        <Caption>
+          <Value>Pie Chart Title</Value>
+          <Font>
+            <Size>16.0</Size>
+            <Bold>true</Bold>
+            <Alignment>
+              <horizontalAlignment>Center</horizontalAlignment>
+              <verticalAlignment>Center</verticalAlignment>
+            </Alignment>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>true</Visible>
+      </Label>
+    </Children>
+    <Children xsi:type="layout:Plot">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>true</Visible>
+      <HorizontalSpacing>5</HorizontalSpacing>
+      <VerticalSpacing>5</VerticalSpacing>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>0.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>0.0</Right>
+        </Insets>
+      </ClientArea>
+    </Children>
+    <Children xsi:type="layout:Legend">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>2.0</Top>
+          <Left>2.0</Left>
+          <Bottom>2.0</Bottom>
+          <Right>2.0</Right>
+        </Insets>
+      </ClientArea>
+      <Text>
+        <Value></Value>
+        <Font>
+          <Alignment/>
+        </Font>
+      </Text>
+      <Orientation>Vertical</Orientation>
+      <Direction>Top_Bottom</Direction>
+      <Separator>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>true</Visible>
+      </Separator>
+      <Position>Right</Position>
+      <ItemType>Categories</ItemType>
+      <Title>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Title>
+      <TitlePosition>Above</TitlePosition>
+    </Children>
+    <Bounds>
+      <Left>0.0</Left>
+      <Top>0.0</Top>
+      <Width>273.59999999999997</Width>
+      <Height>273.59999999999997</Height>
+    </Bounds>
+    <Insets>
+      <Top>3.0</Top>
+      <Left>3.0</Left>
+      <Bottom>3.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Row>-1</Row>
+    <Column>-1</Column>
+    <Rowspan>-1</Rowspan>
+    <Columnspan>-1</Columnspan>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>false</Visible>
+    </Outline>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>255</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Visible>true</Visible>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
+  </Block>
+  <Dimension>Two_Dimensional</Dimension>
+  <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+var COLORS = [
+	'#FFFF00',
+	'#FFC000',
+	'#F5770F',
+	'#DF3939',
+	'#A91B1B',
+	'#7C00A8',
+	'#00558A',
+	'#64C3FF',
+	'#009BFF',
+	'#0071B9',
+	'#009999',
+	'#006464',
+	'#41641A',
+	'#69A129',
+	'#92D050'
+];
+
+var COLORS_15 = [
+	COLORS[9],
+	COLORS[8],
+	COLORS[7],
+	COLORS[6],
+	COLORS[14],
+	COLORS[13],
+	COLORS[12],
+	COLORS[10],
+	COLORS[11],
+	COLORS[5],
+	COLORS[4],
+	COLORS[3],
+	COLORS[2],
+	COLORS[1],
+	COLORS[0]
+];
+
+
+function beforeGeneration(chart, icsc)
+{
+	reportContext = icsc.getExternalContext().getObject();
+	
+	var paletteEntries = chart.getSeriesDefinitions()
+		.get(0)
+		.getSeriesPalette()
+		.getEntries();
+
+	setupPalette(paletteEntries, COLORS_15);
+
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.setSeriesThickness(30);
+}
+
+function setupPalette(paletteEntries, colorSequence) {
+	paletteEntries.clear();
+
+	for (var index = 0; index &lt; colorSequence.length; index++) {
+		paletteEntries.add(translateColor(colorSequence[index]));
+	}
+}
+
+function translateColor(colorRgb) {
+	var red = &quot;0x&quot; + colorRgb.substr(1, 2);
+	var green =  &quot;0x&quot; + colorRgb.substr(3, 2);
+	var blue =  &quot;0x&quot; + colorRgb.substr(5, 2);
+
+	return ColorDefinitionImpl.create(red, green, blue);
+}
+</Script>
+  <Units>Points</Units>
+  <SeriesThickness>10.0</SeriesThickness>
+  <GridColumnCount>0</GridColumnCount>
+  <ExtendedProperties>
+    <Name>enable.area.alt</Name>
+    <Value>false</Value>
+  </ExtendedProperties>
+  <SampleData>
+    <BaseSampleData>
+      <DataSetRepresentation>'A','B','C','D','E'</DataSetRepresentation>
+    </BaseSampleData>
+    <OrthogonalSampleData>
+      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
+      <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
+    </OrthogonalSampleData>
+  </SampleData>
+  <Interactivity>
+    <Enable>true</Enable>
+    <LegendBehavior>None</LegendBehavior>
+  </Interactivity>
+  <EmptyMessage>
+    <Caption>
+      <Value></Value>
+      <Font>
+        <Alignment>
+          <horizontalAlignment>Center</horizontalAlignment>
+          <verticalAlignment>Center</verticalAlignment>
+        </Alignment>
+      </Font>
+    </Caption>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>0</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>true</Visible>
+    </Outline>
+    <Insets>
+      <Top>0.0</Top>
+      <Left>2.0</Left>
+      <Bottom>0.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Visible>true</Visible>
+  </EmptyMessage>
+  <SeriesDefinitions>
+    <Query>
+      <Definition></Definition>
+    </Query>
+    <SeriesPalette>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>166</Green>
+        <Blue>218</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>242</Red>
+        <Green>88</Green>
+        <Blue>106</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>232</Red>
+        <Green>172</Green>
+        <Blue>57</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>64</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>170</Red>
+        <Green>85</Green>
+        <Blue>85</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>192</Red>
+        <Green>192</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>192</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>7</Red>
+        <Green>146</Green>
+        <Blue>94</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>64</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>240</Green>
+        <Blue>120</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>0</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+    </SeriesPalette>
+    <SeriesDefinitions>
+      <Query>
+        <Definition></Definition>
+      </Query>
+      <SeriesPalette>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>166</Green>
+          <Blue>218</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>242</Red>
+          <Green>88</Green>
+          <Blue>106</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>232</Red>
+          <Green>172</Green>
+          <Blue>57</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>64</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>170</Red>
+          <Green>85</Green>
+          <Blue>85</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>192</Red>
+          <Green>192</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>192</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>7</Red>
+          <Green>146</Green>
+          <Blue>94</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>64</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>240</Green>
+          <Blue>120</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>0</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+      </SeriesPalette>
+      <Series xsi:type="type:PieSeries">
+        <Visible>true</Visible>
+        <Label>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Name>Arial</Name>
+              <Size>10.0</Size>
+              <Bold>false</Bold>
+              <Alignment/>
+            </Font>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>112</Red>
+              <Green>113</Green>
+              <Blue>115</Blue>
+            </Color>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+            <Visible>false</Visible>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Label>
+        <DataDefinition>
+          <Definition>row[&quot;device_openings&quot;]</Definition>
+          <Grouping>
+            <GroupType>Text</GroupType>
+            <AggregateExpression>Sum</AggregateExpression>
+          </Grouping>
+        </DataDefinition>
+        <SeriesIdentifier></SeriesIdentifier>
+        <DataPoint>
+          <Components>
+            <Type>Percentile_Orthogonal_Value</Type>
+            <FormatSpecifier xsi:type="attribute:JavaNumberFormatSpecifier">
+              <Pattern>##.#%</Pattern>
+            </FormatSpecifier>
+          </Components>
+          <Components>
+            <Type>Base_Value</Type>
+          </Components>
+          <Suffix></Suffix>
+          <Separator>, </Separator>
+        </DataPoint>
+        <LabelPosition>Outside</LabelPosition>
+        <Stacked>false</Stacked>
+        <Explosion>0</Explosion>
+        <Title>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Size>16.0</Size>
+              <Bold>true</Bold>
+              <Alignment/>
+            </Font>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Title>
+        <TitlePosition>Below</TitlePosition>
+        <LeaderLineAttributes>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>112</Red>
+            <Green>113</Green>
+            <Blue>115</Blue>
+          </Color>
+          <Visible>true</Visible>
+        </LeaderLineAttributes>
+        <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
+        <LeaderLineLength>0.0</LeaderLineLength>
+        <Ratio>1.0</Ratio>
+        <Rotation>0.0</Rotation>
+        <InnerRadius>60.0</InnerRadius>
+      </Series>
+      <Grouping>
+        <Enabled>false</Enabled>
+        <GroupingInterval>1.0</GroupingInterval>
+        <GroupType>Text</GroupType>
+        <AggregateExpression>Sum</AggregateExpression>
+      </Grouping>
+    </SeriesDefinitions>
+    <Series>
+      <Visible>true</Visible>
+      <Label>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Label>
+      <DataDefinition>
+        <Definition>row[&quot;device_name&quot;]</Definition>
+      </DataDefinition>
+      <SeriesIdentifier></SeriesIdentifier>
+      <DataPoint>
+        <Components>
+          <Type>Orthogonal_Value</Type>
+        </Components>
+        <Separator>, </Separator>
+      </DataPoint>
+      <LabelPosition>Outside</LabelPosition>
+      <Stacked>false</Stacked>
+    </Series>
+    <Grouping>
+      <Enabled>true</Enabled>
+      <GroupingInterval>1.0</GroupingInterval>
+      <GroupType>Text</GroupType>
+      <AggregateExpression>Sum</AggregateExpression>
+    </Grouping>
+    <Sorting>Descending</Sorting>
+    <SortKey>
+      <Definition>row[&quot;device_openings&quot;]</Definition>
+    </SortKey>
+  </SeriesDefinitions>
+</model:ChartWithoutAxes>
+]]></xml-property>
+                                    <property name="outputFormat">SVG</property>
+                                    <list-property name="filter">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <expression name="expr" type="javascript">row["category_index"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>0</value>
+                                            </simple-property-list>
+                                            <property name="updateAggregation">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="inheritColumns">true</property>
+                                    <property name="height">320px</property>
+                                    <property name="width">668px</property>
+                                    <structure name="toc"/>
+                                    <property name="dataSet">DevicesStatDataSet</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">device_name</property>
+                                            <expression name="expression" type="javascript">dataSetRow["device_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">device_openings</property>
+                                            <expression name="expression" type="javascript">dataSetRow["device_openings"]</expression>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">category_index</property>
+                                            <expression name="expression">dataSetRow["category_index"]</expression>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                    </list-property>
+                                </extended-item>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+                <cell id="518">
+                    <property name="style">half-width</property>
+                    <grid id="519">
+                        <property name="style">table</property>
+                        <column id="520"/>
+                        <row id="674">
+                            <cell id="675">
+                                <property name="textAlign">left</property>
+                                <text-data id="676">
+                                    <property name="fontWeight">bold</property>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.clicks_by_device', reportContext.getLocale())</expression>
+                                </text-data>
+                            </cell>
+                        </row>
+                        <row id="521">
+                            <cell id="522">
+                                <property name="textAlign">center</property>
+                                <extended-item extensionName="Chart" name="NewChart" id="202">
+                                    <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
+  <Version>2.6.1</Version>
+  <Type>Pie Chart</Type>
+  <SubType>Standard</SubType>
+  <Block>
+    <Children xsi:type="layout:TitleBlock">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <Label>
+        <Caption>
+          <Value>Pie Chart Title</Value>
+          <Font>
+            <Size>16.0</Size>
+            <Bold>true</Bold>
+            <Alignment>
+              <horizontalAlignment>Center</horizontalAlignment>
+              <verticalAlignment>Center</verticalAlignment>
+            </Alignment>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>true</Visible>
+      </Label>
+    </Children>
+    <Children xsi:type="layout:Plot">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>true</Visible>
+      <HorizontalSpacing>5</HorizontalSpacing>
+      <VerticalSpacing>5</VerticalSpacing>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>0.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>0.0</Right>
+        </Insets>
+      </ClientArea>
+    </Children>
+    <Children xsi:type="layout:Legend">
+      <Bounds>
+        <Left>0.0</Left>
+        <Top>0.0</Top>
+        <Width>0.0</Width>
+        <Height>0.0</Height>
+      </Bounds>
+      <Insets>
+        <Top>3.0</Top>
+        <Left>3.0</Left>
+        <Bottom>3.0</Bottom>
+        <Right>3.0</Right>
+      </Insets>
+      <Row>-1</Row>
+      <Column>-1</Column>
+      <Rowspan>-1</Rowspan>
+      <Columnspan>-1</Columnspan>
+      <Outline>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>false</Visible>
+      </Outline>
+      <Visible>false</Visible>
+      <ClientArea>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>0</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>2.0</Top>
+          <Left>2.0</Left>
+          <Bottom>2.0</Bottom>
+          <Right>2.0</Right>
+        </Insets>
+      </ClientArea>
+      <Text>
+        <Value></Value>
+        <Font>
+          <Alignment/>
+        </Font>
+      </Text>
+      <Orientation>Vertical</Orientation>
+      <Direction>Top_Bottom</Direction>
+      <Separator>
+        <Style>Solid</Style>
+        <Thickness>1</Thickness>
+        <Color>
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Color>
+        <Visible>true</Visible>
+      </Separator>
+      <Position>Right</Position>
+      <ItemType>Categories</ItemType>
+      <Title>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Title>
+      <TitlePosition>Above</TitlePosition>
+    </Children>
+    <Bounds>
+      <Left>0.0</Left>
+      <Top>0.0</Top>
+      <Width>273.59999999999997</Width>
+      <Height>273.59999999999997</Height>
+    </Bounds>
+    <Insets>
+      <Top>3.0</Top>
+      <Left>3.0</Left>
+      <Bottom>3.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Row>-1</Row>
+    <Column>-1</Column>
+    <Rowspan>-1</Rowspan>
+    <Columnspan>-1</Columnspan>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>false</Visible>
+    </Outline>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>255</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Visible>true</Visible>
+  </Block>
+  <Dimension>Two_Dimensional</Dimension>
+  <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
+importPackage( Packages.org.eclipse.birt.report.model.api.util );
+
+var COLORS = [
+	'#FFFF00',
+	'#FFC000',
+	'#F5770F',
+	'#DF3939',
+	'#A91B1B',
+	'#7C00A8',
+	'#00558A',
+	'#64C3FF',
+	'#009BFF',
+	'#0071B9',
+	'#009999',
+	'#006464',
+	'#41641A',
+	'#69A129',
+	'#92D050'
+];
+
+var COLORS_15 = [
+	COLORS[9],
+	COLORS[8],
+	COLORS[7],
+	COLORS[6],
+	COLORS[14],
+	COLORS[13],
+	COLORS[12],
+	COLORS[10],
+	COLORS[11],
+	COLORS[5],
+	COLORS[4],
+	COLORS[3],
+	COLORS[2],
+	COLORS[1],
+	COLORS[0]
+];
+
+
+function beforeGeneration(chart, icsc)
+{
+	reportContext = icsc.getExternalContext().getObject();
+	
+	var paletteEntries = chart.getSeriesDefinitions()
+		.get(0)
+		.getSeriesPalette()
+		.getEntries();
+
+	setupPalette(paletteEntries, COLORS_15);
+
+	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale()));
+	chart.setSeriesThickness(30);
+}
+
+function setupPalette(paletteEntries, colorSequence) {
+	paletteEntries.clear();
+
+	for (var index = 0; index &lt; colorSequence.length; index++) {
+		paletteEntries.add(translateColor(colorSequence[index]));
+	}
+}
+
+function translateColor(colorRgb) {
+	var red = &quot;0x&quot; + colorRgb.substr(1, 2);
+	var green =  &quot;0x&quot; + colorRgb.substr(3, 2);
+	var blue =  &quot;0x&quot; + colorRgb.substr(5, 2);
+
+	return ColorDefinitionImpl.create(red, green, blue);
+}
+</Script>
+  <Units>Points</Units>
+  <SeriesThickness>10.0</SeriesThickness>
+  <GridColumnCount>0</GridColumnCount>
+  <ExtendedProperties>
+    <Name>enable.area.alt</Name>
+    <Value>false</Value>
+  </ExtendedProperties>
+  <SampleData>
+    <BaseSampleData>
+      <DataSetRepresentation>'A','B','C','D','E'</DataSetRepresentation>
+    </BaseSampleData>
+    <OrthogonalSampleData>
+      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
+      <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
+    </OrthogonalSampleData>
+  </SampleData>
+  <Interactivity>
+    <Enable>true</Enable>
+    <LegendBehavior>None</LegendBehavior>
+  </Interactivity>
+  <EmptyMessage>
+    <Caption>
+      <Value></Value>
+      <Font>
+        <Alignment>
+          <horizontalAlignment>Center</horizontalAlignment>
+          <verticalAlignment>Center</verticalAlignment>
+        </Alignment>
+      </Font>
+    </Caption>
+    <Background xsi:type="attribute:ColorDefinition">
+      <Transparency>0</Transparency>
+      <Red>255</Red>
+      <Green>255</Green>
+      <Blue>255</Blue>
+    </Background>
+    <Outline>
+      <Style>Solid</Style>
+      <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
+      <Visible>true</Visible>
+    </Outline>
+    <Insets>
+      <Top>0.0</Top>
+      <Left>2.0</Left>
+      <Bottom>0.0</Bottom>
+      <Right>3.0</Right>
+    </Insets>
+    <Visible>true</Visible>
+  </EmptyMessage>
+  <SeriesDefinitions>
+    <Query>
+      <Definition></Definition>
+    </Query>
+    <SeriesPalette>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>166</Green>
+        <Blue>218</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>242</Red>
+        <Green>88</Green>
+        <Blue>106</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>232</Red>
+        <Green>172</Green>
+        <Blue>57</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>64</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>170</Red>
+        <Green>85</Green>
+        <Blue>85</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>192</Red>
+        <Green>192</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>192</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>7</Red>
+        <Green>146</Green>
+        <Blue>94</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>192</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>64</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>80</Red>
+        <Green>240</Green>
+        <Blue>120</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>0</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>0</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>64</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>128</Red>
+        <Green>128</Green>
+        <Blue>128</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>64</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>255</Green>
+        <Blue>255</Blue>
+      </Entries>
+      <Entries xsi:type="attribute:ColorDefinition">
+        <Transparency>255</Transparency>
+        <Red>255</Red>
+        <Green>128</Green>
+        <Blue>0</Blue>
+      </Entries>
+    </SeriesPalette>
+    <SeriesDefinitions>
+      <Query>
+        <Definition></Definition>
+      </Query>
+      <SeriesPalette>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>166</Green>
+          <Blue>218</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>242</Red>
+          <Green>88</Green>
+          <Blue>106</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>232</Red>
+          <Green>172</Green>
+          <Blue>57</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>64</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>170</Red>
+          <Green>85</Green>
+          <Blue>85</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>192</Red>
+          <Green>192</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>192</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>7</Red>
+          <Green>146</Green>
+          <Blue>94</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>192</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>64</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>80</Red>
+          <Green>240</Green>
+          <Blue>120</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>0</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>0</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>64</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>128</Red>
+          <Green>128</Green>
+          <Blue>128</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>64</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>0</Red>
+          <Green>0</Green>
+          <Blue>0</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Entries>
+        <Entries xsi:type="attribute:ColorDefinition">
+          <Transparency>255</Transparency>
+          <Red>255</Red>
+          <Green>128</Green>
+          <Blue>0</Blue>
+        </Entries>
+      </SeriesPalette>
+      <Series xsi:type="type:PieSeries">
+        <Visible>true</Visible>
+        <Label>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Name>Arial</Name>
+              <Size>10.0</Size>
+              <Bold>false</Bold>
+              <Alignment/>
+            </Font>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>112</Red>
+              <Green>113</Green>
+              <Blue>115</Blue>
+            </Color>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+            <Visible>false</Visible>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Label>
+        <DataDefinition>
+          <Definition>row[&quot;device_clicks&quot;]</Definition>
+          <Grouping>
+            <GroupType>Text</GroupType>
+            <AggregateExpression>Sum</AggregateExpression>
+          </Grouping>
+        </DataDefinition>
+        <SeriesIdentifier></SeriesIdentifier>
+        <DataPoint>
+          <Components>
+            <Type>Percentile_Orthogonal_Value</Type>
+            <FormatSpecifier xsi:type="attribute:JavaNumberFormatSpecifier">
+              <Pattern>##.#%</Pattern>
+            </FormatSpecifier>
+          </Components>
+          <Components>
+            <Type>Base_Value</Type>
+          </Components>
+          <Suffix></Suffix>
+          <Separator>, </Separator>
+        </DataPoint>
+        <LabelPosition>Outside</LabelPosition>
+        <Stacked>false</Stacked>
+        <Explosion>0</Explosion>
+        <Title>
+          <Caption>
+            <Value></Value>
+            <Font>
+              <Size>16.0</Size>
+              <Bold>true</Bold>
+              <Alignment/>
+            </Font>
+          </Caption>
+          <Background xsi:type="attribute:ColorDefinition">
+            <Transparency>0</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Background>
+          <Outline>
+            <Style>Solid</Style>
+            <Thickness>1</Thickness>
+            <Color>
+              <Transparency>255</Transparency>
+              <Red>0</Red>
+              <Green>0</Green>
+              <Blue>0</Blue>
+            </Color>
+          </Outline>
+          <Insets>
+            <Top>0.0</Top>
+            <Left>2.0</Left>
+            <Bottom>0.0</Bottom>
+            <Right>3.0</Right>
+          </Insets>
+          <Visible>true</Visible>
+        </Title>
+        <TitlePosition>Below</TitlePosition>
+        <LeaderLineAttributes>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>112</Red>
+            <Green>113</Green>
+            <Blue>115</Blue>
+          </Color>
+          <Visible>true</Visible>
+        </LeaderLineAttributes>
+        <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
+        <LeaderLineLength>0.0</LeaderLineLength>
+        <Ratio>1.0</Ratio>
+        <Rotation>0.0</Rotation>
+        <InnerRadius>60.0</InnerRadius>
+      </Series>
+      <Grouping>
+        <Enabled>false</Enabled>
+        <GroupingInterval>1.0</GroupingInterval>
+        <GroupType>Text</GroupType>
+        <AggregateExpression>Sum</AggregateExpression>
+      </Grouping>
+    </SeriesDefinitions>
+    <Series>
+      <Visible>true</Visible>
+      <Label>
+        <Caption>
+          <Value></Value>
+          <Font>
+            <Alignment/>
+          </Font>
+        </Caption>
+        <Background xsi:type="attribute:ColorDefinition">
+          <Transparency>0</Transparency>
+          <Red>255</Red>
+          <Green>255</Green>
+          <Blue>255</Blue>
+        </Background>
+        <Outline>
+          <Style>Solid</Style>
+          <Thickness>1</Thickness>
+          <Color>
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Color>
+          <Visible>false</Visible>
+        </Outline>
+        <Insets>
+          <Top>0.0</Top>
+          <Left>2.0</Left>
+          <Bottom>0.0</Bottom>
+          <Right>3.0</Right>
+        </Insets>
+        <Visible>false</Visible>
+      </Label>
+      <DataDefinition>
+        <Definition>row[&quot;device_name&quot;]</Definition>
+      </DataDefinition>
+      <SeriesIdentifier></SeriesIdentifier>
+      <DataPoint>
+        <Components>
+          <Type>Orthogonal_Value</Type>
+        </Components>
+        <Separator>, </Separator>
+      </DataPoint>
+      <LabelPosition>Outside</LabelPosition>
+      <Stacked>false</Stacked>
+    </Series>
+    <Grouping>
+      <Enabled>true</Enabled>
+      <GroupingInterval>1.0</GroupingInterval>
+      <GroupType>Text</GroupType>
+      <AggregateExpression>Sum</AggregateExpression>
+    </Grouping>
+    <Sorting>Descending</Sorting>
+    <SortKey>
+      <Definition>row[&quot;device_clicks&quot;]</Definition>
+    </SortKey>
+  </SeriesDefinitions>
+</model:ChartWithoutAxes>
+]]></xml-property>
+                                    <property name="outputFormat">SVG</property>
+                                    <list-property name="filter">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <expression name="expr" type="javascript">row["category_index"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value>0</value>
+                                            </simple-property-list>
+                                            <property name="updateAggregation">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="inheritColumns">true</property>
+                                    <property name="height">320px</property>
+                                    <property name="width">668px</property>
+                                    <structure name="toc"/>
+                                    <property name="dataSet">DevicesStatDataSet</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">device_name</property>
+                                            <expression name="expression" type="javascript">dataSetRow["device_name"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">device_clicks</property>
+                                            <expression name="expression" type="javascript">dataSetRow["device_clicks"]</expression>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                        <structure>
+                                            <property name="name">category_index</property>
+                                            <expression name="expression">dataSetRow["category_index"]</expression>
+                                            <property name="dataType">integer</property>
+                                        </structure>
+                                    </list-property>
+                                </extended-item>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <label id="529">
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">true</expression>
+                </structure>
+            </list-property>
+            <text-property name="text">// CSV Data</text-property>
+        </label>
+        <table name="csvData" id="680">
+            <property name="dataSet">DevicesStatDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">device_name</property>
+                    <text-property name="displayName">Device Name</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["device_name"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">device_openings</property>
+                    <text-property name="displayName">Openings Count</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["device_openings"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">device_clicks</property>
+                    <text-property name="displayName">Clicks Count</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["device_clicks"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <column id="693"/>
+            <column id="694"/>
+            <column id="695"/>
+            <header>
+                <row id="681">
+                    <cell id="682">
+                        <property name="textAlign">left</property>
+                        <text-data id="706">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.device_name', reportContext.getLocale())</expression>
+                            <property name="contentType">auto</property>
+                        </text-data>
+                    </cell>
+                    <cell id="683">
+                        <property name="textAlign">left</property>
+                        <text-data id="707">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.openings', reportContext.getLocale())</expression>
+                            <property name="contentType">auto</property>
+                        </text-data>
+                    </cell>
+                    <cell id="684">
+                        <property name="textAlign">left</property>
+                        <text-data id="708">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.Clicks', reportContext.getLocale())</expression>
+                            <property name="contentType">auto</property>
+                        </text-data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="685">
+                    <cell id="686">
+                        <data id="697">
+                            <property name="resultSetColumn">device_name</property>
+                        </data>
+                    </cell>
+                    <cell id="687">
+                        <data id="699">
+                            <structure name="numberFormat">
+                                <property name="category">Fixed</property>
+                                <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                            </structure>
+                            <property name="resultSetColumn">device_openings</property>
+                        </data>
+                    </cell>
+                    <cell id="688">
+                        <data id="701">
+                            <structure name="numberFormat">
+                                <property name="category">Fixed</property>
+                                <property name="pattern">#,##0{RoundingMode=HALF_UP}</property>
+                            </structure>
+                            <property name="resultSetColumn">device_clicks</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

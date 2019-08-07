@@ -1,0 +1,10 @@
+td.drilldown a, td.drilldown a:visited {
+	color:black;
+	font-weight:bold;
+	
+}
+
+th.drilldown a:hover {
+	font-weight:bold;
+	text-decoration: underline;
+}

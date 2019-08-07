@@ -1,0 +1,7 @@
+<HelpBalloon>
+	<title>Text recognition character</title>
+	<content><![CDATA[In case your recipient data contain the separator specified, it must be identified by a different character. If the separator, for instance, is a comma, and if recipient data also contain commas, the commas used as separators must be identified separately before import.<br>
+Let us take an example. Suppose the csv file contains Towns which are only differentiated by a region name, like Neustadt; Weinstraße or Neustadt; Aisch. If your spreadsheet software is Microsoft Excel, saving data as a csv file will cause semicolons to be inserted as separators. In order to differentiate the separators from the semicolons contained in the text, Excel automatically inserts quotation marks (") as a text recognition character when saving data as a csv file.<br>
+Therefore, if you use Excel as your import source software, we recommend selecting quotation marks as text recognition character. This causes the semicolons to be contained in the town names to not be used as database separators: Neustadt ";" Weinstraße, Neustadt ";" Aisch.<br>
+Please note: This example describes a csv file created by Microsoft Excel. If you use a different spreadsheet software, we recommend checking your software manual to find out which separators your program uses.]]></content>
+</HelpBalloon>

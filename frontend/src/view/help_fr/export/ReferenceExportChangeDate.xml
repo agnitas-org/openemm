@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Changement dans le champ change_date</title>
+	<content><![CDATA[L'exportation comprendra toutes les donn&eacute;es pour lesquelles la date dans la zone change_date correspond &agrave; la p&eacute;riode d&eacute;finie. Pour r&eacute;gler le jour courant, vous devez choisir "0".]]></content>
+</HelpBalloon>

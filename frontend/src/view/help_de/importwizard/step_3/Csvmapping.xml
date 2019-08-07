@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Zuweisung der Spalten</title>
+	<content><![CDATA[Auf der n&auml;chsten Seite k&ouml;nnen Sie den Spalten in der CSV-Datei die entsprechenden Datenbank-Spalten zuweisen. Wenn Sie die Spalten in der CSV-Datei genau so benannt haben, wie die Spalten in Ihrer Datenbank, werden die beiden Spalten bereits automatisch einander zugeordnet. Andernfalls k&ouml;nnen Sie die korrekte Zuordnung &uuml;ber die Auswahllisten vornehmen. Spalten, die Sie nicht importieren m&ouml;chten, k&ouml;nnen Sie hier ebenfalls kenntlich machen.]]></content>
+</HelpBalloon>

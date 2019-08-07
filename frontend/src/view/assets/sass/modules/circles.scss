@@ -1,0 +1,107 @@
+/*doc
+---
+title: Circles
+name: circles
+category: Components - Circles
+---
+
+Basic circles are tiny objects usually only used to display a count.
+They are however very flexible.
+
+*/
+
+/*doc
+---
+title: Basic example
+name: circles_01_example
+parent: circles
+---
+
+```htmlexample
+<span class="circle">14</span>
+```
+
+Badges can also contain text.
+Text inside has to be wrapped inside `.text`.
+
+```htmlexample
+<span class="circle">
+  <span class="text">14</span>
+</span>
+```
+
+Circle can be red if you add circle-red class.
+
+```htmlexample
+<span class="circle circle-red">
+  <span class="text">14</span>
+</span>
+```
+
+*/
+
+/*doc
+---
+title: States
+name: badges_03_states
+parent: badges
+---
+
+The usual states are supported as `.badge-success`, `.badge-info`, `.badge-warning` and `.badge-alert` respectively.
+
+Additionally `.badge-primary` and `.badge-highlighted` is available for special occasions.
+
+```htmlexample
+<span class="badge">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-success">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-info">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-warning">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-alert">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-primary">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-highlighted">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-lab">
+    <span class="text">14</span>
+</span>
+```
+*/
+
+.circle {
+  display: inline-block;
+  line-height: inherit;
+  color: #fff;
+  border-radius: 50%;
+  font-size: $fs-xtiny;
+  padding: 2px;
+  font-weight: 600;
+  width: 20px;
+  height: 20px;
+  margin-left: 5px;
+
+  .text {
+    display: inline-block;
+  }
+}
+
+.circle-red {
+  @extend .circle;
+  background-color: red;
+}
+
+.circle + .circle {
+  margin-left: 5px;
+}
+

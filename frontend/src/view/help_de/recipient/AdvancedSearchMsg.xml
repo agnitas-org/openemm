@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Erweiterte Suche]]></title>
+	<content><![CDATA[In zwei Auswahllisten stellen Sie das Feld und den Vergleichsoperator ein. Im Eingabefeld dahinter tragen Sie den Vergleichswert ein. Alle drei Werte zusammen ergeben eine Suchregel. Ist die erste Suchregel fertig, wenden Sie die Regel mit der Schaltfl&auml;che Hinzuf&uuml;gen an. Der E-Marketing Manager zeigt dann eine neue Empf&auml;ngerliste an, die nur noch Eintr&auml;ge enth&auml;lt, die der Suchregel entsprechen. Es ist auch m&ouml;glich, durch die Eingabe von mehreren Suchregeln, eine kombinierte Abfrage zu starten - z.B. alle E-Mail-Adressen mit der Endung ".de" und der Anrede "Herr".]]></content>
+</HelpBalloon>

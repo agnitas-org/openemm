@@ -1,0 +1,181 @@
+.l-menu {
+  width: 240px;
+  height: 100%;
+
+  background-color: lighten($c-gray-11, 5%);
+  border-right: 1px solid $c-gray-20;
+
+  &.scrollable {
+    position: relative;
+
+    @media (min-width: $screen-md-min) {
+      position: fixed;
+      left: 0; top: 60px;
+      z-index: 1001;
+    }
+  }
+
+  // there seems to be a bug related to perfectscrollbar and position: fixed, which would prevent us from being unable to scroll completely to the bottom, this pseudo-element is there to ensure the calculations take the top offset of our menu into account and leaves some space
+  &:after {
+    content: "";
+    display: block;
+    height: 80px;
+  }
+
+  > li + li {
+    border-top: 1px solid $c-gray-20;
+  }
+
+  .menu-header + li {
+    border-top: 0;
+  }
+
+  .session-timer {
+    padding: 12px 30px 12px 10px;
+    color: grey;
+  }
+
+  .open > .menu-item {
+    background-color: $c-blue-27;
+    color: $c-white;
+
+    &.active {
+      font-weight: $fw-bold;
+    }
+  }
+
+  .account-data {
+    padding-bottom: 15px;
+
+    p {
+      display: block;
+      line-height: 1.5em;
+    }
+
+    .btn {
+      margin-left: 10px;
+      color: $c-black-82;
+      border-color: $c-gray-27;
+
+      &:hover {
+        color: $c-blue-27;
+        border-color: $c-blue-27;
+      }
+
+      &:focus, &:active {
+        color: $c-white;
+        border-color: transparent;
+        background-color: $c-blue-27;
+      }
+    }
+  }
+
+  .version-sign {
+    font-size: $fs-small;
+    padding: 15px;
+
+  }
+
+
+  .dropdown-menu {
+    float: none;
+    position: static;
+    @include box-shadow(none);
+
+    width: 100%;
+    padding-bottom: 10px;
+    font-size: $fs-small;
+    line-height: 1;
+
+    border-radius: 0;
+
+    background-color: $c-gray-11;
+
+    .menu-item {
+      padding-left: 25px;
+      color: $c-black-82;
+      font-size: $fs-small;
+
+      &:hover,
+      &:focus {
+        background-color: darken($c-gray-11, 2%);
+
+        &:before {
+          position: absolute;
+          content: "";
+          top: 50%;
+          left: 15px;
+          height: 13px;
+          margin-top: -6px;
+          width: 2px;
+          background-color: $c-blue-27;
+          font-weight: $fw-bold;
+        }
+      }
+
+      &.active {
+        background-color: darken($c-gray-11, 5%);
+        font-weight: $fw-bold;
+
+        &:before {
+          position: absolute;
+          content: "";
+          top: 50%;
+          left: 15px;
+          height: 13px;
+          margin-top: -6px;
+          width: 2px;
+          background-color: $c-blue-27;
+          font-weight: $fw-bold;
+        }
+      }
+    }
+
+  }
+
+}
+
+.menu-item {
+  position: relative;
+  display: block;
+  padding: 12px 10px;
+  padding-right: 30px;
+
+  font-size: $fs-regular;
+  line-height: 1;
+  color: $c-black-82;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.active {
+    background-color: $c-blue-27;
+    color: $c-white;
+  }
+
+  &.active {
+    font-weight: $fw-bold;
+  }
+
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+
+    @include translate(0, -50%);
+  }
+}
+
+.menu-item-logo {
+  width: 20px;
+  font-size: $fs-regular;
+  line-height: 1;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.menu-item-text {
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+}

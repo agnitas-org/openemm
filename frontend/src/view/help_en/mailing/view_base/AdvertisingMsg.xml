@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Advertising]]></title>
+	<content><![CDATA[Mailings are marked as advertising by default, and users with tracking veto are tracked anonymously. You may want to track users individually despite their veto for certain mailings like transaction mails because you may need these data according to article 21 section 1 of EU GDPR for the establishment, exercise or defense of legal claims. In this case deactivate the switch. ]]></content>
+</HelpBalloon>

@@ -1,0 +1,21 @@
+package com.agnitas.emm.core.logon.web;
+
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+
+import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+
+@Controller
+public class LogonControllerOpenemm extends LogonControllerBasic {
+    @SuppressWarnings("unused")
+	private static final Logger logger = Logger.getLogger(LogonControllerOpenemm.class);
+
+    public LogonControllerOpenemm(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService) {
+    	super(logonService, loginTrackService, hostAuthenticationService, webStorage, configService, userActivityLogService);
+    }
+}

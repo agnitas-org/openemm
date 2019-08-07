@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Update duplicates</title>
+	<content><![CDATA[If more than one duplicate exists in the database, by default only the first duplicate found is updated. If you want to have all duplicates updated please check this box.]]></content>
+</HelpBalloon>

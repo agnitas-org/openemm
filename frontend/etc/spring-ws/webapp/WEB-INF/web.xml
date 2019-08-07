@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+	xmlns="http://java.sun.com/xml/ns/javaee"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+   version="2.5">
+   
+	<display-name>Webservice</display-name>
+
+    <!-- Spring context -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/applicationContext*.xml /WEB-INF/dataAccessContext.xml</param-value>
+    </context-param>
+
+
+    <!-- Filters and Mappings (ordered by execution) -->
+  	<!-- HTTP Security Header -->
+	<filter>
+		<filter-name>HttpSecurityHeaderFilter</filter-name>
+		<filter-class>com.agnitas.web.filter.HttpSecurityHeaderFilter</filter-class>
+		<init-param>
+		    <param-name>hsts.enable</param-name>
+		    <param-value>true</param-value>
+		</init-param>
+		<init-param>
+		    <param-name>hsts.maxAge</param-name>
+		    <param-value>15768000</param-value>	<!-- 6 month -->
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>HttpSecurityHeaderFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+  
+    <!--  Listeners -->
+
+    <!--  load Spring applicationContext -->
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    
+    <!--
+		Listener to initialize the backend datasource
+		Note: This listener requires that Springs ContextLoaderListener is loaded before this listener!
+	-->
+    <listener>
+		<listener-class>org.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
+	</listener>
+
+
+    <!--  EMM Servlets and Mappings -->
+
+    <!--  Spring WS servlet -->
+    <servlet>
+	<servlet-name>spring-ws</servlet-name>
+	<servlet-class>org.springframework.ws.transport.http.MessageDispatcherServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>spring-ws</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+	<!-- listener for generation messages property-files from database -->
+	<listener>
+		<listener-class>com.agnitas.messages.I18NContextListenerForWebservice</listener-class>
+	</listener>
+
+	<security-constraint>
+	    <web-resource-collection>
+	    	<web-resource-name>Secured HTTP-methods</web-resource-name>
+	        <url-pattern>/*</url-pattern>
+	    </web-resource-collection>
+	    <user-data-constraint>
+	        <transport-guarantee>NONE</transport-guarantee>
+	    </user-data-constraint>
+	</security-constraint>
+</web-app>

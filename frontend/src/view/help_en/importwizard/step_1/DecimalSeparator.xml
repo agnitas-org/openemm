@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Import of numerical data</title>
+	<content><![CDATA[Depending on the used decimal delimiter in your CSV files numerical values can be interpreted differently.]]></content>
+</HelpBalloon>

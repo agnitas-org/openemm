@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title>Inhalt</title>
+	<content><![CDATA[Das große Eingabefeld nimmt den Text f&uuml;r die E-Mail auf, zuerst f&uuml;r die HTML-Version (falls Sie nicht Text unter Format angegeben haben) und dann f&uuml;r die Text-Version. Sie k&ouml;nnen den gew&uuml;nschten Text direkt eintippen oder &uuml;ber die Zwischenablage von Windows, aus einem anderen Programm kopieren. Klicken Sie dann auf Hinzuf&uuml;gen.
+Bitte beachten Sie: Verwenden Sie als externen Editor ein ASCII-f&auml;higes Programm wie Notepad, nicht Word. Die meisten Textverarbeitungsprogramme (z. B. Word) verwenden eigene Formatierungen f&uuml;r spezielle Schriftzeichen wie z. B. Ligaturen oder Satzzeichen. Dann kann es bei der Darstellung der Texte im Newsletter zu Fehlern kommen. Diese vermeiden Sie, wenn Sie die Dateien mit der Endung .txt in einem ASCII-f&auml;higen Editor (z. B. Notepad) erstellen. Dasselbe gilt auch f&uuml;r die HTML-Textbausteine, nur dass Sie HTML-Quellcode statt normalem Text kopieren.]]></content>
+</HelpBalloon>

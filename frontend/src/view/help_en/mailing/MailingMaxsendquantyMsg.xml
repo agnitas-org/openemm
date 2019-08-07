@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Maxnumber of recipients]]></title>
+	<content><![CDATA[Here you can define the maximum number of recipients to whom the mailing should be sent. Value "0" means unlimited. The selection of recipients of the mailing list is random, whereby admin and test recipients are generally not included.]]></content>
+</HelpBalloon>

@@ -1,0 +1,11 @@
+<HelpBalloon>
+	<title><![CDATA[Followup Mailing - Empfänger auswählen]]></title>
+	<content><![CDATA[Wenn Sie ein Followup Mailing versenden möchten, müssen Sie zunächst definieren an welchen Empfängerkreis dieses versendet werden soll. Hier gibt es vier Ausprägungen, zwischen denen Sie sich im Pulldown-Menü entscheiden können:
+	<ul>
+		<li>für Nichtöffner</li>
+		<li>für Öffner</li>
+		<li>für Nichtklicker</li>
+		<li>für Anklicker</li>
+	</ul>
+	So können Sie gezielt Empfänger mit einem bestimmten Verhalten durch Zustellung eines Nachfass-Mailings anschreiben.]]></content>
+</HelpBalloon>

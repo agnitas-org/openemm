@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title><![CDATA[Media-Types]]></title>
+	<content><![CDATA[E-Marketing Manager can do more than just send e-mails: it also sends printed letters, faxes, or even
+text or multi-media messages to mobile phones. The check boxes against each Media type let you select what type of message the system should send. Please note that in each case, the relevant datamust be available in the recipient's profile, i.e. the database must contain the street address, the mobile phone number etc.]]></content>
+</HelpBalloon>

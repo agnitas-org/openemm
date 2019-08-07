@@ -1,0 +1,712 @@
+/*doc
+---
+title: Tiles
+name: tiles
+category: Components - Tiles
+---
+
+Tiles are major building blocks and the main element containing .
+In principal they are made up of a header, content and an optional footer.
+
+The header supports various specific elements that will be discussed in a dedicated section below.
+
+The basic structure is as follows:
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">...</div>
+    <div class="tile-content">...</div>
+    <div class="tile-footer">...</div>
+</div>
+```
+
+*/
+
+/*doc
+---
+title: Full Example
+name: tiles_01_example
+parent: tiles
+---
+
+This is a full example showcasing what eventually makes up a complete tile.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h2 class="headline">Headline</h2>
+        <ul class="tile-header-nav">
+            <li class="active">
+                <a href="#">These</a>
+            </li>
+            <li>
+                <a href="#"><i class="icon icon-arrow-down"></i> are</a>
+            </li>
+            <li>
+                <a href="#"><i class="icon icon-arrow-up"></i> tabs</a>
+            </li>
+        </ul>
+        <ul class="tile-header-actions">
+            <li>
+              <button class="btn btn-secondary btn-regular">action</button>
+            </li>
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-question-circle"></i>
+                <span class="text">Help</span>
+              </a>
+            </li>
+        </ul>
+    </div>
+    <div class="tile-content tile-content-forms">
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">Label</label>
+            </div>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">Label</label>
+            </div>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="tile-footer">
+        <div class="btn-group">
+            <button class="btn btn-regular">Cancel</button>
+            <button class="btn btn-regular btn-primary">Save</button>
+        </div>
+    </div>
+</div>
+```
+
+*/
+
+
+/*doc
+---
+title: Tile Elements
+name: tiles_02_elements
+parent: tiles
+---
+*/
+
+/*doc
+---
+title: Tile Header
+name: tiles_03_header
+parent: tiles_02_elements
+---
+
+The tile header is the most complex component of a tile.
+
+It consists of 3 main areas: a headline, a nav / tab area and additional actions.
+
+The headline is always at the left, followed by the nav, while the actions are right aligned.
+*/
+
+/*doc
+---
+title: Headline
+name: tiles_04_headline
+parent: tiles_03_header
+---
+
+The headline is usually any heading element like `<h1>, <h2>, <h3>, <h4> ...` with the class `.headline`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h2 class="headline">Headline</h2>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Nav / Tabs
+name: tiles_05_nav
+parent: tiles_03_header
+---
+
+The nav / tab area is a `<ul>` with class `.tile-header-nav` and should only contain `<a>`, each with their own `<li>`.
+
+The `<li>` elements support `.active` to denote the currently active item.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <ul class="tile-header-nav">
+            <li class="active">
+                <a href="">tab 1</a>
+            </li>
+            <li>
+                <a href="">tab 2</a>
+            </li>
+            <li>
+                <a href="">tab 3</a>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Actions
+name: tiles_06_actions
+parent: tiles_03_header
+---
+
+The action area is the most flexible and supports a wide range of elements.
+
+Each element should be wrapped in their own `<li>` with the exception of the divider element, which is a `<li>` with class `.divider`.
+
+`a.link` for text links, any `.btn` and their respective size modifiers, full height `.dropdown`s and also `.pagination` with its respective size modifiers.
+
+##### Divider, text link, buttons, dropdown
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <ul class="tile-header-actions">
+            <li>
+              <a href="#" class="link">
+                <i class="icon icon-arrow-left"></i>
+                <span class="text">Textlinks</span>
+              </a>
+            </li>
+            <li class="divider"></li>
+            <li>
+              <button class="btn btn-secondary" type="button">default</button>
+            </li>
+            <li>
+              <button class="btn btn-regular btn-secondary" type="button">regular</button>
+            </li>
+            <li>
+              <button class="btn btn-large btn-secondary" type="button">large</button>
+            </li>
+
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="icon icon-eye"></i>
+                    <span class="text">Dropdown</span>
+                    <i class="icon icon-caret-down"></i>
+                </a>
+
+                <ul class="dropdown-menu">
+                    <li class="dropdown-header">Dropdown header</li>
+                    <li>
+                        <a tabindex="-1" href="#">Link</a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+
+##### Pagination
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <ul class="tile-header-actions">
+            <li>
+                <ul class="pagination">
+                    <li><a href="#"><i class="icon icon-angle-left"></i> Previous</a></li>
+                    <li><a href="#">1</a></li>
+                    <li><a href="#">2</a></li>
+                    <li class="active"><a href="#">3</a></li>
+                    <li><a href="#">4</a></li>
+                    <li class="disabled"><a href="#">5</a></li>
+                    <li><a href="#">Next <i class="icon icon-angle-right"></i></a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile Content
+name: tiles_07_content
+parent: tiles_02_elements
+---
+
+`.tile-content` is the main body of a `.tile`. Anything inside here goes.
+
+Supports `.tile-content-forms` either as a separate nested element or a modifier to provide padding to the body.
+
+Also available is a `.tile-separator` element that can be placed inside `.tile-content` to divide content visually, works regardless of whether or not `.tile-content-forms` is used.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-content tile-content-forms">
+        <p>just some text content</p>
+        <div class="tile-separator"></div>
+        <p>just some text content</p>
+    </div>
+</div>
+```
+*/
+
+
+
+/*doc
+---
+title: Tile Footer
+name: tiles_08_footer
+parent: tiles_02_elements
+---
+
+The `.tile-footer` is mostly used for buttons, but as with the content anything goes.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-footer">
+        <button type="button" class="btn btn-regular">button</button>
+        <button type="button" class="btn btn-regular btn-primary">button</button>
+    </div>
+</div>
+```
+
+`.btn`s in a `.btn-group` are aligned to the right.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-footer">
+        <div class="btn-group">
+          <button type="button" class="btn btn-regular">button</button>
+          <button type="button" class="btn btn-regular btn-primary">button</button>
+        </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile Notification
+name: tiles_09_notification
+parent: tiles_02_elements
+---
+
+The `.tile-notification` can be used for additional text content to provide context.
+
+It lives on the same nesting level as `.tile-header`, `.tile-content` and `.tile-footer`.
+While it does not matter after which element it appears, it is usually placed after the `.tile-header`.
+
+It supports the usual states as `.tile-notification-success`, `.tile-notification-info`, `.tile-notification-warning` and `.tile-notification-alert`.
+
+The content can be anything.
+
+
+```htmlexample
+<div class="tile">
+    <div class="tile-notification">
+        <p>There's something you should read here.</p>
+    </div>
+</div>
+
+<div class="tile">
+    <div class="tile-notification tile-notification-success">
+        <p><i class="icon icon-state-success"></i> There's something you should read here.</p>
+    </div>
+</div>
+
+<div class="tile">
+    <div class="tile-notification tile-notification-info">
+        <p><i class="icon icon-state-info"></i> There's something you should read here.</p>
+    </div>
+</div>
+
+<div class="tile">
+    <div class="tile-notification tile-notification-warning">
+        <p><i class="icon icon-state-warning"></i> There's something you should read here.</p>
+    </div>
+</div>
+
+<div class="tile">
+    <div class="tile-notification tile-notification-alert">
+        <p><i class="icon icon-state-alert"></i> There's something you should read here.</p>
+    </div>
+</div>
+```
+*/
+
+
+.tile {
+  background-color: $c-white;
+
+  margin-bottom: 10px;
+
+  @include shadow-variant(regular);
+}
+
+.tile-header {
+  height: 50px;
+  padding: 0 0 0 15px;
+  position: relative;
+
+  background-color: $c-white;
+
+  @include clearfix();
+
+  .headline {
+    float: left;
+    margin: 0;
+    margin-right: 20px;
+    line-height: 22px;
+    margin-top: 14px;
+    font-size: $fs-xlarge;
+    font-weight: $fw-semi;
+    color: $c-black-85;
+
+    &.ellipsis {
+      float: none;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+    }
+
+    a {
+      font-size: $fs-xlarge;
+      font-weight: $fw-semi;
+      color: $c-black-85;
+      line-height: 20px;
+    }
+
+    .select2-container {
+      margin-top: -7px;
+
+      .select2-choice {
+        height: 36px;
+        line-height: 36px;
+        font-size: $fs-xlarge;
+        font-weight: $fw-semi;
+        color: $c-black-85;
+      }
+    }
+
+    .badge {
+      vertical-align: middle;
+    }
+  }
+
+  .form-control {
+    margin-top: 10px;
+  }
+
+  .tile-toggle {
+    color: $c-gray-33;
+  }
+
+  .btn {
+    margin-top: 15px;
+  }
+
+  .btn-regular {
+    margin-top: 10px;
+  }
+
+  .btn-large {
+    margin-top: 5px;
+  }
+
+  .dropdown-toggle {
+    display: block;
+    padding: 15px 10px;
+
+    color: $c-gray-55;
+  }
+
+  .pagination {
+    margin-top: 10px;
+  }
+
+  .pagination-small {
+    margin-top: 15px;
+  }
+
+  .pagination-large {
+    margin-top: 5px;
+  }
+
+  .link {
+    display: block;
+    line-height: 20px;
+    margin-top: 15px;
+    color: $c-gray-55;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: $c-blue-27;
+    }
+  }
+
+  .dropdown {
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $c-blue-27;
+
+      .dropdown-toggle {
+        color: $c-white;
+      }
+    }
+  }
+
+  .status {
+    padding: 15px;
+    display: block;
+    line-height: 20px;
+    color: $c-gray-55;
+  }
+
+  .dropdown.open {
+    background-color: $c-blue-27;
+
+    .dropdown-toggle {
+      color: $c-white;
+    }
+  }
+
+  .segmented-control {
+    padding: 10px;
+
+    .btn {
+      margin-top: 0;
+    }
+  }
+
+  .tab {
+
+    a {
+      display: inline-block;
+      padding: 15px;
+
+      color: $c-gray-55;
+
+      &:hover {
+        color: $c-blue-27;
+      }
+    }
+
+    &.active {
+      border-left: 1px solid $c-gray-20;
+      border-right: 1px solid $c-gray-20;
+      border-bottom: 1px solid #fff;
+      height: calc(100% + 1px);
+
+      a {
+        color: $c-blue-27;
+      }
+    }
+
+
+  }
+
+  .notification {
+    margin-top: 5px;
+
+    .notification-header {
+      padding: 8px 40px 8px 15px;
+
+      .text {
+        color: $c-gray-55;
+      }
+    }
+  }
+
+}
+
+.tile-header-nav, .tile-header-actions {
+  height: 100%;
+
+  > li, .dropdown-toggle {
+    height: 100%;
+  }
+
+  .select {
+    padding: 11px 10px 10px;
+
+    .select2-container {
+      border: none;
+      @include box-shadow(0 0 0 0 transparent);
+    }
+  }
+
+  .control-label {
+    line-height: 50px;
+    padding-top: 0;
+  }
+}
+
+.tile-header-group {
+  border-left: 1px solid $c-gray-11;
+}
+
+.tile-content {
+  border-top: 1px solid $c-gray-20;
+}
+
+.tile-footer {
+  padding: 10px;
+  border-top: 1px solid $c-gray-20;
+
+  @include clearfix();
+
+  .btn-group {
+    text-align: right;
+  }
+}
+
+.tile-notification {
+  padding: 15px 30px;
+  font-size: $fs-regular;
+  border-top: 1px solid $c-gray-20;
+}
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .tile-notification-#{$state} {
+    color: $color;
+  }
+}
+
+
+.tile-header-actions {
+  float: right;
+
+  > li {
+    float: left;
+  }
+
+  > li + li {
+    margin-left: 10px;
+  }
+
+  > .divider {
+    width: 1px;
+    overflow: hidden;
+    background-color: $c-gray-11;
+  }
+
+  > li:last-child:not(.status) {
+    .btn, button[type="button"], .link, .pagination {
+      margin-right: 10px;
+    }
+    .form-control {
+      margin-right: 10px;
+      width: calc(100% - 10px);
+    }
+  }
+
+}
+
+.tile-header-nav {
+  float: left;
+
+  > li {
+    float: left;
+
+    + li {
+      margin-left: 20px;
+    }
+
+    > a {
+      display: block;
+      padding: 15px 0;
+      line-height: 18px;
+      color: $c-gray-55;
+
+      border-bottom: 2px solid $c-transparent;
+
+      @include transition(all .25s ease-in-out);
+    }
+
+    &:hover,
+    &:active,
+    &:focus,
+    &.active {
+      > a {
+        color: $c-blue-27;
+        border-bottom-color: $c-blue-27;
+      }
+    }
+
+    &.disabled {
+      > a {
+        pointer-events: none;
+        cursor: default !important;
+        color: $c-gray-33;
+      }
+
+      &:hover,
+      &:active,
+      &:focus {
+        > a {
+          border-bottom-color: $c-transparent;
+        }
+      }
+
+      &.active {
+        > a {
+          border-bottom-color: $c-gray-33;
+        }
+      }
+    }
+  }
+
+}
+
+.tile-separator {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 20px;
+
+  background-color: $c-gray-11;
+  height: 1px;
+  font-size: 1px;
+  line-height: 1px;
+}
+
+.tile-content-forms {
+  padding: 30px;
+
+  background-color: $c-white;
+
+  .empty-list {
+    margin: 0;
+  }
+
+  .tile-separator {
+    margin-right: -30px;
+    margin-left: -30px;
+  }
+}
+
+.tile-content-padded {
+  padding: 15px;
+}
+
+.l-tile-recipient-info-box {
+  margin: 10px;
+  position: relative;
+  border: 1px solid #cccdcd;
+  color: #338dc7;
+  padding: 15px 30px;
+  font-size: 14px;
+}

@@ -1,0 +1,38 @@
+.logo-tile {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 1px;
+
+  padding: 15px 25px;
+
+  font-size: 20px;
+  line-height: 1.33;
+
+  @include user-select(none);
+
+  @include clearfix();
+
+  .logo, .text {
+    float: left;
+  }
+
+  .logo {
+    height: auto;
+    width: 55px;
+    background-color: $c-transparent;
+  }
+
+  .text {
+    margin-top: 27px;
+    margin-left: 20px;
+  }
+}
+
+@each $conf in $preview-clients {
+  $client: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .logo-tile-#{$client} {
+    @include logo-tile-variant($c-white, $color);
+  }
+}

@@ -1,0 +1,25 @@
+img {
+    display: block;
+    border: 0;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}
+
+.div-container {
+    width: 100%;
+    font-size: 12px;
+    line-height: 140%;
+    text-align: left;
+}
+
+.agn_table_row {
+    width: 100%;
+    max-width: 100%;
+}
+
+.email-container {
+    width: 100%;
+    margin: 0;
+    max-width: 100%;
+}

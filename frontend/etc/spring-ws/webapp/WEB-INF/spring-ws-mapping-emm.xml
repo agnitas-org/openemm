@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+	<bean id="comEndpointMap" class="org.springframework.beans.factory.config.MapFactoryBean" parent="endpointMap">
+		<property name="sourceMap">
+			<map merge="true">
+				<entry 
+					key="{http://agnitas.com/ws/schemas}SetSubscriberBindingWithActionRequest" value-ref="setSubscriberBindingWithActionEndpoint">
+				</entry>
+				
+				<entry 
+					key="{http://agnitas.com/ws/schemas}MailingSummaryStatisticJobRequest" value-ref="mailingSummaryStatisticJobEndpoint">
+				</entry>
+				<entry 
+					key="{http://agnitas.com/ws/schemas}MailingSummaryStatisticResultRequest" value-ref="mailingSummaryStatisticResultEndpoint">
+				</entry>
+				<entry 
+					key="{http://agnitas.com/ws/schemas}GetMailingContentRequest" value-ref="getMailingContentEndpoint">
+				</entry>
+				<entry 
+					key="{http://agnitas.com/ws/schemas}CreateDataSourceRequest" value-ref="createDataSourceEndpoint">
+				</entry>
+				<entry
+					key="{http://agnitas.com/ws/schemas}SendServiceMailRequest" value-ref="sendServiceMailEndpoint">
+				</entry>
+				<entry
+					key="{http://agnitas.com/ws/schemas}UpdateMailingContentRequest" value-ref="updateMailingContentEndpoint">
+				</entry>
+				
+				<entry
+					key="{http://agnitas.com/ws/schemas}UpdateTargetGroupRequest" value-ref="updateTargetGroupEndpoint">
+				</entry>
+                <entry
+                    key="{http://agnitas.com/ws/schemas}CopyMailingRequest" value-ref="copyMailingEndpoint">
+                </entry>
+				<entry
+					key="{http://agnitas.com/ws/schemas}AddTargetGroupRequest" value-ref="addTargetGroupEndpoint">
+				</entry>
+				<entry
+					key="{http://agnitas.com/ws/schemas}GetFullviewUrlRequest" value-ref="getFullviewUrlEndpoint">
+				</entry>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="comBindingExceptionResolver"
+		class="org.agnitas.emm.springws.exceptionresolver.binding.BindingExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+				<ref bean="setSubscriberBindingWithActionEndpoint" />
+			</set>
+		</property>
+	</bean>
+	
+	
+
+    <bean id="configurableCommonExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.ConfigurableCommonExceptionResolver">
+        <constructor-arg>
+            <map>
+                <entry key="com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException"
+					   value=""/>
+                <entry key="org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException"
+                       value="Unknown target group ID"/>
+                <entry key="com.agnitas.emm.core.target.exception.EqlFormatException"
+                       value="Invalid EQL."/>
+				<entry key="org.agnitas.emm.core.mailing.exception.UnknownMailingIdException"
+					   value="Unknown mailing id."/>
+            </map>
+        </constructor-arg>
+        <property name="mappedEndpoints">
+            <set>
+                <ref bean="updateTargetGroupEndpoint"/>
+                <ref bean="copyMailingEndpoint"/>
+				<ref bean="addTargetGroupEndpoint"/>
+				<ref bean="getFullviewUrlEndpoint" />
+            </set>
+        </property>
+    </bean>
+	
+	<bean id="mailingSummaryStatExceptionResolver"
+		class="com.agnitas.emm.core.stat.service.impl.MailingSummaryStatExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+				<ref bean="mailingSummaryStatisticJobEndpoint" />
+				<ref bean="mailingSummaryStatisticResultEndpoint" />
+			</set>
+		</property>
+	</bean>
+	
+	<bean id="dataSourceExceptionResolver"
+		class="com.agnitas.service.DataSourceExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+				<ref bean="createDataSourceEndpoint" />
+			</set>
+		</property>
+	</bean>
+
+	<bean id="sendServiceMailExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.SendServiceMailExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+				<ref bean="sendServiceMailEndpoint" />
+			</set>
+		</property>
+	</bean>
+
+	<bean id="mailingComponentExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.MailingComponentExceptionResolver">
+		<property name="mappedEndpoints">
+			<set>
+				<ref bean="updateMailingContentEndpoint" />
+			</set>
+		</property>
+	</bean>
+
+
+
+	<!-- Endpoints -->
+	<bean id="setSubscriberBindingWithActionEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.SetSubscriberBindingWithActionEndpoint" />
+	
+	
+	
+	<bean id="mailingSummaryStatisticJobEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.MailingSummaryStatisticJobEndpoint" >
+		<property name="mailingSummaryStatisticJobService" ref="MailingSummaryStatisticJobService" />
+		<property name="comObjectFactory" ref="comObjectFactory" />
+	</bean>
+	
+	<bean id="mailingSummaryStatisticResultEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.MailingSummaryStatisticResultEndpoint" >
+		<property name="mailingSummaryStatisticJobService" ref="MailingSummaryStatisticJobService" />
+		<property name="comObjectFactory" ref="comObjectFactory" />
+	</bean>
+	
+	<bean id="getMailingContentEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.GetMailingContentEndpoint" >
+		<property name="comObjectFactory" ref="comObjectFactory" />
+		<property name="mailingService" ref="MailingService" />
+	</bean>
+	
+	<bean id="createDataSourceEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.CreateDataSourceEndpoint" >
+		<property name="comObjectFactory" ref="comObjectFactory" />
+		<property name="dataSourceService" ref="dataSourceService" />
+		<property name="configService" ref="ConfigService" />
+	</bean>
+	
+	<bean id="sendServiceMailEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.SendServiceMailEndpoint">
+		<property name="objectFactory" ref="comObjectFactory" />
+		<property name="sendServiceMailService" ref="SendServiceMailService" />
+		<property name="configService" ref="ConfigService" />
+	</bean>
+	
+	<bean id="updateMailingContentEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.UpdateMailingContentEndpoint" />
+
+	
+
+    <bean id="updateTargetGroupEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.UpdateTargetGroupEndpoint">
+        <property name="objectFactory" ref="comObjectFactory"/>
+    </bean>
+
+    <bean id="copyMailingEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.CopyMailingEndpoint">
+        <property name="objectFactory" ref="comObjectFactory"/>
+    </bean>
+
+	<bean id="addTargetGroupEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.AddTargetGroupEndpoint">
+		<property name="objectFactory" ref="comObjectFactory"/>
+	</bean>
+	
+	<bean id="getFullviewUrlEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.GetFullviewUrlEndpoint">
+		<property name="objectFactory" ref="comObjectFactory"/>
+		<property name="fullviewService" ref="FullviewService" />
+	</bean>
+	
+
+</beans>

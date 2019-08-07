@@ -1,0 +1,48 @@
+.segmented-control {
+
+  input[type="checkbox"], input[type="radio"] {
+    clip: rect(0,0,0,0);
+    width: 0 ;
+    height: 0;
+    overflow: hidden;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+  }
+
+  label {
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+
+  .btn {
+    @include button-size(5px, 10px, 13px, 18px);
+    @include button-variant($c-gray-55, $c-transparent, $c-gray-11);
+
+    margin-right: -5px !important;
+    border-radius: 0;
+  }
+
+  .desc {
+    font-weight: 400;
+    display: inline-block;
+    margin-right: 0;
+  }
+
+  label:first-child {
+    .btn {
+      border-radius: 2px 0 0 2px;
+    }
+  }
+
+  label:last-child {
+    .btn {
+      border-radius: 0 2px 2px 0;
+    }
+  }
+
+  input:checked + .btn {
+    @include button-variant($c-white, #707173)
+  }
+
+}

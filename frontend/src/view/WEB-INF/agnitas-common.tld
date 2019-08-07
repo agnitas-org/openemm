@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<taglib xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+        version="2.1">
+
+    <tlib-version>1.0</tlib-version>
+    <short-name>emm</short-name>
+    <uri>https://emm.agnitas.de/jsp/jsp/common</uri>
+
+    <tag>
+        <name>message</name>
+        <tag-class>org.agnitas.emm.extension.taglib.ExtensionI18NTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>plugin</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>key</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <description>
+            Sets the result of a class instantiation in a 'scope'
+        </description>
+        <name>instantiate</name>
+        <tag-class>com.agnitas.taglib.InstantiateTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>
+                Name of the exported scoped variable to hold the value
+                specified in the action. The type of the scoped variable
+                corresponds to a specified class name.
+            </description>
+            <name>var</name>
+            <required>false</required>
+            <rtexprvalue>false</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                The name of a class to instantiate.
+            </description>
+            <name>type</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Target object whose property will be set. Must evaluate to
+                a JavaBeans object with setter property property, or to a
+                java.util.Map object.
+            </description>
+            <name>target</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Name of the property to be set in the target object.
+            </description>
+            <name>property</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Scope for var.
+            </description>
+            <name>scope</name>
+            <required>false</required>
+            <rtexprvalue>false</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>ShowNavigation</name>
+        <tag-class>org.agnitas.taglib.ShowNavigationTag</tag-class>
+        <tei-class>org.agnitas.taglib.ShowNavigationTagExtraInfo</tei-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>navigation</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>highlightKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>prefix</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>plugin</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>extension</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>ShowTable</name>
+        <tag-class>com.agnitas.taglib.ComShowTableTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>id</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>sqlStatement</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>maxRows</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>encodeHtml</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>startOffset</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>int</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>CustomerMatchTarget</name>
+        <tag-class>org.agnitas.taglib.CustomerMatchTargetTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>customerID</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>int</type>
+        </attribute>
+        <attribute>
+            <name>targetID</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>int</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>JspExtensionPoint</name>
+        <tag-class>org.agnitas.emm.extension.taglib.JspExtensionPointTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>plugin</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>point</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>ShowColumnInfo</name>
+        <tag-class>com.agnitas.taglib.ComShowColumnInfoTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>id</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>table</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>hide</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>useCustomSorting</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>CheckLogon</name>
+        <tag-class>org.agnitas.taglib.CheckLogonTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>page</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>Permission</name>
+        <tag-class>org.agnitas.taglib.PermissionTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>token</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will ignore exception throwing.</description>
+            <name>ignoreException</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>workflowParameters</name>
+        <tag-class>org.agnitas.taglib.WorkflowParamsTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>ShowByPermission</name>
+        <tag-class>org.agnitas.taglib.ShowByPermissionTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>token</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will ignore exception throwing.</description>
+            <name>ignoreException</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>HideByPermission</name>
+        <tag-class>org.agnitas.taglib.HideByPermissionTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>token</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will ignore exception throwing.</description>
+            <name>ignoreException</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <description>
+            Formats a date and/or time using the supplied styles and pattern or SimpleDateFormat object
+        </description>
+        <name>formatDate</name>
+        <tag-class>org.agnitas.taglib.FormatDateTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>
+                SimpleDateFormat object to be used to format date.
+            </description>
+            <name>format</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.text.SimpleDateFormat</type>
+        </attribute>
+        <attribute>
+            <description>
+                Date and/or time to be formatted.
+            </description>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Specifies whether the time, the date, or both
+                the time and date components of the given
+                date are to be formatted.
+            </description>
+            <name>type</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Predefined formatting style for dates. Follows
+                the semantics defined in class
+                java.text.DateFormat. Applied only
+                when formatting a date or both a date and
+                time (i.e. if type is missing or is equal to
+                "date" or "both"); ignored otherwise.
+            </description>
+            <name>dateStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Predefined formatting style for times. Follows
+                the semantics defined in class
+                java.text.DateFormat. Applied only
+                when formatting a time or both a date and
+                time (i.e. if type is equal to "time" or "both");
+                ignored otherwise.
+            </description>
+            <name>timeStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Custom formatting style for dates and times.
+            </description>
+            <name>pattern</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Time zone in which to represent the formatted
+                time.
+            </description>
+            <name>timeZone</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Name of the exported scoped variable which
+                stores the formatted result as a String.
+            </description>
+            <name>var</name>
+            <required>false</required>
+            <rtexprvalue>false</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>
+                Scope of var.
+            </description>
+            <name>scope</name>
+            <required>false</required>
+            <rtexprvalue>false</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>include</name>
+        <tag-class>org.agnitas.taglib.IncludeTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>page</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>The boolean attribute determines whether the included resource has its buffer flushed before it is included.</description>
+            <name>flush</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+        </attribute>
+    </tag>
+
+    <function>
+        <description>
+            Escape a string to make it suitable for use in a JS string literal
+        </description>
+        <name>escapeJs</name>
+        <function-class>org.apache.commons.lang.StringEscapeUtils</function-class>
+        <function-signature>java.lang.String escapeJavaScript(java.lang.String)</function-signature>
+        <example>
+            &lt;script type="text/javascript">
+                var foo = '${emm:escapeJs(foo)}';
+                // ...
+            &lt;/script>
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Replace trailing characters with ellipsis when string length exceeds limit.
+        </description>
+        <name>abbreviate</name>
+        <function-class>org.apache.commons.lang.StringUtils</function-class>
+        <function-signature>java.lang.String abbreviate(java.lang.String,int)</function-signature>
+        <example>
+            &lt;span class="title">${emm:abbreviate(title, 10)}&lt;/span>
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Get current time represented by java.util.Date object.
+        </description>
+        <name>now</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>java.util.Date now()</function-signature>
+        <example>
+            &lt;fmt:formatDate var=&quot;currentServerTime&quot; value=&quot;${emm:now()}&quot; pattern=&quot;yyyy-MM-dd&quot;/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Get current time represented by milliseconds count.
+        </description>
+        <name>milliseconds</name>
+        <function-class>java.lang.System</function-class>
+        <function-signature>long currentTimeMillis()</function-signature>
+        <example>
+            &lt;c:url var=&quot;someLink&quot; value=&quot;/image&quot;&gt;
+                &lt;c:param name=&quot;id&quot; value=&quot;${id}&quot;/&gt;
+                &lt;c:param name=&quot;cacheKiller&quot; value=&quot;${emm:milliseconds()}&quot;/&gt;
+            &lt;/c:url&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Check whether passed date is in the past.
+        </description>
+        <name>isPast</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>boolean isPast(java.util.Date)</function-signature>
+        <example>
+            &lt;c:if test=&quot;${emm:isPast(someForm.sendDate)}&quot;&gt;
+                &lt;!-- ... --&gt;
+            &lt;/c:if&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Check whether passed date is in the future.
+        </description>
+        <name>isFuture</name>
+        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-signature>boolean isFuture(java.util.Date)</function-signature>
+        <example>
+            &lt;c:if test=&quot;${emm:isFuture(someForm.sendDate)}&quot;&gt;
+                &lt;!-- ... --&gt;
+            &lt;/c:if&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Join collection items to a string using separator.
+        </description>
+        <name>join</name>
+        <function-class>org.apache.commons.lang.StringUtils</function-class>
+        <function-signature>java.lang.String join(java.util.Collection,java.lang.String)</function-signature>
+        <example>
+            &lt;c:set var=&quot;rowGutters&quot; value=&quot;${emm:join(${gridTemplateForm.rowGutters}, &#39;, &#39;)}&quot;/&gt;
+
+            &lt;script data-initializer=&quot;grid-layout-view&quot; type=&quot;application/json&quot;&gt;
+                {
+                    // ...
+                    rowGutters: [${rowGutters}]
+                    // ...
+                }
+            &lt;/script&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Ensure that all the selectors in the stylesheet (first argument) select nothing outside an elements selected by a selector specified by second argument.
+            Additional existing selector parts are preserved.
+        </description>
+        <name>cssEnclose</name>
+        <function-class>com.agnitas.emm.grid.grid.util.CssUtils</function-class>
+        <function-signature>java.lang.String enclose(java.lang.String,java.lang.String)</function-signature>
+        <example>
+            &lt;style type="text/css"&gt;
+                ${emm:cssEnclose(stylesForm.css, '#template #template')}
+            &lt;/style&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Represent an object as JSON string.
+        </description>
+        <name>toJson</name>
+        <function-class>org.agnitas.util.HttpUtils</function-class>
+        <function-signature>java.lang.String toJson(java.lang.Object)</function-signature>
+        <example>
+            &lt;script type="application/json" data-initializer="foo"&gt;
+                {
+                    "targets": ${emm:toJson(form.targets)}
+                }
+            &lt;/script&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Retrieve a origin request URI (as opposed to the one pointing to a JSP page).
+        </description>
+        <name>originUri</name>
+        <function-class>org.agnitas.util.HttpUtils</function-class>
+        <function-signature>java.lang.String originUri(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            &lt;c:set var="originUri" value="${emm:originUri(pageContext.request)}" scope="page"/&gt;
+            &lt;h4&gt;You currently are at ${originUri}&lt;/h4&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Searches for the current ckEditor installation with the highest version number.
+            The result is cached.
+        </description>
+        <name>ckEditorPath</name>
+        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-signature>java.lang.String getCkEditorPath(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            &lt;jsp:include page="/${emm:ckEditorPath(request)}/ckeditor-emm-helper.jsp"&gt;
+                &lt;jsp:param name="toolbarType" value="Classic"/&gt;
+            &lt;/jsp:include&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Return the value for the current type for CKEditor.
+        </description>
+        <name>isCKEditorTrimmed</name>
+        <function-class>org.agnitas.util.CKEditorUtils</function-class>
+        <function-signature>boolean isCKEditorTrimmed(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            &lt;c:set var="editorType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'EMC' : 'EMM'}"/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Return the value for the current type for CKEditor.
+        </description>
+        <name>formatBytes</name>
+        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-signature>java.lang.String formatBytes(int,int,java.lang.String,java.util.Locale)</function-signature>
+        <example>
+            &lt;span&gt;${emm:formatBytes(bytes, 0, 'iec', pageContent.request.locale)}&lt;/span&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Gets a current locale from request object (normally it's an admin's locale).
+        </description>
+        <name>getLocale</name>
+        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-signature>java.util.Locale getLocale(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${emm:getLocale(pageContent.request)}
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Gets an ID of admin's timezone (if authorized) or null.
+        </description>
+        <name>getTimeZoneId</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String getTimeZoneId(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${emm:getTimeZoneId(pageContent.request)}
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Parse a string representation of integer value.
+        </description>
+        <name>toInt</name>
+        <function-class>org.apache.commons.lang.math.NumberUtils</function-class>
+        <function-signature>int toInt(java.lang.String,int)</function-signature>
+        <example>
+            &lt;c:set var="imageId" value="${emm:toInt(content, 0)}"/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Get supported JS table column type for a given DbColumnType object.
+        </description>
+        <name>asJsTableColumnType</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String asJsTableColumnType(org.agnitas.util.DbColumnType)</function-signature>
+    </function>
+
+    <function>
+        <description>
+            Get textual representation of the given object or empty string.
+        </description>
+        <name>asText</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String asText(java.lang.Object)</function-signature>
+    </function>
+
+    <function>
+        <description>
+            Checks if a collection/string contains given item/substring.
+        </description>
+        <name>contains</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>boolean contains(java.lang.Object,java.lang.Object)</function-signature>
+    </function>
+
+    <function>
+        <description>
+            Gets workflow parameters.
+        </description>
+        <name>getWorkflowParams</name>
+        <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
+        <function-signature>org.agnitas.web.forms.WorkflowParameters find(javax.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${emm:getTimeZoneId(pageContent.request)}
+        </example>
+    </function>
+
+</taglib>

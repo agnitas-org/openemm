@@ -1,0 +1,65 @@
+.system-tile {
+  position: relative;
+  width: 98%;
+  margin: 0 auto 20px auto;
+
+  background-color: $c-white;
+  color: $c-gray-55;
+
+  @include shadow-variant(regular);
+
+  @media (min-width: $screen-sm-min) {
+    max-width: 550px;
+  }
+
+  @media (min-width: $screen-md-min) {
+
+  }
+
+  @media (min-width: $screen-lg-min) {
+
+  }
+}
+
+.system-tile-header {
+  padding: 30px;
+
+  @include clearfix();
+
+  .logo {
+    float: left;
+  }
+
+  .edition-logo {
+    float: right;
+
+    .logo-image {
+      margin-top: 4px;
+    }
+  }
+}
+
+.system-tile-content {
+  padding: 25px;
+
+  border-top: 1px solid $c-gray-20;
+}
+
+.system-tile-footer {
+  padding: 15px 30px;
+
+  border-top: 1px solid $c-gray-20;
+
+  @include clearfix();
+
+  a {
+    font-size: $fs-small;
+    line-height: 20px;
+    color: $c-gray-55;
+
+    &:hover, &:focus {
+      color: $c-blue-27;
+    }
+  }
+
+}

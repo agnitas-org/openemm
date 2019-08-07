@@ -1,0 +1,8 @@
+<HelpBalloon>
+	<title><![CDATA[L'analyse du fichier d'importation pour
+erreurs potentielles]]></title>
+	<content><![CDATA[Sur la page suivante, le fichier csv est v&eacute;rifi&eacute; à la recherche d'erreurs. Le syst&egrave;me v&eacute;rifie les adresses e-mail erron&eacute;es, les correspondances avec la liste noire, les adresses en double, les valeurs num&eacute;riques erron&eacute;es ainsi que les formats MAILTYPE, GENDER et date. Le syst&egrave;me v&eacute;rifie &eacute;galement la structure de ligne correcte du fichier csv.<br>.
+Toute erreur est signal&eacute;e par le symbole du disque. Si vous cliquez sur le symbole, l'E-Marketing Manager vous propose de t&eacute;l&eacute;charger un fichier csv. Ce protocole d'erreurs peut alors être facilement v&eacute;rifi&eacute; pour les erreurs. Vous pouvez ensuite modifier le fichier d'importation, par exemple en supprimant les destinataires dont les donn&eacute;es de profil sont erron&eacute;es.<br>.
+S'il y a vraiment une erreur, les donn&eacute;es du fichier csv doivent &ecirc;tre modifi&eacute;es. Le E-Marketing Manager est capable d'importer des fichiers csv d&eacute;fectueux. Il sautera simplement les lignes d&eacute;fectueuses. Cependant, il est toujours bon de corriger toutes les erreurs dans le fichier csv avant d'importer les donn&eacute;es. Sinon, vous ne savez jamais si les donn&eacute;es du destinataire ont &eacute;t&eacute; import&eacute;es ou non en cliquant sur le bouton Traiter...
+]]></content>
+</HelpBalloon>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- -*- scope: new -*- -->
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "https://struts.apache.org/dtds/struts-config_1_1.dtd">
+<struts-config>
+	<!-- ========== Form Bean Definitions =================================== -->
+	<form-beans type="org.apache.struts.action.ActionFormBean">
+		<form-bean name="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm" />
+	</form-beans>
+
+	<action-mappings type="org.apache.struts.action.ActionMapping">
+		<!-- Process a mailing send/preview request -->
+		<action path="/mailingsend" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingSendForm" scope="request" input="mailing_send">
+			<forward name="send" path="mailing_send" />
+			<forward name="send2" path="mailing_send2" />
+			<forward name="send_confirm" path="mailing_send_confirm_ajax" />
+			<forward name="preview_select" path="mailing_preview_select" />
+            <forward name="preview_select_pure" path="mailing_preview_select_ajax" />
+			<forward name="preview_header" path="/WEB-INF/jsp/mailing/preview_header.jsp" />
+			<forward name="preview.0" path="/WEB-INF/jsp/mailing/preview_text.jsp" />
+			<forward name="preview.1" path="/WEB-INF/jsp/mailing/preview_html.jsp" />
+			<forward name="preview.6" path="/WEB-INF/jsp/mailing/preview_html.jsp" />
+			<forward name="cancel_generation_question" path="mailing_cancel_generation_question_ajax" />
+			<forward name="cancel_generation_deny" path="mailing_cancel_generation_deny" />
+			<forward name="view_delstatbox" path="/WEB-INF/jsp/mailing/delivery_stat.jsp" />
+			<forward name="preview_errors" path="/WEB-INF/jsp/mailing/preview_errors.jsp" />
+			<forward name="header_errors" path="/WEB-INF/jsp/mailing/header_errors.jsp" />
+			<forward name="progress" path="mailing_send_progress" />
+            <forward name="ajax_send2" path="mailing_send2_ajax" />
+			<forward name="ajax_progress" path="mailing_send_progress_ajax" />
+		</action>
+	</action-mappings>
+</struts-config>

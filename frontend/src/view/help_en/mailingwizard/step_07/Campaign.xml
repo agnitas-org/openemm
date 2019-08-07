@@ -1,0 +1,14 @@
+<HelpBalloon>
+	<title>Archive</title>
+	<content><![CDATA[<P STYLE="margin-bottom: 0in"><SPAN LANG="en-GB">By selecting a
+</SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-US">Archive</SPAN></FONT><SPAN LANG="en-GB">,
+you assign the mailing to a specific archive. This makes mailing
+updates easier if you have to manage a large number of mailings.
+Moreover, it gives you another option for statistical evaluation. 
+All previously defined archives are displayed in that drop-down list.
+Further information on archives is contained in chapter . You do not
+have to assign the mailing to an archive. The mailing will also work
+as a stand-alone action.  You can always select an archive or change
+the archive assignment for your mailing later. </SPAN>
+</P>]]></content>
+</HelpBalloon>

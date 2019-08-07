@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+						http://www.springframework.org/schema/tx 
+       http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+       http://www.springframework.org/schema/aop 
+       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<context:annotation-config/>
+
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:emm-ws.properties</value>
+                <value>classpath:emm.properties</value>
+            </list>
+        </property>
+    </bean>
+	
+	<bean id="throttlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
+        <property name="comAdminDao" ref="AdminDao"/>
+    </bean>
+	
+	<bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
+        <property name="throttlingService" ref="throttlingService"/>
+    </bean>
+	
+	<bean id="wsSecurityInterceptor"
+        class="org.springframework.ws.soap.security.xwss.XwsSecurityInterceptor">
+        <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
+        <property name="callbackHandlers">
+            <ref bean="springSecurityHandler"/>
+        </property>
+    </bean>
+    
+    <bean id="usageInterceptor" class="com.agnitas.emm.springws.usage.UsageInterceptor">
+    	<property name="usageLogger">
+    		<bean class="com.agnitas.emm.springws.usage.DatabaseBasedUsageLogger">
+    			<property name="dataSource" ref="dataSource" />
+    		</bean>
+    	</property>
+    </bean>
+    
+
+	<bean id="springSecurityHandler" class="org.agnitas.emm.springws.security.SpringDigestPasswordValidationCallbackHandler">
+        <property name="userDetailsService" ref="userDetailsService"/>
+    </bean>
+    
+    <bean id="userDetailsService" class="com.agnitas.emm.springws.WebserviceUserDetailService">
+		<property name="dataSource" ref="dataSource" />
+		<property name="webservicePasswordEncryptor" ref="WebservicePasswordEncryptor" />
+        <property name="javaMailService" ref="JavaMailService"/>
+	</bean>
+    
+
+
+    <aop:config>
+	    <aop:pointcut id="userDetailsServiceMethods"
+	                expression="execution(* org.springframework.security.userdetails.jdbc.JdbcDaoImpl.*(..)) or execution(* com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl.checkAndTrack(..))"/>
+	</aop:config>
+
+    <bean id="objectFactory" class="org.agnitas.emm.springws.jaxb.ObjectFactory" />
+    
+    <bean id="abstractEndpoint" abstract="true">
+		<property name="marshaller" ref="marshaller"></property>
+		<property name="unmarshaller" ref="marshaller"></property>
+    </bean>
+</beans>

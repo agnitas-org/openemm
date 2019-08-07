@@ -1,0 +1,33 @@
+<script id="modal-editor" type="text/x-mustache-template">
+    <div class="modal modal-editor">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close" data-dismiss="modal"
+                            data-close-campaign-editor-modal>
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                    </button>
+                    <h4 class="modal-title"><bean:message key="workflow.editor"/></h4>
+                </div>
+                <div class="modal-body">
+                    <div id="modalCampaignEditorContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large" data-dismiss="modal"
+                                data-close-campaign-editor-modal>
+                            <i class="icon icon-times"></i>
+                            <span class="text"><bean:message key="button.Cancel"/></span>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-large" data-dismiss="modal"
+                                data-form-target='#workflowForm' data-form-set='method:save'
+                                data-action='workflowSaveBtnModal' data-close-campaign-editor-modal>
+                            <i class="icon icon-save"></i>
+                            <span class="text"><bean:message key="button.Save"/></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

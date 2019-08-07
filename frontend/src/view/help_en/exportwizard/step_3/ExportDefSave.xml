@@ -1,0 +1,13 @@
+<HelpBalloon>
+	<title>Save Export Definition</title>
+	<content><![CDATA[<P STYLE="margin-bottom: 0in"><SPAN LANG="en-GB">Export definitions
+may be saved for further use. This way, you need not specify all data
+(especially which columns are to be exported) each time you start an
+export process.  Click on </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-GB">Save</SPAN></FONT><SPAN LANG="en-GB">
+and enter a </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-GB">Name,
+</SPAN></FONT><SPAN LANG="en-GB">possibly also a </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-GB">Description</SPAN></FONT><SPAN LANG="en-GB">
+of the export, on the following page.  Whenever you select </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-GB">Recipients</SPAN></FONT><SPAN LANG="en-GB">
+and </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="en-GB">Export,
+all export definitions saved will be shown in an overview from now on</SPAN></FONT><SPAN LANG="en-GB">
+for you to select an export definition. </SPAN>]]></content>
+</HelpBalloon>

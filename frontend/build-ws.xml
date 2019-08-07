@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="all" name="OpenEMM_WS">
+	<import file="build.xml" />
+
+	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, copyEhcacheConfig, replaceEmmPropertiesPlaceholders, compile, deploy, setupContexts, applicationContext" description="Build everything.">
+		<echo message="Application built."/>
+	</target>
+	
+	<target name="checkForPropertiesFile" description="Check the existence of the propertyfile and import it. This overrides the base target">
+		<property file="build-ws.properties" />
+		<property file="build-ws.properties.default" />
+
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="." />
+			</then>
+		</if>
+		
+		<available file="build-ws.properties" property="isBuildPropertiesAvailable" />
+		<fail message="Missing build-ws.properties">
+			<condition>
+				<not>
+					<isset property="isBuildPropertiesAvailable" />
+				</not>
+			</condition>
+		</fail>
+
+		<propertyregex property="deploydir" input="${deploydir}" regexp="~" replace="${user.home}" global="true" override="true" />
+
+		<if>
+			<not>
+				<isset property="javaVersion" />
+			</not>
+			<then>
+				<property name="javaVersion" value="1.8" />
+			</then>
+		</if>
+		<echo message="Using Java version ${javaVersion}" /> 
+	</target>
+
+	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
+		<path id="build.classpath">
+			<fileset dir="${basecss}/lib">
+				<include name="*.jar"/>
+			</fileset>
+		</path>
+
+		<path id="build.containerPath">
+			<fileset dir="${CATALINA_HOME}/lib">
+				<include name="*.jar"/>
+			</fileset>
+		</path>
+	</target>
+	
+	<target name="setDeploytarget" depends="checkForPropertiesFile, checkDeployTargetRunstage">
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="." />
+			</then>
+		</if>
+		
+		<property name="emmSourcePath" value="src" />
+		<property name="emmEtcPath" value="etc" />
+		<property name="emmLibPath" value="lib" />
+		
+		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
+			<condition>
+				<not>
+					<contains string="${deploytarget}" substring="ws" casesensitive="false" />
+				</not>
+			</condition>
+		</fail>
+
+		<!-- Check for available PropertiesConfigFile  -->
+		<available file="build/properties/${deploytarget}.xml" property="isPropertiesConfigFileAvailable" />
+		<fail message="Invalid deploytarget: ${deploytarget} (Missing build/properties/${deploytarget}.xml)">
+			<condition>
+				<isfalse value="${isPropertiesConfigFileAvailable}" />
+			</condition>
+		</fail>
+	</target>
+	
+	<target name="createPropertiesFiles" depends="setDeploytarget" description="Create emm-ws/emm/log4j.properties">
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<mergexml source="${basecss}/build/templates/template.configuration.webservices.xml" change="build/properties/${deploytarget}.xml" dest="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" overwrite="true" />
+		
+		<!-- Copy and sign license file -->
+		<propertyregex property="licenseName" input="${deploytarget}" regexp="^([^.]*)\..*" select="\1" casesensitive="false" />
+		<if>
+			<available file="build/properties/${deploytarget}.emm.license.xml"/>
+			<then>
+				<copy file="build/properties/${deploytarget}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
+			</then>
+			<else>
+				<copy file="build/properties/${licenseName}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
+			</else>
+		</if>
+
+		<delete file="${deploydir}${appname}/WEB-INF/classes/emm-ws.properties" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
+		<echo message="emm-ws/emm/log4j.properties deleted" />
+
+		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/emm-ws.properties" style="${basecss}/build/templates/emm-ws.properties.xslt" />
+		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/emm.properties" style="${basecss}/build/templates/emm.properties.xslt" />
+		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.webservices.xml" out="${deploydir}${appname}/WEB-INF/classes/log4j.properties" style="${basecss}/build/templates/log4j.properties.xslt" />
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
+			<include name="log4j.properties" />
+			<replacetoken>${deploytarget}</replacetoken>
+		</replace>
+		<echo message="emm-ws/emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+	</target>
+
+	<target name="deploy" depends="compile">
+		<copy todir="${deploydir}${appname}">
+			<fileset dir="${basecss}/etc/spring-ws/webapp">
+				<exclude name="**/*.default"/>
+			</fileset>
+		</copy>
+		<copy todir="${deploydir}${appname}/WEB-INF/lib">
+			<fileset dir="${basecss}/lib">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${deploydir}${appname}/WEB-INF/classes">
+			<fileset dir="${emmSourcePath}/view/WEB-INF/conf">
+				<include name="emm.properties" />
+				<include name="mimetypes" />
+				<include name="new_messages.properties" />
+			</fileset>
+            <fileset dir="${emmEtcPath}/validation">
+                <include name="validator-rules.xml" />
+                <include name="validator-messages.properties" />
+            </fileset>
+		</copy>
+		<copy todir="${deploydir}${appname}/WEB-INF">
+			<fileset dir="${emmSourcePath}/view/WEB-INF">
+				<include name="dataAccessContext.xml" />
+				<include name="applicationContext*.xml" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="setupContexts" depends="deploy" description="Removes cronContext.xml">
+		<echo message="removing cronContext.xml" />
+		<delete file="${deploydir}${appname}/WEB-INF/cronContext.xml"/>
+		<echo message="cronContext.xml removed"/>
+	</target>
+
+	<target name="applicationContext" depends="deploy">
+		<echo message="rewriting applicationContext for webservice" />
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
+		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext.xml" preserveType="true">
+			<!-- Remove beans not wanted/needed in webservices -->
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/autoimport']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/dashboard']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/devices_stats']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/domain_stats']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/ecs_stat']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/grid_template']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/ip_stats']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_compare']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat2']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat_plugins']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingsend_ajax']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mcomponents']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/formcomponents']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/month_stats']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/motd']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_ajax']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_schedule']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/recipient_stats']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlink']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlinkstat']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/workflow']" />
+		</xmltask>
+
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" />
+		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext-service-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" preserveType="true">
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='LogonService']" />
+		</xmltask>
+
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-actions-basic.xml" />
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-actions-openemm.xml" />
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-permissions-basic.xml" />
+
+		<echo message="...applicationContext.xml done" />
+	</target>
+
+	<target name="war" depends="all" description="Build Webapp-WS-WAR">
+        <delete file="${deploydir}/emm-ws.war" />
+        
+        <war destfile="${deploydir}/emm-ws.war" webxml="${deploydir}${appname}/WEB-INF/web.xml">
+            <fileset dir="${deploydir}${appname}">
+            	<exclude name="${deploydir}${appname}/WEB-INF/lib"/>
+            	<exclude name="${deploydir}${appname}/WEB-INF/classes"/>
+            </fileset>
+            <lib dir="${deploydir}${appname}/WEB-INF/lib" />
+            <classes dir="${deploydir}${appname}/WEB-INF/classes" />
+
+            <manifest>
+                <attribute name="Built-By" value="AGNITAS AG" />
+                <attribute name="Built-On" value="${DSTAMP}" />
+                <attribute name="Built-At" value="${TSTAMP}" />
+            </manifest>
+        </war>
+    </target>
+
+	<target name="compile" depends="setupBuildPaths, createPropertiesFiles" description="Build EMM">
+		<!-- Both srcdir and destdir should be package roots. -->
+		<!-- They could be different of course; in that case NetBeans can also be set -->
+		<!-- up to compile to a different filesystem in the same way; see Compiler Types: -->
+		<echo message="Java Home: ${java.home}" />
+		<echo message="JAVA_HOME: ${JAVA_HOME}" />
+		<echo message="CATALINA_HOME: ${CATALINA_HOME}" />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<javac debug="true" nowarn="true" deprecation="false" destdir="${deploydir}${appname}/WEB-INF/classes" executable="${JAVA_HOME}/bin/javac" fork="yes" source="${javaVersion}" target="${javaVersion}" includeantruntime="false" encoding="UTF-8">
+			<src path="${emmSourcePath}/java" />
+			<src path="${emmSourcePath}/autogenerated/java" />
+			
+			<!-- Exclude all Web-UI classes -->
+			<exclude name="**/web/*Controller.java" />
+			<exclude name="**/web/*ControllerExtended.java" />
+			<exclude name="**/web/*ControllerBasic.java" />
+			<exclude name="**/web/*ControllerOpenemm.java" />
+			<exclude name="**/web/*Action.java" />
+			
+			<!-- To add something to the classpath: -->
+			<classpath refid="build.classpath" />
+			<classpath refid="build.containerPath" />
+			<!-- To exclude some files: -->
+			<compilerarg line="-Xlint:-unchecked" />
+		</javac>
+
+		<!-- EMM logo, used for header of generated PDF files -->
+		<copy file="${emmSourcePath}/java/com/agnitas/emm/core/workflow/service/resources/preview_pdf_logo.png" todir="${deploydir}${appname}/WEB-INF/classes/com/agnitas/emm/core/workflow/service/resources" />
+	</target>
+</project>

@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Schwellwert]]></title>
+    <content><![CDATA[Im Feld Schwellwert kann ein bestimmter Wert angegeben werden, bei dem auch vor dem Versandzeitpunkt des finalen Mailings das erfolgreichere Mailing an den restlichen Verteiler geschickt wird. Hier sind nur absolute Zahlen und keine Prozentangaben erlaubt.]]></content>
+</HelpBalloon>

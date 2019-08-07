@@ -1,0 +1,11 @@
+<HelpBalloon>
+	<title>Null-Werte</title>
+	<content><![CDATA[Ebenfalls zur Steuerung des Imports dient die Auswahlliste Null-Werte in der CSV-Datei. Dabei geht es um solche Empf&auml;nger, die bereits in der Datenbank vorhanden sind. Zwei Empf&auml;nger sind f&uuml;r den E-Marketing Manager identisch, wenn sie die gleiche E-Mail-Adresse haben.<br>
+Nehmen Sie an, in der Datenbank hat der Empf&auml;nger Heiner M&uuml;ller als Titel "Dr." eingetragen. In der CSV-Datei ist der Eintrag von Herrn M&uuml;ller ebenfalls vorhanden, aber hier fehlt der Titel, das Feld ist leer (Null-Wert). Über die Auswahlliste entscheiden Sie, was in einem solchen Fall passiert.
+      <ul type="disc">
+         <li>Die Standardeinstellung ist Bestehende mit Null-Werten &uuml;berschreiben. Damit verlieren Sie beim Import in der Datenbank den Inhalt des betreffenden Felds. Diese Einstellung macht in den meisten F&auml;llen Sinn, denn schließlich wollen Sie mit dem Import die Eintragungen in der Empf&auml;ngerdatenbank aktualisieren.</li>
+         <li>Die zweite Option Null-Werte bei bestehenden Daten ignorieren ist f&uuml;r Sonderf&auml;lle gedacht. Zum Beispiel wenn Sie genau wissen, dass in der Datenbank Änderungen durchgef&uuml;hrt wurden, die nicht in der Importdatei enthalten sind.</li>
+      </ul>
+Ob zwei Empf&auml;nger identisch sind, pr&uuml;ft der E-Marketing Manager an Hand eines bestimmten Feldes. Dieses Feld stellen Sie &uuml;ber die Auswahlliste Schl&uuml;sselspalte (siehe n&auml;chster Abschnitt) ein. Standardm&auml;ßig verwendet das System das Feld EMAIL.
+]]></content>
+</HelpBalloon>

@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Key column</title>
+	<content><![CDATA[It is important to determine which criteria the system should use when deciding whether an entry is duplicate or not. For mailings sent by e-mail, the e-mail field should be used. This is the default setting. It may be that a recipient registers several times, each time using a different e-mail address, but it is virtually impossible for an automatic control system to detect that. The setting also applies to recipient profile updates. The drop-down list features all fields used in the profile database, both standard and individual.]]></content>
+</HelpBalloon>

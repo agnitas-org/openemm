@@ -1,0 +1,434 @@
+/*doc
+---
+title: Badges
+name: badges
+category: Components - Badges
+---
+
+Basic badges are tiny objects usually only used to display a count.
+They are however very flexible.
+
+*/
+
+/*doc
+---
+title: Basic example
+name: badges_01_example
+parent: badges
+---
+
+```htmlexample
+<span class="badge">14</span>
+```
+
+Badges can also contain text and icons in any order and multitude.
+Text inside has to be wrapped inside `.text`.
+
+```htmlexample
+<span class="badge">
+  <i class="icon icon-angle-left"></i>
+  <span class="text">14</span>
+  <i class="icon icon-angle-right"></i>
+</span>
+```
+
+*/
+
+/*doc
+---
+title: Vertical badges
+name: badges_02_vertical
+parent: badges
+---
+
+As with `.btn`, `.badge`s support the `.badge-vertical` modifier. Text inside has to be wrapped inside `.text`.
+
+```htmlexample
+<span class="badge badge-vertical">
+    <i class="icon icon-angle-up"></i>
+    <span class="text">14</span>
+    <i class="icon icon-angle-down"></i>
+</span>
+```
+*/
+
+/*doc
+---
+title: States
+name: badges_03_states
+parent: badges
+---
+
+The usual states are supported as `.badge-success`, `.badge-info`, `.badge-warning` and `.badge-alert` respectively.
+
+Additionally `.badge-primary` and `.badge-highlighted` is available for special occasions.
+
+```htmlexample
+<span class="badge">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-success">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-info">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-warning">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-alert">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-primary">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-highlighted">
+    <span class="text">14</span>
+</span>
+<span class="badge badge-lab">
+    <span class="text">14</span>
+</span>
+```
+*/
+
+/*doc
+---
+title: Special Badge Variants
+name: badges_04_special
+parent: badges
+---
+
+The following highly specific badges exist: `.mailing-badge`, `.calendar-badge` and `.comment-badge`.
+
+*/
+
+/*doc
+---
+title: Mailing Badges
+name: badges_05_mailing
+parent: badges_04_special
+---
+
+`.mailing-badge` should always be combined with the mailing workstatus, e.g. `.mailing.status.edit`.
+
+These can exist in text elements or standalone and denote the status of a mailing.
+
+```htmlexample
+<span class="mailing-badge mailing.status.new"></span>
+<span class="mailing-badge mailing.status.active"></span>
+<span class="mailing-badge mailing.status.canceled"></span>
+<span class="mailing-badge mailing.status.disable"></span>
+<span class="mailing-badge mailing.status.edit"></span>
+<span class="mailing-badge mailing.status.ready"></span>
+<span class="mailing-badge mailing.status.scheduled"></span>
+<span class="mailing-badge mailing.status.sending"></span>
+<span class="mailing-badge mailing.status.sent"></span>
+<span class="mailing-badge mailing.status.norecipients"></span>
+<span class="mailing-badge mailing.status.test"></span>
+<span class="mailing-badge mailing.status.admin"></span>
+```
+*/
+
+/*doc
+---
+title: Calendar Badges
+name: badges_06_calendar
+parent: badges_04_special
+---
+
+`.calendar-badge` is a specialized badge variant for the calendar, which also gets combined with the mailing workstatus.
+
+__It should not be used anywhere manually and is just included here for completeness.__
+
+```htmlexample
+<span class="calendar-badge mailing.status.new">new mailing</span>
+```
+*/
+
+/*doc
+---
+title: Comment Badges
+name: badges_07_calendar
+parent: badges_06_calendar
+---
+
+The `.comment-badge` is a variant of the `.calendar-badge` and is specifically for use in the calendar.
+
+__It should not be used anywhere manually and is just included here for completeness.__
+
+```htmlexample
+<span class="calendar-badge comment-badge">this is a commentary on comments.</span>
+```
+*/
+
+
+.badge {
+  display: inline-block;
+  padding: 0 4px;
+  font-size: 75%;
+  line-height: inherit;
+  color: #fff;
+  border-radius: 2px;
+  background-color: #6f7d8c;
+
+  .icon {
+    display: inline-block;
+    font-size: 8px;
+    line-height: 1;
+
+    &:first-child:last-child {
+      font-size: 12px;
+    }
+  }
+
+  .text {
+    display: inline-block;
+  }
+
+  @include content-spacing();
+}
+
+.form-badge {
+  display: inline-block;
+  margin: 5px 0;
+  padding: 0 4px;
+  line-height: 20px;
+  color: #fff;
+  border-radius: 2px;
+  background-color: #6f7d8c;
+
+  .icon {
+    display: inline-block;
+    font-size: 8px;
+    line-height: 1;
+
+    &:first-child:last-child {
+      font-size: 12px;
+    }
+  }
+
+  .text {
+    display: inline-block;
+  }
+
+  @include content-spacing();
+}
+
+.form-badge + .form-badge {
+  margin-left: 5px;
+}
+
+.badge-vertical {
+
+  .icon {
+    display: block;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .text {
+    display: block;
+    text-align: center;
+  }
+
+  @include content-spacing($orientation: vertical, $spacing: 0);
+
+}
+
+.badge-large {
+  padding: 5px 10px;
+
+  .text {
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 700;
+  }
+}
+
+.badge-primary {
+  background-color: #3d4a58;
+}
+
+.badge-highlighted {
+  background-color: #76a83d;
+}
+
+// contextual variants
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .badge-#{$state} {
+    @include badge-variant($c-white, $color);
+  }
+}
+
+.badge + .badge {
+  margin-left: 5px;
+}
+
+
+.mailing-badge, .status-badge {
+  display: inline-block;
+  width: 20px;
+  padding: 3px 0;
+  text-align: center;
+
+  line-height: 1;
+  color: $c-white;
+  border-radius: 2px;
+
+  &:before {
+    font-family: 'FontAwesome';
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+.message-badge, .status-badge {
+  display: inline-block;
+  width: 20px;
+  padding: 3px 0;
+  text-align: center;
+
+  line-height: 1;
+  color: $c-white;
+  border-radius: 2px;
+
+  &:before {
+    font-family: 'FontAwesome';
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.calendar-badge {
+  display: block;
+  padding: 4px;
+
+  font-size: $fs-tiny;
+  text-align: left;
+  line-height: 1;
+  color: $c-white;
+  border-radius: 2px;
+
+  white-space: nowrap;
+  overflow: hidden;
+
+  &:before {
+    font-family: 'FontAwesome';
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    font-size: 0.8em;
+    margin-right: 3px;
+  }
+}
+
+.badge-lab {
+ color: #fff;
+ background-color: #00a888;
+}
+
+
+@each $conf in $mailing-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .mailing\.status\.#{$state} {
+    @include mailing-badge-variant($state, $color);
+  }
+}
+
+@each $conf in $message-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .message\.status\.#{$state} {
+    @include message-badge-variant($state, $color);
+  }
+}
+
+@each $conf in $push-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .push\.status\.#{$state} {
+    @include push-badge-variant($state, $color);
+  }
+}
+
+@each $conf in $auto-optimization-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .calendar-optimization-#{$state} {
+    @include auto-optimization-badge-variant($state, $color);
+  }
+}
+
+@each $conf in $campaign-states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .campaign\.status\.#{$state} {
+    @include campaign-badge-variant($state, $color);
+  }
+}
+
+
+.comment-badge {
+  position: relative;
+  display: block;
+  background-color: $c-ochre-0;
+  color: $c-brown-58;
+  border: 1px solid $c-ochre-10;
+  cursor: pointer;
+
+  &:before {
+    content: $fa-var-comments;
+    font-size: 1em;
+  }
+
+  @include user-select(none);
+}
+
+.badge-linkage-action { background-color: $linkage-action; }
+.badge-linkage-campaignmanager { background-color: $linkage-campaignmanager; }
+.badge-linkage-site { background-color: $linkage-site; }
+
+
+.preview-client-badge {
+  display: inline-block;
+  padding: 4px 5px;
+
+  text-align: center;
+  line-height: 1;
+  border-radius: 1px;
+
+  color: $c-white;
+}
+
+.preview-client-badge-with-logo {
+  padding: 10px;
+
+  .logo {
+    background-color: $c-transparent;
+    height: 30px;
+    width: auto;
+  }
+}
+
+@each $conf in $preview-clients {
+  $client: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .preview-client-badge-#{$client} {
+    @include preview-client-badge-variant($color);
+  }
+}

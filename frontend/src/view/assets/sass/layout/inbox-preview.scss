@@ -1,0 +1,32 @@
+.inbox-preview {
+
+  .inline-tile {
+    margin-bottom: 25px;
+  }
+
+  .inline-tile-header {
+    height: 50px;
+
+    .preview-client-badge {
+      float: left;
+    }
+
+    .headline {
+      font-size: $fs-large;
+      line-height: 50px;
+      vertical-align: middle;
+      margin: 0;
+      margin-left: 10px;
+    }
+  }
+
+  .dropdown-toggle, .list-group-item {
+    font-size: $fs-regular;
+    color: $c-black-82;
+  }
+
+  .list-group-item {
+    .checkbox-inline { color: $c-black-82; }
+  }
+
+}

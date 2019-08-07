@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+	xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+	version="3.0">
+
+	<display-name>OpenEMM</display-name>
+
+	<!-- Spring context -->
+	<context-param>
+		<description>spring context</description>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-actions-basic.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
+	</context-param>
+
+	<!-- Filters and Mappings (ordered by execution) -->
+
+	<!-- Filter to redirect invalid sessions to active node -->
+	<filter>
+		<filter-name>InvalidSessionToNodeFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.commons.filter.LoadBalancerFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>InvalidSessionToNodeFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- HTTP Security Header -->
+	<filter>
+		<filter-name>HttpSecurityHeaderFilter</filter-name>
+		<filter-class>com.agnitas.web.filter.HttpSecurityHeaderFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>hsts.enable</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<init-param>
+			<param-name>hsts.maxAge</param-name>
+			<param-value>15768000</param-value>
+			<!-- 6 month -->
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>HttpSecurityHeaderFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Session Hijacking Prevention -->
+	<filter>
+		<filter-name>SessionHijackingPreventionFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.sessionhijacking.web.GroupingSessionHijackingPreventionFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>SessionHijackingPreventionFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
+	<filter>
+		<filter-name>charsetFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.commons.filter.CharacterEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>${defaultRequestEncoding}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>isoEncodingDomains</param-name>
+			<param-value>${isoEncodingDomains}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>utf8EncodingDomains</param-name>
+			<param-value>${utf8EncodingDomains}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>jpEncodingDomains</param-name>
+			<param-value>${jpEncodingDomains}</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>charsetFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- interceptor for AjaxAnywhere library -->
+	<filter>
+		<filter-name>AjaxAnywhere</filter-name>
+		<filter-class>org.ajaxanywhere.AAFilter</filter-class>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>AjaxAnywhere</filter-name>
+		<url-pattern>*.jsp</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>AjaxAnywhere</filter-name>
+		<url-pattern>*.do</url-pattern>
+		<!-- default Struts mapping -->
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>AjaxAnywhere</filter-name>
+		<url-pattern>*.htm</url-pattern>
+		<!-- other frameworks mapping -->
+	</filter-mapping>
+
+	<!-- Stores an original request URI to make it available within JSPs -->
+	<filter>
+		<filter-name>OriginUriFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.commons.filter.OriginUriFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>OriginUriFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Filter to protect Struts 1 application against classloader manipulation (CVE-2014-0114) -->
+	<filter>
+		<filter-name>Struts1SecurityFilter</filter-name>
+		<filter-class>com.agnitas.web.filter.Struts1SecurityFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>excludeParams</param-name>
+			<param-value>(.*\.|^|.*|\[('|"))(c|C)lass(\.|('|")]|\[).*</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>Struts1SecurityFilter</filter-name>
+		<servlet-name>action</servlet-name>
+	</filter-mapping>
+
+	<filter>
+		<filter-name>PdfViewFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.workflow.filter.PdfViewFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>PdfViewFilter</filter-name>
+		<url-pattern>/workflow.do</url-pattern>
+	</filter-mapping>
+
+	<!-- EMM Listeners -->
+
+	<!-- load Spring applicationContext -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<listener>
+		<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+	</listener>
+
+	<!-- Listener to initialize the backend datasource Note: This listener requires
+		that Springs ContextLoaderListener is loaded before this listener! -->
+	<listener>
+		<listener-class>org.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
+	</listener>
+
+	<!-- listener for resetting jobqueue entries on host startup after crash -->
+	<listener>
+		<listener-class>com.agnitas.util.ResetJobQueueContextListener</listener-class>
+	</listener>
+
+	<listener>
+		<!-- cleanup session before startup to prevent accidental cross account access after restart -->
+		<listener-class>org.agnitas.util.web.SessionCleanUpListener</listener-class>
+	</listener>
+
+	<!-- Cleanup session data when user logs out or session is destroyed (after inactivity timeout or user closed browser) -->
+	<listener>
+		<listener-class>com.agnitas.web.filter.HttpSessionCleanUpListener</listener-class>
+	</listener>
+
+	<!-- Listener to rebuild binding field history triggers on startup -->
+	<listener>
+		<listener-class>com.agnitas.emm.core.recipient.web.listener.RebuildBindingHistoryTriggersOnStartupListener</listener-class>
+	</listener>
+	
+	<listener>
+		<listener-class>com.agnitas.emm.core.target.web.listener.TargetGroupMigrationListener</listener-class>
+	</listener>
+
+	<!-- Shutdown the WorkerExecutorService -->
+	<listener>
+		<listener-class>com.agnitas.web.ExecutorShutdownListener</listener-class>
+	</listener>
+
+	<!-- Listener to initialize the extension system Note: This listener requires
+		that Springs ContextLoaderListener is loaded before this listener! -->
+	<listener>
+		<listener-class>com.agnitas.emm.extension.listener.ComExtensionSystemInitializationContextListener</listener-class>
+	</listener>
+
+	<!-- Struts Action servlet -->
+	<servlet>
+		<servlet-name>action</servlet-name>
+		<servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
+		<init-param>
+			<param-name>config</param-name>
+			<param-value>/WEB-INF/struts-config.xml</param-value>
+		</init-param>
+		<init-param>
+			<param-name>debug</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>detail</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>validate</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<init-param>
+			<param-name>chainConfig</param-name>
+			<param-value>org/apache/struts/tiles/chain-config.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>action</servlet-name>
+		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>spring-mvc</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>spring-mvc</servlet-name>
+		<url-pattern>*.action</url-pattern>
+	</servlet-mapping>
+
+	<!-- Quartz job init servlet -->
+	<servlet>
+		<servlet-name>QuartzInitializer</servlet-name>
+		<servlet-class>org.quartz.ee.servlet.QuartzInitializerServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<!-- servlets to show components and images -->
+	<servlet>
+		<servlet-name>ShowComponent</servlet-name>
+		<servlet-class>org.agnitas.web.ShowComponent</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ShowComponent</servlet-name>
+		<url-pattern>/sc</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>ShowImageServlet</servlet-name>
+		<servlet-class>com.agnitas.web.ShowImageServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ShowImageServlet</servlet-name>
+		<url-pattern>/image</url-pattern>
+		<url-pattern>/image/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>ShowDynamicImage</servlet-name>
+		<servlet-class>com.agnitas.web.ShowDynamicImage</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ShowDynamicImage</servlet-name>
+		<url-pattern>/dyn_image/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>ShowFormImage</servlet-name>
+		<servlet-class>com.agnitas.web.ShowFormImageServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ShowFormImage</servlet-name>
+		<url-pattern>/formImage</url-pattern>
+		<url-pattern>/formImage/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- servlet to download mailing components or attachments -->
+	<servlet>
+		<servlet-name>DownloadComponent</servlet-name>
+		<servlet-class>org.agnitas.web.DownloadComponent</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DownloadComponent</servlet-name>
+		<url-pattern>/dc</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>Manual</servlet-name>
+		<servlet-class>com.agnitas.web.ComManualServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Manual</servlet-name>
+		<url-pattern>/manual/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- EMM open count servlet -->
+	<servlet>
+		<servlet-name>OpenrateServlet</servlet-name>
+		<servlet-class>com.agnitas.web.ComOnePixelCount</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OpenrateServlet</servlet-name>
+		<url-pattern>/g</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>OpenrateServlet</servlet-name>
+		<url-pattern>/g.html</url-pattern>
+	</servlet-mapping>
+
+	<!-- EMM redirect servlets -->
+	<servlet>
+		<servlet-name>RedirectServlet</servlet-name>
+		<servlet-class>com.agnitas.web.RedirectServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RedirectServlet</servlet-name>
+		<url-pattern>/r</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RedirectServlet</servlet-name>
+		<url-pattern>/r.html</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>RedirectServletUserForm</servlet-name>
+		<servlet-class>com.agnitas.userform.trackablelinks.web.ComRdirUserForm</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RedirectServletUserForm</servlet-name>
+		<url-pattern>/rdirFormUrl</url-pattern>
+	</servlet-mapping>
+
+	<!-- Servlet for automatically unscubscribe -->
+	<servlet>
+		<servlet-name>UnsubscribeServlet</servlet-name>
+		<servlet-class>com.agnitas.emm.core.unsubscribe.ComUnsubscribe</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>UnsubscribeServlet</servlet-name>
+		<url-pattern>/uq.html</url-pattern>
+	</servlet-mapping>
+
+	<!-- heatmap statistic servlet -->
+	<servlet>
+		<servlet-name>EmbeddedClickStatView</servlet-name>
+		<servlet-class>org.agnitas.ecs.backend.web.EmbeddedClickStatView</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>EmbeddedClickStatView</servlet-name>
+		<url-pattern>/ecs_view</url-pattern>
+	</servlet-mapping>
+
+	<!-- text download servlet -->
+	<servlet>
+		<servlet-name>TextFileDownload</servlet-name>
+		<servlet-class>org.agnitas.web.TextFileDownload</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>TextFileDownload</servlet-name>
+		<url-pattern>/file_download</url-pattern>
+	</servlet-mapping>
+
+	<!-- SWYN servlet -->
+	<servlet>
+		<servlet-name>AnonymousView</servlet-name>
+		<servlet-class>com.agnitas.web.ComAnonymousView</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>AnonymousView</servlet-name>
+		<url-pattern>/v</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>AnonymousView</servlet-name>
+		<url-pattern>/v.html</url-pattern>
+	</servlet-mapping>
+
+	<!-- Extension setup servlet -->
+	<servlet>
+		<servlet-name>ExtensionSetupServlet</servlet-name>
+		<servlet-class>org.agnitas.emm.extension.web.ExtensionSetupServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ExtensionSetupServlet</servlet-name>
+		<url-pattern>/extensionSetupServlet</url-pattern>
+	</servlet-mapping>
+
+	<!-- Extension servlet -->
+	<servlet>
+		<servlet-name>ExtensionServlet</servlet-name>
+		<servlet-class>org.agnitas.emm.extension.web.ExtensionServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ExtensionServlet</servlet-name>
+		<url-pattern>/extensionServlet</url-pattern>
+	</servlet-mapping>
+
+	<!-- File download -->
+	<servlet>
+		<servlet-name>FileDownloadServlet</servlet-name>
+		<servlet-class>org.agnitas.emm.core.download.web.FileDownloadServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>FileDownloadServlet</servlet-name>
+		<url-pattern>/download</url-pattern>
+	</servlet-mapping>
+
+	<!-- trackable link servlet to shorten loading time of target group editor -->
+	<servlet>
+		<servlet-name>GetMailingTrackableLinks</servlet-name>
+		<servlet-class>com.agnitas.web.ajax.GetMailingTrackableLinks</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>GetMailingTrackableLinks</servlet-name>
+		<url-pattern>/GetMailingTrackableLinks.do</url-pattern>
+	</servlet-mapping>
+
+	<!-- Welcome File -->
+	<welcome-file-list>
+		<welcome-file>/WEB-INF/jsp/login.jsp</welcome-file>
+	</welcome-file-list>
+
+	<!--for JS file with translations-->
+	<servlet>
+		<servlet-name>jsLocalize</servlet-name>
+		<servlet-class>com.agnitas.web.JavascriptContentTypeJspServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>jsLocalize</servlet-name>
+		<url-pattern>/assets/translation.js</url-pattern>
+	</servlet-mapping>
+
+	<!-- For JS file that contains some data from static context -->
+	<servlet>
+		<servlet-name>jsConfig</servlet-name>
+		<servlet-class>com.agnitas.web.JavascriptContentTypeJspServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>jsConfig</servlet-name>
+		<url-pattern>/assets/config.js</url-pattern>
+	</servlet-mapping>
+
+	<!-- Error Pages -->
+	<error-page>
+		<exception-type>javax.servlet.ServletException</exception-type>
+		<location>/error.do</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.Exception</exception-type>
+		<location>/error.do</location>
+	</error-page>
+	<error-page>
+		<error-code>404</error-code>
+		<location>/assets/rdir/404/404-absolute.html</location>
+	</error-page>
+
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Secured HTTP-methods</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<user-data-constraint>
+			<transport-guarantee>NONE</transport-guarantee>
+		</user-data-constraint>
+	</security-constraint>
+</web-app>

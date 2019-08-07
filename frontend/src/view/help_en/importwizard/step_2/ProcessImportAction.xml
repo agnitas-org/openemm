@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Pre-Import Action</title>
+	<content><![CDATA[You can have the import data "refined" by us before the import. The previously processed data will then be imported. The data can be converted, aggregated or transformed as a pre-processing action. In the dropdown menu, you can see all the pre-import actions available for your client. (If you are interested in a new pre-import action, contact support@agnitas.de). ]]></content>
+</HelpBalloon>

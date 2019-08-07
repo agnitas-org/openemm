@@ -1,0 +1,9 @@
+<HelpBalloon>
+	<title>Checking for duplicate records</title>
+	<content><![CDATA[This drop-down list allows you to decide what the system should do when checking for duplicate records.
+      <ul type="disc">
+         <li> The setting all will check for two things: whether a recipient already features in the database, and whether the list of new recipients itself contains duplicate entries.</li>
+         <li>The setting Only within new data only checks the list of imported entries for duplicates.</li>
+         <li>The No check setting: All recipients will be imported. There will be no check for duplicates in the import file and no check if recipients already are in the database. As a result, it is possible that one recipient with one e-mail address is included in the database twice.</li>
+      </ul>]]></content>
+</HelpBalloon>

@@ -1,0 +1,6 @@
+<HelpBalloon>
+	<title>Selecting mailing lists</title>
+	<content><![CDATA[Selecting mailing lists
+All mailing lists which you have created to send newsletters to recipients will be displayed. where you can select the particular list your customers subscribe to or unsubscribe from simply by clicking on the corresponding check box. Depending on the import mode selected this function can also be used to unsubscribe recipients from one or more mailing lists.<br>
+Please note: The selected mailing lists are valid for all recipients to import! If you want to import one part of recipients in your csv-file to one mailing list, another part to a second mailing list, you have to separate all recipients to two csv-files and run the import two times.]]></content>
+</HelpBalloon>

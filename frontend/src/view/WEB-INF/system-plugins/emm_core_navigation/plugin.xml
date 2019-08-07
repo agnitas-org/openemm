@@ -1,0 +1,345 @@
+<?xml version="1.0" ?>
+<!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
+
+<plugin id="emm_core_navigation" version="0.0.1" vendor="Agnitas AG">
+
+	<attributes>
+			<attribute id="plugin-name" value="EMM navigation" />
+			<attribute id="plugin-description" value="System plugin providing extension points for navigation" />
+	</attributes>
+	
+	<!-- Extension points for navigation -->
+	<extension-point id="navigation.main">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.dashboard">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.mailings">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.recipients">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.statistics">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.targetgroups">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.mailinglists">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="navigation.push">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="navigation.sites_and_actions">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="navigation.administration">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="navigation.mediapool">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="navigation.messenger">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+	
+	<!-- Extension points for tabs -->
+    <extension-point id="tabs.dashboard.summary">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+	<extension-point id="tabs.mailings.overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.mailings.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.mailings.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.templates">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.templates.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.templates.headerinfo">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.archives">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.archives.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.recipients.overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.recipients.reports">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.recipients.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.recipients.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.import">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.import.profile.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+		
+	<extension-point id="tabs.import.profile.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.classicimport">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.export">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="tabs.blacklist">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="tabs.salutations">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="tabs.salutations.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+	
+	<extension-point id="tabs.statistics.mailing">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+	
+	<extension-point id="tabs.statistics.compare">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.statistics.domain">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.statistics.ip">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.statistics.recipients">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.statistics.reports">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.statistics.month_overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.targetgroups.overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.targetgroups.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.targetgroups.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.targetgroupsqb.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.mailinglists.overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="tabs.mailinglists.recipients-delete">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.mailinglists.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.mailinglists.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.push.overview">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.messenger.overview">
+		<parameter-def id="navigation-bundle" type="string"/>
+	</extension-point>
+
+	<extension-point id="tabs.messenger.edit">
+		<parameter-def id="navigation-bundle" type="string"/>
+	</extension-point>
+
+	<extension-point id="tabs.push.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.push.settings">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.sites">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.sites.new">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.sites.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.actions">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.actions.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.profilefields">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.profilefields.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.admins">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.admins.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.companies">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.companies.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.bouncefilters">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.bouncefilters.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.trackingpoints">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.contentsources">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.contentsources.edit">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.activitylog">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>	
+
+	<extension-point id="tabs.pluginmanager">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="tabs.calendar">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="tabs.autoimport.new">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.autoimport.edit">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.autoexport.new">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.autoexport.edit">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.workflow.new">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.workflow.edit">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+    <extension-point id="tabs.mailings.templates">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+	<extension-point id="tabs.reference">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+	<extension-point id="tabs.reference.column">
+		<parameter-def id="navigation-bundle" type="string" />
+	</extension-point>
+
+    <extension-point id="tabs.grid.template.edit">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+
+	<extension-point id="tabs.server.status">
+        <parameter-def id="navigation-bundle" type="string" />
+    </extension-point>
+</plugin>

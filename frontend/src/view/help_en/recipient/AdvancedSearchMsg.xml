@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Extended search]]></title>
+	<content><![CDATA[You select the field and the relational operator in two drop-down lists. The next entry field takes the reference value. The three entries together form the search rule. Once you have defined a search rule, you can apply it by clicking on the Add button. The E-Marketing Manager will display a new list containing only those recipients matching the search rule.]]></content>
+</HelpBalloon>

@@ -1,0 +1,97 @@
+.l-mailing-priority {
+  .l-sub-headers {
+    border-bottom: 1px solid #cccdcd;
+
+    .headline {
+      font-size: 14px;
+    }
+  }
+
+  .l-row-bordered {
+    margin: 0;
+
+    .col-sm-1:not(:first-child),
+    .col-sm-2:not(:first-child),
+    .col-sm-3:not(:first-child),
+    .col-sm-4:not(:first-child),
+    .col-sm-5:not(:first-child),
+    .col-sm-6:not(:first-child),
+    .col-sm-7:not(:first-child),
+    .col-sm-8:not(:first-child),
+    .col-sm-9:not(:first-child),
+    .col-sm-10:not(:first-child),
+    .col-sm-11:not(:first-child),
+    .col-sm-12:not(:first-child) {
+      border-left: 1px solid $c-gray-20;
+    }
+  }
+
+  .l-content-area {
+    background-color: $c-blue-01;
+  }
+
+  .l-stub {
+    display: none;
+
+    &:only-child {
+      display: block;
+    }
+  }
+
+  .l-droppable-area {
+    padding: 15px;
+
+    &.highlight {
+      background-color: $c-blue-02;
+    }
+  }
+
+  #ordered-area, #unordered-area {
+    height: 100%;
+  }
+}
+
+.l-mailing-entry {
+  width: 100%;
+  padding: 10px;
+  overflow: hidden;
+  color: $c-gray-55;
+  background-color: $c-white;
+  border-left: 2px solid lightblue;
+
+  &:not(:last-child) {
+    margin-bottom: 4px;
+  }
+
+  &:hover {
+    background-color: $c-gray-02;
+  }
+
+  &.ui-sortable-helper {
+    background-color: $c-blue-03;
+  }
+
+  cursor: move;
+
+  @include shadow-variant(soft);
+
+  .l-name {
+    float: left;
+    width: calc(100% - 30px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    span {
+      white-space: nowrap;
+    }
+  }
+
+  .l-badge {
+    display: none;
+    float: right;
+  }
+}
+
+#ordered-area .l-mailing-entry .l-badge {
+  display: block;
+}

@@ -1,0 +1,18 @@
+<HelpBalloon>
+	<title>Mailing search</title>
+	<content><![CDATA[The mailing search allows you to search different fields of your mailings. If you would like to enter multiple terms at the same time then you can use the following options:<br><br>
+<b>Specific search using quotation marks</b><br><br>
+For example: “We wish”<br><br>
+If two or more terms are enclosed in quotation marks, the EMM will search fields using this specific sequence of words. No results containing only one of the words will be displayed.<br><br>
+<b>Combination using the plus sign</b><br><br>
+For example: “We wish” + Christmas<br><br>
+If two or more terms are linked by a plus sign, only results containing all terms will be displayed.<br><br>
+<b>Combination using the space bar</b><br><br>
+For example: Christmas "New Year"<br><br>
+Where two or more terms are separated by a space, this is referred to as an OR search. All hits will be shown that contain at least one of the search terms entered.<br><br>
+<b>Terms in brackets</b><br><br>
+For example: “We wish” + (Christmas "New Year")<br><br>
+The example displayed would show all hits that both contain the phrase “We wish” and also contain either Christmas or New Year. However, the result must contain at least one of the terms in brackets since these are connected by a plus sign.<br><br>
+It is possible to use the various combination options in any order you wish.<br><br>
+For example: "We wish" + (merry happy) + (Christmas "New Year")]]></content>
+</HelpBalloon>

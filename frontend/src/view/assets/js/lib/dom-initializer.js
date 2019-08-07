@@ -1,0 +1,322 @@
+/*doc
+---
+title: Overview
+name: js-dom-initializers
+category: Javascripts - Initializers
+---
+
+Here is an deprecated way to attach some initializer to a particular DOM element:
+
+```js_example
+AGN.Initializers.MyNewInitializer = function($scope) {
+  if (!$scope) {
+    $scope = $(document);
+  }
+
+  var $initializer = $scope.find('[data-initializer="my-new-initializer-name"]')
+        .add($scope.filter('[data-initializer="my-new-initializer-name"]'));
+
+  if ($initializer.length > 0) {
+    // Do some important stuff here.
+  }
+};
+```
+
+A major disadvantage of the old approach (beside its verbosity) is that you may need some `AGN.Initializers.*` to be called first but an order is not guaranteed at all.
+
+An `AGN.Lib.DomInitializer` provides more concise (and a little more efficient) way to achieve the same result:
+
+```js_example
+AGN.Lib.DomInitializer.new('my-new-initializer-name', function($elem, $scope) {
+  // Do some important stuff here.
+});
+```
+
+If you're using `AGN.Lib.Controller`, you could use it's method `addDomInitializer` as a shortcut:
+
+```js-example
+AGN.Lib.Controller.new('...', function() {
+  // ...
+  this.addDomInitializer('my-new-initializer-name', function() {
+    // Do your initialization here.
+  });
+  // ...
+});
+```
+
+*/
+
+/*doc
+---
+title: Manual invocation
+name: js-dom-initializers-01
+parent: js-dom-initializers
+---
+
+Sometimes you would require to enforce the initializer to run. Using old style initializer you would simply call it:
+
+```js
+AGN.Initializers.MyNewInitializer();
+// or
+AGN.Initializers.MyNewInitializer($scope);
+```
+
+Using a new style you would do as follows:
+
+```js
+AGN.Lib.DomInitializer.try('my-new-initializer-name');
+// or
+AGN.Lib.DomInitializer.try('my-new-initializer-name', $scope);
+```
+
+In addition you could run an initializer directly (without checking whether or not there's an element having proper `data-initializer` attribute)
+but keep in mind to provide valid arguments:
+
+```js
+var $elem, $scope;
+// Assign $elem and $scope somehow...
+AGN.Lib.DomInitializer.run('my-new-initializer-name', $elem, $scope);
+```
+*/
+
+/*doc
+---
+title: Lifecycle
+name: js-dom-initializers-02
+parent: js-dom-initializers
+---
+
+All the DOM initializers are triggered by `AGN.runAll()` call after all the basic initializers `AGN.Initializers.*`.
+
+Note that once registered initializer (callback) will be triggered for each DOM element having proper `data-initializer` attribute.
+So the following DOM structure:
+
+```html
+<div data-initializer="bless-you">
+  <span data-initializer="bless-you">Foo</span>
+</div>
+```
+
+will cause two invocations of the initializer (if registered).
+
+You can associate only one handler with an initializer name so every statement like:
+
+```js
+AGN.Lib.DomInitializer.new('some-initializer', function() {
+  // ...
+});
+```
+
+will overwrite previously registered handler.
+
+By returning `false` from your handler you can un-register it:
+
+```js
+// This handler will be called just once.
+AGN.Lib.DomInitializer.new('some-initializer', function() {
+  // Do some important stuff here.
+
+  return false;
+});
+```
+
+*/
+
+/*doc
+---
+title: Actions
+name: js-dom-initializers-03
+parent: js-dom-initializers
+---
+
+Within handler of DOM initializer you can use `this.addAction(events, action)` method.
+At first sight it does the same as `this.addAction()` method within controller initializer but there's some difference.
+An `addAction` method exposed by controller context attaches an event handler to a root document element so you can remove and re-create anything within document and all the attached handlers will be preserved.
+
+But an `addAction` method exposed by DOM initializer context attaches an event handler to an element that a DOM initializer
+belongs to (the one having `data-initializer` attribute). So if that element is removed/replaced then a handler gets removed as well.
+
+```htmlexample
+<div data-initializer="dom-initializer-actions-demo">
+  <div class="form-group">
+    <div class="col-sm-4">
+      <label class="control-label">Type anything and press enter key</label>
+    </div>
+    <div class="col-sm-4">
+      <input type="text" class="form-control" data-action="enterText"/>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-sm-push-4 col-sm-4">
+      <button type="button" class="btn btn-regular btn-primary" data-action="makeBeep">Beep!</button>
+    </div>
+  </div>
+</div>
+```
+
+```js-example
+AGN.Lib.DomInitializer.new('dom-initializer-actions-demo', function($e) {
+  this.addAction({enterdown: 'enterText'}, function() {
+    AGN.Lib.Messages('Here we are.', this.el.val(), 'success');
+  });
+
+  this.addAction({click: 'makeBeep'}, function() {
+    AGN.Lib.Messages('Here we are.', 'Beep!', 'success');
+  });
+});
+```
+
+*/
+
+/*doc
+---
+title: Config
+name: js-dom-initializers-04
+parent: js-dom-initializers
+---
+
+There is a simple and reliable way to store DOM initializer's config as JSON content in `<script>` element.
+Now you don't have to query proper element, retrieve its content and then parse a JSON. That all is done automatically now.
+All you need is to use `<script>` element having `application/json` type and identifier that matches initializer's name prepended by `config:` string:
+
+```htmlexample
+<div class="form-group" data-initializer="dom-initializer-config-demo-1">
+  <div class="col-sm-4">
+    <label for="demoText" class="control-label">Click button to get the message</label>
+  </div>
+  <div class="col-sm-4">
+    <input type="text" class="form-control" id="demoText"/>
+  </div>
+
+  <div class="col-sm-4">
+    <button type="button" class="btn btn-regular btn-primary" data-action="showConfigDemo">Demo</button>
+  </div>
+
+  <!-- Here is our config -->
+  <script id="config:dom-initializer-config-demo-1" type="application/json">
+    { "target": "#demoText", "message": "Hi there!", "color": "darkblue" }
+  </script>
+</div>
+```
+
+Keep in mind that a script element must be a descendant of DOM initializer's element.
+
+And that's it, you can simply use `this.config` from DOM initializer code:
+
+```js_example
+AGN.Lib.DomInitializer.new('dom-initializer-config-demo-1', function($e) {
+  var opt = this.config;
+  var $target = $(opt.target);
+
+  this.addAction({click: 'showConfigDemo'}, function() {
+    $target.val(opt.message);
+    $target.css('color', opt.color);
+  });
+});
+```
+
+Another option is to use standalone `<script>` element marked with `data-initializer`:
+
+```htmlexample
+<div class="form-group">
+  <div class="col-sm-12">
+    <script data-initializer="dom-initializer-config-demo-2" type="application/json">
+      { "message": "This is a message provided by dom-initializer-config-demo-2 DOM initializer" }
+    </script>
+  </div>
+</div>
+```
+
+```js_example
+AGN.Lib.DomInitializer.new('dom-initializer-config-demo-2', function($e) {
+  $e.replaceWith($('<label></label>', {'class': 'form-control', 'text': this.config.message}));
+});
+```
+
+This approach is typical for controllers that are using `data-initializer` to refresh controller config when some UI gets updated.
+
+*/
+
+(function() {
+
+  var SCRIPT_JSON_SELECTOR = 'script[type="application/json"]';
+  var CONFIG_PREFIX = "config:";
+
+  var map = {};
+
+  function Context($e, name) {
+    this.el = $e;
+
+    if ($e.is(SCRIPT_JSON_SELECTOR)) {
+      this.config = $e.json();
+    } else {
+      var $config = $e.find('script#' + CSS.escape(CONFIG_PREFIX + name));
+      if ($config.exists()) {
+        var type = $config.attr('type');
+        if (!type || type === 'application/json') {
+          this.config = $config.json();
+        } else {
+          console.error('Unexpected config script type: `' + type + '`');
+        }
+      }
+    }
+  }
+
+  Context.prototype.addAction = function(events, action) {
+    AGN.Lib.Action.new(AGN.Lib.Action.translate(events), action, this.el);
+  };
+
+  function autorun($scope) {
+    var $root = $scope;
+    if (!$root) {
+      $root = $(document);
+    }
+
+    $root.all('[data-initializer]').each(function() {
+      var $elem = $(this);
+      run($elem.data('initializer'), $elem, $scope);
+    });
+  }
+
+  function run(name, $elem, $scope) {
+    var handler = map['key#' + name];
+
+    if (handler) {
+      var result = handler.call(new Context($elem, name), $elem, $scope);
+      if (result === false) {
+        map["key#" + name] = undefined;
+      }
+    }
+  }
+
+  function tryRun(name, $scope) {
+    if (map['key#' + name]) {
+      var $root = $scope;
+      if (!$root) {
+        $root = $(document);
+      }
+
+      var $elem = $root.all('[data-initializer="' + CSS.escape(name) + '"]');
+      if ($elem.exists()) {
+        run(name, $elem, $scope);
+      }
+    }
+  }
+
+  function register(name, handler) {
+    if ($.isFunction(handler)) {
+      map['key#' + name] = handler;
+    } else {
+      console.error('Handler must be a function');
+    }
+  }
+
+  AGN.Lib.DomInitializer = {
+    autorun: autorun,
+    run: run,
+    try: tryRun,
+    new: register
+  };
+
+})();

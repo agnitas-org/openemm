@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Assigning columns</title>
+	<content><![CDATA[The next page allows you to assign columns from the csv file to the columns used in the database. If the columns in the csv file have exactly the same names as those in the database, they will automatically be matched. If not, a drop-down list allows you to assign columns correctly. It is also possible to mark columns which you do not want to import at all simply by clicking on the Proceed button.]]></content>
+</HelpBalloon>

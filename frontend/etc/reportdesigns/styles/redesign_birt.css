@@ -1,0 +1,49 @@
+@import "birt.css";
+
+#Document {
+    width: auto !important;
+    height: auto !important;
+}
+
+#progressBar {
+  top: 50px !important;
+  left: 50% !important;
+  margin-left: -150px;
+
+  padding-bottom: 50px;
+}
+
+#progressBar .birtviewer_progressbar {
+  width: 300px !important;
+
+  border: 0px;
+  border-radius: 2px;
+  font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;
+
+  -webkit-box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.45);
+  -moz-box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.45);
+  box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.45);
+}
+
+
+#progressBar .birtviewer_progressbar b {
+  display: inline-block;
+  margin: 5px;
+  color: #338dc7;
+  font-size: 14px;
+}
+
+#progressBar .birtviewer_progressbar .birtviewer_progressbar_button {
+  height: 30px;
+  width: auto;
+  line-height: 14px;
+  padding: 8px 15px;
+
+  border: 0;
+  outline: 0;
+  border-radius: 2px;
+  color: #fff;
+  font-size: 13px;
+  background-color: #338dc7;
+
+}

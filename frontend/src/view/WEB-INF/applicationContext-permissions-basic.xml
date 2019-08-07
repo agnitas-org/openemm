@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+	
+	
+	<bean name="actionsTokenResolver" class="com.agnitas.web.perm.ActionsTokenResolver" >
+		<property name="tokens">
+			<map>
+                <entry key="permissionDenied.unspecified" value="always.allowed" />
+                <entry key="error.unspecified" value="always.allowed" />
+
+                <entry key="admin.view" value="admin.show" />
+                <entry key="admin.save" value="admin.change" />
+                <entry key="admin.view_rights" value="admin.show" />
+                <entry key="admin.save_rights" value="admin.change" />
+                <entry key="admin.new" value="admin.new" />
+                <entry key="admin.list" value="admin.show" />
+                <entry key="admin.view_without_load" value="admin.show" />
+                <entry key="admin.export_csv" value="admin.show" />
+                <entry key="admin.export_pdf" value="admin.show" />
+                <entry key="admin.delete" value="admin.delete" />
+                <entry key="admin.confirm_delete" value="admin.delete" />
+                <entry key="admin.unspecified" value="admin.show" />
+
+                <entry key="user.group.list" value="role.show" />
+                <entry key="user.group.save" value="role.change" />
+                <entry key="user.group.create" value="role.change" />
+                <entry key="user.group.delete" value="role.delete" />
+                <entry key="user.group.confirmDelete" value="role.delete" />
+
+               <!-- datasource tokens -->
+                <entry key="datasource.list" value="always.allowed" />
+
+                <!-- bounce filter permissions-->
+                <entry key="bounce.filter.list" value="mailloop.show" />
+                <entry key="bounce.filter.view" value="mailloop.show" />
+                <entry key="bounce.filter.create" value="mailloop.change" />
+                <entry key="bounce.filter.save" value="mailloop.change" />
+                <entry key="bounce.filter.delete" value="mailloop.delete" />
+                <entry key="bounce.filter.confirmDelete" value="mailloop.delete" />
+
+                <!-- user group permissions Spring MVC -->
+                <entry key="user.group.view" value="admin.show" />
+
+                <entry key="plugin.manager.list" value="pluginmanager.show"/>
+                <entry key="plugin.manager.view" value="pluginmanager.show"/>
+                <entry key="plugin.manager.create" value="pluginmanager.change"/>
+                <entry key="plugin.manager.save" value="pluginmanager.change"/>
+                <entry key="plugin.manager.delete" value="pluginmanager.change"/>
+                <entry key="plugin.manager.deactivate" value="pluginmanager.change"/>
+                <entry key="plugin.manager.activate" value="pluginmanager.change"/>
+
+                <entry key="profiledb.list" value="profileField.show" />
+                <entry key="profiledb.view" value="profileField.show" />
+                <entry key="profiledb.save" value="profileField.show" />
+                <entry key="profiledb.new" value="profileField.show" />
+                <entry key="profiledb.delete" value="profileField.show" />
+                <entry key="profiledb.confirm_delete" value="profileField.show" />
+                <entry key="profiledb.confirmDelete" value="profileField.show" />
+                <entry key="profiledb.newWizardField" value="profileField.show" />
+                <entry key="profiledb.saveWizardField" value="profileField.show" />
+                <entry key="profiledb.backToTarget" value="profileField.show" />
+                <entry key="profiledb.new_field" value="profileField.show" />
+                <entry key="profiledb.newField" value="profileField.show" />
+                <entry key="profiledb.back_to_target" value="targets.show" />
+                <entry key="profiledb.unspecified" value="profileField.show" />
+
+                <entry key="userform.save" value="forms.change" />
+                <entry key="userform.confirm_delete" value="forms.delete" />
+                <entry key="userform.delete" value="forms.delete" />
+                <entry key="userform.list" value="forms.show" />
+                <entry key="userform.view" value="forms.show" />
+                <entry key="userform.new" value="forms.change" />
+                <entry key="userform.bulk_delete" value="forms.delete" />
+                <entry key="userform.bulk_confirm_delete" value="forms.delete" />
+                <entry key="userform.clone_form" value="forms.change" />
+                <entry key="userform.view_without_load" value="forms.show" />
+                <entry key="userform.unspecified" value="forms.show" />
+                <entry key="userform.save_activeness" value="forms.change" />
+                <entry key="userform.import" value="forms.import" />
+                <entry key="userform.export" value="forms.export" />
+                
+                <entry key="action.bulk_confirm_delete" value="actions.delete" />
+                <entry key="action.bulk_delete" value="actions.delete" />
+                <entry key="action.clone" value="actions.change" />
+                <entry key="action.list" value="actions.show" />
+                <entry key="action.view" value="actions.show" />
+                <entry key="action.save" value="actions.change" />
+                <entry key="action.confirm_delete" value="actions.delete" />
+                <entry key="action.delete" value="actions.delete" />
+                <entry key="action.add_module" value="actions.change" />
+                <entry key="action.remove_module" value="actions.change" />
+                <entry key="action.new" value="actions.show" />
+                <entry key="action.view_forms" value="actions.show"/>
+                <entry key="action.save_activeness" value="actions.change"/>
+                <entry key="action.unspecified" value="actions.show" />
+
+                <!--Mailinglist permission-->
+                <entry key="mailinglist.list" value="mailinglist.show" />
+                <entry key="mailinglist.view" value="mailinglist.show" />
+                <entry key="mailinglist.save" value="mailinglist.change" />
+                <entry key="mailinglist.delete" value="mailinglist.delete" />
+                <entry key="mailinglist.create" value="mailinglist.change" />
+                <entry key="mailinglist.confirmBulkDelete" value="mailinglist.delete" />
+                <entry key="mailinglist.bulkDelete" value="mailinglist.delete" />
+                <entry key="mailinglist.confirmDelete" value="mailinglist.delete" />
+                <entry key="mailinglist.recipientList" value="mailinglist.show" />
+                <entry key="mailinglist.recipientsDeleteSettings" value="mailinglist.recipients.delete" />
+                <entry key="mailinglist.confirmRecipientsDelete" value="mailinglist.recipients.delete" />
+                <entry key="mailinglist.recipientsDelete" value="mailinglist.recipients.delete" />
+
+                <entry key="target.view" value="targets.show" />
+                <entry key="target.save" value="targets.change" />
+                <entry key="target.back_to_mailingwizard" value="mailing.show" />
+                <entry key="target.bulk_confirm_delete" value="targets.delete" />
+                <entry key="target.bulk_delete" value="targets.delete" />
+                <entry key="target.lock_target_group" value="targets.lock" />
+                <entry key="target.unlock_target_group" value="targets.lock" />
+                <entry key="target.rebuild_structure_data" value="targets.show" />
+                <entry key="target.new" value="targets.change" />
+                <entry key="target.list" value="targets.show" />
+                <entry key="target.confirm_delete" value="targets.delete" />
+                <entry key="target.delete" value="targets.delete" />
+                <entry key="target.create_ml" value="targets.createml" />
+                <entry key="target.clone" value="targets.change" />
+                <entry key="target.delete_recipients_confirm" value="recipient.delete" />
+                <entry key="target.delete_recipients" value="recipient.delete" />
+                <entry key="target.view_mailings" value="targets.show" />
+                <entry key="target.unspecified" value="targets.show" />
+
+                <entry key="targetQB.show" value="targets.show" />
+                <entry key="targetQB.viewQB" value="targets.show" />
+                <entry key="targetQB.viewEQL" value="targets.show" />
+                <entry key="targetQB.save" value="targets.change" />
+                <entry key="targetQB.copy" value="targets.change" />
+                <entry key="targetQB.create" value="targets.change" />
+                <entry key="targetQB.lock" value="targets.change" />
+                <entry key="targetQB.viewMailings" value="targets.show" />
+                <entry key="targetQB.unlock" value="targets.change" />
+                
+                <entry key="recipient.overview_start" value="recipient.show" />
+                <entry key="recipient.search" value="recipient.show" />
+                <entry key="recipient.view" value="recipient.show" />
+                <entry key="recipient.mailings_view" value="recipient.history.mailing" />
+                <entry key="recipient.history_view" value="recipient.history" />
+                <entry key="recipient.bulkView" value="recipient.change.bulk" />
+                <entry key="recipient.bulkSave" value="recipient.change.bulk" />
+                 <entry key="recipient.calculateRecipients" value="recipient.change.bulk" />
+                <entry key="recipient.bulk_confirm_delete" value="recipient.delete" />
+                <entry key="recipient.bulk_delete" value="recipient.delete" />
+                <entry key="recipient.list" value="recipient.show" />
+                <entry key="recipient.save" value="recipient.change" />
+                <entry key="recipient.new" value="recipient.create" />
+                <entry key="recipient.confirm_delete" value="recipient.delete" />
+                <entry key="recipient.delete" value="recipient.delete" />
+                <entry key="recipient.view_without_load" value="recipient.show" />
+                <entry key="recipient.unspecified" value="recipient.show" />
+                <entry key="recipient.check_address" value="recipient.show" />
+
+                <!-- GWUA-3764 test feature -->
+                <entry key="report.recipients" value="always.allowed"/>
+
+                <entry key="recipientsreport.list" value="wizard.import|wizard.export"/>
+                <entry key="recipientsreport.view" value="wizard.import|wizard.export"/>
+                <entry key="recipientsreport.download" value="wizard.import|wizard.export"/>
+
+                <entry key="recipient_chart.ajaxStatistic" value="recipient.show" />
+
+                <entry key="newimportwizard.start" value="wizard.import" />
+                <entry key="newimportwizard.init" value="wizard.import|wizard.importclassic"/>
+                <entry key="newimportwizard.preview" value="wizard.import" />
+                <entry key="newimportwizard.proceed" value="wizard.import" />
+                <entry key="newimportwizard.error_edit" value="wizard.import" />
+                <entry key="newimportwizard.mlists" value="wizard.import" />
+                <entry key="newimportwizard.download_csv" value="wizard.import" />
+                <entry key="newimportwizard.unspecified" value="wizard.import" />
+                
+                <entry key="importprofile.list" value="wizard.import" />
+                <entry key="importprofile.view" value="wizard.import" />
+                <entry key="importprofile.new_gender" value="wizard.import" />
+                <entry key="importprofile.remove_gender" value="wizard.import" />
+                <entry key="importprofile.save" value="wizard.import" />
+                <entry key="importprofile.new" value="wizard.import" />
+                <entry key="importprofile.set_default" value="wizard.import" />
+                <entry key="importprofile.confirm_delete" value="wizard.import" />
+                <entry key="importprofile.delete" value="wizard.import" />
+                <entry key="importprofile.unspecified" value="wizard.import" />
+                
+                <entry key="importprofile_columns.list" value="wizard.import" />
+                <entry key="importprofile_columns.view" value="wizard.import" />
+                <entry key="importprofile_columns.upload" value="wizard.import" />
+                <entry key="importprofile_columns.add_column" value="wizard.import" />
+                <entry key="importprofile_columns.save" value="wizard.import" />
+                <entry key="importprofile_columns.new" value="wizard.import" />
+                <entry key="importprofile_columns.skip" value="wizard.import" />
+                <entry key="importprofile_columns.confirm_delete" value="wizard.import" />
+                <entry key="importprofile_columns.delete" value="wizard.import" />
+                <entry key="importprofile_columns.unspecified" value="wizard.import" />
+                <entry key="importprofile_columns.remove_mapping" value="wizard.import" />
+                <entry key="importprofile_columns.bulk_remove" value="wizard.import" />
+                <entry key="importprofile_columns.save_and_start" value="wizard.import" />
+
+                <entry key="ecs_stat.view" value="stats.ecs" />
+                <entry key="ecs_stat.export" value="stats.ecs" />
+
+                <entry key="exportwizard.list" value="wizard.export" />
+                <entry key="exportwizard.view" value="wizard.export" />
+                <entry key="exportwizard.collect_data" value="wizard.export" />
+                <entry key="exportwizard.view_status_window" value="wizard.export" />
+                <entry key="exportwizard.download" value="wizard.export" />
+                <entry key="exportwizard.save_question" value="wizard.export" />
+                <entry key="exportwizard.save" value="wizard.export" />
+                <entry key="exportwizard.confirm_delete" value="wizard.export" />
+                <entry key="exportwizard.delete" value="wizard.export" />
+                <entry key="exportwizard.unspecified" value="wizard.export" />
+
+                <!-- recipient blacklist -->
+                <entry key="blacklist.list" value="blacklist" />
+                <entry key="blacklist.save" value="blacklist" />
+                <entry key="blacklist.confirm.delete" value="blacklist" />
+                <entry key="blacklist.delete" value="blacklist" />
+                <entry key="blacklist.download" value="blacklist" />
+
+                <entry key="salutation.list" value="salutation.show" />
+                <entry key="salutation.view" value="salutation.show" />
+                <entry key="salutation.save" value="salutation.change" />
+                <entry key="salutation.new" value="salutation.change" />
+                <entry key="salutation.confirm_delete" value="salutation.delete" />
+                <entry key="salutation.delete" value="salutation.delete" />
+                <entry key="salutation.unspecified" value="salutation.show" />
+                
+                <entry key="mailing_stat.list" value="stats.mailing" />
+                <entry key="mailing_stat.mailingstat" value="stats.mailing" />
+                <entry key="mailing_stat.weekstat" value="stats.mailing" />
+                <entry key="mailing_stat.daystat" value="stats.mailing" />
+                <entry key="mailing_stat.url_weekstat" value="stats.mailing" />
+                <entry key="mailing_stat.url_daystat" value="stats.mailing" />
+                <entry key="mailing_stat.mailing_send_opened" value="stats.mailing" />
+                <entry key="mailing_stat.mailing_optout" value="stats.mailing" />
+                <entry key="mailing_stat.mailing_bounces" value="stats.mailing" />
+                <entry key="mailing_stat.unspecified" value="stats.mailing" />
+                
+                <entry key="mailing_compare.list" value="stats.mailing" />
+                <entry key="mailing_compare.compare" value="stats.mailing" />
+                <entry key="mailing_compare.unspecified" value="stats.mailing" />
+                
+                <entry key="domain.statistics.view" value="stats.domains"/>
+
+                <entry key="recipient_stats.list" value="stats.mailing" />
+                <entry key="recipient_stats.view" value="stats.mailing" />
+                <entry key="recipient_stats.unspecified" value="stats.mailing" />
+                
+                <entry key="monthly.statistics.view" value="stats.month"/>
+
+                <!--Mvc dashboard permissions-->
+                <entry key="dashboard.view" value="always.allowed" />
+                <entry key="dashboard.getStatistics" value="stats.mailing" />
+
+                <entry key="information.list" value="always.allowed" />
+                <entry key="information.unspecified" value="always.allowed" />
+                
+                <entry key="calendar.view" value="calendar.show" />
+                <entry key="calendar.getUnsentMailings" value="calendar.show" />
+                <entry key="calendar.saveComment" value="calendar.show"/>
+                <entry key="calendar.removeComment" value="calendar.show"/>
+                <entry key="calendar.getAutoOptimization" value="calendar.show" />
+                <entry key="calendar.getPlannedMailings" value="calendar.show" />
+                <entry key="calendar.getComments" value="calendar.show" />
+                <entry key="calendar.getMailings" value="calendar.show" />
+                <entry key="calendar.moveMailing" value="calendar.show" />
+                <entry key="calendar.getNotifications" value="calendar.show" />
+                <entry key="calendar.movePush" value="calendar.show" />
+
+                <entry key="mailingbase.new" value="mailing.change" />
+                <entry key="mailingbase.view" value="mailing.show" />
+                <entry key="mailingbase.view_without_load" value="mailing.show" />
+                <entry key="mailingbase.save" value="mailing.change" />
+                <entry key="mailingbase.confirm_delete" value="mailing.delete" />
+                <entry key="mailingbase.confirm_undo" value="mailing.change" />
+                <entry key="mailingbase.undo" value="mailing.change" />
+                <entry key="mailingbase.bulk_confirm_delete" value="mailing.delete" />
+                <entry key="mailingbase.bulk_delete" value="mailing.delete" />
+                <entry key="mailingbase.move_media_up" value="mailing.change" />
+                <entry key="mailingbase.move_media_down" value="mailing.change" />
+                <entry key="mailingbase.recipients_calculate" value="always.allowed" />
+                <entry key="mailingbase.clone_as_mailing" value="mailing.change" />
+                <entry key="mailingbase.list" value="mailing.show" />
+                <entry key="mailingbase.remove_target" value="mailing.change" />
+                <entry key="mailingbase.select_template" value="template.show" />
+                <entry key="mailingbase.delete" value="mailing.delete" />
+                <entry key="mailingbase.used_actions" value="mailing.show" />
+                <entry key="mailingbase.unspecified" value="mailing.show" />
+                <entry key="mailingbase.mailing_templates" value="mailing.show" />
+                <entry key="mailingbase.is_advertising_content_type" value="mailing.show" />
+                <entry key="mailingbase.mailing_import" value="mailing.import" />
+                
+                <entry key="mailingParameter.newParameter" value="mailing.parameter.change" />
+                <entry key="mailingParameter.save" value="mailing.parameter.change" />
+                <entry key="mailingParameter.delete" value="mailing.parameter.change" />
+                <entry key="mailingParameter.deleteConfirm" value="mailing.parameter.change" />
+                <entry key="mailingParameter.deleteCancelled" value="mailing.parameter.change" />
+                <entry key="mailingParameter.confirmDelete" value="mailing.parameter.change" />
+                
+                <entry key="mwStart.unspecified" value="mailing.change" />
+                <entry key="mwStart.target" value="mailing.change" />
+                <entry key="mwStart.newTarget" value="targets.change" />
+                <entry key="mwStart.newField" value="profileField.show" />
+                <entry key="mwStart.mailtype" value="mailing.change" />
+                <entry key="mwStart.init" value="mailing.change" />
+                <entry key="mwStart.withoutWizard" value="mailing.change" />
+                <entry key="mwStart.start" value="mailing.change" />
+                <entry key="mwStart.name" value="mailing.change" />
+                <entry key="mwStart.template" value="mailing.change" />
+                <entry key="mwStart.type" value="mailing.change" />
+                <entry key="mwStart.textmodules_previous" value="mailing.change" />
+                <entry key="mwStart.sendaddress" value="mailing.change" />
+                <entry key="mwStart.subject" value="mailing.change" />
+                <entry key="mwStart.targetView" value="targets.show" />
+                <entry key="mwStart.target_finish" value="targets.change" />
+                <entry key="mwStart.textmodule" value="mailing.content.show" />
+                <entry key="mwStart.type_previous" value="mailing.change" />
+                <entry key="mwStart.textmodule_add" value="mailing.content.show" />             
+                <entry key="mwStart.textmodule_save" value="mailing.content.show" />
+                <entry key="mwStart.textmodule_move_up" value="mailing.content.show" />             
+                <entry key="mwStart.textmodule_move_down" value="mailing.content.show" />
+                <entry key="mwStart.links" value="mailing.change" />               
+                <entry key="mwStart.link" value="mailing.change" />
+                <entry key="mwStart.link_save_only" value="mailing.change" />              
+                <entry key="mwStart.to_attachment" value="mailing.attachments.show" />
+                <entry key="mwStart.attachment" value="mailing.attachments.show" />
+                <entry key="mwStart.attachmentDownload" value="mailing.attachments.show" />
+                <entry key="mwStart.finish" value="mailing.change" />
+                <entry key="mwStart.previous" value="mailing.change" />
+                <entry key="mwStart.next" value="mailing.change" />
+                <entry key="mwStart.skip" value="mailing.change" />
+                
+                <entry key="workflow.unspecified" value="workflow.show" />
+                <entry key="workflow.list" value="workflow.show" />
+                <entry key="workflow.create" value="workflow.edit" />
+                <entry key="workflow.save" value="workflow.edit" />
+                <entry key="workflow.view" value="workflow.show" />
+                <entry key="workflow.viewOnlyElements" value="workflow.show" />
+                <entry key="workflow.generatePDF" value="workflow.show" />
+                <entry key="workflow.delete" value="workflow.delete" />
+                <entry key="workflow.deleteconfirm" value="workflow.delete" />
+                <entry key="workflow.bulkDeleteConfirm" value="workflow.delete" />
+                <entry key="workflow.bulkDelete" value="workflow.delete" />
+                <entry key="workflow.bulkDeactivateConfirm" value="workflow.activate" />
+                <entry key="workflow.bulkDeactivate" value="workflow.activate" />
+                <entry key="workflow.getMailingLinks" value="workflow.show" />
+                <entry key="workflow.getMailingsByWorkStatus" value="workflow.show" />
+                <entry key="workflow.getAllMailingSorted" value="workflow.show" />
+                <entry key="workflow.getWorkflowContent" value="workflow.show" />
+                <entry key="workflow.getSampleWorkflowContent" value="workflow.show" />
+                <entry key="workflow.loadStatistics" value="workflow.show" />
+                <entry key="workflow.getCurrentAdminTime" value="workflow.show" />
+                <entry key="workflow.getMailingContent" value="workflow.show" />
+                <entry key="workflow.copy" value="workflow.edit" />
+                <entry key="workflow.validateDependency" value="workflow.show" />
+                <entry key="workflow.getMailingThumbnail" value="workflow.show" />
+
+                <entry key="importwizard.start" value="wizard.importclassic" />
+                <entry key="importwizard.mode" value="wizard.importclassic" />
+                <entry key="importwizard.csv" value="wizard.importclassic" />
+                <entry key="importwizard.check_fields" value="wizard.importclassic" />
+                <entry key="importwizard.verify_missing_fields" value="wizard.importclassic" />
+                <entry key="importwizard.parse" value="wizard.importclassic" />
+                <entry key="importwizard.preview_scroll" value="wizard.importclassic" />
+                <entry key="importwizard.prescan" value="wizard.importclassic" />
+                <entry key="importwizard.mlists" value="wizard.importclassic" />
+                <entry key="importwizard.write" value="wizard.importclassic" />
+                <entry key="importwizard.view_status" value="wizard.importclassic" />
+                <entry key="importwizard.view_status_window" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_date" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_email" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_emaildouble" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_gender" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_mailtype" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_numeric" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_structure" value="wizard.importclassic" />
+                <entry key="importwizard.get_error_blacklist" value="wizard.importclassic" />
+                <entry key="importwizard.get_data_parsed" value="wizard.importclassic" />
+
+                <entry key="mailingcontent.unspecified" value="mailing.content.show" />
+                <entry key="mailingcontent.view_content" value="mailing.content.show" />
+                <entry key="mailingcontent.import_content" value="mailing.content.show" />
+                <entry key="mailingcontent.view_textblock" value="mailing.content.show" />
+                <entry key="mailingcontent.save_textblock_and_back" value="mailing.content.show" />
+                <entry key="mailingcontent.save_textblock" value="mailing.content.show" />
+                <entry key="mailingcontent.add_textblock" value="mailing.content.show" />
+                <entry key="mailingcontent.add_textblock_and_back" value="mailing.content.show" />
+                <entry key="mailingcontent.delete_textblock" value="mailing.content.show" />
+                <entry key="mailingcontent.change_order_up" value="mailing.content.show" />
+                <entry key="mailingcontent.change_order_down" value="mailing.content.show" />
+                <entry key="mailingcontent.change_order_top" value="mailing.content.show" />
+                <entry key="mailingcontent.change_order_bottom" value="mailing.content.show" />
+                <entry key="mailingcontent.generate_text_from_html" value="mailing.content.show" />
+                <entry key="mailing.content.save" value="mailing.content.show" />
+
+                <entry key="mcomponents.list" value="mailing.components.show" />
+                <entry key="mcomponents.save_components" value="mailing.components.change" />
+                <entry key="mcomponents.save_component_edit" value="mailing.components.change" />
+                <entry key="mcomponents.bulk_download_component" value="mailing.components.show" />
+                <entry key="mcomponents.upload_archive" value="mailing.components.change" />
+                <entry key="mcomponents.upload_sftp" value="mailing.components.sftp" />
+                <entry key="mcomponents.delete" value="mailing.components.change" />
+                <entry key="mcomponents.unspecified" value="mailing.components.show" />
+                <entry key="mcomponents.confirm_delete" value="mailing.components.change" />
+                <entry key="mcomponents.update_image" value="mailing.components.change" />
+                
+                <entry key="mailingattachments.list" value="mailing.attachments.show" />
+                <entry key="mailingattachments.save" value="mailing.attachments.show" />
+                <entry key="mailingattachments.confirm_delete" value="mailing.attachments.show" />
+                <entry key="mailingattachments.delete" value="mailing.attachments.show" />
+                
+                <entry key="mailingsend.view_send" value="mailing.send.show" />
+                <entry key="mailingsend.unlock_send" value="mailing.can_allow" />
+                <entry key="mailingsend.deactivate_mailing" value="mailing.send.world" />
+                <entry key="mailingsend.deactivate_intervalmailing" value="mailing.send.world" />
+                <entry key="mailingsend.activate_rulebased" value="mailing.send.world" />
+                <entry key="mailingsend.activate_campaign" value="mailing.send.world" />
+                <entry key="mailingsend.activate_intervalmailing" value="mailing.send.world" />
+                <entry key="mailingsend.save_statusmail_recipients" value="mailing.send.world" />
+                <entry key="mailingsend.confirm_send_world" value="mailing.send.show" />
+                <entry key="mailingsend.preview_select" value="mailing.show" />
+                <entry key="mailingsend.view_send2" value="mailing.send.show" />
+                <entry key="mailingsend.view_send2_no_recipient_count" value="mailing.send.world" />
+                <entry key="mailingsend.cancel_mailing" value="mailing.send.world" />
+                <entry key="mailingsend.pdf_preview" value="mailing.show" />
+                <entry key="mailingsend.view_delstatbox" value="mailing.send.show" />
+                <entry key="mailingsend.cancel_mailing_request" value="mailing.send.world" />
+                <entry key="mailingsend.send_admin" value="always.allowed" />
+                <entry key="mailingsend.send_test" value="always.allowed" />
+                <entry key="mailingsend.send_world" value="mailing.send.world" />
+                <entry key="mailingsend.preview_header" value="mailing.show" />
+                <entry key="mailingsend.preview" value="mailing.show" />
+                <entry key="mailingsend.check_links" value="mailing.send.show" />
+                <entry key="mailingsend.unspecified" value="mailing.send.show" />
+                <entry key="mailingsend.prioritization_switching" value="mailing.send.show" />
+                
+                <entry key="tracklink.list" value="mailing.content.show" />
+                <entry key="tracklink.view" value="mailing.content.show" />
+                <entry key="tracklink.save" value="mailing.content.show" />
+                <entry key="tracklink.save_all" value="mailing.content.show" />
+                <entry key="tracklink.unspecified" value="mailing.content.show" />
+                <entry key="tracklink.delete_global_and_individual_link_extensions" value="mailing.content.show" />
+                
+                <entry key="campaign.unspecified" value="campaign.show" />
+                <entry key="campaign.list" value="campaign.show" />
+                <entry key="campaign.view" value="campaign.show" />
+                <entry key="campaign.save" value="campaign.change" />
+                <entry key="campaign.new" value="campaign.change" />
+                <entry key="campaign.new_mailing" value="mailing.change" />
+                <entry key="campaign.view_without_load" value="campaign.show" />
+                
+                <entry key="webservice.manager.user.list" value="webservice.user.show"/>
+                <entry key="webservice.manager.user.create" value="webservice.user.create"/>
+                <entry key="webservice.manager.user.save" value="webservice.user.change"/>
+                <entry key="webservice.manager.user.view" value="webservice.user.change"/>
+
+                <entry key="session.info" value="always.allowed"/>
+
+                <entry key="http_options_handler.handle" value="always.allowed" /> <!-- Required for successful preflight requests -->
+
+                <!-- new tokens for user activity log -->
+                <entry key="user.activity.log.list" value="always.allowed"/>
+                <entry key="user.activity.log.download" value="always.allowed"/>
+
+                <entry key="response.messagesJson" value="always.allowed"/>
+                    
+                <entry key="server.status.view" value="server.status"/>
+                <entry key="server.status.saveConfig" value="server.status"/>
+                <entry key="server.status.viewConfig" value="server.status"/>
+                <entry key="server.status.startJob" value="server.status"/>
+                <entry key="server.status.sendTestEmail" value="server.status"/>
+                <entry key="server.status.diagnosisView" value="server.status"/>
+                <entry key="server.status.logFileDownload" value="server.status"/>
+                <entry key="server.status.logFileView" value="server.status"/>
+                <entry key="server.status.jobQueueView" value="server.status"/>
+            
+			</map>
+		</property>
+		<!-- Below is a configuration of tokens in case of permission depends on several tokens
+			 If there are more than one permissions are needed for an action use aggregation AND,
+			 if more than one permissions are possible to allow an action use aggregation OR.
+			 List all possible or needed permissions in the list of property tokens.
+			 All subactions, which only have one permission are not complex and have to be defined above.
+			 Be careful not to define permissions for one subaction twice. -->
+			
+		<property name="complexTokens">
+			<map>
+				<entry key="campaign">
+					<list>
+						<bean class="com.agnitas.web.perm.ComplexToken">
+							<property name="subaction" value="confirm_delete"/>
+							<property name="tokens">
+								<list>
+									<value>campaign.delete</value>
+									<value>mailing.delete</value>
+								</list>
+							</property>
+							<property name="aggregation" value="OR"/>
+						</bean>
+						<bean class="com.agnitas.web.perm.ComplexToken">
+							<property name="subaction" value="delete"/>
+							<property name="tokens">
+								<list>
+									<value>campaign.delete</value>
+									<value>mailing.delete</value>
+								</list>
+							</property>
+							<property name="aggregation" value="OR"/>
+						</bean>
+					</list>
+				</entry>
+			</map>
+		</property>
+	</bean>
+</beans>

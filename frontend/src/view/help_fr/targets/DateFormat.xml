@@ -1,0 +1,7 @@
+<HelpBalloon>
+	<title>Format de date pour les comparaisons de dates</title>
+	<content><![CDATA[Pour les comparaisons de dates, veuillez pr&eacute;ciser le format &agrave; utiliser pour la comparaison des deux valeurs de date &agrave; comparer.
+En r&egrave;gle g&eacute;n&eacute;rale, vous devez utiliser le format de date "AAAAMMJJ", qui se compare &agrave; la date compl&egrave;te.
+Pour les comparaisons d'anniversaires, veuillez utiliser le format "MMDD", dans ce cas, seuls les mois et les jours seront compar&eacute;s.
+	]]></content>
+</HelpBalloon>

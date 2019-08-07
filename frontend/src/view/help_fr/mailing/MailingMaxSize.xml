@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[taille maximale des courriels]]></title>
+	<content><![CDATA[Cette valeur est calcul&eacute;e en d&eacute;terminant la variante d'envoi ayant le plus grand volume de donn&eacute;es, en tenant compte de tous les modules à contenu variable et facultatif ainsi que des images. Si une deuxième valeur est affich&eacute;e entre parenthèses, cette valeur inclut &eacute;galement les images externes.]]></content>
+</HelpBalloon>

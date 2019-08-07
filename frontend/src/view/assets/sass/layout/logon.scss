@@ -1,0 +1,118 @@
+.l-logon-mask {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: 100;
+  overflow: auto;
+
+  .l-login-button-group {
+    margin-top: 20px;
+    margin-bottom: 5px !important;
+  }
+
+  .l-bottom-links-group {
+    a {
+      color: grey;
+    }
+  }
+
+  form {
+    margin: auto;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .l-form {
+    margin: 30px 30px 50px 30px;
+  }
+
+  #notifications-container {
+    position: relative;
+    width: auto;
+    margin: 35px auto;
+    padding: 0 30px;
+  }
+}
+
+.l-frame-wrapper {
+  display: none;
+}
+
+.l-frame {
+  width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 601px) {
+  .l-logon-mask {
+    .l-form {
+      margin: 30px 100px 50px 100px;
+    }
+  }
+}
+
+@media (min-width: 1281px) {
+  .l-logon-mask {
+    right: 0;
+    top: 0;
+    width: 600px;
+
+    .l-form {
+      margin: 50px 100px 50px 100px;
+    }
+  }
+
+  .l-frame-wrapper {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 600px;
+    width: auto;
+    overflow: hidden;
+  }
+}
+
+.l-logo-box {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  overflow: hidden;
+  margin: 0 5px 30px 5px !important;
+
+  .l-left-logo {
+    width: auto;
+    height: auto;
+  }
+
+  .l-edition {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-left: 10px;
+  }
+
+  .l-edition-name {
+    font-size: 28px;
+    line-height: 1em;
+    font-weight: 700;
+    white-space: nowrap;
+    color: #0071b9;
+  }
+
+  .l-edition-version {
+    color: grey;
+  }
+
+  .l-right-logo {
+    width: auto;
+    height: auto;
+  }
+}

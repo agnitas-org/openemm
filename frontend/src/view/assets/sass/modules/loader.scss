@@ -1,0 +1,18 @@
+.loader {
+  position: fixed;
+  top: 15px; left: 50%;
+  margin-left: 45px;
+  z-index: 1003;
+
+  display: none;
+
+  height:    30px;
+  padding:   8px;
+  line-height: 15px;
+
+  border-radius: 2px;
+
+  font-size: $fs-small;
+  color:     $c-white;
+  background-color: $c-black;
+}

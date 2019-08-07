@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<!DOCTYPE plugin PUBLIC "-//JPF//Java Plug-in Manifest 1.0" "http://jpf.sourceforge.net/plugin_1_0.dtd">
+
+<plugin id="emm_core" version="0.0.1" vendor="Agnitas AG">
+
+	<attributes>
+			<attribute id="plugin-name" value="EMM core system" />
+			<attribute id="plugin-description" value="System plugin providing the core extension points" />
+	</attributes>
+
+	<requires>
+		<import plugin-id="emm_core_navigation" />
+	</requires>
+
+	<!-- "URL"-extension point -->
+	<extension-point id="featurePlugin">
+		<parameter-def id="class" type="string" />
+	</extension-point>
+
+	<!-- Extension points for outputs to JSP -->
+	<extension-point id="footer">
+		<parameter-def id="class" type="string" />
+	</extension-point>
+
+	<extension-point id="admin.view.pos2">
+    	<parameter-def id="class" type="string" />
+	</extension-point>
+	
+	<extension-point id="birt.statistics.mailing">
+		<parameter-def id="titlekey" type="string" multiplicity="one" />
+		<parameter-def id="reportdesign" type="string" multiplicity="one" />
+		<parameter-def id="permissions" type="string" multiplicity="one" />
+	</extension-point>
+
+</plugin>

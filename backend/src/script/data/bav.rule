@@ -1,0 +1,95 @@
+#	-*- no -*-
+######################################################################################################################################################################################################################################################################
+##                                                                                                                                                                                                                                                                  ##
+##                                                                                                                                                                                                                                                                  ##
+##        Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   ##
+##                                                                                                                                                                                                                                                                  ##
+##        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    ##
+##        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           ##
+##        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            ##
+##                                                                                                                                                                                                                                                                  ##
+######################################################################################################################################################################################################################################################################
+#
+#	Detect non daemon mail, which is still generated automatically
+[systemmail]
+^Subject: .*(DELIVER|RETURNED MAIL).*
+^Return-Path:.*<>
+^Precedence: bulk
+^Return-Path:.*<(MAILER-DA?EMON.*|(mailgun|mailout)@(.*\.)?agnitas\.de)>
+^Subject: unsubscribe:[A-Za-z0-9]+(\.[A-Za-z0-9]+)+
+#
+#
+#	Every mail that matches this filter won't be forwarded and will be
+#	stored locally in a file beginning with {mark}. Forward mail used
+#	`sent' as mark.
+[filter]
+{auto}^(From|Sender): .*(AUTO.*(RESPOND|ANTWORT|REPLY)|(ZUSTELL|EINGANGS)BEST(AE|Ä|=E4)TIGUNG|KEINEANTWORTADRESSE).*
+{ooo}^Subject: .*(OUT OF.*OFFICE|AUTO.*RESPOND|AUTO.*REPLY|ABWESENHEIT|URLAUBSVERTRETUNG|ABWESEND).*
+{ooo}^Subject: .*(AUTOMATISCH|VACATION|ZUSTELLBENACH|IST.*AU(SS|ß|=DF)ER.*HAUS|IST NICHT IM HAUS|IST IM URLAUB|(AUTO|ACTION).*NOTIFICATION|EINGANGSBEST(AE|Ä|=E4)TIGUNG|IS OUT OF E-MAILACCESS).*
+# {unsubscribe}^Subject: .*UNSUBSCRIBE.*
+#
+#
+#	Hardbounces
+[hard]
+#
+unknown user|user unknown|user not found
+^There is no such user\.
+^        Recipient.s Mailbox unavailable
+^Receiver not found:
+^Action: failed
+^Sorry, no mailbox here by that name\.
+^    The recipient name is not recognized
+^Invalid receiver address:
+^did not reach the following recipient\(s\):
+^Ihre Mail ist leider nicht zustellbar\.
+^Sorry. Your message could not be delivered to:
+^No such user\.
+^   user .* not known at this site\.
+^    unknown local-part .* in domain .*
+^.* sorry, no such mailbox here
+^User  not listed in public
+The user.s email name is not found\.
+: unknown recipient:
+^User not known
+^Diese Adresse ist nicht mehr verfuegbar\.$
+#
+# tassilos hard world
+^The following destination addresses were unknown
+Received <<< 550 Invalid recipient <.*>
+Unknown recipient address
+address: <.*> ... failed
+<<< 550 <.*> ... failed
+550 Invalid recipient <.*>
+550 Unknown local part .* in <.*>
+553 Invalid recipient address
+550 No such recipient
+User name is unknown
+no vaild recipients were found for this message
+This user doesn.t have a yahoo.de account
+# Sourceforge Bugreport #2620217
+^    Unrouteable address
+#
+#
+#	Softbounces
+[soft]
+#
+^Mailbox size exceeded - Mailbox voll
+^This message is looping:
+^.* User.?s Disk Quota exceeded
+^.* \.\.\. 550 Mailbox quota exceeded / Mailbox voll\.
+^since the mailbox size of the recipient was exceeded!
+Message could not be delivered for [0-9][0-9] hours - returned\.
+\.\.\. Benutzer hat das Speichervolumen ueberschritten
+.* The intended recipient.s mailbox is full\.
+^Sorry, i couldn.t find any host by that name
+#
+# tassilos soft world
+^<.*>: message rejected by recipient, comment: .Quota not
+The following mail address is unreachable: <.*>
+mailbox is full \(MTA-imposed quote exceeded while writing to file .*\):
+Returned mail: Mailbox full
+output: .*: Over quota
+the recipient mailbox is full
+552 RCPT TO:<.*> Mailbox disk quota
+Quota exceeded. The recipients mailbox is full.
+^User mailbox exceeds allowed size: .*

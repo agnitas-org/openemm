@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Include profile field in history]]></title>
+	<content><![CDATA[By activating the profile field history, the original contents of this field are archived when a change (automated or manual) takes place. The profile field historization also allows the change of this field to be used as a campaign trigger (selectable in the start icon). Please note that you can only activate a maximum of 5 fields for historization. If further fields are required, please contact your account manager.]]></content>
+</HelpBalloon>

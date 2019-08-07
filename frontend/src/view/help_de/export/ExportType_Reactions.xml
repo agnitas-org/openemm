@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>ExportTyp: Reaktionen</title>
+	<content><![CDATA[ Es werden alle Reaktionen des Vortags je Empf&auml;nger aufgelistet. Folgende Felder sind im Export enthalten: Mailing_ID, Customer_ID, E-Mail, Event (1=Link-Klick, 2=&Ouml;ffnung, 3=Abmeldung, 4=Zustellung, 5=Softbounce, 6=Hardbounce, 7=Blacklist, 8=Revenue), Timestamp (f&uuml;r die aufgetretene Reaktion), Link (wenn es sich um einen Link-Klick handelte) und Revenue]]></content>
+</HelpBalloon>

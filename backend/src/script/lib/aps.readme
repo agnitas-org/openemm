@@ -1,0 +1,475 @@
+AGNITAS Plugin Service
+======================
+
+This is a plugin framework or library for python with one primary goal
+in mind: simple, simple for the author of the host program and simple
+for the writer of a plugin. For this goal we sacrified possible
+advanced features like dependencies, dynamic loading, etc. Some more
+fancy feature are still available, but totally optional.
+
+Keep in mind that this system offers little to no security mechanism.
+That means, every plugin has full access to all data and the
+runtimesystem as the host has.
+
+
+Simple example
+--------------
+
+The host application must import the module "aps" and create an
+instance of the class "Manager". Then the plugin system should be
+bootstrapped and can then be used. Before exiting, the manager should
+be shutdown.
+
+Soe this is a simple frame for the host application:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ()
+	mgr.bootstrap ()
+	
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+This will not do very much, it will scan the current directory for
+python modules, tries to load them and if they are recognized as a
+plugin, their methods will be regisierted. As this is a often unwanted
+behaviour (the host program will be loaded itself to see, if it is a
+plugin), one or more separate directories should be used for placing
+the plugins themselves. Absolute paths are preferred, but for this
+example we use a relative path to a subdirectory plugin:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ('plugin')
+	mgr.bootstrap ()
+	
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+We changed the creation of the instance and passing a path for the
+plugin directory. If you have more than one, pass a tuple with a list
+of directories to use. Still not very useful, but better than before
+as the sample will not be loaded anymore. And it will not crash, if
+you create the plugin directory.
+
+Now call one or even more possible installed plugins:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ('plugin')
+	mgr.bootstrap ()
+	mgr ().doit ()
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+This will call each plugin which registered itself with the name
+"doit". Without a plugin, nothing will happen. Be sure to understand,
+that a plugin method is called using the calling interface of the
+manager instance. At the moment this returns just the instance
+variable dispatch, so you could write instead of "mgr ().doit ()"
+"mgr.dispatch.doit ()". But as this is an internal solution, which may
+be modified without any notice in future versions, use the calling
+interface "mgr ().doit ()" instead. Always. Forever. If you think this
+has a performance impact, then you should think about solving your
+problem using python at all.
+
+Now, create a simple plugin which just prints "Hello, world!".
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {}
+
+def doit ():
+	print ('Hello, world!')
+------------------------------ 8< ------------------------------
+
+If you now start sample.py you should see the output of the plugin.
+The first line is required to mark this as a plugin. This dictonary
+may contain some configuration parameter and can also be filled by an
+external configuration file. Now add a second plugin:
+
+--- plugin/halloWelt.py ------ 8< ------------------------------
+__aps__ = {}
+
+def doit ():
+	print ('Hallo, Welt!')
+------------------------------ 8< ------------------------------
+
+When you now start sample.py, you will see that the second plugin is
+executed first. This is the order sequence by the file name. If you
+want to enforce the first plugin to be the first, modify the plugins:
+
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1
+}
+
+def doit ():
+	print ('Hello, world!')
+------------------------------ 8< ------------------------------
+--- plugin/halloWelt.py ------ 8< ------------------------------
+__aps__ = {
+	'order':	2
+}
+
+def doit ():
+	print ('Hallo, Welt!')
+------------------------------ 8< ------------------------------
+
+Now, the first plugin is executed first, the second as the second.
+This quit simple ordering system allows a minimal control of the
+execution sequence. A more advanced version is the depend keyword,
+which will take a list of module names and try to obey the dependence
+list, but if it cannot be resolved, the system is still running.
+
+To overwrite entries in the __aps__ dictionary you can add a separate
+configuration file, where the default name is "plugin.cfg" in the
+plugin directory:
+
+--- plugin/plugin.cfg -------- 8< ------------------------------
+[helloWorld]
+order: 2
+[halloWelt]
+order: 1
+------------------------------ 8< ------------------------------
+
+Now, the sequence has changed again. The idea behind this system is to
+provide some useful default configuration in the plugin itself and
+allow modification using the configuration file. So in a simple world,
+no configuration file is needed at all.
+
+As python is an OO language, we can write the plugin as a class:
+
+--- plugin/bonjourMonde.py --- 8< ------------------------------
+__aps__ = {}
+
+class BonjourMonde (object):
+	def doit (self):
+		print ('Bonjour, Monde!')
+------------------------------ 8< ------------------------------
+
+As we have no ordering, the last plugin is executed last. To change
+this, modify the configuration file:
+
+--- plugin/plugin.cfg -------- 8< ------------------------------
+[helloWorld]
+order: 2
+[halloWelt]
+order: 3
+[bonjourMonde]
+order: 1
+------------------------------ 8< ------------------------------
+
+e voila, viva la France! If the manager finds a class which is a
+subclass of "object", it instanciate that class and register all
+methods. 
+
+CAUTION: Whenever the manager scans for data, it ignores names with
+leading underscore (when not looking for specialized names like
+__aps__, of course.)
+
+As a program is often in continous development things may change and
+this is also true for a plugin interface. So there is a minimal
+versioning system enabled in the software. A version number is a major
+number, separated from one or more minor numbers by a period. Major
+numbers are considered incompatible when changed, while a plugin with
+lower minors is able to be executed in the host application.
+
+So first set the version for the host application:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ('plugin', apiVersion = '1.0')
+	mgr.bootstrap ()
+	mgr ().doit ()
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+And now set the required version for our first plugin:
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1,
+	'api':		'1.0'
+}
+
+def doit ():
+	print ('Hello, world!')
+------------------------------ 8< ------------------------------
+
+At this point there is no change in the output. But if we modify for
+example the minor number:
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1,
+	'api':		'1.1'
+}
+
+def doit ():
+	print ('Hello, world!')
+------------------------------ 8< ------------------------------
+
+This plugin is now no more used in the host application. If we obey
+more than one version, we can also provide a list of supported
+versions. For example we support all version 1 installation and a 2.0,
+we can write:
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1,
+	'api':		['1', '2.0']
+}
+
+def doit ():
+	print ('Hello, world!')
+------------------------------ 8< ------------------------------
+
+One final plugin example is the special case for handling all kind of
+requests issued by the manager. This catchall mechanism is a bit more
+tricky and can either be achieved programmatically for functions and
+classes. 
+
+--- plugin/catchall.py ------- 8< ------------------------------
+import	aps
+
+__aps__ = {}
+
+def catchall (name):
+	def proxy (*args, **kws):
+		print ('Catching %s' % name)
+	return proxy
+catchall.name = aps.Manager.catchall
+------------------------------ 8< ------------------------------
+
+As you can see, a catchall method is called before the regular methods
+(and the return value is discarded.) The tricky thing is, the method
+is called with the name (as a string) of the destination method and
+must return a method matching the signature of the requested method.
+In the example we are using the python magics for variable calling
+interface.
+
+To see that it also catches other methods, lets add some other calls
+to the main program:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ('plugin', apiVersion = '1.0')
+	mgr.bootstrap ()
+	mgr ().prepare ()
+	mgr ().doit ()
+	mgr ().cleanup ()
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+Now a sample how to create a catchall as a class:
+
+--- plugin/catchall.py ------- 8< ------------------------------
+import	aps
+
+__aps__ = {}
+
+def catchall (name):
+	def proxy (*args, **kws):
+		print ('Catching %s' % name)
+	return proxy
+catchall.name = aps.Manager.catchall
+
+class Catchall (object):
+	nameMapper = {'_catcher': aps.Manager.catchall}
+	
+	def _catcher (self, name):
+		def proxy (*args, **kws):
+			print ('Class catching %s' % name)
+		return proxy
+------------------------------ 8< ------------------------------
+
+To clarify things, the name of the method and class (catchall and
+Catchall) has no meaning, the magic is done setting the attribute
+"name" of the function catchall and mapping the method "_catcher"
+using the "nameMapper" dictionary to the logical ID
+"aps.Manager.catchall".
+
+There can be two special functions in each plugin file called
+"_bootstrap" and "_shutdown" which are called during initialization
+(wenn calling "mgr.bootstrap ()") and shutdown (when calling
+"mgr.shutdown ()"). During the shutdown process the modules are called
+in reverse order as during bootstrap.
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1,
+	'api':		['1', '2.0']
+}
+
+def doit ():
+	print ('Hello, world!')
+
+def _bootstrap ():
+	print ('Initializing "Hello, World!"')
+	
+def _shutdown ():
+	print ('Shuting "Hello, World!" down')
+------------------------------ 8< ------------------------------
+
+Return values are another thing that requires some special handling.
+For the client (the plugin) code, there is not much magic, the only
+thing to remember is, catchall functions return value is ignored. So
+add now to each plugin a return value:
+
+--- plugin/helloWorld.py ----- 8< ------------------------------
+__aps__ = {
+	'order':	1,
+	'api':		['1', '2.0']
+}
+
+def doit ():
+	print ('Hello, world!')
+	return 'HelloWorld'
+
+def _bootstrap ():
+	print ('Initializing "Hello, World!"')
+	
+def _shutdown ():
+	print ('Shuting "Hello, World!" down')
+------------------------------ 8< ------------------------------
+
+--- plugin/bonjourMonde.py --- 8< ------------------------------
+__aps__ = {}
+
+class BonjourMonde (object):
+	def doit (self):
+		print ('Bonjour, Monde!')
+		return True
+------------------------------ 8< ------------------------------
+
+--- plugin/halloWelt.py ------ 8< ------------------------------
+__aps__ = {
+	'order':	2
+}
+
+def doit ():
+	print ('Hallo, Welt!')
+	return 42
+------------------------------ 8< ------------------------------
+
+--- plugin/catchall.py ------- 8< ------------------------------
+import	aps
+
+__aps__ = {}
+
+def catchall (name):
+	def proxy (*args, **kws):
+		print ('Catching %s' % name)
+		return 3.1415
+	return proxy
+catchall.name = aps.Manager.catchall
+
+class Catchall (object):
+	nameMapper = {'_catcher': aps.Manager.catchall}
+	
+	def _catcher (self, name):
+		def proxy (*args, **kws):
+			print ('Class catching %s' % name)
+			return 2.7182
+		return proxy
+------------------------------ 8< ------------------------------
+
+If we now modify the host application to see the return of the call to
+doit:
+
+--- sample.py ---------------- 8< ------------------------------
+#!/usr/bin/env python
+#
+import	aps
+#
+def main ():
+	mgr = aps.Manager ('plugin', apiVersion = '1.0')
+	mgr.bootstrap ()
+	mgr ().prepare ()
+	print (mgr ().doit ())
+	mgr ().cleanup ()
+	mgr.shutdown ()
+
+if __name__ == '__main__':
+	main ()
+------------------------------ 8< ------------------------------
+
+It returns a list of all regular plugins, in this case "[True,
+'HelloWorld', 42]". It is up to the host application to do something
+useful with the return values. If you want to allow chaining of
+modification, you have to pass a value by reference to the plugin as
+the return value is only available after all plugins for this method
+are done.
+
+You can also add functions and instances programatically if you whish
+to add some internal logic. For this purpose you can call the managers
+register(...) and registerInstance(...) methods. In this case, no
+magic configuration like "__aps__" or the external configuration file
+takes place, neither a special bootstrap or shutdown logic.
+
+
+More features
+-------------
+
+Here are some topics, what else is implemented and need some more
+documentation:
+- restrict loading of methods using __aps__['load']
+- enable/disable a module using __aps__['active']
+- set/get the path of the modules directory using __aps__['path']
+- Managers named paramter:
+  - paths: a list of paths to plugin directories, if omit the current
+directory is used.
+  - tolerant: a boolean value, if set, ignores errors during loading.
+Default is False.
+  - ignore: a boolean value, if set, ignores errors during execution
+of plugins. Default is False.
+  - apiVersion: current version of the api.
+  - apiDescription: detailed description of the exported api.
+- register(..) method in detail.
+- registerInstance(...) method in detail.
+- registerRemoteXMLRPC(...) method and XML-RPC plugins in general.
+- load(...) method in detail.
+- bootstrap(...) method named parameter:
+  - configFile: the name to look for external configuration in the
+plugin directory, "plugin.cfg" by default, pass '-' to disable looking
+for a configuration file.
+  - forceConfig: a boolean value, if set, loads only modules which
+have a section in the configuration file.
+- add some good practice rule, regarding global variables, thread safe
+handling, configuration using __aps__, etc.

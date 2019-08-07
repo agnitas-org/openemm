@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Absender-Adresse</title>
+	<content><![CDATA[Die Absender-Adresse ist die Adresse f&uuml;r R&uuml;ckantworten. Sie sollten deshalb eine m&ouml;glichst sinnvolle Adresse wie zum Beispiel newsdienst@ihrefirma.de eintragen, die es auch wirklich gibt. Sie k&ouml;nnen den Realname der Absender-Adresse (Absender-Name) und der Reply-To-Adresse (Antwort-Name) unterschiedlich benennen. Die hinter den Realnames stehende E-Mail-Adresse bleibt identisch, es handelt sich lediglich um den angezeigten Namen. Die unterschiedlichen Namen k&ouml;nnen Sie in den entsprechenden Formularfeldern unter Absender-Name bzw. Antwort-Name eingeben. Wenn Sie nur einen Namen in Absender-Name eingeben, so wird dieser automatisch als Antwort-Name &uuml;bernommen.]]></content>
+</HelpBalloon>

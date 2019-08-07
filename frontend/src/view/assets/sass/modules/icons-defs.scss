@@ -1,0 +1,40 @@
+/*doc
+---
+title: SVG Sprite Icons
+name: icons-02
+parent: icons
+---
+
+As icons from fronts are limited to one color we are providing an svg-sprite for multi-colored icons. 
+For adding a new icon add the svg with the icon in `src/view/assets/core/images/sprite` and rerun the grunt task.
+
+To differentiate between fontawesome and svg icons the module class for svg icons is `icon-defs`. 
+Instead of using a css class name for selecting an icon please use the `data-icon="name-of-file"` attribute. 
+
+As svg icons work similar to background images, the container must have a width and height assigned. By default the three classes `icon-defs-small`, `icon-defs-medium` and `icon-defs-large` are provided.
+
+```htmlexample
+<i class="icon-defs icon-defs-small" data-icon="clicks-minus"></i>
+<i class="icon-defs icon-defs-medium" data-icon="clicks-minus"></i>
+<i class="icon-defs icon-defs-large" data-icon="clicks-minus"></i>
+```
+*/
+
+.icon-defs {
+  display: inline-block;
+}
+
+.icon-defs-small {
+  width: 15px;
+  height: 15px;
+}
+
+.icon-defs-medium {
+  width: 30px;
+  height: 30px;
+}
+
+.icon-defs-large {
+  width: 45px;
+  height: 45px;
+}

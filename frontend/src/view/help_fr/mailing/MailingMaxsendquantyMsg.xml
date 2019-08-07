@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Nombre maximum de destinataires]]></title>
+	<content><![CDATA[Vous pouvez d&eacute;finir ici le nombre maximum de destinataires auxquels le mailing doit &ecirc;tre envoy&eacute;. La valeur "0" signifie illimit&eacute;. La s&eacute;lection des destinataires de la liste de diffusion est al&eacute;atoire, les destinataires admin et test n'&eacute;tant g&eacute;n&eacute;ralement pas inclus.]]></content>
+</HelpBalloon>

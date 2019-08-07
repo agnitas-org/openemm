@@ -1,0 +1,34 @@
+.logo {
+  display: block;
+  background-color: $c-white;
+
+  .logo-image {
+    float: left;
+    width: 40px;
+    margin-right: 5px;
+  }
+
+  .headline {
+    font-size: 28px;
+    line-height: 1em;
+    font-weight: $fw-bold;
+    white-space: nowrap;
+    color: $c-blue-27;
+  }
+
+  .version {
+    font-size: $fs-small;
+    line-height: 1em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: $c-gray-44;
+  }
+
+  .beta {
+    width: 65px;
+    height: 20px;
+    position: absolute;
+    top: 13px;
+    right: 45px;
+  }
+}

@@ -1,0 +1,82 @@
+/*doc
+---
+title: Breadcrumbs
+name: breadcrumbs
+category: Components - Breadcrumbs
+---
+
+Breadcrumbs consist of a `<ul>` with class `.breadcrumbs` and `<li>` as children. Everything inside is usually an `<a>` for navigation purposes, except for the last item, which would be for the current page.
+
+```htmlexample
+<ul class="breadcrumbs">
+    <li>
+        <a href="#">Main</a>
+    </li>
+    <li>
+        <a href="#">Sub</a>
+    </li>
+    <li>
+        Current
+    </li>
+</ul>
+```
+*/
+
+.breadcrumbs:not(.js-ellipsis) {
+
+  @include clearfix();
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  > li {
+    display: inline;
+  }
+
+  > li + li:before {
+    font-family: 'FontAwesome';
+    content: " " + $fa-var-angle-right + "  ";
+  }
+
+}
+
+.breadcrumbs.js-ellipsis {
+
+  @include clearfix();
+
+  overflow: visible;
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  > li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+
+  > li:not(.js-ellipsis) {
+    &:after {
+      font-family: 'FontAwesome';
+      content: "\00a0";
+    }
+  }
+
+  > li.js-ellipsis + li.js-ellipsis {
+    &:not(.abbreviated):before {
+      font-family: 'FontAwesome';
+      content: "\00a0\f105\00a0";
+    }
+
+    &.abbreviated:before {
+      font-family: 'FontAwesome';
+      content: "\2026\00a0\f105\00a0";
+    }
+  }
+
+}
+
+.breadcrumb-element-small {
+  font-size: $fs-regular;
+  font-weight: $fw-semi;
+}

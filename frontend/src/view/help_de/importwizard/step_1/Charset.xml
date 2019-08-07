@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Zeichensatz</title>
+	<content><![CDATA[Als Standardwert ist hier der westeurop&auml;ische Zeichensatz ISO 8859-1 voreingestellt, den Sie &uuml;bernehmen k&ouml;nnen. Die anderen Zeichens&auml;tze sollten Sie nur ausw&auml;hlen, wenn in der CSV-Datei ebenfalls dieser Zeichensatz zum Einsatz kommt.]]></content>
+</HelpBalloon>

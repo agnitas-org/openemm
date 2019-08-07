@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[BCC recipient]]></title>
+	<content><![CDATA[You may insert one or more BCC addresses (separated by comma). Every sent e-mail will be sent to this address(es) as well. Use this feature to archive e-mails sent to recipients.]]></content>
+</HelpBalloon>

@@ -1,0 +1,9 @@
+<HelpBalloon>
+	<title>Dublettenabgleich</title>
+	<content><![CDATA[&Uuml;ber diese Auswahlliste entscheiden Sie, wie das System bei der Pr&uuml;fung nach Dubletten vorgeht.
+      <ul type="disc">
+         <li>Die Einstellung "Komplett" pr&uuml;ft zwei Dinge: Erstens, ob ein neuer Empf&auml;nger bereits in der Datenbank eingetragen ist. Und zweitens, ob innerhalb der neuen Empf&auml;nger ein Eintrag mehrfach vorkommt. Wie erkannte Dubletten behandelt werden, h&auml;ngt von Ihrer Wahl unter Import-Modus (siehe Kapitel "Behandlung von Dubletten") ab. Nur neue Empf&auml;nger hinzuf&uuml;gen ignoriert bestehende Empf&auml;nger d.h. diese werden auch nicht laut den Daten aus der CSV-Datei aktualisiert. Eine zus&auml;tzliche Aktualisierung bereits bestehender Empf&auml;nger findet statt, wenn Sie den Import-Modus Neue Empf&auml;nger hinzuf&uuml;gen und bestehende aktualisieren gew&auml;hlt haben.</li>
+         <li>Mit der Option Nur innerhalb neuer Daten schließen Sie lediglich aus, dass innerhalb der zu importierenden Daten Dubletten vorkommen. Bei Dubletten innerhalb der CSV-Datei wird der erste Eintrag in die Datenbank &uuml;bernommen. So ist sichergestellt, dass neue Empf&auml;nger nur einmal importiert werden, auch wenn sie mehrmals in der CSV-Datei enthalten sind. Diese Pr&uuml;fung ist im Dublettenabgleich Komplett ebenfalls enthalten.</li>
+         <li>Die Einstellung Keine Abgleich: Alle Empf&auml;nger werden importiert. Es findet keine &uuml;berpr&uuml;fung auf Dubletten innerhalb der Importdatei statt. Ebenso wird nicht &uuml;berpr&uuml;ft, ob ein Empf&auml;nger bereits in der Datenbank vorhanden ist. Dies kann dazu f&uuml;hren, dass ein Empf&auml;nger mit einer E-Mail-Adresse mehrmals in der Datenbank enthalten ist.</li>
+      </ul>]]></content>
+</HelpBalloon>

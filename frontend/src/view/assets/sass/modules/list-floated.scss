@@ -1,0 +1,20 @@
+.list-floated {
+  > li {
+    float: left; 
+  }
+  @include clearfix();
+}
+
+.list-spaced {
+  > li {
+    padding-right: 10px;
+  }
+}
+
+.list-inline {
+  text-align: center;
+
+  > li {
+    display: inline-block;
+  }
+}

@@ -1,0 +1,229 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package org.agnitas.util;
+
+import java.io.FileOutputStream;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * This is the collection of blacklisted emails and
+ * email pattern.
+ */
+public class Blacklist {
+	private static Charset		digestCharset = null;
+	static {
+		try {
+			digestCharset = Charset.forName ("UTF-8");
+		} catch (Exception e) {
+			digestCharset = null;
+		}
+	}
+	/** used to detect and avoud double tnries */
+	private Set <String>		seen;
+	/** contains all non wildcard entries */
+	private Map <String, Blackdata>	exact;
+	/** contains a list of all wildcard records */
+	private List <Blackdata>	wildcards;
+	/** number of entries from global blacklist */
+	private int			globalCount;
+	/** number of entries from local blacklist */
+	private int			localCount;
+	/** number of entries in wildcards */
+	private int			wcount;
+	/** path to bouncelog file */
+	private String			bouncelog;
+	/** optional logger */
+	private Log			log;
+	// available digest for all compariasions
+	private MessageDigest		digestSHA1;
+	// available comparation implementations
+	private Set <String>		robinsonAT;
+
+	/** Constructor for the class
+	 * 
+	 * @param nLog a optional instance of Log for logging
+	 */
+	public Blacklist (Log nLog) {
+		seen = new HashSet <> ();
+		exact = new HashMap <> ();
+		wildcards = new ArrayList <> ();
+		localCount = 0;
+		globalCount = 0;
+		wcount = 0;
+
+		String	separator = System.getProperty ("file.separator");
+		String	home = System.getProperty ("user.home", ".");
+
+		bouncelog = home + separator + "var" + separator + "spool" + separator + "log" + separator + "extbounce.log";
+		log = nLog;
+		digestSHA1 = null;
+		robinsonAT = null;
+	}
+	public Blacklist () {
+		this (null);
+	}
+
+	/** sets the path to the bouncelog file
+	 * @param nBouncelog the path to the file
+	 */
+	public void setBouncelog (String nBouncelog) {
+		bouncelog = nBouncelog;
+	}
+
+	/** add a email or pattern to the blacklist
+	 * @param email the email or pattern
+	 * @param global true, if this entry is on the global blacklist
+	 */
+	public void add (String email, boolean global) {
+		if (! seen.contains (email)) {
+			seen.add (email);
+
+			Blackdata	bd = new Blackdata (email, global);
+
+			if (bd.isWildcard ()) {
+				wildcards.add (bd);
+				++wcount;
+			} else {
+				exact.put (bd.getEmail (), bd);
+			}
+			if (global) {
+				++globalCount;
+			} else {
+				++localCount;
+			}
+		}
+	}
+
+	/**
+	 * Set the by the austrian goverment provided binary list
+	 * of email SHA-1 hashes which are to be considered to
+	 * deny receiving of emails
+	 * 
+	 * @param list the raw byte list of the provied hashes
+	 */
+	public void addRobinsonAT (byte[] list) {
+		if (robinsonAT == null) {
+			robinsonAT = new HashSet<>();
+		}
+		for (int n = 0; n + 20 <= list.length; n += 20) {
+			byte[]	key = new byte[20];
+			
+			System.arraycopy (list, n, key, 0, 20);
+			robinsonAT.add (coded (key));
+		}
+	}
+
+	/** Returns wether an email is on the blacklist or not
+	 * @param email the email to check
+	 * @return the entry, if the email is blacklisted, null otherwise
+	 */
+	public Blackdata isBlackListed (String email) {
+		Blackdata rc = null;
+
+		email = email.toLowerCase ();
+		rc = exact.get (email);
+		for (int n = 0; (rc == null) && (n < wcount); ++n) {
+			Blackdata	e = wildcards.get (n);
+
+			if (e.matches (email)) {
+				rc = e;
+			}
+		}
+		if ((rc == null) && (robinsonAT != null)) {
+			String	calc = calculateDigestSHA1 (email);
+			boolean	match;
+			
+			if (! (match = robinsonAT.contains (calc))) {
+				int	n;
+			
+				if ((n = email.indexOf ('@')) != -1) {
+					String	domain = email.substring (n);
+					calc = calculateDigestSHA1 (domain);
+					match = robinsonAT.contains (calc);
+				}
+			}
+			if (match) {
+				rc = new Blackdata (email, true) {
+					@Override
+					public String where () {
+						return "robinson at";
+					}
+				};
+			}
+		}
+		return rc;
+	}
+
+	/** returns the number of entries on the global blacklist
+	 * @return count
+	 */
+	public int globalCount () {
+		return globalCount + (robinsonAT != null ? robinsonAT.size () : 0);
+	}
+
+	/** returns the number of entries on the local blacklist
+	 * @return count
+	 */
+	public int localCount () {
+		return localCount;
+	}
+
+	/** Write blacklisted entry to bounce log file
+	 * @param mailingID the mailingID
+	 * @param customerID the customerID to mark as blacklisted
+	 */
+	public void writeBounce (long mailingID, long customerID) {
+		if (bouncelog != null) {
+			String	entry = "5.9.9;0;" + mailingID + ";0;" + customerID + ";admin=auto opt-out due to blacklist\tstatus=blacklist\n";
+			try (FileOutputStream file = new FileOutputStream (bouncelog, true)) {
+				file.write (entry.getBytes ("ISO-8859-1"));
+			} catch (Exception e) {
+				if (log != null) {
+					log.out (Log.ERROR, "blacklist", "Failed to write \"" + entry + "\" to " + bouncelog + ": " + e.toString ());
+				}
+			}
+		}
+	}
+
+	private String coded (byte[] i) {
+		char[]	code = new char[(i.length + 1) >> 1];
+		
+		for (int n = 0; n < i.length; n += 2) {
+			if (n + 1 < i.length) {
+				code[n >> 1] = (char) ((i[n] & 0xff << 8) | (i[n + 1] & 0xff));
+			} else {
+				code[n >> 1] = (char) (i[n] & 0xff);
+			}
+		}
+		return new String (code);
+	}
+	private String calculateDigest (MessageDigest how, String what) {
+		how.update (what.getBytes (digestCharset));
+		return coded (how.digest ());
+	}
+	private String calculateDigestSHA1 (String what) {
+		if (digestSHA1 == null) {
+			try {
+				digestSHA1 = MessageDigest.getInstance ("SHA-1");
+			} catch (java.security.NoSuchAlgorithmException e) {
+				digestSHA1 = null;
+			}
+		}
+		return calculateDigest (digestSHA1, what);
+	}
+}

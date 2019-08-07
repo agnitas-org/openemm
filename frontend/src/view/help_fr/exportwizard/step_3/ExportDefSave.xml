@@ -1,0 +1,13 @@
+<HelpBalloon>
+	<title>Sauvegarder la d&eacute;finition d'exportation</title>
+	<content><![CDATA[<P STYLE="margin-bottom: 0in"><SPAN LANG="fr-FRA">Définitions d'exportation
+peuvent &ecirc;tre conserv&egrave;es pour une utilisation ult&egrave;rieure. De cette fa&ccedil;on, vous n'avez pas besoin de sp&egrave;cifier toutes les donn&egrave;es
+(en particulier les colonnes qui doivent &ecirc;tre exportées) chaque fois que vous lancez un
+processus d'exportation. Cliquez sur </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="fr-FRA">Save</SPAN></FONT><SPAN LANG="fr-FRA">
+et saisissez un </SPAN><fr-FRA FONT FACE="Tahoma, sans-serif"><SPAN LANG="fr-FRA">Nom,
+</SPAN></FONT><SPAN LANG="fr-FRA">possiblement aussi un </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="fr-FRA">Description</SPAN></FONT><SPAN LANG="fr-FRA">
+de l'exportation, &acirc; la page suivante. Chaque fois que vous s&eacute;lectionnez </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="fr">R&eacute;cipiendaires</SPAN></FONT><SPAN LANG="fr">
+et </SPAN><FONT FACE="Tahoma, sans-serif"><SPAN LANG="fr-FRA">Exporter,
+toutes les d&eacute;finitions d'exportation sauvegard&eacute;es sont d&eacute;sormais affich&eacute;es dans une vue d'ensemble</SPAN></FONT><SPAN LANG="fr-FRA">
+pour s&eacute;lectionner une d&eacute;finition d'exportation. </SPAN>]]></content>
+</HelpBalloon>

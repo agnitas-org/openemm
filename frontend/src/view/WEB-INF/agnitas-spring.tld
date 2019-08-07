@@ -1,0 +1,2747 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<taglib xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+        version="2.1">
+
+    <tlib-version>1.0</tlib-version>
+    <short-name>mvc</short-name>
+    <uri>https://emm.agnitas.de/jsp/jsp/spring</uri>
+
+    <tag>
+        <description>Retrieves the message with the given code, or text if code isn't resolvable.
+            The HTML escaping flag participates in a page-wide or application-wide setting
+            (i.e. by HtmlEscapeTag or a "defaultHtmlEscape" context-param in web.xml).</description>
+        <name>message</name>
+        <tag-class>com.agnitas.taglib.spring.SpringMessageTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>A MessageSourceResolvable argument (direct or through JSP EL).
+                Fits nicely when used in conjunction with Spring's own validation error classes
+                which all implement the MessageSourceResolvable interface. For example, this
+                allows you to iterate over all of the errors in a form, passing each error
+                (using a runtime expression) as the value of this 'message' attribute, thus
+                effecting the easy display of such error messages.</description>
+            <name>message</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The code (key) to use when looking up the message.
+                If code is not provided, the text attribute will be used.</description>
+            <name>code</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Set optional message arguments for this tag, as a (comma-)
+                delimited String (each String argument can contain JSP EL), an Object array
+                (used as argument array), or a single Object (used as single argument).
+                You can additionally use nested spring:argument tags.</description>
+            <name>arguments</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The separator character to be used for splitting the
+                arguments string value; defaults to a 'comma' (',').</description>
+            <name>argumentSeparator</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Default text to output when a message for the given code
+                could not be found. If both text and code are not set, the tag will
+                output null.</description>
+            <name>text</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The string to use when binding the result to the page,
+                request, session or application scope. If not specified, the result
+                gets outputted to the writer (i.e. typically directly to the JSP).</description>
+            <name>var</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The scope to use when exporting the result to a variable.
+                This attribute is only used when var is also set. Possible values are
+                page, request, session and application.</description>
+            <name>scope</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Set HTML escaping for this tag, as boolean value.
+                Overrides the default HTML escaping setting for the current page.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Set JavaScript escaping for this tag, as boolean value.
+                Default is 'false'.</description>
+            <name>javaScriptEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'form' tag and exposes a binding path to inner tags
+            for binding.</description>
+        <name>form</name>
+        <tag-class>com.agnitas.taglib.spring.SpringFormTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute - added for backwards compatibility cases</description>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the model attribute under which the form object is exposed.
+                Defaults to 'command'.</description>
+            <name>modelAttribute</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>DEPRECATED: Use "modelAttribute" instead.</description>
+            <name>commandName</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Required Attribute</description>
+            <name>action</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Action reference to be appended to the current servlet path</description>
+            <name>servletRelativeAction</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>method</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>target</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>enctype</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Specifies the list of character encodings for input data that is accepted
+                by the server processing this form. The value is a space- and/or comma-delimited list of
+                charset values. The client must interpret this list as an exclusive-or list, i.e. the
+                server is able to accept any single character encoding per entity received.</description>
+            <name>acceptCharset</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onsubmit</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onreset</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Common Optional Attribute</description>
+            <name>autocomplete</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The parameter name used for HTTP methods other then GET and POST.
+                Default is '_method'.</description>
+            <name>methodParam</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'text' using the bound value.</description>
+        <name>text</name>
+        <tag-class>com.agnitas.taglib.spring.SpringInputTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will make the HTML element readonly.</description>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Common Optional Attribute</description>
+            <name>autocomplete</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'number' using the bound value.</description>
+        <name>number</name>
+        <tag-class>com.agnitas.taglib.spring.SpringNumberTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will make the HTML element readonly.</description>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Common Optional Attribute</description>
+            <name>autocomplete</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'password' using the bound value.</description>
+        <name>password</name>
+        <tag-class>com.agnitas.taglib.spring.SpringPasswordInputTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>maxlength</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>alt</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will make the HTML element readonly.</description>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Common Optional Attribute</description>
+            <name>autocomplete</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Is the password value to be shown? Defaults to false.</description>
+            <name>showPassword</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'hidden' using the bound value.</description>
+        <name>hidden</name>
+        <tag-class>com.agnitas.taglib.spring.SpringHiddenInputTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'select' element. Supports data binding to the
+            selected option.</description>
+        <name>select</name>
+        <tag-class>com.agnitas.taglib.spring.SpringSelectTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The Collection, Map or array of objects used to generate the
+                inner 'option' tags</description>
+            <name>items</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to 'value' attribute of the
+                'option' tag</description>
+            <name>itemValue</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to the inner text of the
+                'option' tag</description>
+            <name>itemLabel</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>size</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>multiple</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders a single HTML 'option'.
+            Sets 'selected' as appropriate based on bound value.</description>
+        <name>option</name>
+        <tag-class>com.agnitas.taglib.spring.SpringOptionTag</tag-class>
+        <body-content>JSP</body-content>
+        <variable>
+            <description>The actual value bound to the 'value' attribute</description>
+            <name-given>value</name-given>
+            <variable-class>java.lang.Object</variable-class>
+        </variable>
+        <variable>
+            <description>The String representation of thr value bound to the 'value'
+                attribute, taking into consideration any PropertyEditor associated with
+                the enclosing 'select' tag.</description>
+            <name-given>displayValue</name-given>
+            <variable-class>java.lang.String</variable-class>
+        </variable>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>label</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders a list of HTML 'option' tags. Sets 'selected' as appropriate
+            based on bound value.</description>
+        <name>options</name>
+        <tag-class>com.agnitas.taglib.spring.SpringOptionsTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The Collection, Map or array of objects used to generate the inner
+                'option' tags. This attribute is required unless the containing select's property
+                for data binding is an Enum, in which case the enum's values are used.</description>
+            <name>items</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to 'value' attribute of the 'option' tag</description>
+            <name>itemValue</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to the inner text of the 'option' tag</description>
+            <name>itemLabel</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'radio'.</description>
+        <name>radiobutton</name>
+        <tag-class>com.agnitas.taglib.spring.SpringRadioButtonTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Value to be displayed as part of the tag</description>
+            <name>label</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders multiple HTML 'input' tags with type 'radio'.</description>
+        <name>radiobuttons</name>
+        <tag-class>com.agnitas.taglib.spring.SpringRadioButtonsTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The Collection, Map or array of objects used to generate the 'input'
+                tags with type 'radio'. This attribute is required unless the property for data
+                binding is an Enum, in which case the enum's values are used.</description>
+            <name>items</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to 'value' attribute of the 'input'
+                tags with type 'radio'</description>
+            <name>itemValue</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Value to be displayed as part of the 'input' tags with type
+                'radio'</description>
+            <name>itemLabel</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Delimiter to use between each 'input' tag with type 'radio'.
+                There is no delimiter by default.</description>
+            <name>delimiter</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Specifies the HTML element that is used to enclose each 'input'
+                tag with type 'radio'. Defaults to 'span'.</description>
+            <name>element</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'input' tag with type 'checkbox'.</description>
+        <name>checkbox</name>
+        <tag-class>com.agnitas.taglib.spring.SpringCheckboxTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute</description>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Value to be displayed as part of the tag</description>
+            <name>label</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders multiple HTML 'input' tags with type 'checkbox'.</description>
+        <name>checkboxes</name>
+        <tag-class>com.agnitas.taglib.spring.SpringCheckboxesTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The Collection, Map or array of objects used to generate the
+                'input' tags with type 'checkbox'</description>
+            <name>items</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Name of the property mapped to 'value' attribute of the 'input'
+                tags with type 'checkbox'</description>
+            <name>itemValue</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Value to be displayed as part of the 'input' tags with type
+                'checkbox'</description>
+            <name>itemLabel</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Delimiter to use between each 'input' tag with type 'checkbox'.
+                There is no delimiter by default.</description>
+            <name>delimiter</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Specifies the HTML element that is used to enclose each 'input'
+                tag with type 'checkbox'. Defaults to 'span'.</description>
+            <name>element</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'textarea'.</description>
+        <name>textarea</name>
+        <tag-class>com.agnitas.taglib.spring.SpringTextareaTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used when the bound field has errors.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onfocus</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onblur</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onchange</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>accesskey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Required Attribute</description>
+            <name>rows</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Required Attribute</description>
+            <name>cols</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onselect</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will make the HTML element readonly.</description>
+            <name>readonly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders field errors in an HTML 'span' tag.</description>
+        <name>errors</name>
+        <tag-class>com.agnitas.taglib.spring.SpringErrorsTag</tag-class>
+        <body-content>JSP</body-content>
+        <variable>
+            <name-given>messages</name-given>
+            <variable-class>java.util.List</variable-class>
+        </variable>
+        <attribute>
+            <description>Path to errors object for data binding</description>
+            <name>path</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Delimiter for displaying multiple error messages.
+                Defaults to the HTML br tag.</description>
+            <name>delimiter</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Specifies the HTML element that is used to render the enclosing errors.</description>
+            <name>element</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders a form field label in an HTML 'label' tag.</description>
+        <name>label</name>
+        <tag-class>com.agnitas.taglib.spring.SpringLabelTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Enable/disable HTML escaping of rendered values.</description>
+            <name>htmlEscape</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>for</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.</description>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "class" - HTML Optional Attribute.
+                Used only when errors are present.</description>
+            <name>cssErrorClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Equivalent to "style" - HTML Optional Attribute</description>
+            <name>cssStyle</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>lang</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>dir</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>tabindex</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>ondblclick</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousedown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseover</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmousemove</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onmouseout</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeypress</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeyup</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Event Attribute</description>
+            <name>onkeydown</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an HTML 'button' tag.</description>
+        <name>button</name>
+        <tag-class>com.agnitas.taglib.spring.SpringButtonTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The name attribute for the HTML button tag</description>
+            <name>name</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>The value attribute for the HTML button tag</description>
+            <name>value</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
+                will disable the HTML element.</description>
+            <name>disabled</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+</taglib>

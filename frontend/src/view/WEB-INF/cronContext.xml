@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- cronExpression-Syntax
+	* * * * * ?
+	| | | | | |
+	| | | | | +_____ day of week (MON - SUN)
+	| | | | +_______ month (1 - 12)
+	| | | +_________ day of month (1 - 31)
+	| | +___________ hour (0 - 23)
+	| +_____________ min (0 - 59) (0/5 = every 5 minutes)
+	+_______________ sec (0 - 59)
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="
+	    http://www.springframework.org/schema/beans
+	    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+ 
+	<context:component-scan base-package="org.agnitas" />
+	<context:component-scan base-package="com.agnitas" />
+
+	<!-- check for queued jobs to execute -->
+	<bean id="JobQueueJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="org.agnitas.service.JobQueueQuartzJob" />
+		<property name="name" value="JobQueueJob" />
+		<property name="jobDataAsMap">
+			<map>
+				<entry>
+					<key>
+						<value>jobQueueService</value>
+					</key>
+					<ref bean="JobQueueService" />
+				</entry>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="QuartzShutdownHook" class="com.agnitas.emm.core.commons.spring.hooks.QuartzShutdownHook" lazy-init="false">
+		<property name="scheduler" ref="QuartzScheduler" />
+	</bean>
+
+	<!-- Wait 10 seconds after system startup and run JobQueueService repeatedly 
+		every 60 seconds (keep in mind to set active status in config_tbl) -->
+	<bean id="JobQueueTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+		<property name="jobDetail" ref="JobQueueJob" />
+		<property name="startDelay" value="10000" />
+		<property name="repeatInterval" value="60000" />
+	</bean>
+	
+	<bean name="QuartzScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="schedulerName" value="emmScheduler" />        
+		<property name="triggers">
+			<list>
+				<ref bean="JobQueueTrigger" />
+			</list>
+		</property>
+	</bean>
+	
+</beans>

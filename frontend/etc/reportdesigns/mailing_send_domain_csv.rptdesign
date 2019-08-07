@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.17" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 2.3.1.v20080911 Build &lt;2.3.1.v20080917-1340></property>
+    <property name="units">in</property>
+
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="layoutPreference">auto layout</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <list-property name="cssStyleSheets">
+        <structure>
+            <property name="fileName">styles.css</property>
+        </structure>
+    </list-property>
+    <parameters>
+        <scalar-parameter name="companyID" id="42">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="paramType">simple</property>
+            <property name="isRequired">false</property>
+            <property name="controlType">text-box</property>
+            <property name="defaultValue">276</property>
+            <property name="distinct">true</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="mailingID" id="176">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <property name="distinct">true</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="top" id="177">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <property name="distinct">true</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <script-data-source name="ScriptedDataSource" id="178"/>
+    </data-sources>
+    <data-sets>
+        <script-data-set name="OpenedMailingsDataSet" id="179">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">0</property>
+                    <property name="name">DOMAIN</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">COUNT</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">TOTAL</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">DOMAIN</property>
+                </structure>
+                <structure>
+                    <property name="columnName">COUNT</property>
+                </structure>
+                <structure>
+                    <property name="columnName">TOTAL</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">DOMAIN</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">COUNT</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">TOTAL</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">ScriptedDataSource</property>
+            <method name="open"><![CDATA[datasetclass = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpenedDataSet();
+statList = datasetclass.getTopDomainsStat(params["companyID"], params["mailingID"], params["top"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < statList.size()  ) {
+	row["DOMAIN"] = statList.get(currentrow).getDomain();
+	row["COUNT"] = statList.get(currentrow).getCustomer();
+	row["TOTAL"] = statList.get(currentrow).getTotal();
+	currentrow++;	
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="CompanyDescriptionDataSet" id="1042">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">company_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">company_name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">company_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">ScriptedDataSource</property>
+            <method name="open"><![CDATA[companyDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.CompanyDescriptionDataSet();
+companyDescription = companyDescriptionDataSet.getCompanyDescription(params["companyID"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < companyDescription.size() ) {
+	row["company_name"] = companyDescription.get(currentrow);
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+        <script-data-set name="MailingDescriptionDataSet" id="262">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">mailing_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">mailing_name</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">mailing_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">ScriptedDataSource</property>
+            <method name="open"><![CDATA[mailingDescriptionDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingDescriptionDataSet();
+mailingDescription = mailingDescriptionDataSet.getMailingDescription(params["mailingID"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < mailingDescription.size() ) {
+	row["mailing_name"] = mailingDescription.get(currentrow);
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">a4</property>
+            <property name="orientation">landscape</property>
+            <property name="topMargin">0in</property>
+            <property name="leftMargin">20mm</property>
+            <property name="bottomMargin">0in</property>
+            <property name="rightMargin">20mm</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <table id="147">
+            <property name="width">100%</property>
+            <property name="dataSet">OpenedMailingsDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">DOMAIN</property>
+                    <expression name="expression">dataSetRow["DOMAIN"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">COUNT</property>
+                    <expression name="expression">dataSetRow["COUNT"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">TOTAL</property>
+                    <expression name="expression">dataSetRow["TOTAL"] == 0 ? 0 : dataSetRow["COUNT"] / dataSetRow["TOTAL"]</expression>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="name">SUMCLICKS</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value">row["COUNT"]</expression>
+                        </structure>
+                    </list-property>
+                </structure>
+            </list-property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key">row["COUNT"]</expression>
+                    <property name="direction">desc</property>
+                </structure>
+            </list-property>
+            <column id="160">
+                <property name="width">100px</property>
+            </column>
+            <column id="161">
+                <property name="width">100px</property>
+            </column>
+            <column id="183">
+                <property name="width">100px</property>
+            </column>
+            <header>
+                <row id="148">
+                    <cell id="149">
+                        <text-data id="163">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.domain", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="150">
+                        <text-data id="165">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Recipient", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="180">
+                        <text-data id="184">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="152">
+                    <property name="style">table-odd</property>
+                    <list-property name="highlightRules">
+                        <structure>
+                            <property name="operator">ne</property>
+                            <expression name="testExpr">row.__rownum%2</expression>
+                            <simple-property-list name="value1">
+                                <value>1</value>
+                            </simple-property-list>
+                            <property name="style">table-even</property>
+                        </structure>
+                    </list-property>
+                    <cell id="153">
+                        <data id="187">
+                            <property name="resultSetColumn">DOMAIN</property>
+                        </data>
+                    </cell>
+                    <cell id="154">
+                        <data id="188">
+                            <property name="numberAlign">right</property>
+                            <structure name="numberFormat">
+                                <property name="category">Fixed</property>
+                                <property name="pattern">#,##0</property>
+                            </structure>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">COUNT</property>
+                        </data>
+                    </cell>
+                    <cell id="181">
+                        <data id="185">
+                            <property name="numberAlign">right</property>
+                            <structure name="numberFormat">
+                                <property name="category">Percent</property>
+                                <property name="pattern">Percent</property>
+                            </structure>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">TOTAL</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+        <table id="1079">
+            <property name="width">100%</property>
+            <property name="dataSet">OpenedMailingsDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">DOMAIN</property>
+                    <expression name="expression">dataSetRow["DOMAIN"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">COUNT</property>
+                    <expression name="expression">dataSetRow["COUNT"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">TOTAL</property>
+                    <expression name="expression">dataSetRow["TOTAL"] == 0 ? 0 : dataSetRow["COUNT"] / dataSetRow["TOTAL"]</expression>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="name">SUMCLICKS</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value">row["COUNT"]</expression>
+                        </structure>
+                    </list-property>
+                </structure>
+            </list-property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key">row["COUNT"]</expression>
+                    <property name="direction">desc</property>
+                </structure>
+            </list-property>
+            <column id="1100">
+                <property name="width">100px</property>
+            </column>
+            <column id="1101">
+                <property name="width">100px</property>
+            </column>
+            <column id="1102">
+                <property name="width">100px</property>
+            </column>
+            <detail>
+                <row id="1087">
+                    <property name="style">table-odd</property>
+                    <list-property name="highlightRules">
+                        <structure>
+                            <property name="operator">ne</property>
+                            <expression name="testExpr">row.__rownum%2</expression>
+                            <simple-property-list name="value1">
+                                <value>1</value>
+                            </simple-property-list>
+                            <property name="style">table-even</property>
+                        </structure>
+                    </list-property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr">if(row.__rownum>0)
+true;
+else
+false;</expression>
+                        </structure>
+                    </list-property>
+                    <cell id="1088">
+                        <text-data id="1096">
+                            <property name="fontWeight">normal</property>
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="1090">
+                        <data id="1098">
+                            <property name="numberAlign">right</property>
+                            <structure name="numberFormat">
+                                <property name="category">Fixed</property>
+                                <property name="pattern">#,##0</property>
+                            </structure>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">SUMCLICKS</property>
+                        </data>
+                    </cell>
+                    <cell id="1092"/>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

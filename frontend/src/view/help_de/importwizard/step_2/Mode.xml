@@ -1,0 +1,13 @@
+<HelpBalloon>
+	<title>Import-Modus</title>
+	<content><![CDATA[Mit der Auswahlliste Modus steuern Sie, wie der E-Marketing Manager die importierten Empf&auml;nger in seine Datenbank integriert. Folgende Modi stehen zur Verf&uuml;gung:
+      <ul type="disc">
+         <li>Nur neue Empf&auml;nger hinzuf&uuml;gen</li>
+         <li>Neue Empf&auml;nger hinzuf&uuml;gen und bestehende aktualisieren</li>
+         <li>Nur bestehende Empf&auml;nger aktualisieren</li>
+         <li>Empf&auml;nger auf Status 'Opt-Out' setzen</li>
+         <li>Empf&auml;nger auf Status 'Bounced' setzen</li>
+</ul>
+Hier er&ouml;ffnet sich f&uuml;r Sie viel Spielraum, um Ihre Empf&auml;ngerdaten auf dem aktuellsten Stand zu halten. Oft passiert es, dass sich Empf&auml;nger nicht &uuml;ber Ihre Website anmelden, sondern Ihnen eine Mail mit der Bitte um Aufnahme in die Mailing-Liste schicken. Einen einzelnen Empf&auml;nger nebenbei einzutragen verursacht nicht viel Arbeit; doch wenn Dutzende von solchen Mails eingehen, dann ist es einfacher, diese User in einer Liste in einem Tabellenkalkulations-Programm zu sammeln und dann en bloc in den E-Marketing Manager einzuspielen.<br>
+Ebenso ist es m&ouml;glich, den Status von Empf&auml;ngern, die sich aus Ihren Mailing-Listen austragen wollen, und dies nicht selber vornehmen k&ouml;nnen oder wollen, zu aktualisieren. Hierzu sind die Optionen Empf&auml;nger auf Status 'Opt-Out setzen und Empf&auml;nger auf Status 'Bounced setzen vorgesehen. Dieses Verfahren bietet sich vor allem aus rechtlichen Gr&uuml;nden an, denn manche Empf&auml;nger drohen mit juristischen Schritten, wenn ihr Abmeldewunsch nicht ber&uuml;cksichtigt wird.]]></content>
+</HelpBalloon>

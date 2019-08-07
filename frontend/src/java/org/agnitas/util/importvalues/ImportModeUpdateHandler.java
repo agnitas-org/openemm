@@ -1,0 +1,115 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package org.agnitas.util.importvalues;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.agnitas.beans.CustomerImportStatus;
+import org.agnitas.beans.ImportProfile;
+import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.ImportUtils.ImportErrorType;
+import org.apache.log4j.Logger;
+
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionService;
+
+public class ImportModeUpdateHandler implements ImportModeHandler {
+    private static final transient Logger logger = Logger.getLogger(ImportModeUpdateHandler.class);
+    
+    private ImportRecipientsDao importRecipientsDao;
+
+	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
+		this.importRecipientsDao = importRecipientsDao;
+	}
+
+	@Override
+	public void checkPreconditions(ImportProfile importProfile) throws Exception {
+		// Do nothing
+	}
+
+	@Override
+	public boolean isNullValueAllowedForData(DbColumnType columnType, NullValuesAction nullValuesAction) {
+		return columnType.isNullable() || nullValuesAction == NullValuesAction.IGNORE;
+	}
+
+	@Override
+	public void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+		// Do nothing
+	}
+
+	@Override
+	public void handleExistingCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+		// Update customer data
+		if (importProfile.getUpdateAllDuplicates()) {
+			// Update all existing customer identified by keycolumns
+			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumn(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			status.setUpdated(updatedEntries);
+		} else {
+			// Update the first existing customer only
+			int updatedEntries = importRecipientsDao.updateFirstExistingCustomers(temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			status.setUpdated(updatedEntries);
+		}
+	}
+
+	@Override
+	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
+			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
+			if (importProfile.getActionForNewRecipients() > 0) {
+				// Execute configured action for recipients that had no binding before this import (existing recipients without binding or completely new recipients)
+				for (int mailingListId : mailingListIdsToAssign) {
+					List<Integer> customerIdsForAction = importRecipientsDao.getImportedCustomerIdsWithoutBindingToMailinglist(temporaryImportTableName, importProfile.getCompanyId(), datasourceId, mailingListId);
+					
+		    		// Execute the action for each customer
+					int succesfullyExecutedCustomerActions = 0;
+					for (int customerID : customerIdsForAction) {
+						try {
+							final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
+							
+							Map<String, Object> params = new HashMap<>();
+		                    params.put("customerID", customerID);
+		                    Map<String, Object> requestParams = new HashMap<>();
+		                    requestParams.put("agnSUBSCRIBE", Integer.toString(UserStatus.Active.getStatusCode()));
+		                    requestParams.put("agnMAILINGLIST", Integer.toString(mailingListId));
+		                    requestParams.put("agnFN", "ProfileImport");
+		                    params.put("requestParameters", requestParams);
+		        			params.put("actionErrors", actionOperationErrors);
+		        			
+		        			if (emmActionService != null) {
+		        				emmActionService.executeActions(importProfile.getActionForNewRecipients(), importProfile.getCompanyId(), params, actionOperationErrors);
+		        			}
+		                    succesfullyExecutedCustomerActions++;
+						} catch (Exception e) {
+							logger.error("Error in actionForNewRecipients: " + e.getMessage());
+							status.addError(ImportErrorType.ACTION_ERROR);
+							throw e;
+						}
+					}
+		    		mailinglistAssignStatistics.put(mailingListId, succesfullyExecutedCustomerActions);
+				}
+			} else  {
+				// Insert bindings for new and existing customers (subscribe to mailinglists)
+		    	for (int mailingListId : mailingListIdsToAssign) {
+		    		int existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, UserStatus.Active);
+		    		
+		    		mailinglistAssignStatistics.put(mailingListId, existingCustomerSubscribed);
+		    	}
+			}
+			return mailinglistAssignStatistics;
+		} else {
+			return null;
+		}
+	}
+}

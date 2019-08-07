@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title>File name of the csv file</title>	
+		<content><![CDATA[In the entry field file name you choose the desired csv file via the Browse button. At a click of the mouse the Windows selection dialog is called up. Select the required csv file and click on the Open button. The window closes automatically and the source folder of the selected file is entered into the File name entry field.]]>	
+	</content>
+</HelpBalloon>

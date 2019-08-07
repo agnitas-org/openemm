@@ -1,0 +1,18 @@
+<HelpBalloon>
+	<title>Recherche d'adresses</title>
+	<content><![CDATA[La recherche de mailing vous permet de rechercher diff&eacute;rents champs de vos mailings. Si vous souhaitez entrer plusieurs termes en m&ecirc;me temps, vous pouvez utiliser les options suivantes:<br><br><br>.
+<b>Recherche sp&eacute;cifique par guillemets </b><br><br><br>.
+Par exemple : Nous souhaitons"<br><br><br>".
+Si deux termes ou plus sont mis entre guillemets, l'EMM recherchera les champs en utilisant cette s&eacute;quence sp&eacute;cifique de mots. Aucun r&eacute;sultat contenant un seul des mots ne sera affich&eacute;. <br><br><br>.
+<b>Combinaison avec le signe plus </b><br><br><br>.
+Par exemple : "Nous souhaitons" + Noël<br><br><br>.
+Si deux termes ou plus sont li&eacute;s par un signe plus, seuls les r&eacute;sultats contenant tous les termes seront affich&eacute;s.<br><br><br>.
+<b>Combinaison &agrave; l'aide de la barre d'espacement </b><br><br>>br
+Par exemple : Noël "Nouvel An"<br><br><br>Noël
+Lorsque deux termes ou plus sont s&eacute;par&eacute;s par un espace, il s'agit d'une recherche OU. Tous les r&eacute;sultats qui contiennent au moins un des termes de recherche entr&eacute;s.<br><br><br> seront affich&eacute;s.
+<b>Termes entre parenth&egrave;ses </b><br><br><br>.
+Par exemple : "Nous souhaitons" + (Noël "Nouvel An")<br><br><br>
+L'exemple affich&eacute; montrerait tous les hits qui contiennent &agrave; la fois la phrase "We wish" et contiennent &eacute;galement Noël ou le Nouvel An. Cependant, le r&eacute;sultat doit contenir au moins un des termes entre parenth&egrave;ses car ceux-ci sont reli&eacute;s par un signe plus. <br><br><br>.
+Il est possible d'utiliser les diff&eacute;rentes options de combinaison dans n'importe quel ordre.<br><br><br>.
+Par exemple : "We wish" + (joyeux bonheur) + (Noël "Nouvel An")]]></content>
+</HelpBalloon>

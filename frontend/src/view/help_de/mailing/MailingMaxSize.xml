@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Maximale Gr&ouml;&szlig;e der E-Mail]]></title>
+	<content><![CDATA[Dieser Wert wird berechnet, indem unter Ber&uuml;cksichtigung aller optionalen und variablen Inhaltsbausteine sowie Bilder diejenige Variante des Mailings ermittelt wird, die das h&ouml;chste Datenvolumen hat. Ist ein zweiter Wert in Klammern angegeben, so beinhaltet dieser Wert auch externe Bilder.]]></content>
+</HelpBalloon>

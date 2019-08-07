@@ -1,0 +1,355 @@
+/*doc
+---
+title: Panels
+name: panels
+category: Components - Panels
+---
+*/
+
+/*doc
+---
+title: Basic Example
+name: panels_01_example
+parent: panels
+---
+
+```htmlexample
+<div class="panel">
+  <div class="panel-body">
+    Basic Panel example
+  </div>
+</div>
+```
+*/
+
+
+/*doc
+---
+title: Panel with heading
+name: panels_02_heading
+parent: panels
+---
+
+Add a header to your panel with `.panel-heading`. You can optionally include any `<h1>, <h2>, ...` with a `.panel-title` for some extra emphasis.
+
+For proper styling of links, place them inside headings with `.panel-title`.
+
+```htmlexample
+<div class="panel">
+  <div class="panel-heading">Panel heading without title</div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-heading">
+    <h3 class="panel-title">Panel title</h3>
+  </div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Panel with footer
+name: panels_03_footer
+parent: panels
+---
+
+Wrap buttons or secondary text in `.panel-footer`. Note that panel footers __do not__ inherit colors and borders when using contextual variations as they are not meant to be in the foreground.
+
+```htmlexample
+<div class="panel">
+  <div class="panel-body">
+    Panel content
+  </div>
+  <div class="panel-footer">Panel footer</div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Contextual Variants
+name: panels_04_states
+parent: panels
+---
+
+Panels support the usual states as `.panel-success`, `.panel-info`, `.panel-warning` and `.panel-alert` respectively.
+
+```htmlexample
+<div class="panel panel-success">
+  <div class="panel-heading">
+    <h3 class="panel-title">Panel title</h3>
+  </div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Panel title</h3>
+  </div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+
+<div class="panel panel-warning">
+  <div class="panel-heading">
+    <h3 class="panel-title">Panel title</h3>
+  </div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+
+<div class="panel panel-alert">
+  <div class="panel-heading">
+    <h3 class="panel-title">Panel title</h3>
+  </div>
+  <div class="panel-body">
+    Panel content
+  </div>
+</div>
+```
+*/
+
+
+// Base class
+.panel {
+  margin-bottom: 10px;
+  background-color: $c-white;
+  border: 1px solid $c-gray-11;
+  border-radius: 2px;
+
+  @include shadow-variant(soft);
+}
+
+// Panel contents
+.panel-body {
+  padding: 15px;
+  @include clearfix();
+}
+
+// Optional heading
+.panel-heading {
+  padding: 15px;
+  background-color: $c-gray-02;
+
+  > .dropdown .dropdown-toggle {
+    color: inherit;
+  }
+
+  .headline {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+// Within heading, strip any `h*` tag of its default margins for spacing.
+.panel-title {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: $fs-large;
+  color: inherit;
+  font-weight: normal;
+
+  > a {
+    color: inherit;
+  }
+}
+
+// Optional footer (stays gray in every modifier class)
+.panel-footer {
+  padding: 15px;
+  background-color: $c-gray-02;
+}
+
+
+// List groups in panels
+//
+// By default, space out list group content from panel headings to account for
+// any kind of custom content between the two.
+
+.panel {
+  > .list-group {
+    margin-bottom: 0;
+
+    .list-group-item {
+      border-width: 1px 0;
+      border-radius: 0;
+    }
+
+    // Add border top radius for first one
+    &:first-child {
+      .list-group-item:first-child {
+        border-top: 0;
+        @include border-top-radius(2px);
+      }
+    }
+    // Add border bottom radius for last one
+    &:last-child {
+      .list-group-item:last-child {
+        border-bottom: 0;
+        @include border-bottom-radius(2px);
+      }
+    }
+  }
+}
+// Collapse space between when there's no additional content.
+.panel-heading + .list-group {
+  .list-group-item:first-child {
+    border-top-width: 0;
+  }
+}
+.list-group + .panel-footer {
+  border-top-width: 0;
+}
+
+// Tables in panels
+//
+// Place a non-bordered `.table` within a panel (not within a `.panel-body`) and
+// watch it go full width.
+
+.panel {
+  > .table,
+  > .table-responsive > .table,
+  > .panel-collapse > .table {
+    margin-bottom: 0;
+  }
+  // Add border top radius for first one
+  > .table:first-child,
+  > .table-responsive:first-child > .table:first-child {
+    @include border-top-radius(2px);
+
+    > thead:first-child,
+    > tbody:first-child {
+      > tr:first-child {
+        td:first-child,
+        th:first-child {
+          border-top-left-radius: (2px);
+        }
+        td:last-child,
+        th:last-child {
+          border-top-right-radius: (2px);
+        }
+      }
+    }
+  }
+  // Add border bottom radius for last one
+  > .table:last-child,
+  > .table-responsive:last-child > .table:last-child {
+    @include border-bottom-radius(2px);
+
+    > tbody:last-child,
+    > tfoot:last-child {
+      > tr:last-child {
+        td:first-child,
+        th:first-child {
+          border-bottom-left-radius: (2px);
+        }
+        td:last-child,
+        th:last-child {
+          border-bottom-right-radius: (2px);
+        }
+      }
+    }
+  }
+  > .panel-body + .table,
+  > .panel-body + .table-responsive {
+    // border-top: 1px solid $table-border-color;
+  }
+  > .table > tbody:first-child > tr:first-child th,
+  > .table > tbody:first-child > tr:first-child td {
+    border-top: 0;
+  }
+  > .table-bordered,
+  > .table-responsive > .table-bordered {
+    border: 0;
+    > thead,
+    > tbody,
+    > tfoot {
+      > tr {
+        > th:first-child,
+        > td:first-child {
+          border-left: 0;
+        }
+        > th:last-child,
+        > td:last-child {
+          border-right: 0;
+        }
+      }
+    }
+    > thead,
+    > tbody {
+      > tr:first-child {
+        > td,
+        > th {
+          border-bottom: 0;
+        }
+      }
+    }
+    > tbody,
+    > tfoot {
+      > tr:last-child {
+        > td,
+        > th {
+          border-bottom: 0;
+        }
+      }
+    }
+  }
+  > .table-responsive {
+    border: 0;
+    margin-bottom: 0;
+  }
+}
+
+
+// Collapsable panels (aka, accordion)
+//
+// Wrap a series of panels in `.panel-group` to turn them into an accordion with
+// the help of our collapse JavaScript plugin.
+
+.panel-group {
+  margin-bottom: 10px;
+
+  // Tighten up margin so it's only between panels
+  .panel {
+    margin-bottom: 0;
+    border-radius: 2px;
+    + .panel {
+      margin-top: 5px;
+    }
+  }
+
+  .panel-heading {
+    border-bottom: 0;
+    + .panel-collapse > .panel-body {
+      border-top: 1px solid $c-gray-02;
+    }
+  }
+  .panel-footer {
+    border-top: 0;
+    + .panel-collapse .panel-body {
+      border-bottom: 1px solid $c-gray-02;
+    }
+  }
+}
+
+
+// contextual variants
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  .panel-#{$state} {
+    @include panel-variant(darken($color, 10%), $c-white, $color, lighten($color, 10%));
+  }
+}

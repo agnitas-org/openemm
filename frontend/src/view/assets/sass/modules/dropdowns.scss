@@ -1,0 +1,413 @@
+/*doc
+---
+title: Dropdowns
+name: dropdowns
+category: Components - Dropdowns
+---
+*/
+
+
+/*doc
+---
+title: Example
+name: dropdowns_01_example
+parent: dropdowns
+---
+
+Wrap the dropdown's trigger and the dropdown menu within `.dropdown`.
+
+The `.dropdown-menu` supports a variety of elements like `.dropdown-header`, `.divider` and even `label`s with checkboxes and radio buttons and selects.
+
+```htmlexample
+<div class="dropdown">
+    <button class="btn btn-primary btn-regular dropdown-toggle" type="button" data-toggle="dropdown">
+        <i class="icon icon-eye"></i>
+        <span class="text">Dropdown</span>
+        <i class="icon icon-caret-down"></i>
+    </button>
+
+    <ul class="dropdown-menu">
+        <li class="dropdown-header">Dropdown header</li>
+        <li>
+          <a tabindex="-1" href="#">Link</a>
+        </li>
+        <li class="dropdown-header">Dropdown header</li>
+        <li>
+            <label class="label">
+                <input type="checkbox">
+                <span class="label-text">nested</span>
+            </label>
+            <label class="label">
+                <input type="radio">
+                <span class="label-text">nested</span>
+            </label>
+            <a tabindex="-1" href="#">Something else here</a>
+        </li>
+        <li>
+            <select>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+        </li>
+        <li class="divider"></li>
+        <li><a tabindex="-1" href="#">Separated link</a></li>
+    </ul>
+</div>
+```
+*/
+
+/*doc
+---
+title: Alignment
+name: dropdowns_02_alignment
+parent: dropdowns
+---
+
+By default, a dropdown menu is automatically positioned 100% from the top and along the right side of its parent. Add `.dropdown-menu-left` to a `.dropdown-menu` to left align it.
+
+```htmlexample
+<div class="dropdown">
+    <button class="btn btn-primary btn-regular dropdown-toggle" type="button" data-toggle="dropdown">
+        <i class="icon icon-eye"></i>
+        <span class="text">Dropdown</span>
+        <i class="icon icon-caret-down"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-left">
+        <li>
+          <a tabindex="-1" href="#">Link</a>
+        </li>
+        <li>
+            <a tabindex="-1" href="#">Something else here</a>
+        </li>
+    </ul>
+</div>
+```
+
+A dropdown menu can also be opened above the trigger by applying `.dropup` directly on the `.dropdown` element.
+
+```htmlexample
+<div class="dropdown dropup">
+    <button class="btn btn-primary btn-regular dropdown-toggle" type="button" data-toggle="dropdown">
+        <i class="icon icon-eye"></i>
+        <span class="text">Dropdown</span>
+        <i class="icon icon-caret-down"></i>
+    </button>
+
+    <ul class="dropdown-menu">
+        <li>
+          <a tabindex="-1" href="#">Link</a>
+        </li>
+        <li>
+            <a tabindex="-1" href="#">Something else here</a>
+        </li>
+    </ul>
+</div>
+```
+
+
+*/
+
+/*doc
+---
+title: Disabled items
+name: dropdowns_03_disabled
+parent: dropdowns
+---
+
+You can disable menu items by adding `.disabled` to any `<li>` inside the `.dropdown-menu`.
+
+```htmlexample
+<div class="dropdown">
+    <button class="btn btn-primary btn-regular dropdown-toggle" type="button" data-toggle="dropdown">
+        <i class="icon icon-eye"></i>
+        <span class="text">Dropdown</span>
+        <i class="icon icon-caret-down"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-left">
+        <li>
+          <a tabindex="-1" href="#">Link</a>
+        </li>
+        <li class="disabled">
+            <a tabindex="-1" href="#">Disabled item</a>
+        </li>
+        <li><a tabindex="-1" href="#">Another link</a></li>
+    </ul>
+</div>
+```
+*/
+
+.dropdown, .dropup {
+  position: relative;
+}
+
+
+// Prevent the focus on the dropdown toggle when closing dropdowns
+// .dropdown-toggle:focus {
+//   outline: 0;
+// }
+
+// The dropdown menu (ul)
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: auto;
+  right: 0;
+  z-index: 1000;
+  display: none; // none by default, but block on "open" of the menu
+  float: left;
+  min-width: 200px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: $fs-large;
+  text-align: left; // Ensures proper alignment if parent has it changed (e.g., modal footer)
+  background-color: $c-white;
+
+  border-radius: 3px;
+  background-clip: padding-box;
+
+  @include shadow-variant(hard);
+
+  label {
+    font-weight: $fw-regular;
+  }
+
+  // Helps to use block-buttons in dropdown. According to http://getbootstrap.com/css/#buttons-sizes
+  //
+  // Prettier solution welcome
+  p {
+    margin: 10px;
+  }
+
+  // Aligns the dropdown menu to right
+  //
+  // Deprecated as of 3.1.0 in favor of `.dropdown-menu-[dir]`
+  &.pull-right {
+    right: 0;
+    left: auto;
+  }
+
+  // Dividers (basically an hr) within the dropdown
+  .divider {
+    height: 1px;
+    font-size: 1px;
+    line-height: 1px;
+    overflow: hidden;
+    background-color: $c-gray-11;
+  }
+
+  // Links within the dropdown menu
+  > li > a {
+    display: block;
+    padding: 7px 15px;
+    clear: both;
+    font-size: $fs-large;
+    font-weight: normal;
+    line-height: 1.2;
+    color: $c-black-82;
+    white-space: nowrap; // prevent links from randomly breaking onto new lines
+  }
+
+  > li > .label {
+    display: block;
+    padding: 4px 15px;
+    line-height: 20px;
+
+    cursor: pointer;
+
+    .label-text, input { vertical-align: middle; }
+  }
+
+  // selects within the dropdown menu
+  .select2-container {
+    width: 100%;
+
+    .select2-choice {
+      padding: 0 0 0 15px;
+    }
+
+    &:hover {
+      .select2-choice {
+        color: $c-blue-27;
+        background-color: $c-blue-03;
+      }
+    }
+  }
+
+  .select2-container-active {
+    .select2-choice {
+      color: $c-blue-27;
+      background-color: $c-blue-03;
+      outline: 5px auto #4d90fe;
+
+      @include box-shadow(none);
+    }
+  }
+
+  select {
+    border: 0;
+    border-radius: 0;
+    cursor: pointer;
+
+    @include box-shadow(none);
+
+    &:hover {
+      color: $c-blue-27;
+      background-color: $c-blue-03;
+    }
+  }
+
+}
+
+//Workaround to force dropdown to be displayed on top of main container.
+.dropdown-menu-top {
+  position: fixed;
+  top: auto;
+  left: auto !important;
+}
+
+// Hover/Focus state
+.dropdown-menu > li > a {
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    color: $c-blue-27;
+    background-color: $c-blue-03;
+  }
+}
+
+.dropdown-menu > li > .label {
+  &:hover,
+  &:focus {
+    color: $c-blue-27;
+    background-color: $c-blue-03;
+  }
+}
+
+.dropdown-menu > li > button:not(.btn) {
+  width: 100%;
+  text-align: left;
+  padding: 7px 15px;
+  color: $c-black-82;
+
+  &:hover,
+  &:focus {
+    color: $c-blue-27;
+    background-color: $c-blue-03;
+  }
+
+  &[disabled] {
+    color: $c-gray-44;
+  }
+}
+
+// Active state
+// .dropdown-menu > .active > a {
+//   &,
+//   &:hover,
+//   &:focus {
+//     color: $dropdown-link-active-color;
+//     text-decoration: none;
+//     outline: 0;
+//     background-color: $dropdown-link-active-bg;
+//   }
+// }
+
+// Disabled state
+//
+// Gray out text and ensure the hover/focus state remains gray
+
+.dropdown-menu > .disabled > a {
+  &,
+  &:hover,
+  &:focus {
+    color: $c-gray-20;
+  }
+}
+// Nuke hover/focus effects
+.dropdown-menu > .disabled > a {
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    background-color: transparent;
+    background-image: none; // Remove CSS gradient
+    @include reset-filter();
+    cursor: not-allowed;
+  }
+}
+
+// Open state for the dropdown
+.open {
+  // Show the menu
+  > .dropdown-menu {
+    display: block;
+  }
+
+  // Remove the outline when :focus is triggered
+  > a {
+    outline: 0;
+  }
+}
+
+// Menu positioning
+//
+// Add extra class to `.dropdown-menu` to flip the alignment of the dropdown
+// menu with the parent.
+.dropdown-menu-left {
+  right: auto; // Reset the default from `.dropdown-menu`
+  left: 0;
+}
+// With v3, we enabled auto-flipping if you have a dropdown within a right
+// aligned nav component. To enable the undoing of that, we provide an override
+// to restore the default dropdown menu alignment.
+//
+// This is only for left-aligning a dropdown menu within a `.navbar-right` or
+// `.pull-right` nav component.
+.dropdown-menu-left {
+  left: 0;
+  right: auto;
+}
+
+// Dropdown section headers
+.dropdown-header {
+  display: block;
+  padding: 12px 15px 5px 15px;
+  font-size: $fs-small;
+  line-height: 1.2;
+  color: $c-gray-44;
+  white-space: nowrap; // as with > li > a
+}
+
+// Backdrop to catch body clicks on mobile, etc.
+.dropdown-backdrop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  z-index: 990;
+}
+
+// Right aligned dropdowns
+.pull-right > .dropdown-menu {
+  right: 0;
+  left: auto;
+}
+
+// Allow for dropdowns to go bottom up (aka, dropup-menu)
+.dropup {
+  .dropdown-menu {
+    top: auto;
+    bottom: 100%;
+    margin-bottom: 1px;
+  }
+}
+
+.dropdown-light-button {
+  .select2-choice {
+    color: $c-white !important;
+  }
+}

@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Type of mailing]]></title>
+	<content><![CDATA[You can generate a simple newsletter using the "Normal Mailing" preset. Further types of mailings are described in the Chapter "Mailings - sending a newsletter". In brief: A date-driven mailing is sent on a certain date, for example the birthday of the subscriber. An action-driven mailing is sent when a certain action occurs, for example when the subscriber clicks on a specific link in a mailing. A follow-up mailing sends a mailing to a subscriber who, for example, has not reacted to previous mailings, the purpose being to achieve a higher advertising success rate.]]></content>
+</HelpBalloon>

@@ -1,0 +1,9 @@
+<HelpBalloon>
+	<title><![CDATA[Archive]]></title>
+	<content><![CDATA[By selecting a Archive, you assign the mailing to a specific archive. This makes mailing updates
+easier if you have to manage a large number of mailings. Moreover, it gives you another option
+for statistical evaluation. All previously defined archives are displayed in that drop-down list.
+Further information on archives and how to create them is contained in Chapter Archives - Grouping Mailings. You do not
+have to assign the mailing to a archive. The mailing will also work as a stand-alone action. You
+can always select an archive or change the archive assignment for your mailing later.]]></content>
+</HelpBalloon>

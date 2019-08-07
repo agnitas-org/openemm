@@ -1,0 +1,3 @@
+# prevents spiders/robots from indexing this server
+User-agent: *
+Disallow: /

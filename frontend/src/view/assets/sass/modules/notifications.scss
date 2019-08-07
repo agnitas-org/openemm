@@ -1,0 +1,203 @@
+/*doc
+---
+title: Notifications
+name: notifications
+category: Components - Notifications
+---
+
+Notifications are the backbone of the javascript popups, but they can also be used as standalone elements.
+
+In that case, they should not contain a close icon, because they can't be dismissed - for illustration purposes, the close icons in the examples have been left in.
+
+*/
+
+/*doc
+---
+title: Basic Example
+name: notifications_01_example
+parent: notifications
+---
+
+```htmlexample
+<div class="notification">
+    <div class="notification-header">
+        <p class="headline">
+            <span class="text">You've been notified!</span>
+            <i class="close-icon icon icon-times-circle"></i>
+        </p>
+    </div>
+
+    <div class="notification-content">
+        <p>There's something I meant to notify you about, but I forgot...</p>
+    </div>
+
+</div>
+```
+*/
+
+/*doc
+---
+title: States
+name: notifications_02_states
+parent: notifications
+---
+
+Notifications support the full range of state variants, namely as `.notification-success`, `.notification-info`, `.notification-warning` and `.notification-alert` respectively.
+
+Please note that depending on the state, the state icon in the headline has to be adjusted accordingly, it does not get placed automatically when placing notifications into the content directly.
+
+```htmlexample
+<div class="notification notification-success">
+    <div class="notification-header">
+        <p class="headline">
+            <i class="icon icon-state-success"></i>
+            <span class="text">You've been notified!</span>
+            <i class="close-icon icon icon-times-circle"></i>
+        </p>
+    </div>
+
+    <div class="notification-content">
+        <p>There's something I meant to notify you about, but I forgot...</p>
+    </div>
+</div>
+
+<div class="notification notification-info">
+    <div class="notification-header">
+        <p class="headline">
+            <i class="icon icon-state-info"></i>
+            <span class="text">You've been notified!</span>
+            <i class="close-icon icon icon-times-circle"></i>
+        </p>
+    </div>
+
+    <div class="notification-content">
+        <p>There's something I meant to notify you about, but I forgot...</p>
+    </div>
+</div>
+
+<div class="notification notification-warning">
+    <div class="notification-header">
+        <p class="headline">
+            <i class="icon icon-state-warning"></i>
+            <span class="text">You've been notified!</span>
+            <i class="close-icon icon icon-times-circle"></i>
+        </p>
+    </div>
+
+    <div class="notification-content">
+      <p>There's something I meant to notify you about, but I forgot...</p>
+    </div>
+</div>
+
+<div class="notification notification-alert">
+    <div class="notification-header">
+        <p class="headline">
+            <i class="icon icon-state-alert"></i>
+            <span class="text">You've been notified!</span>
+            <i class="close-icon icon icon-times-circle"></i>
+        </p>
+    </div>
+
+    <div class="notification-content">
+        <p>There's something I meant to notify you about, but I forgot...</p>
+    </div>
+</div>
+```
+*/
+
+
+.notification {
+  position: relative;
+  border-left: 5px solid $c-transparent;
+
+  border-radius: 2px;
+  overflow: hidden;
+
+  font-size: $fs-large;
+
+  background-color: $c-white;
+  margin-bottom: 10px;
+  @include shadow-variant(regular);
+}
+
+.notification + .notification {
+  margin-top: 10px;
+}
+
+.notification-header {
+  position: relative;
+  padding: 15px;
+  padding-right: 40px;
+
+
+  .close-icon {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+
+    cursor: pointer;
+
+    @include translate(0, -50%);
+
+  }
+
+  .headline {
+    font-weight: $fw-bold;
+  }
+}
+
+.notification-content {
+  padding: 15px;
+  padding-top: 0;
+
+  color: $c-gray-55;
+
+  .error-list {
+    margin-top: 15px;
+  }
+}
+
+// contextual variants
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include notification-variant($state, $color);
+}
+
+#notifications-container {
+  position: fixed;
+  z-index: 999999;
+  width: 365px;
+
+  .notification {
+    @include shadow-variant(hardest);
+  }
+}
+
+.notification-top-left {
+  top: 12px;
+  left: 12px;
+}
+.notification-top-right {
+  top: 12px;
+  right: 12px;
+}
+.notification-bottom-right {
+  right: 12px;
+  bottom: 12px;
+}
+.notification-bottom-left {
+  bottom: 12px;
+  left: 12px;
+}
+.notification-below-header {
+  top: 72px;
+  right: 12px;
+}
+
+#globalStatInfo {
+  margin: 10px 10px 10px 10px;
+  position: relative;
+  bottom: 10px;
+}

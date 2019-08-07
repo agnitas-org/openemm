@@ -1,0 +1,34 @@
+.split-1-1 {
+
+  .tile-content-forms {
+    .form-group {
+      [class^="col-sm-"], [class*=" col-sm-"] {
+        margin-bottom: 5px;
+      }
+    }
+  }
+
+  @media (min-width: $screen-md-min) and (max-width: $screen-md-max) {
+    .tile-content-forms {
+      .control-label {
+        text-align: left;
+        margin-bottom: 5px;
+        padding-top: 0;
+        padding-left: 7px;
+        padding-right: 7px;
+      }
+
+      .form-group {
+        > [class^="col-sm-"], > [class*=" col-sm-"] {
+          width: 100%;
+          float: none;
+        }
+
+        > [class^="col-sm-offset"], > [class*=" col-sm-offset"] {
+          margin-left: 0;
+        }
+      }
+
+    }
+  }
+}

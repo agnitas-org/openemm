@@ -1,0 +1,278 @@
+//
+// Utility classes
+// --------------------------------------------------
+
+
+// Floats
+// -------------------------
+
+.clearfix {
+  @include clearfix();
+}
+.center-block {
+  @include center-block();
+}
+.pull-right {
+  float: right !important;
+}
+.pull-left {
+  float: left !important;
+}
+.text-right {
+  text-align: right;
+}
+.text-left {
+  text-align: left;
+}
+
+
+// Toggling content
+// -------------------------
+
+// Note: Deprecated .hide in favor of .hidden or .sr-only (as appropriate) in v3.0.1
+.hide {
+  display: none !important;
+}
+.show {
+  display: block !important;
+}
+.invisible {
+  visibility: hidden;
+}
+.text-hide {
+  @include text-hide();
+}
+.transparent {
+  opacity: 0;
+}
+
+// Hide from screenreaders and browsers
+//
+// Credit: HTML5 Boilerplate
+
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.invisible {
+  clip: rect(0,0,0,0) !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+
+// For Affix plugin
+// -------------------------
+
+.affix {
+  position: fixed;
+  @include translate3d(0, 0, 0);
+}
+
+// Only display content to screen readers
+//
+// See: http://a11yproject.com/posts/how-to-hide-content/
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+.align-top {
+  vertical-align: top !important;
+}
+
+.align-middle {
+  vertical-align: middle !important;
+}
+
+.align-bottom {
+  vertical-align: bottom !important;
+}
+
+.align-left {
+  text-align: left !important;
+}
+
+.align-center {
+  text-align: center !important;
+}
+
+.align-right {
+  text-align: right !important;
+}
+
+.block {
+  display: block !important;
+}
+
+.inline-block {
+  display: inline-block !important;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.vspacer-10 {
+  display: block;
+  width: 100%;
+  font-size: 10px;
+  line-height: 10px;
+  height: 10px;
+}
+
+.vspace-top-10 {
+  margin-top: 10px !important;
+}
+
+.vspace-top-20 {
+  margin-top: 20px !important;
+}
+
+.vspace-bottom-10 {
+  margin-bottom: 10px !important;
+}
+
+.vspace-bottom-20 {
+  margin-bottom: 20px !important;
+}
+
+.vspace-top-0 {
+  margin-top: 0 !important;
+}
+
+.vspace-bottom-0 {
+  margin-bottom: 0 !important;
+}
+
+.no-hover, .no-hover a {
+  pointer-events: none;
+  cursor: default !important;
+}
+
+[class^="multiline-"], [class*=" multiline-"] {
+  display: inline-block;
+  word-break: break-all;
+  white-space: normal;
+}
+
+@each $conf in $screens {
+  $name: nth($conf, 1);
+  $media: nth($conf, 2);
+
+  @each $width in 100, 150, 200, 250, 300, 350, 400 {
+    @media (min-width: $media) {
+      .multiline-#{$name}-#{$width} {
+        max-width: #{$width}px;
+      }
+    }
+  }
+
+  @media (min-width: $media) {
+    .multiline-#{$name}-max {
+      max-width: none;
+    }
+  }
+}
+
+@each $conf in $screens {
+  $name: nth($conf, 1);
+  $media: nth($conf, 2);
+
+  @each $width in 100, 150, 200, 250, 300, 350, 400 {
+    @media (min-width: $media) {
+      .multiline-min-#{$name}-#{$width} {
+        min-width: #{$width}px;
+      }
+    }
+  }
+}
+
+.multiline-auto {
+
+}
+
+@each $state in $states {
+  $name: nth($state, 1);
+  $color: nth($state, 2);
+
+  .state-#{$name} {
+    background-color: $color !important;
+    border-color: $color !important;
+  }
+
+  .text-state-#{$name} {
+    color: $color !important;
+  }
+}
+
+@media (max-width: $screen-xs) {
+  .hidden-xs { display: none !important; }
+}
+
+@media (min-width: $screen-sm-min) and (max-width: $screen-sm-max) {
+  .hidden-sm { display: none !important; }
+}
+
+@media (min-width: $screen-md-min) and (max-width: $screen-md-max) {
+  .hidden-md { display: none !important; }
+}
+
+@media (min-width: $screen-lg-min) {
+  .hidden-lg { display: none !important; }
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.lowercase {
+  text-transform: lowercase;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.non-resizable {
+  resize: none;
+}
+
+.v-resizable {
+  resize: vertical;
+}
+
+.h-resizable {
+  resize: horizontal;
+}
+
+.clickable {
+  cursor: pointer !important;
+}
+
+.unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.break-word {
+  word-wrap: break-word;
+}
+
+.relative {
+  position: relative !important;
+}

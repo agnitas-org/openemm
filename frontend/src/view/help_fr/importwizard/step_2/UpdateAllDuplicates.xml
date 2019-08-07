@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Mise &agrave; jour des doublons</title>
+	<content><![CDATA[S'il existe plus d'un duplicata dans la base de donn&eacute;es, seul le premier duplicata trouv&eacute; est mis &agrave; jour par d&eacute;faut. Si vous voulez que tous les doublons soient mis &agrave; jour, veuillez cocher cette case.]]></content>
+</HelpBalloon>

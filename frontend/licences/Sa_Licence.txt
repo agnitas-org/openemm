@@ -1,0 +1,51 @@
+   _        ___  ____ ____  ____
+  |_|_ _   / _ \/ ___/ ___||  _ \   ___  __ _
+  _|_||_| | | | \___ \___ \| |_) | / __|/ _` |
+ |_||_|_| | |_| |___) |__) |  __/  \__ \ (_| |
+  |_|_|_|  \___/|____/____/|_|     |___/\__,_|
+
+  OSSP sa - Socket Abstraction
+  Version 1.2.6 (03-Oct-2005)
+
+  ABSTRACT
+
+  OSSP sa is an abstraction library for the Unix socket application
+  programming interface (API) featuring stream and datagram oriented
+  communication over Unix Domain and Internet Domain (TCP and UDP)
+  sockets. It provides the following key features: address abstraction
+  (local, IPv4, and IPv6), type abstraction, I/O timeouts, I/O stream
+  buffering and convenience I/O functions.
+
+  COPYRIGHT AND LICENSE
+
+  Copyright (c) 2001-2005 Ralf S. Engelschall <rse@engelschall.com>
+  Copyright (c) 2001-2005 The OSSP Project <http://www.ossp.org/>
+  Copyright (c) 2001-2005 Cable & Wireless <http://www.cw.com/>
+
+  This file is part of OSSP sa, a socket abstraction library which
+  can be found at http://www.ossp.org/pkg/lib/sa/.
+
+  Permission to use, copy, modify, and distribute this software for
+  any purpose with or without fee is hereby granted, provided that
+  the above copyright notice and this permission notice appear in all
+  copies.
+
+  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE AUTHORS AND COPYRIGHT HOLDERS AND THEIR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+  USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  SUCH DAMAGE.
+
+  HOME AND DOCUMENTATION
+
+  The documentation and latest release can be found on
+
+  o http://www.ossp.org/pkg/lib/sa/
+  o  ftp://ftp.ossp.org/pkg/lib/sa/

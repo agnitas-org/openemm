@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Application context definition for Agnitas DAO layer.
+
+	Only DAO classes here!!!
+-->
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="daoLookupFactory" class="com.agnitas.dao.impl.DaoLookupFactory">
+		<lookup-method name="getBeanDataSource" bean="dataSource"/>
+		<lookup-method name="getBeanDatasourceDescriptionDao" bean="DatasourceDescriptionDao"/>
+		<lookup-method name="getBeanCompanyDao" bean="CompanyDao"/>
+		<lookup-method name="getBeanAdminDao" bean="AdminDao"/>
+		<lookup-method name="getBeanDynamicTagDao" bean="DynamicTagDao"/>
+		<lookup-method name="getBeanMailingDao" bean="MailingDao"/>
+		<lookup-method name="getBeanMaildropStatusDao" bean="MaildropStatusDao"/>
+		<lookup-method name="getBeanMailingParameterDao" bean="MailingParameterDao"/>
+		<lookup-method name="getBeanLoginTrackDao" bean="LoginTrackDao"/>
+		<lookup-method name="getBeanUndoMailingDao" bean="UndoMailingDao"/>
+		<lookup-method name="getBeanUndoMailingComponentDao" bean="UndoMailingComponentDao"/>
+		<lookup-method name="getBeanUndoDynContentDao" bean="UndoDynContentDao"/>
+		<lookup-method name="getBeanTargetDao" bean="TargetDao"/>
+		<lookup-method name="getBeanMailinglistDao" bean="MailinglistDao"/>
+		<lookup-method name="getBeanImportRecipientsDao" bean="ImportRecipientsDao" />
+		<lookup-method name="getBeanProfileFieldEncryptor" bean="ProfileFieldEncryptor" />
+		<lookup-method name="getBeanWorkflowReactionDao" bean="WorkflowReactionDao"/>
+		<lookup-method name="getBeanRecipientDao" bean="RecipientDao"/>
+		<lookup-method name="getBeanEmmActionService" bean="EmmActionService"/>
+		<lookup-method name="getBeanProfileImportReporter" bean="ProfileImportReporter"/>
+		<lookup-method name="getBeanImportModeHandlerFactory" bean="ImportModeHandlerFactory"/>
+		<lookup-method name="getBeanRdirTrafficAmountDao" bean="RdirTrafficAmountDao"/>
+		<lookup-method name="getBeanJavaMailService" bean="JavaMailService"/>
+		<lookup-method name="getBeanAnonymizeStatisticsDao" bean="AnonymizeStatisticsDao"/>
+	</bean>
+
+    <bean id="MailingDao" class="com.agnitas.dao.impl.ComMailingDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="undoMailingDao" ref="UndoMailingDao" />
+		<property name="undoMailingComponentDao" ref="UndoMailingComponentDao" />
+		<property name="undoDynContentDao" ref="UndoDynContentDao" />
+		<property name="targetDao" ref="TargetDao" />
+		<property name="comTrackableLinkDao" ref="TrackableLinkDao" />
+		<property name="mailingComponentDao" ref="MailingComponentDao" />
+		<property name="mediatypesDao" ref="MediatypesDao" />
+		<property name="databaseInformation" ref="DatabaseInformation" />
+		<property name="configService" ref="ConfigService" />
+		<property name="maildropStatusDao" ref="MaildropStatusDao" />
+		<property name="companyDao" ref="CompanyDao" />
+		<property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator" />
+        <property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
+        <property name="dynamicTagDao" ref="DynamicTagDao"/>
+    </bean>
+
+    <bean id="SupervisorDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultSupervisorDaoImpl"/>
+
+	<bean id="GrantedSupervisorLoginDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultGrantedSupervisorLoginDaoImpl"/>
+		
+<!-- ============================================================================================================================== Admin -->
+	<bean id="AdminDao" class="com.agnitas.dao.impl.ComAdminDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="adminGroupDao" ref="AdminGroupDao" />
+		<property name="companyDao" ref="CompanyDao" />
+		<property name="configService" ref="ConfigService" />
+		
+		<!-- For RDIR: Set "passwordEncryptor" and "supervisorDao" to null -->
+		<property name="passwordEncryptor" ref="passwordEncryptor" />
+	</bean>
+	
+	<!-- ============================================================================================================================== Companies -->
+	<bean id="CompanyDao" class="com.agnitas.dao.impl.ComCompanyDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="mailingDao" ref="MailingDao" />
+		<property name="emmActionService" ref="EmmActionService" />
+		<property name="targetDao" ref="TargetDao" />
+		<property name="copyMailingService" ref="CopyMailingService" />
+		<property name="bindingHistoryDao" ref="BindingHistoryDao" />
+	</bean>
+	
+<!-- ============================================================================================================================== Mailinglists -->
+	<bean id="MailinglistDao" class="org.agnitas.dao.impl.MailinglistDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="targetDao" ref="TargetDao" />
+	</bean>
+	
+	<bean id="MailinglistApprovalDao" class="org.agnitas.dao.impl.MailinglistApprovalDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+	
+<!-- ============================================================================================================================== Mediatypes -->
+	<bean id="MediatypesDao" class="com.agnitas.emm.core.mediatypes.dao.ComMediatypesDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+	
+<!-- ============================================================================================================================== Recipients -->
+	<bean id="RecipientDao" class="com.agnitas.dao.impl.ComRecipientDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="companyDao" ref="CompanyDao" />
+		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="bindingEntryDao" ref="BindingEntryDao" />
+		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
+		<property name="configService" ref="ConfigService" />
+		<property name="recipientFactory" ref="RecipientFactory" />
+		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
+		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
+	</bean>
+
+</beans>

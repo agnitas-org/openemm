@@ -1,0 +1,7 @@
+<HelpBalloon>
+	<title>Date format for date comparisons</title>
+	<content><![CDATA[For date comparisons, please specify the format to be used for the comparison on both date values to be compared.
+As a rule, you should use the date format "YYYYMMDD", which compares to the full date.
+For comparisons on birthdays please use the format "MMDD", so in this case only months and days will be compared.
+	]]></content>
+</HelpBalloon>

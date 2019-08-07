@@ -1,0 +1,19 @@
+<HelpBalloon>
+	<title>Export Definition speichern</title>
+	<content><![CDATA[ F&uuml;r
+den regelm&auml;&szlig;igen Gebrauch k&ouml;nnen Sie
+Export-Definitionen auch speichern<SPAN LANG="en-US">.</SPAN></I></FONT></P>
+<P STYLE="margin-bottom: 0in">Um bei regelm&auml;&szlig;igen Exports
+nicht immer alle Daten (besonders die zu exportierenden Spalten) neu
+eingeben zu m&uuml;ssen, k&ouml;nnen Sie die erstellte
+Export-Definition f&uuml;r zuk&uuml;nftige Verwendungen speichern.
+Klicken Sie dazu auf <FONT FACE="Tahoma, sans-serif">Speichern</FONT>
+und<FONT FACE="Tahoma, sans-serif"> </FONT>geben Sie auf der
+folgenden Seite einen <FONT FACE="Tahoma, sans-serif">Namen</FONT>
+sowie ggf. eine <FONT FACE="Tahoma, sans-serif">Beschreibung</FONT>
+des Exports an. Ihre gespeicherten Export-Definitionen erscheinen
+zuk&uuml;nftig immer in einer &Uuml;bersicht, wenn Sie im Men&uuml;
+<FONT FACE="Tahoma, sans-serif">Empf&auml;nger</FONT> und <FONT FACE="Tahoma, sans-serif">Export
+</FONT>ausw&auml;hlen. Sie k&ouml;nnen die Export-Definitionen dann
+direkt anw&auml;hlen.</P>]]></content>
+</HelpBalloon>

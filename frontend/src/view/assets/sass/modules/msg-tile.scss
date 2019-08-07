@@ -1,0 +1,66 @@
+.msg-tile {
+  margin: 10px auto;
+  width: 345px;
+  background-color: #fff;
+  @include shadow-variant(regular);
+}
+
+.msg-tile-header {
+  height: 215px;
+  text-align: center;
+
+  img {
+    display: inline-block;
+    width: auto; height: 110px;
+    margin: 40px auto 20px auto;
+  }
+
+  h1 {
+    font-size: 18px;
+    line-height: 24px;
+    text-align: center;
+    color: #fff;
+  }
+
+  .msg-tile-primary & {
+    background-color: $c-blue-27;
+  }
+
+  .msg-tile-error & {
+    background-color: $c-state-alert;
+  }
+
+  .msg-tile-info & {
+    background-color: $c-state-info;
+  }
+
+  .msg-tile-alert & {
+    background-color: $c-state-warning;
+  }
+
+  .msg-tile-success & {
+    background-color: #64a70b;
+  }
+
+}
+
+.msg-tile-content {
+  padding: 20px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #424244;
+  }
+
+  h2, h3, h4, h5, h6 {
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 13px;
+    color: #424244;
+    margin-bottom: 15px;
+  }
+}

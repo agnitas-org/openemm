@@ -1,0 +1,123 @@
+@charset "UTF-8";
+/* CSS Document */
+
+.other_media_checkbox_item .info_bubble{
+	margin-top:3px;
+}
+
+.advanced_search_add:link,
+.advanced_search_add:visited,
+.advanced_search_add:hover,
+.advanced_search_add:active{
+	padding-left:20px;
+	padding-bottom:2px;
+	padding-top:2px;
+	margin-left:15px;
+	display:inline;
+	float:none;
+	
+}
+
+.advanced_search_filter_list_first_item{
+	margin-left:52px;
+	
+}
+
+.advanced_search_filter_select4{
+	width:317px
+}
+
+.advanced_search_filter_selection{
+	padding-left:52px;
+	width:800px;
+	
+}
+
+.advanced_search_filter_select9 {
+	width:185px;
+}
+
+.dashboard_recently_modified_content{
+	overflow-y:scroll;
+	overflow-x:hidden;
+	position:relative;
+}
+
+.dashboard_mail_preview_tab_content {
+    display: none;
+    padding: 0;
+    overflow-y: hidden;
+}
+
+.contentbox_small{
+	height:500px;
+}
+
+.graphic_component_file_info {
+	margin-top:25px;
+	clear:left;
+	
+}
+
+.assistant_step7_checkbox label {
+	padding-top:3px;
+}
+
+.motd_container {
+    left: 0;
+    top: 250px;
+    position: absolute;
+    z-index: 100;
+}
+
+.motd_subcontainer {
+    text-align: center;
+    position:relative;
+    overflow: auto;
+}
+
+.motd_content {
+}
+
+.motd_button_container {
+    margin: 10px;
+    margin-left: 75px;
+    width: 100px;
+}
+
+.motd_button {
+    float: none;
+}
+
+#motd_control_panel {
+    text-align: right;
+}
+
+.contentbox_right_column .recipient_detail_mailinglist_container {
+    display: inline-block;
+}
+
+.contentbox_right_column .recipient_detail_mailinglist_nowidelayout {
+    display: block;
+}
+
+.calendar_sent_mail_text {
+    color: #000000;
+}
+
+.calendar_scheduled_mail_text {
+    color: #aa3333;
+}
+
+.status_mail_label {
+    float: left;
+}
+
+.status_mail_field {
+    float: left;
+}
+
+.status_email_delete {
+    float: left;
+    margin-left: 30px;
+}

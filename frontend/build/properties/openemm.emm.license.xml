@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<emm.license>
+	<licenseID>0</licenseID>
+	<licenseHolder>OpenEMM</licenseHolder>
+	<licenseType>Inhouse</licenseType>
+	<expirationDate></expirationDate>
+	<maximumNumberOfCompanies>-1</maximumNumberOfCompanies>
+	<maximumNumberOfSupervisors>-1</maximumNumberOfSupervisors>
+	<maximumNumberOfAdmins>-1</maximumNumberOfAdmins>
+	<maximumNumberOfWebserviceUsers>-1</maximumNumberOfWebserviceUsers>
+	<maximumNumberOfCustomers>-1</maximumNumberOfCustomers>
+	<maximumNumberOfProfileFields>-1</maximumNumberOfProfileFields>
+	<allowedPremiumFeatures>
+		pluginmanager.change
+		pluginmanager.show
+		recipient.profileField.html.allowed
+		statistic.individual.show
+		webservice.user.change
+		webservice.user.create
+		webservice.user.show
+	</allowedPremiumFeatures>
+	<maximumNumberOfReferenceTables>-1</maximumNumberOfReferenceTables>
+	<allowMailingSendForMasterCompany>true</allowMailingSendForMasterCompany>
+</emm.license>

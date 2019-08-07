@@ -1,0 +1,81 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package org.agnitas.util;
+
+import java.text.DateFormat;
+import java.util.Date;
+
+import org.apache.commons.lang.StringUtils;
+
+public class UserActivityUtil {
+
+    public static  String addChangedFieldLog(String fieldName, boolean newValue, boolean oldValue) {
+        return addChangedFieldLog(fieldName, String.valueOf(newValue), String.valueOf(oldValue));
+    }
+
+    public static String addChangedFieldLog(String fieldName, int newValue, int oldValue) {
+        String newVal = newValue == 0 ? StringUtils.EMPTY : String.valueOf(newValue);
+        String oldVal = oldValue == 0 ? StringUtils.EMPTY : String.valueOf(oldValue);
+
+        return addChangedFieldLog(fieldName, newVal, oldVal);
+    }
+
+    public static String addChangedFieldLog(String fieldName, Date newValue, Date oldValue, DateFormat format) {
+        String newDate = newValue == null ? null : format.format(newValue);
+        String oldDate = oldValue == null ? null : format.format(oldValue);
+
+        return addChangedFieldLog(fieldName, newDate, oldDate);
+    }
+
+    public static String addChangedFieldLog(String fieldName, String newValue, String oldValue) {
+        oldValue = StringUtils.trimToNull(oldValue);
+        newValue = StringUtils.trimToNull(newValue);
+
+        return buildFieldDescription(fieldName, newValue, oldValue);
+    }
+
+    private static String buildFieldDescription(String fieldName, String newValue, String oldValue) {
+        StringBuilder fieldDescription = new StringBuilder();
+
+        if (!StringUtils.equals(oldValue, newValue)) {
+            fieldDescription.append(getRemovedFiledDescription(fieldName, newValue, oldValue));
+            fieldDescription.append(getChangedFieldDescription(fieldName, newValue, oldValue));
+        }
+        return fieldDescription.toString();
+    }
+
+    private static String getRemovedFiledDescription(String fieldName, String newValue, String oldValue) {
+        StringBuilder fieldDescription = new StringBuilder();
+
+        if (StringUtils.isEmpty(newValue)) {
+            fieldDescription.append(fieldName)
+                    .append(" value ").append(oldValue)
+                    .append(" was removed. ");
+        }
+
+        return fieldDescription.toString();
+    }
+
+    private static String getChangedFieldDescription(String fieldName, String newValue, String oldValue) {
+        StringBuilder fieldDescription = new StringBuilder();
+
+        if (StringUtils.isNotEmpty(newValue)) {
+            if (StringUtils.isNotEmpty(oldValue)) {
+                fieldDescription.append(fieldName).append(" changed from ")
+                        .append(oldValue).append(" to ").append(newValue).append(". ");
+            } else {
+                fieldDescription.append(fieldName).append(" changed to ").append(newValue).append(". ");
+            }
+        }
+
+        return fieldDescription.toString();
+    }
+}

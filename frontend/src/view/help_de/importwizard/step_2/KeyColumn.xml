@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Schlüsselspalte</title>
+	<content><![CDATA[Wichtig ist, an Hand welchen Kriteriums das System eine Adresse als Doppelgänger einstuft. Beim E-Mail-Versand macht es Sinn, die E-Mail-Adresse als Kriterium zu verwenden. Das ist auch die Standardeinstellung. Damit kann es zwar passieren, dass sich ein Empfänger mit mehreren E-Mail-Adressen anmeldet, solche Doppelmeldungen kann eine Automatik aber kaum entdecken. Diese Einstellung gilt auch f&uuml;r die Aktualisierung von Empfängerprofilen. Die Auswahlliste enthält sämtliche vordefinierten und selbst definierten Felder der Profildatenbank.]]></content>
+</HelpBalloon>

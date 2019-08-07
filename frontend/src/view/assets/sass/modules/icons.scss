@@ -1,0 +1,68 @@
+/*doc
+---
+title: Icons
+name: icons
+category: CSS - Icons
+---
+*/
+
+/*doc
+---
+title: Font Awesome Icons
+name: icons-01
+parent: icons
+---
+
+The Font Awesome Iconset (v4.3) is included in the css. Simply use `<i class="icon icon-name"></i>` to display an icon.
+Icon names can be looked up on the <a href="http://fontawesome.io/icons/" target="_blank">Font Awesome Doc</a>
+
+```htmlexample
+<i class="icon icon-check"></i>
+```
+*/
+
+.icon-help:before {
+  content: $fa-var-question-circle;
+}
+
+.icon-state-alert:before {
+  content: $fa-var-warning;
+}
+
+.icon-state-warning:before {
+  content: $fa-var-exclamation-circle;
+}
+
+.icon-state-success:before {
+  content: $fa-var-check-circle;
+}
+
+.icon-state-info:before {
+  content: $fa-var-info-circle;
+}
+
+.icon-lab:before {
+  content: "\f0c3";
+}
+
+@each $conf in $mailing-state-icons {
+    $state: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+  .icon-mailing\.status\.#{$state}:before { content: $icon; }
+}
+
+.icon-emc {
+  background-image: url(core/images/facelift/agn_mailing-new-grid.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  vertical-align: middle;
+}
+
+/* Linkages (Aktionen/Kampagnenmanager/Seiten) */
+.icon-linkage-action:before { content: $fa-var-cog; }
+.icon-linkage-campaignmanager:before { content: $fa-var-tasks; }
+.icon-linkage-site:before { content: $fa-var-list-alt; }

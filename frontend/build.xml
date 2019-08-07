@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="all" name="OpenEMM">
+	<tstamp />
+
+	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="lib_ant/xmltask.jar" />
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="lib_ant/ant-contrib-1.0b3.jar" />
+	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
+	<taskdef name="signfile" classname="com.agnitas.ant.SignFile" classpath="lib_ant/signfile.jar">
+		<classpath>
+			<pathelement location="lib_ant/bcprov-jdk15-141.jar" />
+		</classpath>
+	</taskdef>
+
+	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, copyEhcacheConfig, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MySQL, createMandatoryDbChanges_MySQL, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
+		<echo message="Application built." />
+	</target>
+
+	<target name="checkForPropertiesFile" description="Check the existence of the propertyfile and import it">
+		<echo message="basedir: ${basedir}" />
+
+		<property file="build.properties" />
+		<property file="build.properties.default" />
+
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="${basedir}" />
+			</then>
+		</if>
+
+		<propertyregex property="deploydir" input="${deploydir}" regexp="~" replace="${user.home}" global="true" override="true" />
+
+		<if>
+			<not>
+				<isset property="javaVersion" />
+			</not>
+			<then>
+				<property name="javaVersion" value="1.8" />
+			</then>
+		</if>
+		<echo message="Using Java version ${javaVersion}" />
+	</target>
+
+	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
+		<path id="build.classpath">
+			<fileset dir="${basecss}/lib">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+
+		<path id="build.containerPath">
+			<fileset dir="${CATALINA_HOME}/lib">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+	</target>
+
+	<target name="parseApplicationVersion" depends="checkForPropertiesFile" description="Parse the given appname to get the version">
+		<propertyregex property="ApplicationVersion" input="${appname}" regexp="(\d+)\.(\d+)\.(\d+)((.|-hf)(\d+))?" select="\0" defaultValue="Unknown version" />
+		<propertyregex property="ApplicationMajorVersion" input="${appname}" regexp="(\d+)\.(\d+)\.(\d+)((.|-hf)(\d+))?" select="\1" defaultValue="Unknown major version" />
+		<propertyregex property="ApplicationMinorVersion" input="${appname}" regexp="(\d+)\.(\d+)\.(\d+)((.|-hf)(\d+))?" select="\2" defaultValue="Unknown minor version" />
+		<propertyregex property="ApplicationMicroVersion" input="${appname}" regexp="(\d+)\.(\d+)\.(\d+)((.|-hf)(\d+))?" select="\3" defaultValue="Unknown micro version" />
+		<propertyregex property="ApplicationHotfixVersion" input="${appname}" regexp="(\d+)\.(\d+)\.(\d+)((.|-hf)(\d+))?" select="\6" defaultValue="No hotfix version" />
+
+		<echo message="Building version: ${ApplicationVersion}" />
+		<echo message="ApplicationMajorVersion: ${ApplicationMajorVersion}" />
+		<echo message="ApplicationMinorVersion: ${ApplicationMinorVersion}" />
+		<echo message="ApplicationMicroVersion: ${ApplicationMicroVersion}" />
+		<echo message="ApplicationHotfixVersion: ${ApplicationHotfixVersion}" />
+	</target>
+
+	<target name="setDeploytarget" depends="checkForPropertiesFile, checkDeployTargetRunstage">
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="." />
+			</then>
+		</if>
+
+		<property name="emmSourcePath" value="src" />
+		<property name="emmEtcPath" value="etc" />
+		<property name="emmLibPath" value="lib" />
+
+		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
+			<condition>
+				<not>
+					<contains string="${deploytarget}" substring="asp" casesensitive="false" />
+				</not>
+			</condition>
+		</fail>
+
+		<!-- Check for available PropertiesConfigFile -->
+		<available file="build/properties/${deploytarget}.xml" property="isPropertiesConfigFileAvailable" />
+		<fail message="Invalid deploytarget: ${deploytarget} (Missing build/properties/${deploytarget}.xml)">
+			<condition>
+				<isfalse value="${isPropertiesConfigFileAvailable}" />
+			</condition>
+		</fail>
+	</target>
+
+	<target name="checkDeployTargetRunstage" depends="checkForPropertiesFile">
+		<fail message="Missing deploytarget">
+			<condition>
+				<not>
+					<isset property="deploytarget" />
+				</not>
+			</condition>
+		</fail>
+
+		<condition property="isLocalhost" value="true" else="false">
+			<contains string="${deploytarget}" substring="localhost" casesensitive="false" />
+		</condition>
+
+		<condition property="isLocalServer" value="true" else="false">
+			<contains string="${deploytarget}" substring=".local" casesensitive="false" />
+		</condition>
+
+		<condition property="isTestServer" value="true" else="false">
+			<or>
+				<contains string="${deploytarget}" substring=".test" casesensitive="false" />
+			</or>
+		</condition>
+
+		<condition property="isPreviewServer" value="true" else="false">
+			<or>
+				<contains string="${deploytarget}" substring=".preview" casesensitive="false" />
+				<contains string="${deploytarget}" substring=".outlook" casesensitive="false" />
+				<contains string="${deploytarget}" substring=".sandbox" casesensitive="false" />
+				<contains string="${deploytarget}" substring=".suse" casesensitive="false" />
+			</or>
+		</condition>
+
+		<condition property="isBetaServer" value="true" else="false">
+			<contains string="${deploytarget}" substring=".beta" casesensitive="false" />
+		</condition>
+
+		<condition property="isLiveServer" value="true" else="false">
+			<contains string="${deploytarget}" substring=".live" casesensitive="false" />
+		</condition>
+
+		<condition property="isServiceServer" value="true" else="false">
+			<contains string="${deploytarget}" substring=".service" casesensitive="false" />
+		</condition>
+	</target>
+
+	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create emm/log4j.properties">
+		<delete dir="${deploydir}${appname}" />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<mergexml source="${basecss}/build/templates/template.configuration.emm.xml" change="build/properties/${deploytarget}.xml" dest="${deploydir}${appname}/WEB-INF/classes/configuration.emm.xml" overwrite="true" />
+
+		<!-- Copy and sign license file -->
+		<propertyregex property="licenseName" input="${deploytarget}" regexp="^([^.]*)\..*" select="\1" casesensitive="false" />
+		<if>
+			<available file="build/properties/${deploytarget}.emm.license.xml"/>
+			<then>
+				<copy file="build/properties/${deploytarget}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
+			</then>
+			<else>
+				<copy file="build/properties/${licenseName}.emm.license.xml" tofile="${deploydir}${appname}/WEB-INF/classes/emm.license.xml" />
+			</else>
+		</if>
+
+		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
+		<echo message="emm/log4j.properties deleted" />
+
+		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.emm.xml" out="${deploydir}${appname}/WEB-INF/classes/emm.properties" style="${basecss}/build/templates/emm.properties.xslt" />
+		<xslt in="${deploydir}${appname}/WEB-INF/classes/configuration.emm.xml" out="${deploydir}${appname}/WEB-INF/classes/log4j.properties" style="${basecss}/build/templates/log4j.properties.xslt" />
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
+			<include name="log4j.properties" />
+			<replacetoken>${deploytarget}</replacetoken>
+		</replace>
+
+		<echo message="emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+	</target>
+
+	<target name="copyEhcacheConfig" depends="checkForPropertiesFile">
+		<copy todir="${deploydir}${appname}/WEB-INF/classes/" file="${emmSourcePath}/view/WEB-INF/conf/ehcache.xml" />
+	</target>
+
+	<target name="replaceEmmPropertiesPlaceholders" depends="createPropertiesFiles, parseApplicationVersion">
+		<!-- Replace version placeholders in emm.properties -->
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationVersion}">
+			<include name="emm.properties" />
+			<replacetoken>${ApplicationVersion}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationMajorVersion}">
+			<include name="emm.properties" />
+			<replacetoken>${ApplicationMajorVersion}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationMinorVersion}">
+			<include name="emm.properties" />
+			<replacetoken>${ApplicationMinorVersion}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationMicroVersion}">
+			<include name="emm.properties" />
+			<replacetoken>${ApplicationMicroVersion}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationHotfixVersion}">
+			<include name="emm.properties" />
+			<replacetoken>${ApplicationHotfixVersion}</replacetoken>
+		</replace>
+
+		<!-- Replace other placeholders in emm.properties -->
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${isLocalServer}">
+			<include name="emm.properties" />
+			<replacetoken>${isLocalServer}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${isLiveServer}">
+			<include name="emm.properties" />
+			<replacetoken>${isLiveServer}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${isBetaServer}">
+			<include name="emm.properties" />
+			<replacetoken>${isBetaServer}</replacetoken>
+		</replace>
+		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${isServiceServer}">
+			<include name="emm.properties" />
+			<replacetoken>${isServiceServer}</replacetoken>
+		</replace>
+		<echo message="Replaced placeholders in emm.properties" />
+	</target>
+
+	<target name="copyDbChanges_Oracle" depends="checkForPropertiesFile">
+	</target>
+
+	<target name="copyDbChanges_MySQL" depends="checkForPropertiesFile">
+		<copy todir="${deploydir}${appname}/WEB-INF/sql">
+			<fileset dir="${basecss}/sql">
+				<include name="**/mysql/**" />
+				<include name="**/emm_messages*.sql" />
+				<include name="**/emm_deleted_messages*.sql" />
+				<include name="**/userrights*.sql" />
+				<include name="**/emm-mysql-execute-updates.sh" />
+				<exclude name="**/old/**" />
+				<exclude name="**/*test*" />
+				<exclude name="**/*fulldb*" />
+				<exclude name="**/*create*" />
+				<exclude name="**/*drop*" />
+			</fileset>
+		</copy>
+
+		<!-- Copy data for first initial setup installation-->
+		<copy todir="${deploydir}${appname}/WEB-INF/sql">
+			<fileset dir="${basecss}/sql">
+				<include name="**/*create-database*" />
+				<include name="**/*create-tablespaces*" />
+				<include name="**/*create-user*" />
+				<include name="**/*fulldb*" />
+				<include name="**/emm-create-initial-password.sh" />
+				<exclude name="**/old/**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="createMandatoryDbChanges_Oracle" depends="copyDbChanges_Oracle">
+	</target>
+
+	<target name="createMandatoryDbChanges_MySQL" depends="copyDbChanges_MySQL">
+		<delete file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mysql.csv" />
+		<fileset id="mandatoryDbChanges_mysql" dir="${deploydir}${appname}/WEB-INF/sql/mysql">
+			<include name="emm-mysql-update-*.sql" />
+		</fileset>
+		<pathconvert property="mandatoryDbChangesFileList_mysql" refid="mandatoryDbChanges_mysql" pathsep="${line.separator}">
+			<map from="${deploydir}${appname}/WEB-INF/sql/mysql/" to="" />
+		</pathconvert>
+		<propertyregex property="mandatoryDbChangesList_mysql" input="${mandatoryDbChangesFileList_mysql}" regexp=".*-(\d+\.\d+\.\d+).*" replace="\1" global="true" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mysql.csv" message="${mandatoryDbChangesList_mysql}" />
+		<echo message="Created mandatoryDbChanges_mysql.csv" />
+	</target>
+
+	<target name="compile" depends="setupBuildPaths, createPropertiesFiles" description="Build EMM">
+		<!-- Both srcdir and destdir should be package roots. -->
+		<!-- They could be different of course; in that case NetBeans can also be set -->
+		<!-- up to compile to a different filesystem in the same way; see Compiler Types: -->
+		<echo message="Java Home: ${java.home}" />
+		<echo message="JAVA_HOME: ${JAVA_HOME}" />
+		<echo message="CATALINA_HOME: ${CATALINA_HOME}" />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<javac debug="true" nowarn="true" deprecation="false" destdir="${deploydir}${appname}/WEB-INF/classes" executable="${JAVA_HOME}/bin/javac" fork="yes" source="${javaVersion}" target="${javaVersion}" srcdir="${emmSourcePath}/java:${emmSourcePath}/autogenerated/java" includeantruntime="false" encoding="UTF-8">
+			<exclude name="**/emm/springws/**" />
+			<!-- To add something to the classpath: -->
+			<classpath refid="build.classpath" />
+			<classpath refid="build.containerPath" />
+			<classpath>
+				<pathelement path="lib_tools/agn-anno-whitelist-processor.jar" />
+			</classpath>
+			<!-- To exclude some files: -->
+			<compilerarg line="-Xlint:-unchecked" />
+		</javac>
+
+		<!-- EMM logo, used for header of generated PDF files -->
+		<copy file="${emmSourcePath}/java/com/agnitas/emm/core/workflow/service/resources/preview_pdf_logo.png" todir="${deploydir}${appname}/WEB-INF/classes/com/agnitas/emm/core/workflow/service/resources" />
+	</target>
+
+	<target name="copyAdditionalPiwikFile" depends="setDeploytarget">
+		<if>
+			<contains string="${deploytarget}" substring="agnitas.asp.beta" casesensitive="false" />
+			<then>
+				<!-- copy additional_piwik.jsp to deploydir with changing ID from 1 to 4 -->
+				<copy file="${emmSourcePath}/view/WEB-INF/jsp/additional_piwik.jsp" tofile="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" overwrite="true" />
+				<replace file="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" token=", 1)" value=", 4)" />
+				<replace file="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" token="idsite=1" value="idsite=4" />
+			</then>
+			<else>
+				<if>
+					<contains string="${deploytarget}" substring="agnitas.asp.live" casesensitive="false" />
+					<then>
+						<!-- copy additional_piwik.jsp to deploy without changes -->
+						<copy file="${emmSourcePath}/view/WEB-INF/jsp/additional_piwik.jsp" tofile="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" overwrite="true" />
+					</then>
+					<else>
+						<!-- All others deploytargets deploy an empty additional.jsp without piwik data -->
+						<copy file="${emmSourcePath}/view/WEB-INF/jsp/additional.jsp" tofile="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" overwrite="true" />
+					</else>
+				</if>
+			</else>
+		</if>
+	</target>
+
+	<target name="create_web.xml" depends="deploy">
+		<echo message="Creating web.xml" />
+
+		<delete file="${deploydir}${appname}/WEB-INF/web.xml" />
+
+		<echo message="Merging from: ${basecss}/build/templates/web-basic.xml with ${basecss}/build/templates/web-openemm.xml into ${deploydir}${appname}/WEB-INF/web.xml" />
+		<mergexml source="${basecss}/build/templates/web-basic.xml" change="${basecss}/build/templates/web-openemm.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" />
+
+		<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+			<insert path="/:web-app/:welcome-file-list[1]" position="after">
+				<![CDATA[&#09;
+	<context-param>
+		<param-name>sessionfilestore</param-name>
+		<param-value>WEB-INF/sessions</param-value>
+	</context-param>]]>
+			</insert>
+		</xmltask>
+
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
+		<!-- Configure CharacterEncodingFilter -->
+		<if>
+			<not>
+				<isset property="defaultRequestEncoding" />
+			</not>
+			<then>
+				<property name="defaultRequestEncoding" value="UTF-8" />
+			</then>
+		</if>
+		<if>
+			<not>
+				<isset property="isoEncodingDomains" />
+			</not>
+			<then>
+				<property name="isoEncodingDomains" value="" />
+			</then>
+		</if>
+		<if>
+			<not>
+				<isset property="utf8EncodingDomains" />
+			</not>
+			<then>
+				<property name="utf8EncodingDomains" value="" />
+			</then>
+		</if>
+		<if>
+			<not>
+				<isset property="jpEncodingDomains" />
+			</not>
+			<then>
+				<property name="jpEncodingDomains" value="" />
+			</then>
+		</if>
+		<echo message="defaultRequestEncoding: ${defaultRequestEncoding}" />
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="${defaultRequestEncoding}">
+			<replacetoken>${defaultRequestEncoding}</replacetoken>
+		</replace>
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="${isoEncodingDomains}">
+			<replacetoken>${isoEncodingDomains}</replacetoken>
+		</replace>
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="${utf8EncodingDomains}">
+			<replacetoken>${utf8EncodingDomains}</replacetoken>
+		</replace>
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="${jpEncodingDomains}">
+			<replacetoken>${jpEncodingDomains}</replacetoken>
+		</replace>
+
+		<!-- Extended session timeout in web.xml -->
+		<if>
+			<istrue value="${extendSessionTimeout}" />
+			<then>
+				<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+					<insert path="/:web-app/:display-name" position="after">
+						<![CDATA[&#09;
+	<!-- Extended session timeout -->
+	<session-config>
+		<session-timeout>60</session-timeout>
+	</session-config>]]>
+					</insert>
+				</xmltask>
+
+				<!-- Remove unwanted namespace attributes -->
+				<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
+					<replacetoken> xmlns=""</replacetoken>
+				</replace>
+			</then>
+		</if>
+
+		<!-- Deactivate jobqueue (default: keep job queue)-->
+		<property name = "deactivateJobQueue" value="false" />
+		<if>
+			<istrue value="${deactivateJobQueue}" />
+			<then>
+				<echo message="Deactivating job queue" />
+				<delete file="${deploydir}${appname}/WEB-INF/cronContext.xml" />
+				<xmltask source="${deploydir}${appname}/WEB-INF/web.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+					<replace path="/:web-app/:context-param[:param-name='contextConfigLocation']/:param-value/text()">/WEB-INF/applicationContext*.xml</replace>
+				</xmltask>
+				<echo message="cronContext.xml removed" />
+			</then>
+		</if>
+
+		<echo message="rewriting web.xml done" />
+	</target>
+
+	<target name="applicationContext" depends="deploy">
+		<echo message="rewriting applicationContext for asp" />
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
+		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext.xml">
+		</xmltask>
+		<echo message="...applicationContext.xml done" />
+	</target>
+
+	<target name="deploy" depends="compile">
+		<copy todir="${deploydir}${appname}/licences">
+			<fileset dir="${emmLibPath}/../licences" />
+		</copy>
+
+		<copy todir="${deploydir}${appname}" overwrite="true" includeemptydirs="false">
+			<fileset dir="${emmSourcePath}/view">
+				<include name="**/*.jsp" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}" overwrite="true" includeemptydirs="false">
+			<fileset dir="${emmSourcePath}/view">
+				<exclude name="**/grunt_config.json" />
+				<exclude name="**/Gruntfile.js" />
+				<exclude name="**/grunt/**" />
+				<exclude name="**/assets/sass/**" />
+				<exclude name="**/node_modules/**" />
+
+				<exclude name="**/package.json" />
+				<exclude name="**/WEB-INF/conf/**" />
+				<exclude name="**/*.jsp" />
+				<exclude name="**/test*" />
+				<exclude name="**/*~" />
+				<exclude name="**/*.tmp" />
+				<exclude name="**/*.log" />
+				<exclude name="**/*.default" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/lib" overwrite="true">
+			<fileset dir="${emmLibPath}" />
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmSourcePath}/view/WEB-INF/conf">
+				<exclude name="**/*.default" />
+				<exclude name="**/*~" />
+				<exclude name="**/*.tmp" />
+				<exclude name="**/.nbattrs" />
+				<exclude name="**/*test*" />
+				<exclude name="**/*cactus*" />
+				<exclude name="**/*web-cactus.xml" />
+				<exclude name="emm.properties" />
+			</fileset>
+		</copy>
+
+		<!--
+		Added this copy instruction to get merged application context working.
+		This could be the wrong validation file, but it doesn't matter.
+		This file will only be used by the webservice 2.0 classes and these classes
+		are currently not used in EMM.
+		-->
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmEtcPath}/validation">
+				<include name="validator-rules.xml" />
+				<include name="validator-messages.properties" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmSourcePath}/view/WEB-INF/conf" />
+		</copy>
+
+		<!-- Set source path for ACE editor addons and its deployment target -->
+		<property name="aceeditor.addons.dir" location="${emmSourcePath}/view/assets/js/ace-addons" />
+		<property name="aceeditor.deploydir" location="${deploydir}${appname}/assets/js/vendor/ace_20.12.14" />
+
+		<copy todir="${aceeditor.deploydir}">
+			<fileset dir="${aceeditor.addons.dir}" includes="**.js" />
+		</copy>
+
+		<copy file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" tofile="${deploydir}${appname}/WEB-INF/tiles-defs.xml"/>
+		<delete file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" />
+
+		<mergexml source="${deploydir}${appname}/WEB-INF/struts-config-basic.xml" change="${deploydir}${appname}/WEB-INF/struts-config-openemm.xml" dest="${deploydir}${appname}/WEB-INF/struts-config.xml" overwrite="true" />
+		<delete file="${deploydir}${appname}/WEB-INF/struts-config-basic.xml" />
+		<delete file="${deploydir}${appname}/WEB-INF/struts-config-openemm.xml" />
+
+		<chmod file="${deploydir}${appname}/WEB-INF/sql/mysql/*.sh" perm="ugo+x"/>
+
+		<delete file="${deploydir}${appname}/assets/core/images/logo.png" />
+		<copy file="src/view/assets/core/images/openemm_logo.png" tofile="${deploydir}${appname}/assets/core/images/logo.png" overwrite="true" />
+		<copy file="src/view/assets/core/images/openemm_logo.png" tofile="${deploydir}${appname}/assets/core/images/openemm_logo.png" />
+		<copy file="src/view/assets/core/images/openemm_favicon.ico" tofile="${deploydir}${appname}/favicon.ico" overwrite="true" />
+		<copy file="src/view/assets/core/images/openemm_logo.png" tofile="${deploydir}${appname}/assets/core/images/facelift/agnitas-emm-logo.png" overwrite="true" />
+		<copy file="src/view/assets/core/images/openemm_logo.svg" tofile="${deploydir}${appname}/assets/core/images/facelift/agnitas-emm-logo.svg" overwrite="true" />
+		<echo message="Using special demoopenemm logo (openemm_logo.png)" />
+	</target>
+
+	<target name="war" depends="all" description="Build Webapp-WAR">
+		<delete file="${deploydir}/emm.war" />
+
+		<war destfile="${deploydir}/emm.war" webxml="${deploydir}${appname}/WEB-INF/web.xml">
+			<fileset dir="${deploydir}${appname}">
+				<exclude name="${deploydir}${appname}/WEB-INF/lib"/>
+				<exclude name="${deploydir}${appname}/WEB-INF/classes"/>
+			</fileset>
+			<lib dir="${deploydir}${appname}/WEB-INF/lib" />
+			<classes dir="${deploydir}${appname}/WEB-INF/classes" />
+
+			<manifest>
+				<attribute name="Built-By" value="AGNITAS AG" />
+				<attribute name="Built-On" value="${DSTAMP}" />
+				<attribute name="Built-At" value="${TSTAMP}" />
+			</manifest>
+		</war>
+	</target>
+</project>

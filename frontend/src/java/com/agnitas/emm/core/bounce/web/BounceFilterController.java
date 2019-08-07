@@ -1,0 +1,217 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.bounce.web;
+
+import java.util.concurrent.Callable;
+
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
+
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.web.forms.FormUtils;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterForm;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedAutoResponderEmailException;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+
+@Controller
+@PermissionMapping("bounce.filter")
+@RequestMapping("/administration/bounce")
+public class BounceFilterController {
+    private static final String MAILING_LISTS = "mailingLists";
+    private static final String USER_FORM_LIST = "userFormList";
+    private static final String BOUNCE_FILTER_FORM = "bounceFilterForm";
+    private static final String ACTIONBASED_MAILINGS = "actionBasedMailings";
+    private static final String ALLOW_ACTIONBASED_AUTORESPONDER = "allowedActionBasedResponder";
+
+    public static final long DEFAULT_TIMEOUT = 1000L;
+
+    private final BounceFilterService bounceFilterService;
+    private final ComMailinglistService mailingListService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final ComUserformService userFormService;
+    private final ConversionService conversionService;
+    private final ConfigService configService;
+    private final WebStorage webStorage;
+    private final UserActivityLogService userActivityLogService;
+    
+
+    public BounceFilterController(BounceFilterService bounceFilterService, ComMailinglistService mailingListService, final MailinglistApprovalService mailinglistApprovalService,
+                                  ComUserformService userFormService, ConversionService conversionService,
+                                  ConfigService configService, WebStorage webStorage,
+                                  UserActivityLogService userActivityLogService) {
+        this.bounceFilterService = bounceFilterService;
+        this.mailingListService = mailingListService;
+        this.userFormService = userFormService;
+        this.conversionService = conversionService;
+        this.configService = configService;
+        this.webStorage = webStorage;
+        this.userActivityLogService = userActivityLogService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
+    }
+
+    @RequestMapping(value = "/list.action")
+    public Pollable<ModelAndView> list(ComAdmin admin, HttpSession session, BounceFilterListForm form, Model model) {
+        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.BOUNCE_FILTER_OVERVIEW, form);
+
+        PollingUid uid = PollingUid.builder(session.getId(), "bounceFilterList")
+            .arguments(form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows())
+            .build();
+
+        Callable<ModelAndView> worker = () -> {
+            model.addAttribute("bounceFilterList",
+                    bounceFilterService.getPaginatedBounceFilterList(
+                            admin,
+                            form.getSort(),
+                            form.getOrder(),
+                            form.getPage(),
+                            form.getNumberOfRows()));
+
+            writeUserActivityLog(admin, "bounce filter list", "active submenu item - overview");
+
+            return new ModelAndView("bounce_filter_list", model.asMap());
+        };
+
+        return new Pollable<>(uid, DEFAULT_TIMEOUT, new ModelAndView("redirect:/administration/bounce/list.action", model.asMap()), worker);
+    }
+
+    @GetMapping(value = "/{id:\\d+}/view.action")
+    public String view(ComAdmin admin, @PathVariable int id, Model model) {
+        int companyId = admin.getCompanyID();
+
+        BounceFilterForm form = loadBounceFilter(companyId, id, model);
+        loadAdditionalFormData(admin, model);
+        configActionBasedResponder(companyId, form, model);
+
+        writeUserActivityLog(admin, "view bounce filter", getBounceFilterDescription(form));
+
+        return "bounce_filter_view";
+    }
+
+    @GetMapping(value = "/new.action")
+    public String create(ComAdmin admin, BounceFilterForm form, Model model) {
+        loadAdditionalFormData(admin, model);
+        configActionBasedResponder(admin.getCompanyID(), form, model);
+        return "bounce_filter_view";
+    }
+
+    @PostMapping(value = "/save.action")
+    public String save(ComAdmin admin, @Valid BounceFilterForm form, BindingResult result, RedirectAttributes model, Popups popups) throws Exception {
+        int id = form.getId();
+        if (result.hasErrors()) {
+            model.addFlashAttribute("bounceFilterForm", form);
+            return "redirect:/administration/bounce/" + id + "/view.action";
+        }
+
+        BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
+        int newId;
+		try {
+			newId = bounceFilterService.saveBounceFilter(admin, bounceFilter);
+			
+	        if (newId > 0) {
+	            form.setId(newId);
+	            popups.success("default.changes_saved");
+	            writeUserActivityLog(admin, (id == 0 ? "create " : "edit ") + "bounce filter", getBounceFilterDescription(form));
+	        } else {
+	            popups.alert("Error");
+	        }
+
+	        return "redirect:/administration/bounce/list.action";
+		} catch (BlacklistedFilterEmailException e) {
+			popups.alert("error.blacklistedFilterEmail");
+		} catch (BlacklistedForwardEmailException e) {
+			popups.alert("error.blacklistedForwardEmail");
+		} catch (BlacklistedAutoResponderEmailException e) {
+			popups.alert("error.blacklistedAutoresponderEmail");
+		}
+		
+        return "redirect:/administration/bounce/" + id + "/view.action";
+    }
+
+    @GetMapping(value = "/{id:\\d+}/confirmDelete.action")
+    public String confirmDelete(ComAdmin admin, @PathVariable int id, Model model) {
+        loadBounceFilter(admin.getCompanyID(), id, model);
+        return "bounce_filter_delete_ajax";
+    }
+
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String delete(ComAdmin admin, BounceFilterForm form, Popups popups) {
+        int id = form.getId();
+        if(id > 0 && bounceFilterService.deleteBounceFilter(id, admin.getCompanyID())){
+            writeUserActivityLog(admin, "delete bounce filter", getBounceFilterDescription(form));
+            popups.success("default.selection.deleted");
+        } else {
+            popups.alert("Error");
+        }
+        return "redirect:/administration/bounce/list.action";
+    }
+
+    private BounceFilterForm loadBounceFilter(int companyId, int id, Model model) {
+        BounceFilterForm form = (BounceFilterForm) model.asMap().get(BOUNCE_FILTER_FORM);
+        if(id > 0) {
+            form = conversionService.convert(bounceFilterService.getBounceFilter(companyId, id), BounceFilterForm.class);
+            model.addAttribute(BOUNCE_FILTER_FORM, form);
+        }
+        return form;
+    }
+
+    private void loadAdditionalFormData(ComAdmin admin, Model model){
+        model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
+        model.addAttribute(USER_FORM_LIST, userFormService.getUserForms(admin.getCompanyID()));
+    }
+
+    private void configActionBasedResponder(int companyId, BounceFilterForm form, Model model) {
+        boolean isResponderEnabled = configService.isActionbasedMailloopAutoresponderInUiEnabled(companyId);
+        if(isResponderEnabled) {
+            model.addAttribute(ACTIONBASED_MAILINGS,
+                    mailingListService.getMailingListByType(MailingTypes.ACTION_BASED, companyId));
+        }
+
+        boolean allowedActionBasedResponder = (form.getId() == 0 && isResponderEnabled) || form.getArMailingId() != 0;
+        // TODO: Remove after transition phase (EMM-3645)
+        model.addAttribute(ALLOW_ACTIONBASED_AUTORESPONDER, allowedActionBasedResponder);
+    }
+
+    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+        userActivityLogService.writeUserActivityLog(admin, action, description);
+    }
+
+    private String getBounceFilterDescription(BounceFilterForm form) {
+        return String.format("%s (%d)", form.getShortName(), form.getId());
+    }
+}

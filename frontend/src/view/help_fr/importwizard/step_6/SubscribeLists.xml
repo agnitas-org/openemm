@@ -1,0 +1,6 @@
+<HelpBalloon>
+	<title>S&eacute;lection des listes de diffusion</title>
+	<content><![CDATA[S&eacute;lection des listes de diffusion
+Toutes les listes de diffusion que vous avez cr&eacute;&eacute;es pour envoyer des bulletins d'information aux destinataires seront affich&eacute;es. Vous pouvez s&eacute;lectionner la liste &agrave; laquelle vos clients s'abonnent ou se d&eacute;sabonnent simplement en cochant la case correspondante. Selon le mode d'importation s&eacute;lectionn&eacute;, cette fonction peut &eacute;galement &ecirc;tre utilis&eacute;e pour d&eacute;sabonner les destinataires d'une ou de plusieurs listes de diffusion.<br>.
+Attention : Les listes de diffusion s&eacute;lectionn&eacute;es sont valables pour tous les destinataires &agrave; importer ! Si vous voulez importer une partie des destinataires de votre fichier csv dans une liste de diffusion, une autre partie dans une deuxi&egrave;me liste de diffusion, vous devez s&eacute;parer tous les destinataires dans deux fichiers csv et ex&eacute;cuter l'importation deux fois.]]></content>
+</HelpBalloon>

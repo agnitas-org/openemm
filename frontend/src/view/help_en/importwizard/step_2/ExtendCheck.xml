@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Extended check</title>
+	<content><![CDATA[Experience shows that certain typing errors occur rather frequently within e-mail addresses, for instance @tonline.de (instead of @t-online.de) or @aol.de (instead of @aol.com). If the Extended e-mail address check function has been activated, the import function will filter recipients whose e-mail address field contains such a typing error and place them in a download destined for correction.]]></content>
+</HelpBalloon>

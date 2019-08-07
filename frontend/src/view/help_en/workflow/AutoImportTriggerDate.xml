@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Campaign using  auto  import</title>
+	<content><![CDATA[For a reaction to be triggered after an auto-import, the trigger date must be after the campaign has been activated.]]></content>
+</HelpBalloon>

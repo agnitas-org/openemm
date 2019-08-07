@@ -1,0 +1,14 @@
+<HelpBalloon>
+	<title>Mode d'importation</title>
+	<content><![CDATA[La liste d&eacute;roulante Mode permet de contr&ocirc;ler la fa&ccedil;on dont le gestionnaire E-Marketing int&egrave;gre les donn&eacute;es import&eacute;es dans la base de donn&eacute;es. Les modes suivants sont disponibles :
+      <ul type="disc">
+         <li>Ajouter seulement les nouveaux destinataires</li>
+         <li>Ajouter de nouveaux destinataires et mettre &agrave; jour les destinataires existants</li>
+         <li>Mettre &agrave; jour uniquement les destinataires existants</li>
+         <li>Marquer les destinataires comme &eacute;tant exclus</li>
+         <li>Marquer les destinataires comme Bounced</li>
+      </ul>
+Vous disposez ainsi d'une grande marge de manœuvre pour la mise &agrave; jour de votre base de donn&eacute;es de profils. Parfois, vous recevrez des courriels d'abonn&eacute;s vous demandant de recevoir un bulletin d'information au lieu de vous inscrire &agrave; une liste de diffusion sur votre site Web. Entrer un seul destinataire n'est pas tr&egrave;s difficile. D&egrave;s que des dizaines de ces courriers ont besoin d'être trait&eacute;s, il est plus facile de produire une feuille de calcul avec les d&eacute;tails de l'utilisateur et de les importer dans le E-Marketing Manager.
+<br>
+Vous pouvez mettre à jour le statut du destinataire pour les abonn&eacute;s qui souhaitent se d&eacute;sabonner, mais ne peuvent ou ne veulent pas le faire eux-mêmes, de la même manière. Les options Marquer les destinataires comme Opt-Out et Marquer les destinataires comme Bounced sont utilis&eacute;es à cette fin. Cette proc&eacute;dure est principalement propos&eacute;e pour des raisons juridiques, car certains destinataires menacent de poursuites judiciaires si leur demande de d&eacute;sabonnement n'est pas prise en compte.Vous pouvez mettre &agrave; jour le statut du destinataire pour les abonn&eacute;s qui souhaitent se d&eacute;sabonner, mais ne peuvent ou ne veulent pas le faire eux-mêmes, de la même mani&egrave;re. Les options Marquer les destinataires comme Opt-Out et Marquer les destinataires comme Bounced sont utilis&eacute;es &agrave; cette fin. Cette proc&eacute;dure est principalement propos&eacute;e pour des raisons juridiques, car certains destinataires menacent de poursuites judiciaires si leur demande de d&eacute;sabonnement n'est pas prise en compte.]]></content>
+</HelpBalloon>

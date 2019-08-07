@@ -1,0 +1,9 @@
+<HelpBalloon>
+	<title>V&eacute;rification des enregistrements en double</title>
+	<content><![CDATA[Cette liste d&eacute;roulante vous permet de d&eacute;cider ce que le syst&egrave;me doit faire lorsqu'il v&eacute;rifie les enregistrements en double.
+      <ul type="disc">
+         <li> Le param&eacute;trage v&eacute;rifiera deux choses : si un destinataire figure d&eacute;j&agrave; dans la base de donn&eacute;es et si la liste des nouveaux destinataires contient elle-m&ecirc;me des entr&eacute;es en double.</li>
+         <li>L'option Uniquement dans les nouvelles donn&eacute;es v&eacute;rifie uniquement la liste des entr&eacute;es importées pour les doublons.</li>
+         <li>Le param&egrave;tre Pas de contr&ocirc;le : Tous les destinataires seront import&eacute;s. Il n'y aura pas de v&eacute;rification des doublons dans le fichier d'importation et pas de v&eacute;rification si les destinataires sont d&eacute;j&agrave; dans la base de donn&eacute;es. Par cons&eacute;quent, il est possible qu'un destinataire avec une adresse e-mail soit inclus deux fois dans la base de donn&eacute;es.</li>
+      </ul>]]></content>
+</HelpBalloon>

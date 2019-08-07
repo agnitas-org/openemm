@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="comments">Copyright (c) 2007 &lt;&lt;Your Company Name here>></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <html-property name="description">Creates a grouped report with a chart giving a visual representation of each group data.</html-property>
+
+    <property name="units">in</property>
+    <text-property name="displayName">Chart &amp; Listing</text-property>
+    <property name="iconFile">/templates/chart_listing.gif</property>
+    <property name="cheatSheet">org.eclipse.birt.report.designer.ui.cheatsheet.chartlisting</property>
+    <property name="layoutPreference">auto layout</property>
+    <list-property name="cssStyleSheets">
+        <structure>
+            <property name="fileName">styles.css</property>
+            <property name="useExternalCss">false</property>
+        </structure>
+    </list-property>
+    <parameters>
+        <scalar-parameter name="companyID" id="99">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">30</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="startdate" id="101">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">20090301</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="enddate" id="103">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">20090331</value>
+            </simple-property-list>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="includeAdminAndTestMails" id="450">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <script-data-source name="Scripted Data Source" id="176"/>
+    </data-sources>
+    <data-sets>
+        <script-data-set name="MonthDetailDataSet" id="406">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">date</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">shortname</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">kilobyte</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">mailing_count</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">mailtype</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">date</property>
+                </structure>
+                <structure>
+                    <property name="columnName">shortname</property>
+                </structure>
+                <structure>
+                    <property name="columnName">kilobyte</property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailing_count</property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailtype</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">date</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">shortname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">kilobyte</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">mailing_count</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">mailtype</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Scripted Data Source</property>
+            <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
+mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["startdate"] , params["enddate"]);
+currentrow = 0;]]></method>
+            <method name="fetch"><![CDATA[if( currentrow < mailDetails.size() ) {
+	row["date"] = mailDetails.get(currentrow).getDate();
+	row["shortname"] = mailDetails.get(currentrow).getShortName();
+	row["kilobyte"] = mailDetails.get(currentrow).getKiloByte();
+	row["mailing_count"] = mailDetails.get(currentrow).getMailingCount();
+	row["mailtype"] = mailDetails.get(currentrow).getMailtype();
+	currentrow++;
+	return true;
+}
+return false;]]></method>
+        </script-data-set>
+    </data-sets>
+    <styles>
+        <style name="crosstab" id="37">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="38">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">a4</property>
+            <property name="orientation">portrait</property>
+            <property name="topMargin">0in</property>
+            <property name="leftMargin">20mm</property>
+            <property name="bottomMargin">0in</property>
+            <property name="rightMargin">20mm</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <table id="160">
+            <property name="dataSet">MonthDetailDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">date</property>
+                    <expression name="expression">dataSetRow["date"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shortname</property>
+                    <expression name="expression">dataSetRow["shortname"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">kilobyte</property>
+                    <expression name="expression">dataSetRow["kilobyte"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">mailing_count</property>
+                    <expression name="expression">dataSetRow["mailing_count"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailtype</property>
+                    <text-property name="displayName">mailtype</text-property>
+                    <expression name="expression">dataSetRow["mailtype"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <property name="pageBreakInterval">1410065408</property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key">new Date(dataSetRow["date"].substr(6,4),dataSetRow["date"].substr(3,2),dataSetRow["date"].substr(0,2))</expression>
+                    <property name="direction">asc</property>
+                </structure>
+            </list-property>
+            <column id="170">
+                <property name="width">110px</property>
+            </column>
+            <column id="171"/>
+            <column id="427">
+                <property name="width">85px</property>
+            </column>
+            <column id="430">
+                <property name="width">75px</property>
+            </column>
+            <column id="443">
+                <property name="repeat">1</property>
+                <property name="width">75px</property>
+            </column>
+            <header>
+                <row id="161">
+                    <cell id="162">
+                        <text-data id="431">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("settings.fieldType.DATE", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="163">
+                        <text-data id="174">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Description", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="425">
+                        <text-data id="448">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailtype", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="428">
+                        <text-data id="433">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("default.Size", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="444">
+                        <text-data id="445">
+                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Amount", reportContext.getLocale())</expression>
+                        </text-data>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="164">
+                    <cell id="165">
+                        <data id="432">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">date</property>
+                        </data>
+                    </cell>
+                    <cell id="166">
+                        <data id="407">
+                            <property name="resultSetColumn">shortname</property>
+                        </data>
+                    </cell>
+                    <cell id="426">
+                        <data id="449">
+                            <property name="resultSetColumn">mailtype</property>
+                        </data>
+                    </cell>
+                    <cell id="429">
+                        <data id="434">
+                            <property name="numberAlign">right</property>
+                            <structure name="numberFormat">
+                                <property name="category">Custom</property>
+                                <property name="pattern">###0 kB</property>
+                            </structure>
+                            <structure name="stringFormat">
+                                <property name="category">Custom</property>
+                                <property name="pattern">@@@@@ kB</property>
+                            </structure>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">kilobyte</property>
+                        </data>
+                    </cell>
+                    <cell id="446">
+                        <data id="447">
+                            <property name="numberAlign">right</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">mailing_count</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

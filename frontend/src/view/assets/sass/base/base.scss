@@ -1,0 +1,134 @@
+*, *:before, *:after {
+  @include box-sizing(border-box);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: $ff-regular;
+  font-size: $fs-small;
+  line-height: 1.5;
+  background-color: $c-gray-11;
+}
+
+img {
+  outline: none;
+  text-decoration: none;
+  -ms-interpolation-mode: bicubic;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+p {
+  margin: 0;
+  // margin-bottom: 10px;
+}
+
+dl {
+  margin: 0;
+}
+
+dt, dd {
+  font-weight: normal;
+}
+
+/*doc
+---
+title: Headings
+name: headings
+category: CSS - Typography
+---
+
+```html_example
+<h1>Heading 1</h1>
+<h2>Heading 2</h2>
+```
+
+*/
+
+h1, h2 {
+  line-height: 1.2;
+  font-weight: $fw-semi;
+  margin: 0;
+}
+
+h1, .h1 {
+  font-size: $fs-xxlarge;
+  color: $c-white;
+
+  a {
+    font-size: $fs-xxlarge;
+    color: $c-white;
+  }
+}
+
+h2, .h2 {
+  font-size: $fs-xlarge;
+  color: $c-black-85;
+
+  a {
+    font-size: $fs-xlarge;
+    color: $c-black-85;
+  }
+}
+
+h3, h4, h5, h6 {
+  color: $c-black-85;
+  margin: 0;
+}
+
+small, .small {
+  font-size: $fs-tiny;
+}
+
+// h3, .h3 {
+//   font-size: $cpl-h3-fs;
+//   line-height: $cpl-h3-lh;
+//   font-weight: $cpl-h3-fw;
+//   color: $cpl-h3-text;
+// }
+
+// h4, .h4 {
+//   font-size: $cpl-h4-fs;
+//   line-height: $cpl-h4-lh;
+//   font-weight: $cpl-h4-fw;
+//   color: $cpl-h4-text;
+// }
+
+hr {
+  border: 0;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+ol {
+  // padding: 0;
+  margin: 0;
+}
+
+i { font-style: normal; }
+
+a { text-decoration: none; }
+
+// reset default webkit button styles
+button {
+  padding: 0;
+  border: 0;
+  background-color: inherit;
+
+  &:focus {
+    outline: 0;
+  }
+}
+
+.hidden {
+  display: none !important;
+}

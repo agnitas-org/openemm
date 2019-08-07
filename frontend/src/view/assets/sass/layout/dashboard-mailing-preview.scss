@@ -1,0 +1,68 @@
+.dashboard-mailing-preview {
+  padding: 15px;
+  background-color: $c-blue-01;
+}
+
+.mailing-preview-card {
+  display: block;
+  padding: 10px;
+  border: 1px solid $c-transparent;
+  border-radius: 4px;
+  text-align: center;
+
+  &:hover, &:active, &.active {
+    background-color: $c-blue-05;
+    border: 1px solid $c-blue-11;
+
+    .mailing-preview-card-body {
+      .headline {
+        color: $c-blue-27;
+
+        .badge {
+          color: $c-white;
+        }
+      }
+
+      .description {
+        color: $c-blue-22;
+      }
+    }
+  }
+}
+
+.mailing-preview-card-image {
+  width: auto;
+  background-color: $c-white;
+
+  @include shadow-variant(soft);
+}
+
+.mailing-preview-card-body {
+  text-align: left;
+
+  .headline {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+
+    font-size: $fs-small;
+    font-weight: $fw-bold;
+    color: $c-black-85;
+
+
+    @include text-overflow();
+
+  }
+
+  .mailing-badge {
+    font-weight: normal;
+  }
+
+  .description {
+    font-size: $fs-small;
+    color: $c-gray-44;
+
+    @include text-overflow();
+  }
+}

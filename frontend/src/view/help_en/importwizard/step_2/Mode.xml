@@ -1,0 +1,14 @@
+<HelpBalloon>
+	<title>Import mode</title>
+	<content><![CDATA[The Mode drop-down list is used to control how the E-Marketing Manager integrates imported data into the database. The following modes are available:
+      <ul type="disc">
+         <li>Add only new recipients</li>
+         <li>Add new recipients and update existing recipients</li>
+         <li>Only update existing recipients</li>
+         <li>Mark recipients as Opt Out</li>
+         <li>Mark recipients as Bounced</li>
+      </ul>
+This gives you a great deal of scope for updating your profile database. Sometimes you will receive e-mails from subscribers requesting to be sent a newsletter instead of registering for a mailing list on your website. To enter just one recipient is not a great deal of trouble. As soon as dozens of such mails need processing, it is easier to produce a spreadsheet with user details and import them into the E-Marketing Manager.
+<br>
+You can update the recipient status for subscribers who wish to unsubscribe, but cannot or do not want to do so themselves, in the same way. The options Mark recipients as Opt-Out and Mark recipients as Bounced are used for this purpose. This procedure is mainly offered for legal reasons, since some recipients threaten legal action if their request to unsubscribe is not heeded.]]></content>
+</HelpBalloon>
