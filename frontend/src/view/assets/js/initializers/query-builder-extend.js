@@ -21,71 +21,156 @@
         }
 
         function updateValue(rule, value, operator) {
-            if (operator && operator === 'sub') {
-                value = "-" + Math.abs(value);
+            if (operator) {
+                if (operator === 'sub') {
+                    value = '-' + Math.abs(value);
+                } else {
+                    value = '+' + Math.abs(value);
+                }
             }
 
             rule.$el.find('#date-filter').val(value);
         }
 
-        $.fn.queryBuilder.extend({
+        var QueryBuilder = $.fn.queryBuilder;
+        var QueryBuilderConstructor = QueryBuilder.constructor;
+        var originalInit = QueryBuilderConstructor.prototype.init;
+        var originalValidate = QueryBuilderConstructor.prototype.validate;
+
+        //Unconventional variables to avoid unnecessary OOTB code changes.
+        Utils = QueryBuilderConstructor.utils;
+        var Selectors = QueryBuilderConstructor.selectors;
+
+        QueryBuilder.extend({
+
+            init: function(rules) {
+                this.on('afterCreateRuleInput', function(event, rule) {
+                    var options = event.builder.optionsByType[rule.filter.type];
+                    if (options) {
+                        var method = options.postCreate;
+                        if (method && typeof method === 'function') {
+                            method.call(event.builder, rule, options);
+                        }
+                    }
+                });
+
+                if (rules && rules.rules && rules.rules.length) {
+                    this.initialRule = false;
+                } else {
+                    this.initialRule = true;
+                    rules.rules = [{initialRule: true, empty: true}];
+                }
+                return originalInit.call(this, rules);
+            },
 
             optionsByType: {
                 'date': {
-                    'availableFormats' : ['YYYYMMDD', 'DDMMYYYY', 'MMDD', 'DDMM', 'DD', 'MM', 'YYYY'],
-                    'input': function (rule, options) {
-                        var checkboxHideSelector = 'input[name=today]',
-                            html =
-                            "<div class='qb-input-label'>" +
-                                "<label class='checkbox-inline'>" +
-                                    "<input name='today' type='checkbox'>" +
-                                    "<span class='text'>" +
+                    availableFormats : ['DD.MM.YYYY', 'YYYYMMDD', 'DDMMYYYY', 'MMDD', 'DDMM', 'DD', 'MM', 'YYYY'],
+                    input: function (rule, options) {
+                        // Cannot use default data attributes and AGN.runAll, since runAll is performed on document and this part is detached.
+                        return $(
+                            '<div class="qb-input-label">' +
+                                '<label class="checkbox-inline">' +
+                                    '<input name="today" type="checkbox">' +
+                                    '<span class="text">' +
                                         t('defaults.today') +
-                                    "</span>" +
-                                "</label>" +
-                            "</div>" +
-                            "<div class='qb-input-element date-filter'>" +
-                                "<input class='form-control' type='number' id='date-filter'/>" +
-                            "</div>" +
-                            "<div class='qb-input-label'>" +
-                                "<div class='qb-input-inner'>" +
+                                    '</span>' +
+                                '</label>' +
+                            '</div>' +
+                            '<div class="qb-input-element date-filter">' +
+                                '<input class="form-control" type="text" id="date-filter"/>' +
+                            '</div>' +
+                            '<div class="qb-input-label" id="date-offset-label" style="display: none;">' +
+                                '<div class="form-badge qb-input-inner">' +
+                                    t('defaults.days') +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="qb-input-label">' +
+                                '<div class="qb-input-inner">' +
                                     t('date.formats.label') +
-                                "</div>" +
-                            "</div>" +
-                            "<div class='qb-input-element'>" + dateFormatInput(options.availableFormats)+
-                            "</div>" +
-                            "<div class='qb-input-label'>" +
-                                "<div class='qb-input-inner'>" +
-                                    "<button type='button' class='icon icon-help' data-help='help_" + getHelpLanguage() + "/targets/DateFormat.xml'></button>" +
-                                "</div>"
-                            "</div>",
-                            $html = $(html);
-                        //Cannot use default data attributes and AGN.runAll, since runAll is performed on document and this part is detached.
-                        return $html;
+                                '</div>' +
+                            '</div>' +
+                            '<div class="qb-input-element">' + dateFormatInput(options.availableFormats) +
+                            '</div>' +
+                            '<div class="qb-input-label">' +
+                                '<div class="qb-input-inner">' +
+                                    '<button type="button" class="icon icon-help" data-help="help_' + getHelpLanguage() + '/targets/DateFormat.xml"></button>' +
+                                '</div>' +
+                            '</div>'
+                        );
+                    },
+                    postCreate: function(rule) {
+                        var $todayCheckbox = rule.$el.find('input[name=today]');
+                        var $offsetLabel = rule.$el.find('#date-offset-label');
+                        var $dateFilter = rule.$el.find('#date-filter');
+                        var $dateFormat = rule.$el.find('#date-format');
+
+                        var onModeChange = function() {
+                            var isToday = $todayCheckbox.prop('checked');
+
+                            $offsetLabel.toggle(isToday);
+                            $dateFilter.off('change.offset keyup.offset');
+
+                            if (!rule._updating_input) {
+                                rule._updating_value = true;
+                                if (isToday) {
+                                    $dateFilter.val('+0');
+                                } else {
+                                    $dateFilter.val(formatDate(new Date(), $dateFormat.val()));
+                                }
+                                rule._updating_value = false;
+                            }
+
+                            if (isToday) {
+                                $dateFilter.on('change.offset keyup.offset', function(e) {
+                                    var value = $dateFilter.val();
+
+                                    if (value) {
+                                        var offset = parseInt(value);
+                                        if (!isNaN(offset)) {
+                                            var newValue = (offset < 0 ? '' : '+') + offset;
+                                            if (newValue != value) {
+                                                $dateFilter.val(newValue);
+                                            }
+                                        }
+                                    } else if (e.type === 'change') {
+                                        $dateFilter.val('+0');
+                                    }
+                                });
+                            }
+                        };
+
+                        $todayCheckbox.on('change', onModeChange);
                     },
                     valueSetter: function (rule, values) {
                         var valuesCopy = values.slice(0);
-                        var todayCheckbox = rule.$el.find('input[name=today]');
+                        var $todayCheckbox = rule.$el.find('input[name=today]');
+                        var $offsetLabel = rule.$el.find('#date-offset-label');
+                        var $dateFormat = rule.$el.find('#date-format');
                         var isToday = false, operator, dateFormat, value;
 
                         if (values.length > MIN_EXPECTED_SIZE) {
                             if (valuesCopy.shift() === 'today') {
                                 isToday = true;
                             }
-                            value = valuesCopy.shift() ;
-                            operator = valuesCopy.shift() ;
-                            dateFormat = valuesCopy.shift() ;
+                            value = valuesCopy.shift();
+                            operator = valuesCopy.shift();
+                            dateFormat = valuesCopy.shift();
                         } else {
                             value = valuesCopy.shift();
                             if (value === 'today') {
                                 isToday = true;
-                                value = '';
+                                value = '+0';
                             }
-                            dateFormat = valuesCopy.shift() ;
+                            dateFormat = valuesCopy.shift();
                         }
-                        todayCheckbox.prop('checked', isToday);
+
+                        $offsetLabel.toggle(isToday);
                         updateValue(rule, value, operator);
-                        rule.$el.find('#date-format').val(dateFormat);
+                        $dateFormat.val(dateFormat);
+
+                        // Make sure to set this checkbox after all other inputs are updated.
+                        $todayCheckbox.prop('checked', isToday).change();
                     },
                     valueGetter: function (rule) {
                         var dateValue = [],
@@ -104,21 +189,47 @@
                         dateValue.push(dateFormat);
                         return dateValue;
                     },
-                    validate: function (value) {
-                        var result = true, data = 0;
-                        if (!value[data]) {
-                            result = ['empty_date'];
+                    validate: function (values) {
+                        if (values.length == 2) {
+                            var date = values[0];
+                            var format = values[1];
+
+                            if (date) {
+                                if (format) {
+                                    return validateDateFormat(date, format.toUpperCase()) ? true : ['invalid_format'];
+                                } else {
+                                    return true;
+                                }
+                            } else {
+                                return ['empty_date'];
+                            }
+                        } else if (values.length == 4) {
+                            var delta = values[1];
+
+                            if (!delta || delta != parseInt(delta)) {
+                                return ['invalid_expression'];
+                            }
                         }
-                        return result;
+
+                        return true;
                     }
                 }
             },
 
-            getRuleInput: function (rule, value_id) {
+            validate: function(options) {
+                var self = this;
+                var root = self.model.root.rules;
+                if (this.initialRule && root.length === 1) {
+                    this.clearErrors();
+                    root[0].$el.addClass('initial-rule');
+                    this.initialRule = false;
+                } else {
+                    $('.initial-rule').removeClass('initial-rule');
+                    originalValidate.call(this, options);
+                }
+            },
 
-                //Unconventional variables to avoid unnecessary OOTB code changes.
-                var QueryBuilder = $.fn.queryBuilder.constructor;
-                var Utils = QueryBuilder.utils;
+            getRuleInput: function (rule, value_id) {
 
                 var filter = rule.filter;
                 var validation = rule.filter.validation || {};
@@ -195,8 +306,6 @@
             },
 
             updateRuleOperator: function (rule, previousOperator) {
-                var Selectors = $.fn.queryBuilder.constructor.selectors;
-
                 var $valueContainer = rule.$el.find(Selectors.value_container);
                 if (!rule.operator || rule.operator.nb_inputs === 0) {
                     $valueContainer.hide();
@@ -227,7 +336,6 @@
             },
 
             createRuleOperators: function(rule) {
-                var Selectors = $.fn.queryBuilder.constructor.selectors;
                 var $operatorContainer = rule.$el.find(Selectors.operator_container).empty();
 
                 if (!rule.filter) {
@@ -255,7 +363,6 @@
             },
 
             createRuleInput: function(rule) {
-                var Selectors = $.fn.queryBuilder.constructor.selectors;
                 var $valueContainer = rule.$el.find(Selectors.value_container).empty();
 
                 rule.__.value = undefined;
@@ -316,8 +423,6 @@
             },
 
             setRuleInputValue: function (rule, value) {
-                var Selectors = $.fn.queryBuilder.constructor.selectors;
-                var Utils = $.fn.queryBuilder.constructor.utils;
 
                 var filter = rule.filter;
                 var operator = rule.operator;
@@ -372,9 +477,6 @@
             },
 
             getRuleInputValue: function(rule) {
-                var Selectors = $.fn.queryBuilder.constructor.selectors;
-                var Utils = $.fn.queryBuilder.constructor.utils;
-
                 var filter = rule.filter;
                 var operator = rule.operator;
                 var value = [];
@@ -709,7 +811,7 @@
                 }
             }
         })
-    }
+    };
 
     function generateDateFormatSelect(availableFormats) {
         var resultMarkup = [];
@@ -721,5 +823,102 @@
             resultMarkup.push($('<div/>').append($option).html());
         });
         return resultMarkup.join('');
+    }
+
+    function formatDate(date, format) {
+        return format.replace('DD', AGN.Lib.Helpers.pad(date.getDate(), 2))
+          .replace('MM', AGN.Lib.Helpers.pad(date.getMonth() + 1, 2))
+          .replace('YYYY', AGN.Lib.Helpers.pad(date.getFullYear(), 4));
+    }
+
+    function validateDateFormat(date, format) {
+        if (!date) {
+            return false;
+        }
+
+        var fragments = getDateFormatFragments(format);
+        if (fragments) {
+            for (var i = 0; i < fragments.length; i++) {
+                var fragment = fragments[i];
+
+                if (fragment.isDigitFragment) {
+                    if (fragment.isLenient) {
+                        var match = date.match('^\\d{1,' + fragment.lexeme.length + '}');
+                        if (match) {
+                            date = date.substring(match[0].length);
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        if (date.length < fragment.lexeme.length) {
+                            return false;
+                        }
+                        if (!date.substr(0, fragment.lexeme.length).match(/^\d+$/)) {
+                            return false;
+                        }
+                        date = date.substring(fragment.lexeme.length);
+                    }
+                } else {
+                    if (date.startsWith(fragment.lexeme)) {
+                        date = date.substring(fragment.lexeme.length);
+                    } else {
+                        return false;
+                    }
+                }
+            }
+
+            return !date;
+        }
+
+        return false;
+    }
+
+    function getDateFormatFragment(format) {
+        var fragments = ['DD', 'MM', 'YYYY', '.', '-', '_'];
+
+        if (format) {
+            for (var i = 0; i < fragments.length; i++) {
+                if (format.startsWith(fragments[i])) {
+                    return fragments[i];
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function getDateFormatFragments(format) {
+        var digitFragments = ['DD', 'MM', 'YYYY'];
+        var fragments = [];
+
+        while (format) {
+            var fragmentLexeme = getDateFormatFragment(format);
+            if (fragmentLexeme) {
+                var isDigitFragment = false;
+                var isLenient = false;
+
+                if (digitFragments.includes(fragmentLexeme)) {
+                    isDigitFragment = true;
+                    isLenient = true;
+
+                    if (fragments.length) {
+                        // If there's no separator between two digit fragments then they both cannot be lenient.
+                        var previousFragment = fragments[fragments.length - 1];
+                        if (previousFragment.isDigitFragment) {
+                            previousFragment.isLenient = false;
+                            isLenient = false;
+                        }
+                    }
+                }
+
+                fragments.push({lexeme: fragmentLexeme, isDigitFragment: isDigitFragment, isLenient: isLenient});
+            } else {
+                return false;
+            }
+
+            format = format.substring(fragmentLexeme.length);
+        }
+
+        return fragments.length ? fragments : false;
     }
 })();

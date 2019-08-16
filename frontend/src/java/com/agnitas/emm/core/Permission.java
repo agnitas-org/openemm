@@ -163,7 +163,6 @@ public class Permission {
 
 	public static final Permission SERVER_STATUS = new Permission("server.status");
 
-	public static final Permission STATISTIC_INDIVIDUAL_SHOW = new Permission("statistic.individual.show");
 	public static final Permission STATISTIC_LOAD_SPECIFIC = new Permission("statistic.load.specific");
 	public static final Permission STATISTIC_SOFTBOUNCES_SHOW = new Permission("statistic.softbounces.show");
 
@@ -208,6 +207,8 @@ public class Permission {
 	public static final Permission DEEPTRACKING = new Permission("deeptracking", false);
 	public static final Permission IMPORT_CUSTOMERID = new Permission("import.customerid", false);
 	public static final Permission IMPORT_MAPPING_AUTO = new Permission("import.mapping.auto", false);
+	public static final Permission IMPORT_MODE_ADD_UPDATE_FORCED = new Permission("import.mode.add_update_forced");
+	public static final Permission IMPORT_MODE_REMOVE_STATUS = new Permission("import.mode.remove_status");
 	public static final Permission IMPORT_MODE_REACTIVATE_SUSPENDED = new Permission("import.mode.reactivateSuspended");
 	/** Import customer data without subscribing it to a mailinglist **/
 

@@ -53,6 +53,8 @@ public class ConfigValue {
 	
 	public static final ConfigValue GridTemplateImportAllowed = new ConfigValue("import.gridTemplateAllowed", "false");
 
+	public static final ConfigValue UseNewCssLibForStylesEmbedding = new ConfigValue("company.useNewCssLibForStylesEmbedding", "false");
+
 	public static final ConfigValue WkhtmlToPdfToolPath = new ConfigValue("wkhtmltopdf");
 	public static final ConfigValue WkhtmlToImageToolPath = new ConfigValue("wkhtmltoimage");
 	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "true");

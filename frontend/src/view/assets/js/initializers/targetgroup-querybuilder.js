@@ -35,15 +35,9 @@
             inherit_no_sortable: true,
             icon: 'icon icon-arrows-alt'
           }
-        }
+        },
+        rules: readRulesFromJson($el, "#queryBuilderRules", isTargetGroupLocked)
       });
-
-      var qbRules = readRulesFromJson($el, "#queryBuilderRules", isTargetGroupLocked);
-      if (qbRules === null) {
-        $el.queryBuilder('reset');
-      } else {
-        $el.queryBuilder('setRules', qbRules);
-      }
 
       if (!isIE10) {
         AGN.Initializers.Select($el);

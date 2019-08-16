@@ -13,6 +13,8 @@ package org.agnitas.ecs.backend.web;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +53,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(EmbeddedClickStatView.class);
 
-	private static final String ENCODING = "UTF-8";
+	private static final Charset ENCODING = StandardCharsets.UTF_8;
 
 	public static final String PATH = "/ecs_view";
 	
@@ -91,7 +93,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 			String charsetPattern = "<meta http-equiv *= *\"content-type\".*charset *= *[A-Za-z0-9-.:_]*";
 
 			res.setContentType("text/html");
-			res.setCharacterEncoding(ENCODING);
+			res.setCharacterEncoding(ENCODING.name());
 
 			try (ServletOutputStream out = res.getOutputStream()) {
 
@@ -139,7 +141,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 							final String media = "print";
 
 							try {
-								Document document = HtmlUtils.parseDocument(mailingContent, ENCODING);
+								Document document = HtmlUtils.parseDocument(mailingContent, ENCODING.name());
 
 								URL base = null;
 								try {
@@ -148,8 +150,17 @@ public class EmbeddedClickStatView extends HttpServlet {
 									logger.error("Error occurred: " + e.getMessage(), e);
 								}
 
-								DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, ENCODING, base);
-								mailingContent = HtmlUtils.embedStyles(document, declarationMap, ENCODING, base, media, true, false);
+								DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, ENCODING.name(), base);
+								HtmlUtils.StylesEmbeddingOptions options = HtmlUtils.stylesEmbeddingOptionsBuilder()
+										.setEncoding(ENCODING)
+										.setBaseUrl(base)
+										.setMediaType(media)
+										.setEscapeAgnTags(true)
+										.setPrettyPrint(false)
+										.setUseNewLib(configService.getBooleanValue(ConfigValue.UseNewCssLibForStylesEmbedding, companyId))
+										.build();
+
+								mailingContent = HtmlUtils.embedStyles(document, declarationMap, options);
 							} catch (Exception e) {
 								logger.error("Error occurred: " + e.getMessage(), e);
 							}

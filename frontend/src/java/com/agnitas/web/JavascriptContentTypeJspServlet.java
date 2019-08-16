@@ -19,10 +19,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.agnitas.util.HttpUtils;
 import org.apache.jasper.servlet.JspServlet;
 
-
 /**
  * Redefines Content-Type header to 'application/javascript' in response object.
+ * @deprecated since 19.07.292. Use <%@ page contentType="application/javascript" %> tag instead.
  */
+@Deprecated
 public class JavascriptContentTypeJspServlet extends JspServlet {
 
     private static final long serialVersionUID = -3530420764067522036L;

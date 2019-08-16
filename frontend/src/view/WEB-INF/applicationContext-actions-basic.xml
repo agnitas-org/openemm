@@ -134,7 +134,6 @@
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="mailingService" ref="MailingBaseService"/>
 		<property name="eqlFacade" ref="EqlFacade"/>
-		<property name="mailinglistService" ref="mailinglistService"/>
 		<property name="configService" ref="ConfigService"/>
 		<property name="publicKeyFilename" ref="publickeyfile" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />

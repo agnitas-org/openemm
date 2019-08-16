@@ -14,11 +14,14 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -86,8 +89,6 @@ public class HtmlUtils {
      * @param document a HTML code to parse.
      * @param encoding an encoding to use for a parser.
      * @return a parsed document representation.
-     * @throws java.io.IOException
-     * @throws org.xml.sax.SAXException
      */
     public static Document parseDocument(String document, String encoding) throws IOException, SAXException {
         DOMParser parser = new DOMParser(new HTMLConfiguration());
@@ -108,25 +109,25 @@ public class HtmlUtils {
         return parser.getDocument();
     }
 
-    private static List<RuleBlock<?>> getAtRuleBlocks(String css, String media, URL baseUrl) {
+    private static List<RuleBlock<?>> getAtRuleBlocks(String css, StylesEmbeddingOptions options) {
         try {
-            return getAtRuleBlocks(CSSFactory.parseString(css, baseUrl), media);
+            return getAtRuleBlocks(CSSFactory.parseString(css, options.getBaseUrl()), options);
         } catch (IOException | CSSException e) {
             logger.error("Style sheets parsing failed", e);
         }
         return Collections.emptyList();
     }
 
-    private static List<RuleBlock<?>> getAtRuleBlocks(URL source, String media, String encoding) {
+    private static List<RuleBlock<?>> getAtRuleBlocks(URL source, StylesEmbeddingOptions options) {
         try {
-            return getAtRuleBlocks(CSSFactory.parse(source, encoding), media);
+            return getAtRuleBlocks(CSSFactory.parse(source, options.getEncodingName()), options);
         } catch (IOException | CSSException e) {
             logger.error("Remote style sheets parsing failed", e);
         }
         return Collections.emptyList();
     }
 
-    private static List<RuleBlock<?>> getAtRuleBlocks(StyleSheet styles, String media) {
+    private static List<RuleBlock<?>> getAtRuleBlocks(StyleSheet styles, StylesEmbeddingOptions options) {
         List<RuleBlock<?>> rules = new ArrayList<>();
 
         if (styles != null) {
@@ -138,7 +139,7 @@ public class HtmlUtils {
                         set.forEach(HtmlUtils::resolveUris);
                     }
 
-                    resolveMediaType(block.getMediaQueries(), media);
+                    resolveMediaType(block.getMediaQueries(), options.getMediaType());
 
                     rules.add(block);
                 } else if (ruleBlock instanceof RuleFontFace) {
@@ -185,7 +186,7 @@ public class HtmlUtils {
      * @param styles a stylesheet to process.
      * @return a list of entities that represent media queries.
      */
-    public static List<RuleMedia> getMediaQueries(StyleSheet styles) {
+    private static List<RuleMedia> getMediaQueries(StyleSheet styles) {
         List<RuleMedia> rules = new ArrayList<>();
 
         if (styles != null) {
@@ -242,42 +243,34 @@ public class HtmlUtils {
     /**
      * Convert all the URIs (if any) to an absolute.
      * @param declaration a rules to process.
-     * @return {@code true} if at least one URI has been resolved or {@code false} otherwise.
      */
-    public static boolean resolveUris(Declaration declaration) {
-        boolean changes = false;
+    private static void resolveUris(Declaration declaration) {
         for (Term<?> term : declaration) {
             if (term instanceof TermURI) {
-                if (resolveUri((TermURI) term)) {
-                    changes = true;
-                }
+                resolveUri((TermURI) term);
             }
         }
-        return changes;
     }
 
     /**
      * Resolve the URI to an absolute.
      * @param termUri a rule to process.
-     * @return {@code true} if URI has been resolved or {@code false} otherwise.
      */
-    public static boolean resolveUri(TermURI termUri) {
+    private static void resolveUri(TermURI termUri) {
         URL base = termUri.getBase();
         String value = termUri.getValue();
 
         if (base == null || base.getHost() == null) {
             logger.error("Base URL is required");
-            return false;
+            return;
         }
 
         if (StringUtils.isEmpty(value)) {
             logger.error("Empty URI");
-            return false;
+            return;
         }
 
         termUri.setValue(HttpUtils.resolveRelativeUri(base, value));
-
-        return true;
     }
 
     /**
@@ -285,7 +278,7 @@ public class HtmlUtils {
      * @param name a name of a tag to check.
      * @return {@code true} if tag is standalone or {@code false} otherwise.
      */
-    public static boolean isStandaloneTag(String name) {
+    private static boolean isStandaloneTag(String name) {
         return STANDALONE_NODE_NAMES.contains(name);
     }
 
@@ -295,7 +288,7 @@ public class HtmlUtils {
      * @param node a node to check.
      * @return {@code true} if a node represents a conditional comment or {@code false} otherwise.
      */
-    public static boolean isConditionalCommentNode(Node node) {
+    private static boolean isConditionalCommentNode(Node node) {
         if (node.getNodeType() == Node.COMMENT_NODE) {
             final String content = StringUtils.trimToNull(node.getNodeValue());
             if (content != null) {
@@ -337,7 +330,7 @@ public class HtmlUtils {
     }
 
     /**
-     * This method provides a workaround for bug in jstyleparser library that is currently used. To be used instead of
+     * This method provides a workaround for bug in jStyleParser library that is currently used. To be used instead of
      * a plain {@link cz.vutbr.web.css.Declaration#toString()} method.
      * (see https://github.com/radkovo/jStyleParser/commit/356f39348929569eb8117bc14afd70687d6a23dc)
      * @param declaration CSS declaration representation to stringify.
@@ -364,36 +357,36 @@ public class HtmlUtils {
         return sb.toString();
     }
 
-    public static String embedStyles(Document document, DeclarationMap styleMap, String encoding, URL baseUrl, String media, boolean escapeAgnTags, boolean prettyPrint) {
+    public static String embedStyles(Document document, DeclarationMap styleMap, StylesEmbeddingOptions options) {
         StringBuilder builder = new StringBuilder();
-        embedStyles(builder, document, styleMap, encoding, baseUrl, media, escapeAgnTags, prettyPrint);
+        embedStyles(builder, document, styleMap, options);
         return builder.toString();
     }
 
-    public static void embedStyles(StringBuilder builder, Document document, DeclarationMap styleMap, String encoding, URL baseUrl, String media, boolean escapeAgnTags, boolean prettyPrint) {
+    public static String embedStyles(NodeList nodes, DeclarationMap styleMap, StylesEmbeddingOptions options) {
+        StringBuilder builder = new StringBuilder();
+        embedStyles(builder, nodes, styleMap, options);
+        return builder.toString();
+    }
+
+    private static void embedStyles(StringBuilder builder, Document document, DeclarationMap styleMap, StylesEmbeddingOptions options) {
         DocumentType documentType = document.getDoctype();
         if (documentType != null) {
             toString(builder, document.getDoctype());
-            if (prettyPrint) {
+            if (options.isPrettyPrint()) {
                 builder.append('\n');
             }
         }
-        embedStyles(builder, document.getDocumentElement(), styleMap, encoding, baseUrl, media, escapeAgnTags, prettyPrint);
+        embedStyles(builder, document.getDocumentElement(), styleMap, options);
     }
 
-    public static String embedStyles(NodeList nodes, DeclarationMap styleMap, String encoding, URL baseUrl, String media, boolean escapeAgnTags, boolean prettyPrint) {
-        StringBuilder builder = new StringBuilder();
-        embedStyles(builder, nodes, styleMap, encoding, baseUrl, media, escapeAgnTags, prettyPrint);
-        return builder.toString();
-    }
-
-    public static void embedStyles(StringBuilder builder, NodeList nodes, DeclarationMap styleMap, String encoding, URL baseUrl, String media, boolean escapeAgnTags, boolean prettyPrint) {
+    private static void embedStyles(StringBuilder builder, NodeList nodes, DeclarationMap styleMap, StylesEmbeddingOptions options) {
         for (int i = 0; i < nodes.getLength(); i++) {
-            embedStyles(builder, nodes.item(i), styleMap, encoding, baseUrl, media, escapeAgnTags, prettyPrint);
+            embedStyles(builder, nodes.item(i), styleMap, options);
         }
     }
 
-    private static void embedStyles(StringBuilder builder, Node node, DeclarationMap styleMap, String encoding, URL baseUrl, String media, boolean escapeAgnTags, boolean prettyPrint) {
+    private static void embedStyles(StringBuilder builder, Node node, DeclarationMap styleMap, StylesEmbeddingOptions options) {
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE:
                 Element element = (Element) node;
@@ -404,38 +397,23 @@ public class HtmlUtils {
                         if (StringUtils.isNotBlank(node.getTextContent())) {
                             String mediaSpec = element.getAttribute("media");
                             if (StringUtils.isNotBlank(mediaSpec)) {
-                                element.setAttribute("media", resolveMediaType(mediaSpec, media, baseUrl));
+                                element.setAttribute("media", resolveMediaType(mediaSpec, options.getMediaType(), options.getBaseUrl()));
 
                                 builder.append("<style");
-                                appendAttributes(builder, styleMap, element, baseUrl, escapeAgnTags);
+                                appendAttributes(builder, styleMap, element, options);
                                 builder.append('>');
                                 builder.append(node.getTextContent());
                                 builder.append("</style>");
 
-                                if (prettyPrint) {
+                                if (options.isPrettyPrint()) {
                                     builder.append('\n');
                                 }
                             } else {
                                 // Strip all the styles except non-embeddable ones (like @media, @font-face etc)
-                                List<RuleBlock<?>> rules = getAtRuleBlocks(node.getTextContent(), media, baseUrl);
-                                if (!rules.isEmpty()) {
-                                    builder.append("<style");
-                                    appendAttributes(builder, styleMap, element, baseUrl, escapeAgnTags);
-                                    builder.append('>');
-
-                                    if (prettyPrint) {
-                                        builder.append('\n');
-                                    }
-
-                                    for (RuleBlock<?> rule : rules) {
-                                        builder.append(rule.toString());
-                                    }
-
-                                    builder.append("</style>");
-
-                                    if (prettyPrint) {
-                                        builder.append('\n');
-                                    }
+                                if (options.isUseNewLib()) {
+                                    appendStyleTag(builder, CssUtils.stripEmbeddableStyles(node.getTextContent(), options.getMediaType(), options.isPrettyPrint()), styleMap, element, options);
+                                } else {
+                                    appendStyleTag(builder, getAtRuleBlocks(node.getTextContent(), options), styleMap, element, options);
                                 }
                             }
                         }
@@ -445,25 +423,14 @@ public class HtmlUtils {
                         if (StringUtils.equalsIgnoreCase("stylesheet", element.getAttribute("rel"))) {
                             String address = element.getAttribute("href");
                             if (StringUtils.isBlank(element.getAttribute("media")) && StringUtils.isNotBlank(address)) {
-                                address = HttpUtils.resolveRelativeUri(baseUrl, address);
+                                address = HttpUtils.resolveRelativeUri(options.getBaseUrl(), address);
                                 try {
-                                    List<RuleBlock<?>> rules = getAtRuleBlocks(new URL(address), media, encoding);
-                                    if (!rules.isEmpty()) {
-                                        builder.append("<style type=\"text/css\">");
+                                    URL remoteResource = new URL(address);
 
-                                        if (prettyPrint) {
-                                            builder.append('\n');
-                                        }
-
-                                        for (RuleBlock<?> rule : rules) {
-                                            builder.append(rule.toString());
-                                        }
-
-                                        builder.append("</style>");
-
-                                        if (prettyPrint) {
-                                            builder.append('\n');
-                                        }
+                                    if (options.isUseNewLib()) {
+                                        appendStyleTag(builder, CssUtils.stripEmbeddableStyles(remoteResource, options.getMediaType(), options.isPrettyPrint()), options);
+                                    } else {
+                                        appendStyleTag(builder, getAtRuleBlocks(remoteResource, options), options);
                                     }
                                 } catch (MalformedURLException e) {
                                     logger.error("Unable to resolve a URL: " + address);
@@ -476,18 +443,18 @@ public class HtmlUtils {
 
                     //$FALL-THROUGH$
 				default:
-                        if (prettyPrint) {
+                        if (options.isPrettyPrint()) {
                             builder.append('\n');
                         }
 
                         builder.append('<').append(nodeName);
 
-                        appendAttributes(builder, styleMap, element, baseUrl, escapeAgnTags);
+                        appendAttributes(builder, styleMap, element, options);
 
                         if (isStandaloneTag(nodeName)) {
                             builder.append("/>");
 
-                            if (prettyPrint) {
+                            if (options.isPrettyPrint()) {
                                 builder.append('\n');
                             }
                         } else {
@@ -496,13 +463,13 @@ public class HtmlUtils {
                             if (node.hasChildNodes()) {
                                 NodeList children = node.getChildNodes();
                                 for (int i = 0; i < children.getLength(); i++) {
-                                    embedStyles(builder, children.item(i), styleMap, encoding, baseUrl, media, escapeAgnTags, prettyPrint);
+                                    embedStyles(builder, children.item(i), styleMap, options);
                                 }
                             }
 
                             builder.append("</").append(nodeName).append('>');
 
-                            if (prettyPrint) {
+                            if (options.isPrettyPrint()) {
                                 builder.append('\n');
                             }
                         }
@@ -525,14 +492,94 @@ public class HtmlUtils {
             default:
                 builder.append(node.getNodeValue());
 
-                if (prettyPrint) {
+                if (options.isPrettyPrint()) {
                     builder.append('\n');
                 }
                 break;
         }
     }
 
-    private static void appendAttributes(StringBuilder builder, DeclarationMap styleMap, Element element, URL baseUrl, boolean escapeAgnTags) {
+    private static void appendStyleTag(StringBuilder builder, List<RuleBlock<?>> rules, DeclarationMap styleMap, Element element, StylesEmbeddingOptions options) {
+        if (!rules.isEmpty()) {
+            builder.append("<style");
+            appendAttributes(builder, styleMap, element, options);
+            builder.append('>');
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+
+            for (RuleBlock<?> rule : rules) {
+                builder.append(rule.toString());
+            }
+
+            builder.append("</style>");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+        }
+    }
+
+    private static void appendStyleTag(StringBuilder builder, String css, DeclarationMap styleMap, Element element, StylesEmbeddingOptions options) {
+        if (StringUtils.isNotBlank(css)) {
+            builder.append("<style");
+            appendAttributes(builder, styleMap, element, options);
+            builder.append('>');
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+
+            builder.append(css);
+
+            builder.append("</style>");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+        }
+    }
+
+    private static void appendStyleTag(StringBuilder builder, List<RuleBlock<?>> rules, StylesEmbeddingOptions options) {
+        if (!rules.isEmpty()) {
+            builder.append("<style type=\"text/css\">");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+
+            for (RuleBlock<?> rule : rules) {
+                builder.append(rule.toString());
+            }
+
+            builder.append("</style>");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+        }
+    }
+
+    private static void appendStyleTag(StringBuilder builder, String css, StylesEmbeddingOptions options) {
+        if (StringUtils.isNotBlank(css)) {
+            builder.append("<style type=\"text/css\">");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+
+            builder.append(css);
+
+            builder.append("</style>");
+
+            if (options.isPrettyPrint()) {
+                builder.append('\n');
+            }
+        }
+    }
+
+    private static void appendAttributes(StringBuilder builder, DeclarationMap styleMap, Element element, StylesEmbeddingOptions options) {
         if (element.hasAttributes()) {
             NamedNodeMap attributes = element.getAttributes();
 
@@ -549,13 +596,13 @@ public class HtmlUtils {
 
                     case "src":
                         if (StringUtils.equals(element.getTagName(), "img") && !value.startsWith("[")) {
-                            value = HttpUtils.resolveRelativeUri(baseUrl, value);
+                            value = HttpUtils.resolveRelativeUri(options.getBaseUrl(), value);
                         }
                         //$FALL-THROUGH$
 
                     default:
                         value = value.replace("\n", "&#10;");
-                        if (escapeAgnTags) {
+                        if (options.isEscapeAgnTags()) {
                             value = AgnTagUtils.escapeAgnTags(value);
                         }
                         builder.append(' ').append(name).append("=\"").append(value).append("\"");
@@ -605,12 +652,7 @@ public class HtmlUtils {
         return getDeclarationMap(document, stylesheet, media);
     }
 
-    public static DeclarationMap getDeclarationMap(Document document, StyleSheet stylesheet) {
-        // Use empty media name to retrieve media-independent styles only.
-        return getDeclarationMap(document, stylesheet, "");
-    }
-
-    public static DeclarationMap getDeclarationMap(Document document, StyleSheet stylesheet, String media) {
+    private static DeclarationMap getDeclarationMap(Document document, StyleSheet stylesheet, String media) {
         CssAnalyzer analyzer = new CssAnalyzer(stylesheet);
         return analyzer.getDeclarationMap(document, media);
     }
@@ -618,25 +660,25 @@ public class HtmlUtils {
     /**
      * Try to parse enum from string. Return {@code null} If string is empty or does not have valid enum name
      */
-    public static <T extends Enum<?>> T parseEnumSafe(Class<T> enumClass, String stringValue){
+    public static <T extends Enum<?>> T parseEnumSafe(Class<T> enumClass, String stringValue) {
         return parseEnumSafe(enumClass, stringValue, null);
     }
 
     /**
      * Try to parse enum from string. Return {@code defaultValue} If string is empty or does not have valid enum name
      */
-    public static <T extends Enum<?>> T parseEnumSafe(Class<T> enumClass, String stringValue, T defaultValue){
-        if(StringUtils.isBlank(stringValue)){
+    public static <T extends Enum<?>> T parseEnumSafe(Class<T> enumClass, String stringValue, T defaultValue) {
+        if (StringUtils.isBlank(stringValue)) {
             return defaultValue;
         }
         T value = null;
-        for(T enumEntry : enumClass.getEnumConstants()){
-            if(enumEntry.name().equals(stringValue)){
+        for (T enumEntry : enumClass.getEnumConstants()) {
+            if (enumEntry.name().equals(stringValue)) {
                 value = enumEntry;
                 break;
             }
         }
-        if(value != null){
+        if (value != null) {
             return value;
         }
         return defaultValue;
@@ -648,7 +690,7 @@ public class HtmlUtils {
      * <p><b>\r &emsp;->&emsp; &lt;br&gt;</b></p>
      * <p><b>\t &emsp;->&emsp; &#38;emsp;</b></p>
      */
-    public static String replaceLineFeedsForHTML(String text){
+    public static String replaceLineFeedsForHTML(String text) {
         return text.replace("\r\n", "<br>\n").replace("\n", "<br>\n").replace("\r", "<br>\n").replace("\t", "&emsp;");
     }
 
@@ -684,6 +726,99 @@ public class HtmlUtils {
         return Collections.emptyList();
     }
 
+    public static StylesEmbeddingOptionsBuilder stylesEmbeddingOptionsBuilder() {
+        return new StylesEmbeddingOptionsBuilder();
+    }
+
+    public static class StylesEmbeddingOptions {
+        private Charset encoding;
+        private URL baseUrl;
+        private String mediaType;
+        private boolean escapeAgnTags;
+        private boolean prettyPrint;
+        private boolean useNewLib;
+
+        private StylesEmbeddingOptions(StylesEmbeddingOptionsBuilder builder) {
+            this.encoding = builder.encoding;
+            this.baseUrl = Objects.requireNonNull(builder.baseUrl, "baseUrl == null");
+            this.mediaType = builder.mediaType;
+            this.escapeAgnTags = builder.escapeAgnTags;
+            this.prettyPrint = builder.prettyPrint;
+            this.useNewLib = builder.useNewLib;
+        }
+
+        public Charset getEncoding() {
+            return encoding;
+        }
+
+        public String getEncodingName() {
+            return encoding.name();
+        }
+
+        public URL getBaseUrl() {
+            return baseUrl;
+        }
+
+        public String getMediaType() {
+            return mediaType;
+        }
+
+        public boolean isEscapeAgnTags() {
+            return escapeAgnTags;
+        }
+
+        public boolean isPrettyPrint() {
+            return prettyPrint;
+        }
+
+        public boolean isUseNewLib() {
+            return useNewLib;
+        }
+    }
+
+    public static class StylesEmbeddingOptionsBuilder {
+        private Charset encoding = StandardCharsets.UTF_8;
+        private URL baseUrl;
+        private String mediaType;
+        private boolean escapeAgnTags;
+        private boolean prettyPrint;
+        private boolean useNewLib;
+
+        public StylesEmbeddingOptionsBuilder setEncoding(Charset encoding) {
+            this.encoding = Objects.requireNonNull(encoding, "encoding == null");
+            return this;
+        }
+
+        public StylesEmbeddingOptionsBuilder setBaseUrl(URL baseUrl) {
+            this.baseUrl = baseUrl;
+            return this;
+        }
+
+        public StylesEmbeddingOptionsBuilder setMediaType(String mediaType) {
+            this.mediaType = mediaType;
+            return this;
+        }
+
+        public StylesEmbeddingOptionsBuilder setEscapeAgnTags(boolean escapeAgnTags) {
+            this.escapeAgnTags = escapeAgnTags;
+            return this;
+        }
+
+        public StylesEmbeddingOptionsBuilder setPrettyPrint(boolean prettyPrint) {
+            this.prettyPrint = prettyPrint;
+            return this;
+        }
+
+        public StylesEmbeddingOptionsBuilder setUseNewLib(boolean useNewLib) {
+            this.useNewLib = useNewLib;
+            return this;
+        }
+
+        public StylesEmbeddingOptions build() {
+            return new StylesEmbeddingOptions(this);
+        }
+    }
+
     private static class HtmlParsingHandler implements SaxParsingHandler {
         private Locale locale;
         private Stack<String> stack = new Stack<>();
@@ -693,7 +828,7 @@ public class HtmlUtils {
         }
 
         @Override
-        public void onOpeningTag(String name, Attributes attributes, boolean isStandalone) throws SAXException {
+        public void onOpeningTag(String name, Attributes attributes, boolean isStandalone) {
             if (!isStandalone && !isStandaloneTag(name)) {
                 stack.push(name);
             }

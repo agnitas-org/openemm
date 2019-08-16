@@ -54,13 +54,7 @@ import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
-import com.agnitas.emm.core.hashtag.tags.AlterHashTag;
-import com.agnitas.emm.core.hashtag.tags.ComProfileFieldHashTag;
-import com.agnitas.emm.core.hashtag.tags.DateHashTag;
-import com.agnitas.emm.core.hashtag.tags.HexProfileFieldEncodingHashTag;
-import com.agnitas.emm.core.hashtag.tags.Md5ProfileFieldHashTag;
-import com.agnitas.emm.core.hashtag.tags.ProfileFieldEncryptionHashTag;
-import com.agnitas.emm.core.hashtag.tags.Rot47ProfileFieldHashTag;
+import com.agnitas.emm.core.hashtag.service.HashTagEvaluationService;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
@@ -108,14 +102,9 @@ public class LinkServiceImpl implements LinkService {
 	
 	private ComMailingParameterDao mailingParameterDao;
 	
-	private ProfileFieldEncryptionHashTag profileFieldEncryptionHashTag;
-	private HexProfileFieldEncodingHashTag hexProfileFieldEncodingHashTag;
-	private ComProfileFieldHashTag profileFieldHashTag;
-	private Rot47ProfileFieldHashTag rot47ProfileFieldHashTag;
-	private DateHashTag dateHashTag;
-	private AlterHashTag alterHashTag;
 	private HashTag unencodedProfileFieldHashTag;
-	private Md5ProfileFieldHashTag md5ProfileFieldHashTag;
+	
+	private HashTagEvaluationService hashTagEvaluationService;
 
 	/**
 	 * Map cache from mailingID to baseUrl
@@ -153,43 +142,13 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	@Required
-	public void setProfileFieldEncryptionHashTag(ProfileFieldEncryptionHashTag profileFieldEncryptionHashTag) {
-		this.profileFieldEncryptionHashTag = profileFieldEncryptionHashTag;
-	}
-	
-	@Required
-	public void setHexProfileFieldEncodingHashTag(HexProfileFieldEncodingHashTag hexProfileFieldEncodingHashTag) {
-		this.hexProfileFieldEncodingHashTag = hexProfileFieldEncodingHashTag;
-	}
-	
-	@Required
-	public void setProfileFieldHashTag(ComProfileFieldHashTag profileFieldHashTag) {
-		this.profileFieldHashTag = profileFieldHashTag;
-	}
-	
-	@Required
-	public void setRot47ProfileFieldHashTag(Rot47ProfileFieldHashTag rot47ProfileFieldHashTag) {
-		this.rot47ProfileFieldHashTag = rot47ProfileFieldHashTag;
-	}
-	
-	@Required
-	public void setDateHashTag(DateHashTag dateHashTag) {
-		this.dateHashTag = dateHashTag;
-	}
-	
-	@Required
-	public void setAlterHashTag(AlterHashTag alterHashTag) {
-		this.alterHashTag = alterHashTag;
-	}
-	
-	@Required
-	public final void setMd5HashTag(final Md5ProfileFieldHashTag hashTag) {
-		this.md5ProfileFieldHashTag = Objects.requireNonNull(hashTag, "MD5 hash tag cannot be null");
-	}
-	
-	@Required
 	public final void setUnencodedProfileFieldHashTag(final HashTag hashTag) {
 		this.unencodedProfileFieldHashTag = hashTag;
+	}
+	
+	@Required
+	public final void setHashTagEvaluationService(final HashTagEvaluationService service) {
+		this.hashTagEvaluationService = Objects.requireNonNull(service, "HashTagEvaluationSerice is null");
 	}
 	
 	private TimeoutLRUMap<Integer, String> getBaseUrlCache() {
@@ -297,95 +256,53 @@ public class LinkServiceImpl implements LinkService {
 				hashTagReplacement = pubid.createID();
 			} else if (hashTagContent.startsWith("SENDDATE-UNENCODED:")) {
 				String format = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
-
+				
 				try {
 					hashTagReplacement = mailingDao.getSendDate(format, link.getCompanyID(), link.getMailingID());
 				} catch (Exception e) {
 					hashTagReplacement = "";
 				}
-
+				
 				if (hashTagReplacement == null) {
 					hashTagReplacement = "";
 				}
-			} else if (hashTagContent.equals("DATE") || hashTagContent.startsWith("DATE:")) {			  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-				hashTagReplacement = executeHashTag(dateHashTag, hashTagContent, hashTagContext);
-				
+			} else if (hashTagContent.startsWith("MAILING:") || hashTagContent.startsWith("MAILING-UNENCODED:")) {
 				try {
-					hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF-8");
+					String paramName = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
+					ComMailingParameter parameter = mailingParameterDao.getParameterByName(paramName, link.getMailingID(), link.getCompanyID());
+					
+					if (parameter != null && parameter.getValue() != null) {
+						hashTagReplacement = parameter.getValue();
+						
+						// If tag is "MAILING:" then URL-encode content
+						if (hashTagContent.startsWith("MAILING:")) {
+							hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
+						}
+					} else {
+						hashTagReplacement = "";
+					}
 				} catch (Exception e) {
-					logger.info("Error encoding ##DATE## result", e);
+					logger.warn("Error processing ##MAILING:...#", e);
 					hashTagReplacement = "";
 				}
-			} else if (hashTagContent.equals("ALTER") || hashTagContent.startsWith("ALTER:")) {			  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-				hashTagReplacement = executeHashTag(alterHashTag, hashTagContent, hashTagContext);
-				
-				try {
-					hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF-8");
-				} catch (Exception e) {
-					logger.info("Error encoding ##ALTER## result", e);
-					hashTagReplacement = "";
-				}
-			} else if (hashTagContent.startsWith("MD5:")) {
-				hashTagReplacement = executeHashTag(md5ProfileFieldHashTag, hashTagContent, hashTagContext);
-				
-				try {
-					hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF-8");
-				} catch (Exception e) {
-					logger.error("Error processing ##MD5:...##", e);
-					hashTagReplacement = "";
-				}
-			} else if (hashTagContent.startsWith("ROT47:")) {											  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-				hashTagReplacement = executeHashTag(rot47ProfileFieldHashTag, hashTagContent, hashTagContext);
-				
-				try {
-					hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF-8");
-				} catch (Exception e) {
-					logger.error("Error processing ##ROT47:...##", e);
-					hashTagReplacement = "";
-				}
-            } else if (hashTagContent.startsWith("MAILING:") || hashTagContent.startsWith("MAILING-UNENCODED:")) {
-            	try {
-            		String paramName = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
-            		ComMailingParameter parameter = mailingParameterDao.getParameterByName(paramName, link.getMailingID(), link.getCompanyID());
-            		
-            		if (parameter != null && parameter.getValue() != null) {
-            			hashTagReplacement = parameter.getValue();
-            			
-            			// If tag is "MAILING:" then URL-encode content
-            			if (hashTagContent.startsWith("MAILING:")) {
-            				hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
-            			}
-            		} else {
-            			hashTagReplacement = "";
-            		}
-            	} catch (Exception e) {
-            		logger.warn("Error processing ##MAILING:...#", e);
-            		hashTagReplacement = "";
-            	}
-            } else if (hashTagContent.startsWith("ENCRYPT:") || "ENCRYPT".equals(hashTagContent)) {			  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-            	hashTagReplacement = executeHashTag(profileFieldEncryptionHashTag, hashTagContent, hashTagContext);
-            	
-            	try {
-            		hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
-            	} catch(UnsupportedEncodingException e) {
-            		logger.error("Error while URL-encoding", e);
-            		hashTagReplacement = "";
-            	}
-            } else if (hashTagContent.startsWith("ENCODE-HEX:") || "ENCODE-HEX".equals(hashTagContent)) {	  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-            	hashTagReplacement = executeHashTag(hexProfileFieldEncodingHashTag, hashTagContent, hashTagContext);
-            	
-            	try {
-            		hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
-            	} catch(UnsupportedEncodingException e) {
-            		logger.error("Error while URL-encoding", e);
-            		hashTagReplacement = "";
-            	}
-            } else if (hashTagContent.startsWith("UNENCODED:")) {	  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
-            	hashTagReplacement = executeHashTag(this.unencodedProfileFieldHashTag, hashTagContent, hashTagContext);
+			} else if (hashTagContent.startsWith("UNENCODED:")) {	  // TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)
+				hashTagReplacement = executeHashTag(this.unencodedProfileFieldHashTag, hashTagContent, hashTagContext);
 			} else {
-				// Fill in a customers field in a link but DO NOT URL-ENCODE the data
-				// TODO: Replace this with a registry, that selects the correct hash tag. (-> AGNEMM-2731)			
-				hashTagReplacement = executeHashTag(profileFieldHashTag, hashTagContent, hashTagContext);
+				// Handle hash tag by registry and evaluation service here
+				try {
+					hashTagReplacement = this.hashTagEvaluationService.evaluateHashTag(hashTagContext, hashTagContent);
+				} catch(final Exception e) {
+					logger.error("Error processing tag string: " + hashTagContent + " (company " + hashTagContext.getCompanyID() + ", link " + hashTagContext.getCurrentTrackableLink().getId() + ")", e);
+
+					hashTagReplacement = "";
+				}
+				
+            	try {
+            		hashTagReplacement = URLEncoder.encode(hashTagReplacement, "UTF8");
+            	} catch(UnsupportedEncodingException e) {
+            		logger.error("Error while URL-encoding", e);
+            		hashTagReplacement = "";
+            	}
 			}
 			
 			if (hashTagReplacement != null) {
@@ -401,7 +318,8 @@ public class LinkServiceImpl implements LinkService {
 		return returnLinkString.toString();
 	}
 
-	private static String executeHashTag(final HashTag tag, final String tagString, final HashTagContext context) {
+	@Deprecated // Removed without replacement
+	private static final String executeHashTag(final HashTag tag, final String tagString, final HashTagContext context) {
 		try {
 			return tag.handle(context, tagString);
 		} catch(HashTagException e) {

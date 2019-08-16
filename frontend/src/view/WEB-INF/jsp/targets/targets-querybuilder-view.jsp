@@ -70,24 +70,26 @@
 		<div class="tile-content tile-content-forms">
 			<div class="form-group">
 				<div class="col-sm-4">
-					<label class="control-label"><bean:message key="Name" /></label>
+					<label class="control-label" for="shortname">
+						<bean:message key="Name"/>
+					</label>
 				</div>
 				<div class="col-sm-8">
-					<html:text styleId="mailing_name" styleClass="form-control" property="shortname" maxlength="99" size="42" readonly="${editTargetForm.locked}"/>
+					<html:text styleId="shortname" styleClass="form-control" property="shortname" maxlength="99" size="42" readonly="${editTargetForm.locked}"/>
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-4">
-					<label class="control-label">
+					<label class="control-label" for="description">
 						<bean:message key="default.description" />
 					</label>
 				</div>
 				<div class="col-sm-8">
-					<html:textarea styleId="mailing_description" styleClass="form-control" property="description" rows="5" cols="32" readonly="${editTargetForm.locked}"/>
+					<html:textarea styleId="description" styleClass="form-control" property="description" rows="5" cols="32" readonly="${editTargetForm.locked}"/>
 				</div>
 			</div>
 			<div class="form-group">
-				<div class="col-sm-4">
+				<div class="col-sm-4" for="admin_and_test_delivery">
 					<label class="control-label"><bean:message key="target.adminAndTestDelivery"/></label>
 				</div>
 				<div class="col-sm-8">

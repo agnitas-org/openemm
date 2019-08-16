@@ -457,6 +457,7 @@
 			<forward name="view" path="targets_querybuilder_view" />
 			<forward name="view_mailings" path="targets_querybuilder_view_mailings" />
 			<forward name="list" path="/target.do?action=1" />
+			<forward name="messages" path="messages" />
 		</action>
 		
 		

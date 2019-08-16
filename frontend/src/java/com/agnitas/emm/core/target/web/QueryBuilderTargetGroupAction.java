@@ -39,7 +39,6 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
@@ -80,8 +79,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 	private EqlFacade eqlFacade;
 
-	private ComMailinglistService mailinglistService;
-	
     private MailinglistApprovalService mailinglistApprovalService;
 
 	private ConfigService configService;
@@ -120,10 +117,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	 * @throws Exception on errors performing request
 	 */
 	public final ActionForward show(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-		return show(mapping, form0, request, response, true);
-	}
-	
-	private final ActionForward show(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response, final boolean loadTargetGroupFromDB) throws Exception {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
 		
@@ -151,12 +144,18 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 				// Make data for QueryBuilder available from EQL
 				this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
 		
-				return viewQB(mapping, form0, request, response);
+				if (!form.isSimpleStructure()) {
+					form.setFormat(TargetgroupViewFormat.EQL);
+				}
 			} catch(final EditorContentSynchronizationException e) {
 				form.setFormat(TargetgroupViewFormat.EQL);
 				
 				return viewEQL(mapping, form0, request, response);
 			}
+
+			return form.isSimpleStructure()
+					? viewQB(mapping, form0, request, response)
+					: viewEQL(mapping, form0, request, response);
 		} catch(final UnknownTargetGroupIdException e) {
 			logger.warn(String.format("Unknown target group ID %d", form.getTargetID()), e);
 			
@@ -332,7 +331,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		}
 
 		try {
-			// Do not set view format. We just mis-use synchronzeEditors to get EQL from any editor view
+			// Do not set view format. We just mis-use synchronizeEditors to get EQL from any editor view
 			this.editorContentSynchronizer.synchronizeEditors(admin, form, TargetgroupViewFormat.EQL);
 
 			// Load target group or create new one
@@ -408,7 +407,11 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			reloadTargetGroupFromDB = false;
 		}
 
-		return show(mapping, form0, request, response, reloadTargetGroupFromDB);
+		if (reloadTargetGroupFromDB) {
+			return show(mapping, form0, request, response);
+		} else {
+			return mapping.findForward("messages");
+		}
 	}
 
 	private String getReportUrl(ComAdmin admin, HttpServletRequest request, QueryBuilderTargetGroupForm form) throws Exception {
@@ -485,11 +488,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	@Required
 	public void setEqlFacade(EqlFacade eqlFacade) {
 		this.eqlFacade = eqlFacade;
-	}
-
-	@Required
-	public void setMailinglistService(ComMailinglistService mailinglistService) {
-		this.mailinglistService = mailinglistService;
 	}
 
 	@Required

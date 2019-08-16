@@ -64,20 +64,26 @@ public class MysqlDialect implements SqlDialect {
 
 	@Override
 	public String dateFormat(EqlDateFormat dateFormat) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder builder = new StringBuilder();
 
 		for(DateFragment fragment : dateFormat) {
 			switch(fragment) {
 			case DAY:
-				buffer.append(MYSQL_DAY_SYMBOL);
+					builder.append(MYSQL_DAY_SYMBOL);
 				break;
 				
 			case MONTH:
-				buffer.append(MYSQL_MONTH_SYMBOL);
+					builder.append(MYSQL_MONTH_SYMBOL);
 				break;
 				
 			case YEAR:
-				buffer.append(MYSQL_YEAR_SYMBOL);
+					builder.append(MYSQL_YEAR_SYMBOL);
+					break;
+
+				case PERIOD:
+				case HYPHEN:
+				case UNDERSCORE:
+					builder.append(fragment.pattern());
 				break;
 				
 			default:
@@ -85,7 +91,7 @@ public class MysqlDialect implements SqlDialect {
 			}
 		}
 		
-		return buffer.toString();
+		return builder.toString();
 	}
 
 	@Override

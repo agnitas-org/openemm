@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.target.eql.emm.eql.EqlUtils;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
@@ -27,7 +28,6 @@ import org.agnitas.target.impl.TargetNodeNumeric;
 import org.agnitas.target.impl.TargetNodeString;
 
 import com.agnitas.dao.ComProfileFieldDao;
-import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat.DateFragment;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue;
@@ -299,7 +299,7 @@ public class TargetRepresentationToEqlConverter {
 				buffer.append(" ");
 				buffer.append(StringUtil.makeEqlStringConstant(node.getPrimaryValue()));
 				buffer.append(" DATEFORMAT ");
-				buffer.append(StringUtil.makeEqlStringConstant(toEqlDateFormat(node.getDateFormat())));
+				buffer.append(StringUtil.makeEqlStringConstant(EqlUtils.toEQLDateFormat(node.getDateFormat())));
 			} else {
 				field = convertProfileField(node.getPrimaryField(), companyId, resolvedNames);
 
@@ -315,7 +315,7 @@ public class TargetRepresentationToEqlConverter {
 					value = StringUtil.makeEqlStringConstant(value);
 				}
 
-				value += " DATEFORMAT '" + toEqlDateFormat(node.getDateFormat()) + "'";
+				value += " DATEFORMAT '" + EqlUtils.toEQLDateFormat(node.getDateFormat()) + "'";
 
 				convertNodeEquation(buffer, field, primaryOperator, value, disableThreeValuedLogic);
 			}
@@ -504,39 +504,6 @@ public class TargetRepresentationToEqlConverter {
 		} catch(Exception e) {
 			throw new TargetRepresentationToEqlConversionException("Unable to convert profile field name '" + name + "'", e);
 		}
-	}
-
-	private static String toEqlDateFormat(String dateFormat) {
-		StringBuffer buffer = new StringBuffer();
-		String remnant = dateFormat.toUpperCase();
-		String pattern;
-		
-		while(remnant.length() > 0) {
-			/*
-			 * Note on date formats:
-			 * 
-			 * We do not use Mysql-specific format parameters (like %Y) here.
-			 * We always get something like "yyyymmdd" from UI.
-			 * 
-			 * Transformation to Mysql-specific format parameters is done
-			 * in TargetNodeDate by calling AgnUtils.sqlDateString()!
-			 */
-			if(remnant.startsWith("DD")) {
-				pattern = DateFragment.DAY.pattern();
-			} else if(remnant.startsWith("MM")) {
-				pattern = DateFragment.MONTH.pattern();
-			} else if(remnant.startsWith("YYYY")) {
-				pattern = DateFragment.YEAR.pattern();
-			} else {
-				throw new IllegalArgumentException("Invalid date format pattern: " + dateFormat);
-			}
-			
-			remnant = remnant.substring(pattern.length());
-			buffer.append(pattern);
-		}
-
-		
-		return buffer.toString();
 	}
 
 	private static void convertNodeEquation(StringBuffer buffer, String field, TargetOperator operator1, Object value1, boolean disableThreeValuedLogic) {

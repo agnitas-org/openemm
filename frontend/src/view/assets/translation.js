@@ -1,3 +1,4 @@
+/* <%@ page contentType="application/javascript" %> */
 /* <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %> */
 
 /* The parameter translation.js?lang=de or translation.js?lang=en is not evaluated, but prevents the browser caching of the file while the admin changed his language*/
@@ -62,6 +63,7 @@ window.I18n = {
         selectYear: '<agn:agnMessage key="selectYear" />',
         formats: {
             label: '<agn:agnMessage key="import.dateFormat"/>',
+            'DD.MM.YYYY' : '<agn:agnMessage key="date.format.DD.MM.YYYY"/>',
             YYYYMMDD: '<agn:agnMessage key="date.format.YYYYMMDD"/>',
             DDMM: '<agn:agnMessage key="date.format.DDMM"/>',
             DDMMYYYY: '<agn:agnMessage key="date.format.DDMMYYYY"/>',
@@ -80,6 +82,7 @@ window.I18n = {
     defaults: {
         delete: '<agn:agnMessage key="Delete" />',
         today: '<agn:agnMessage key="calendar.today.button" />',
+        days: '<agn:agnMessage key="days" />',
         close: '<agn:agnMessage key="close" />',
         warning: '<agn:agnMessage key="warning" />',
         success: '<agn:agnMessage key="default.Success" />',

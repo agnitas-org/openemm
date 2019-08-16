@@ -14,6 +14,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Database-independent representation of date formats.
@@ -25,24 +30,45 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 	 */
 	public enum DateFragment {
 		/** Fragment representing a year value. */
-		YEAR("YYYY"),
+		YEAR("YYYY", true, "^\\d{4}", "^\\d{1,4}"),
 
 		/** Fragment representing a month value. */
-		MONTH("MM"),
+		MONTH("MM", true, "^\\d{2}", "^\\d{1,2}"),
 
 		/** Fragment representing a day value. */
-		DAY("DD");
+		DAY("DD", true, "^\\d{2}", "^\\d{1,2}"),
+
+		/** Fragments representing different separators. */
+		PERIOD(".", false, "^\\."),
+		HYPHEN("-", false, "^\\-"),
+		UNDERSCORE("_", false, "^_");
 		
 		/** Pattern for fragment used in EQL. */
 		private final String pattern;
-		
+		private final boolean isDigitFragment;
+		private final Pattern regex;
+		private final Pattern regexLenient;
+
 		/**
 		 * Creates a new enum item. 
 		 * 
 		 * @param pattern EQL-pattern for fragment
+		 * @param isDigitFragment whether or not the fragment stands for digits (year, month or day).
 		 */
-		DateFragment(String pattern) {
+		DateFragment(String pattern, boolean isDigitFragment, String regex, String regexLenient) {
 			this.pattern = pattern;
+			this.isDigitFragment = isDigitFragment;
+			this.regex = Pattern.compile(regex);
+
+			if (regexLenient == null) {
+				this.regexLenient = this.regex;
+			} else {
+				this.regexLenient = Pattern.compile(regexLenient);
+			}
+		}
+
+		DateFragment(String pattern, boolean isDigitFragment, String regex) {
+			this(pattern, isDigitFragment, regex, null);
 		}
 		
 		/**
@@ -54,6 +80,17 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 			return this.pattern;
 		}
 		
+		public boolean isDigitFragment() {
+			return isDigitFragment;
+		}
+
+		private Pattern getRegex(boolean isLenient) {
+			if (isLenient) {
+				return regexLenient;
+			} else {
+				return regex;
+			}
+		}
 	}
 	
 	/** List of date fragments as specified in EQL date format. */
@@ -108,6 +145,56 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		return new EqlDateFormat(list);
 	}
 	
+	public String normalizeValue(String value) throws EqlDateValueFormatException {
+		if (StringUtils.isBlank(value)) {
+			throw new EqlDateValueFormatException(toString(), value);
+		}
+
+		StringBuilder builder = new StringBuilder();
+		String part = value;
+		boolean isPreviousDigits = false;
+
+		for (int i = 0; i < fragments.size(); i++) {
+			DateFragment fragment = fragments.get(i);
+			boolean isLenient;
+
+			if (fragment.isDigitFragment()) {
+				isLenient = true;
+
+				if (isPreviousDigits) {
+					isLenient = false;
+				} else if (i + 1 < fragments.size() && fragments.get(i + 1).isDigitFragment()) {
+					isLenient = false;
+				}
+			} else {
+				isLenient = false;
+			}
+
+			Matcher matcher = fragment.getRegex(isLenient).matcher(part);
+			if (matcher.find()) {
+				String lexeme = matcher.group();
+
+				if (fragment.isDigitFragment()) {
+					builder.append(StringUtils.leftPad(lexeme, fragment.pattern().length(), '0'));
+				} else {
+					builder.append(lexeme);
+				}
+
+				part = part.substring(lexeme.length());
+			} else {
+				throw new EqlDateValueFormatException(toString(), value);
+			}
+
+			isPreviousDigits = fragment.isDigitFragment();
+		}
+
+		if (part.length() > 0) {
+			throw new EqlDateValueFormatException(toString(), value);
+		}
+
+		return builder.toString();
+	}
+
 	/**
 	 * Returns the number of fragments contained in the {@link EqlDateFormat}.
 	 * 
@@ -134,5 +221,11 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 	@Override
 	public Iterator<DateFragment> iterator() {
 		return this.fragments.iterator();
+	}
+
+	@Override
+	public String toString() {
+		return this.fragments.stream().map(DateFragment::pattern)
+				.collect(Collectors.joining());
 	}
 }

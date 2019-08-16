@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.emm.eql;
 
+import com.agnitas.emm.core.target.eql.codegen.InvalidEqlDateFormatException;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
 import org.apache.commons.lang.StringUtils;
@@ -28,11 +29,6 @@ public class EqlUtils {
     }
 
     public static String toEQLDateFormat(String dateFormat) {
-		StringBuilder builder = new StringBuilder();
-		String remnant = StringUtils.upperCase(dateFormat);
-		String pattern;
-		
-		while(remnant.length() > 0) {
 			/*
 			 * Note on date formats:
 			 *
@@ -42,21 +38,15 @@ public class EqlUtils {
 			 * Transformation to Mysql-specific format parameters is done
 			 * in TargetNodeDate by calling AgnUtils.sqlDateString()!
 			 */
-			if(remnant.startsWith("DD")) {
-				pattern = EqlDateFormat.DateFragment.DAY.pattern();
-			} else if(remnant.startsWith("MM")) {
-				pattern = EqlDateFormat.DateFragment.MONTH.pattern();
-			} else if(remnant.startsWith("YYYY")) {
-				pattern = EqlDateFormat.DateFragment.YEAR.pattern();
-			} else {
-				throw new IllegalArgumentException("Invalid date format pattern: " + dateFormat);
+		try {
+			StringBuilder sb = new StringBuilder();
+			for (EqlDateFormat.DateFragment fragment : EqlDateFormat.parse(StringUtils.upperCase(dateFormat))) {
+				sb.append(fragment.pattern());
 			}
-			
-			remnant = remnant.substring(pattern.length());
-			builder.append(pattern);
+			return sb.toString();
+		} catch (InvalidEqlDateFormatException e) {
+			throw new IllegalArgumentException("Invalid date format pattern: " + dateFormat, e);
 		}
-		
-		return builder.toString();
 	}
 	
 	public static String makeEquation(String field, TargetOperator operator1, Object value1, boolean disableThreeValuedLogic) {

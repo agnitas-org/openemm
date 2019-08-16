@@ -674,6 +674,25 @@
 
 <!-- ============================================================================================================================== Device -->
 	<bean id="DeviceService" class="com.agnitas.emm.core.mobile.service.impl.ComDeviceServiceImplBasic"/>
+	
+<!-- ============================================================================================================================== Hash tags -->
+	<bean id="HashTagRegistry" class="com.agnitas.emm.core.hashtag.service.HashTagRegistryImpl">
+		<property name="hashTags">
+			<list>
+				<ref bean="ProfileFieldEncryptionHashTag" />
+				<ref bean="HexProfileFieldEncodingHashTag" />
+				<ref bean="Rot47ProfileFieldHashTag" />
+				<ref bean="Md5ProfileFieldHashTag" />
+				<ref bean="DateHashTag" />
+				<ref bean="AlterHashTag" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="HashTagEvaluationService" class="com.agnitas.emm.core.hashtag.service.HashTagEvaluationServiceImpl">
+		<property name="hashTagRegistry" ref="HashTagRegistry" />
+		<property name="fallbackHashTag" ref="ProfileFieldHashTag" />
+	</bean>
 
 <!-- ============================================================================================================================== Misc. -->
 	<bean id="imageHelperService" class="org.agnitas.emm.core.imagehelper.ImageHelperService" scope="prototype">
@@ -725,18 +744,12 @@
 	<bean id="LinkService" class="com.agnitas.emm.core.LinkServiceImpl">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="mailingParameterDao" ref="MailingParameterDao" />
-		<property name="profileFieldEncryptionHashTag" ref="ProfileFieldEncryptionHashTag" />
-		<property name="hexProfileFieldEncodingHashTag" ref="HexProfileFieldEncodingHashTag" />
-		<property name="profileFieldHashTag" ref="ProfileFieldHashTag" />
-		<property name="rot47ProfileFieldHashTag" ref="Rot47ProfileFieldHashTag" />
-		<property name="md5HashTag" ref="Md5ProfileFieldHashTag" />
-		<property name="dateHashTag" ref="DateHashTag" />
-		<property name="alterHashTag" ref="AlterHashTag" />
 		<property name="configService" ref="ConfigService" />
 		<property name="extensibleUIDService" ref="ExtensibleUIDService" />
 		<property name="agnTagService" ref="AgnTagService" />
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="unencodedProfileFieldHashTag" ref="UnencodedProfileFieldHashTag" />
+		<property name="hashTagEvaluationService" ref="HashTagEvaluationService" /> 
 	</bean>
 
 	<bean id="CopyMailingService" class="org.agnitas.emm.core.mailing.service.impl.CopyMailingServiceImpl">

@@ -19,7 +19,6 @@ import org.agnitas.dao.TagDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.lang.NotImplementedException;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComRecipientDao;
@@ -27,7 +26,7 @@ import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
-public class AlterHashTag implements HashTag {
+public class AlterHashTag implements HashTag { // TODO Derive from AbstractColonHashTag instead of implementing HashTag
 	private static final Pattern HASHTAG_PARAMETER_PATTERN = Pattern.compile("^\\s*(\\w+)\\s*=\\s*\'([^\']*)\'\\s*(?:,(.*))?$");
 	
 	private TagDao tagDao;
@@ -55,7 +54,7 @@ public class AlterHashTag implements HashTag {
 	
 	@Override
 	public boolean canHandle(HashTagContext context, String tagString) {
-		throw new NotImplementedException();
+		return "alter".equalsIgnoreCase(tagString) || tagString.toLowerCase().startsWith("alter:");
 	}
 
 	@Override

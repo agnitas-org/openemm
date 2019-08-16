@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
+import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.EqlDateValueFormatException;
 import org.agnitas.util.DbUtilities;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractAtomEqlNode;
@@ -68,6 +70,7 @@ import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidationExceptio
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidator;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidationException;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Code generator callback for generation of SQL code.
@@ -300,15 +303,31 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 			throw new MissingDateFormatException();
 		}
 		
-		final Function<String, String> leftFn = left.evaluatesToType(DataType.DATE)
-				? x -> this.sqlDialect.dateToString(x, dateFormat)
-				: Function.identity();
+		try {
+			binaryRelationalOperationWithOperandTransformation(node, left, getDateTransformFunction(left, dateFormat), right, getDateTransformFunction(right, dateFormat));
+		} catch (EqlDateValueFormatException e) {
+			throw new DateValueFormatFaultyCodeException(node, e.getDateFormat(), e.getDateValue());
+		}
+	}
+
+	private Function<String, String> getDateTransformFunction(CodeFragment fragment, EqlDateFormat dateFormat) {
+		if (fragment.evaluatesToType(DataType.DATE)) {
+			return x -> this.sqlDialect.dateToString(x, dateFormat);
+		}
 				
-		final Function<String, String> rightFn = right.evaluatesToType(DataType.DATE)
-				? x -> this.sqlDialect.dateToString(x, dateFormat)
-				: Function.identity();
+		if (fragment.evaluatesToType(DataType.TEXT)) {
+			return x -> normalizeDateValue(dateFormat, x);
+		}
 		
-		binaryRelationalOperationWithOperandTransformation(node, left, leftFn, right, rightFn);
+		return Function.identity();
+	}
+
+	private String normalizeDateValue(EqlDateFormat dateFormat, String value) {
+		if (StringUtils.startsWith(value, "'") && StringUtils.endsWith(value, "'")) {
+			return "'" + dateFormat.normalizeValue(value.substring(1, value.length() - 1)) + "'";
+		} else {
+			return dateFormat.normalizeValue(value);
+		}
 	}
 	
 	private void binaryRelationalOperationWithOperandTransformation(final BinaryOperatorRelationalEqlNode node, final CodeFragment left, final Function<String, String> transformLeft, final CodeFragment right, final Function<String, String> transformRight) throws CodeGeneratorException {

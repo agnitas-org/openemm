@@ -1,3 +1,4 @@
+/* <%@ page contentType="application/javascript" %> */
 /* <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> */
 /* <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %> */
 

@@ -42,6 +42,7 @@ public class DateRuleConverter extends GenericRuleConverter {
         Object[] values = (Object[]) node.getValue();
         LinkedList<Object> valuesList = new LinkedList<>(Arrays.asList(values));
         String value = (String) valuesList.pop();
+
         if (!TODAY.equalsIgnoreCase(value)) {
             value = SINGLE_QUOTE + value + SINGLE_QUOTE;
         } else {
@@ -49,24 +50,41 @@ public class DateRuleConverter extends GenericRuleConverter {
             if (valuesList.size() > MIN_EXPECTED_SIZE) {
                 String rawValue = (String) valuesList.pop();
                 if (StringUtils.isNotBlank(rawValue)) {
-                    int offset = Integer.valueOf(rawValue);
-                    String sign  = valuesList.pop().equals("sub") ? MINUS :PLUS;
+                    int offset = parseOffset(node, rawValue);
+                    String sign = valuesList.pop().equals("sub") ? MINUS : PLUS;
                     value += sign;
                     value += Math.abs(offset);
                 }
 
             }
         }
+
         return GRAVE_ACCENT + node.getId() + GRAVE_ACCENT + WHITESPACE + operator +
                 WHITESPACE + value + DATE_FORMAT + SINGLE_QUOTE + valuesList.pollLast() + SINGLE_QUOTE;
     }
 
     @Override
-    protected void validate(QueryBuilderRuleNode node, DataType dataType, String operator) throws
-            QueryBuilderToEqlConversionException {
+    protected void validate(QueryBuilderRuleNode node, DataType dataType, String operator) throws QueryBuilderToEqlConversionException {
         Object[] values = (Object[]) node.getValue();
+
         if (values.length < 2) {
             throw new QueryBuilderToEqlConversionException("Invalid rule value for node " + node);
+        }
+
+        if (TODAY.equalsIgnoreCase((String) values[0])) {
+            parseOffset(node, (String) values[1]);
+        }
+    }
+
+    private int parseOffset(QueryBuilderRuleNode node, String rawValue) throws QueryBuilderToEqlConversionException {
+        if (StringUtils.isBlank(rawValue)) {
+            return 0;
+        }
+
+        try {
+            return Integer.parseInt(rawValue);
+        } catch (NumberFormatException e) {
+            throw new QueryBuilderToEqlConversionException("Invalid rule value for node " + node, e);
         }
     }
 }
