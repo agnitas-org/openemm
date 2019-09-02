@@ -1463,6 +1463,9 @@ public class DbUtilities {
 				if (length <= 0) {
 					length = 100;
 				}
+				if (length > 4000) {
+					length = 4000;
+				}
 				addColumnStatement += "(" + length + ")";
 			}
 

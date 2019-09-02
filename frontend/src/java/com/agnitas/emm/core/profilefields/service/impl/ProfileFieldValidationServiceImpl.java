@@ -136,7 +136,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     @Override
     public boolean isInvalidVarcharField(String fieldType, int fieldLength) {
         return DbColumnType.GENERIC_TYPE_VARCHAR.equals(fieldType)
-                && fieldLength > MAX_VARCHAR_LENGTH;
+                && (fieldLength < 0 || fieldLength > MAX_VARCHAR_LENGTH);
     }
 
     @Override

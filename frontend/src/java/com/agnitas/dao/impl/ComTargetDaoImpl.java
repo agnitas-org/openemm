@@ -434,7 +434,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	 */
 	@Override
 	public List<TargetLight> getTargetLightsByName(String targetName, @VelocityCheck int companyID, boolean allowDeleted) {
-		String sqlQuery = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0) AND target_shortname = ?";
+		String sqlQuery = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0) AND target_shortname = ?";
 		if (!allowDeleted) {
 			sqlQuery += " AND deleted != 1";
 		}
@@ -952,6 +952,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				readTarget.setChangeDate(resultSet.getDate("change_date"));
 				readTarget.setDeleted(resultSet.getInt("deleted"));
 				readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
+				readTarget.setValid(!resultSet.getBoolean("invalid"));
 				
 				return readTarget;
 			} catch (Exception e) {
@@ -989,13 +990,13 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		
 		String deleted = includeDeleted ? "" : " AND deleted = 0";
 		
-		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetLightRowMapper, companyID);
+		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetLightRowMapper, companyID);
 	}
 
 	@Override
 	public List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds) {
 		if (CollectionUtils.isNotEmpty(targetIds)) {
-			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide " +
+			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid " +
 					"FROM dyn_target_tbl " +
 					"WHERE company_id = ? AND COALESCE(deleted, 0) = 0 AND COALESCE(hidden, 0) = 0 AND admin_test_delivery = 0 " +
 					"AND target_id NOT IN (" + StringUtils.join(targetIds, ", ") + ") " +
@@ -1010,7 +1011,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	@Override
 	public List<TargetLight> getChoosenTargetLights(String targetExpression, int companyID) {
 		if (StringUtils.isNotEmpty(targetExpression)) {
-			return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY target_shortname", targetLightRowMapper);
+			return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY target_shortname", targetLightRowMapper);
 		} else {
 			return new ArrayList<>();
 		}
@@ -1026,7 +1027,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
-		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide ")
+		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid ")
 				.append("FROM dyn_target_tbl ")
 				.append("WHERE (company_id = ? OR company_id = 0) AND deleted = 0 ");
 		sqlParameters.add(companyID);

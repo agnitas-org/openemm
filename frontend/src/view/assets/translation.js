@@ -135,7 +135,11 @@ window.I18n = {
         },
         errors: {
             contentLengthExceedsLimit: '<agn:agnMessage key="error.contentLengthExceedsLimit" arg0="%s"/>',
-            range: '<agn:agnMessage key="error.value.big.100"/>'
+            number_nan: '<agn:agnMessage key="querybuilder.error.number_nan"/>',
+            number_not_integer: '<agn:agnMessage key="querybuilder.error.number_not_integer"/>',
+            number_not_double: '<agn:agnMessage key="querybuilder.error.number_not_double"/>',
+            number_exceed_min: '<agn:agnMessage key="querybuilder.error.number_exceed_min" arg0="%s"/>',
+            number_exceed_max: '<agn:agnMessage key="querybuilder.error.number_exceed_max" arg0="%s"/>'
         },
         mailing: {
             parameter: '<agn:agnMessage key="MailingParameter"/>',

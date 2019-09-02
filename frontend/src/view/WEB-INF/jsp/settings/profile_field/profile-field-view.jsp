@@ -101,96 +101,98 @@
 				</div>
 
 				<c:if test="${isNewField}">
-					<div id="fieldLengthDiv" class="form-group">
+					<div id="fieldLengthDiv" class="form-group" data-field="validator">
 						<div class="col-sm-4">
 							<label class="control-label" for="fieldLength"><bean:message key="settings.Length"/></label>
 						</div>
 						<div class="col-sm-8">
-							<mvc:text path="fieldLength" id="fieldLength" size="5" cssClass="form-control"/>
+							<mvc:text path="fieldLength" id="fieldLength" cssClass="form-control"
+										data-field-validator="number"
+										data-validator-options="min: 1, max: 4000, required: true, strict: true"/>
 						</div>
 					</div>
 				</c:if>
 			</div>
 
-			<c:if test="${not isNewField}">
-				<c:if test="${profileForm.fieldType == 'VARCHAR'}">
-					<div class="form-group">
-						<div class="col-sm-4">
-							<label class="control-label"><bean:message key="settings.Length"/></label>
-						</div>
-						<div class="col-sm-8">
-							<div class="form-control-static">
-								<mvc:hidden path="fieldLength"/>
-								<c:out value="${profileForm.fieldLength}"/>
+				<c:if test="${not isNewField}">
+					<c:if test="${profileForm.fieldType == 'VARCHAR'}">
+						<div class="form-group">
+							<div class="col-sm-4">
+								<label class="control-label"><bean:message key="settings.Length"/></label>
+							</div>
+							<div class="col-sm-8">
+								<div class="form-control-static">
+									<mvc:hidden path="fieldLength"/>
+									<c:out value="${profileForm.fieldLength}"/>
+								</div>
 							</div>
 						</div>
-					</div>
+					</c:if>
 				</c:if>
-			</c:if>
 
-			<div class="form-group">
-				<div class="col-sm-4">
-					<label class="control-label" for="fieldDefault"><bean:message key="Default_Value"/></label>
-				</div>
-				<div class="col-sm-8">
-					<mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"/>
-				</div>
-			</div>
-
-			<div class="form-group">
-				<div class="col-sm-4">
-					<label class="control-label" for="fieldNull"><bean:message key="settings.NullAllowed"/></label>
-				</div>
-				<div class="col-sm-8">
-					<c:choose>
-						<c:when test="${isNewField}">
-							<label class="toggle">
-								<mvc:checkbox path="fieldNull" id="fieldNull"/>
-								<div class="toggle-control"></div>
-							</label>
-						</c:when>
-						<c:otherwise>
-							<mvc:hidden path="fieldNull"/>
-							<div class="form-badge">
-								<c:choose>
-									<c:when test="${profileForm.fieldNull}">
-										<bean:message key="Yes"/>
-									</c:when>
-									<c:otherwise>
-										<bean:message key="No"/>
-									</c:otherwise>
-								</c:choose>
-							</div>
-						</c:otherwise>
-					</c:choose>
-				</div>
-			</div>
-
-			<emm:ShowByPermission token="profileField.visible">
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="fieldVisible"><bean:message key="FieldVisible"/></label>
+						<label class="control-label" for="fieldDefault"><bean:message key="Default_Value"/></label>
+					</div>
+					<div class="col-sm-8">
+						<mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"/>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="col-sm-4">
+						<label class="control-label" for="fieldNull"><bean:message key="settings.NullAllowed"/></label>
+					</div>
+					<div class="col-sm-8">
+						<c:choose>
+							<c:when test="${isNewField}">
+								<label class="toggle">
+									<mvc:checkbox path="fieldNull" id="fieldNull"/>
+									<div class="toggle-control"></div>
+								</label>
+							</c:when>
+							<c:otherwise>
+								<mvc:hidden path="fieldNull"/>
+								<div class="form-badge">
+									<c:choose>
+										<c:when test="${profileForm.fieldNull}">
+											<bean:message key="Yes"/>
+										</c:when>
+										<c:otherwise>
+											<bean:message key="No"/>
+										</c:otherwise>
+									</c:choose>
+								</div>
+							</c:otherwise>
+						</c:choose>
+					</div>
+				</div>
+
+				<emm:ShowByPermission token="profileField.visible">
+					<div class="form-group">
+						<div class="col-sm-4">
+							<label class="control-label" for="fieldVisible"><bean:message key="FieldVisible"/></label>
+						</div>
+						<div class="col-sm-8">
+							<label class="toggle">
+								<mvc:checkbox path="fieldVisible" id="fieldVisible"/>
+								<div class="toggle-control"></div>
+							</label>
+						</div>
+					</div>
+				</emm:ShowByPermission>
+
+				<div class="form-group">
+					<div class="col-sm-4">
+						<label class="control-label" for="line"><bean:message key="line_after"/></label>
 					</div>
 					<div class="col-sm-8">
 						<label class="toggle">
-							<mvc:checkbox path="fieldVisible" id="fieldVisible"/>
+							<mvc:checkbox path="line" id="line"/>
 							<div class="toggle-control"></div>
 						</label>
 					</div>
 				</div>
-			</emm:ShowByPermission>
-
-			<div class="form-group">
-				<div class="col-sm-4">
-					<label class="control-label" for="line"><bean:message key="line_after"/></label>
-				</div>
-				<div class="col-sm-8">
-					<label class="toggle">
-						<mvc:checkbox path="line" id="line"/>
-						<div class="toggle-control"></div>
-					</label>
-				</div>
-			</div>
 
 			<div class="form-group">
 				<div class="col-sm-4">
