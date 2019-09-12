@@ -19,6 +19,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
+import org.agnitas.beans.Company;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -27,6 +28,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 
 /**
@@ -42,6 +44,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 	
 	private WebApplicationContext webApplicationContext;
 	private DataSource dataSource;
+	private ComCompanyDao companyDao;
 	private BindingHistoryDao bindingHistoryDao;
 
 	@Override
@@ -72,17 +75,19 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 				logger.warn(String.format("Found %d companies to rebuild binding history triggers", markedCompanies.size()));
 			}
 
-			for (final int company : markedCompanies) {
-				try {
-					logger.warn(String.format("Rebuilding binding history triggers for company %d", company));
-				
-					getBindingHistoryDao().recreateBindingHistoryTrigger(company);
-					final JdbcTemplate template1 = new JdbcTemplate(getDataSource());
+			for (final int companyID : markedCompanies) {
+				if (Company.STATUS_ACTIVE.equals(getCompanyDao().getCompany(companyID).getStatus())) {
+					try {
+						logger.warn(String.format("Rebuilding binding history triggers for company %d", companyID));
 					
-					ConfigService.getInstance().getBooleanValue(ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup, company);
-					template1.update("UPDATE company_info_tbl SET cvalue = 'false', timestamp = CURRENT_TIMESTAMP, description = 'History binding triggers rebuilt' WHERE company_id = ? and cname = ?", company, ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup.toString());
-				} catch (final Exception e) {
-					logger.error(String.format("Could not rebuild binding history trigger for company %d", company), e);
+						getBindingHistoryDao().recreateBindingHistoryTrigger(companyID);
+						final JdbcTemplate template1 = new JdbcTemplate(getDataSource());
+						
+						ConfigService.getInstance().getBooleanValue(ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup, companyID);
+						template1.update("UPDATE company_info_tbl SET cvalue = 'false', timestamp = CURRENT_TIMESTAMP, description = 'History binding triggers rebuilt' WHERE company_id = ? and cname = ?", companyID, ConfigValue.RecipientBindingFieldHistoryRebuildOnStartup.toString());
+					} catch (final Exception e) {
+						logger.error(String.format("Could not rebuild binding history trigger for company %d", companyID), e);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -104,5 +109,13 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 		}
 		
 		return bindingHistoryDao;
+	}
+	
+	private ComCompanyDao getCompanyDao() {
+		if (companyDao == null) {
+			companyDao = (ComCompanyDao) webApplicationContext.getBean("CompanyDao");
+		}
+		
+		return companyDao;
 	}
 }

@@ -63,19 +63,7 @@
                         </div>
                         <div class="inline-tile-content">
                             <div data-field="toggle-vis">
-                                <emm:ShowByPermission token="mailing.attachment.personalize">
-                                    <div class="form-group">
-                                        <div class="col-sm-4">
-                                            <label class="control-label" for="newAttachmentType"><bean:message key="mailing.attachment.type"/></label>
-                                        </div>
-                                        <div class="col-sm-8">
-                                            <agn:agnSelect property="newAttachmentType" styleId="newAttachmentType" styleClass="form-control js-select" data-field-vis="">
-                                                <agn:agnOption value="0" data-field-vis-hide="#attachmentBackground"><bean:message key="attachment.type.normal"/></agn:agnOption>
-                                                <agn:agnOption value="1" data-field-vis-show="#attachmentBackground"><bean:message key="attachment.type.personalized"/></agn:agnOption>
-                                            </agn:agnSelect>
-                                        </div>
-                                    </div>
-                                </emm:ShowByPermission>
+                                <%@include file="mailing-wizard-attachment-personalize.jspf" %>
                                 <div class="form-group">
                                     <div class="col-sm-4">
                                         <label class="control-label" for="newAttachment"><bean:message key="mailing.Attachment"/></label>
@@ -92,18 +80,7 @@
                                         <html:text property="newAttachmentName" styleId="newAttachmentName" styleClass="form-control"/>
                                     </div>
                                 </div>
-                                <emm:ShowByPermission token="mailing.attachment.personalize">
-                                    <div id="attachmentBackground">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label" for="newAttachmentBackground"><bean:message key="attachment.background"/></label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <html:file property="newAttachmentBackground" styleId="newAttachmentBackground" styleClass="form-control"/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </emm:ShowByPermission>
+                                <%@include file="mailing-wizard-attachment-personalize2.jspf" %>
                                 <div class="form-group">
                                     <div class="col-sm-4">
                                         <label class="control-label" for="attachmentTargetID"><bean:message key="Target"/></label>

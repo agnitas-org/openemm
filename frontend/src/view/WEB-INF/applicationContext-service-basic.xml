@@ -845,6 +845,10 @@
 	<bean id="ImportModeMarkAsBounceHandler" class="org.agnitas.util.importvalues.ImportModeMarkAsBounceHandler">
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 	</bean>
+	
+	<bean id="ImportModeBounceReactivateHandler" class="org.agnitas.util.importvalues.ImportModeBounceReactivateHandler">
+		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
+	</bean>
 
 	<bean id="ImportModeBlacklistHandler" class="org.agnitas.util.importvalues.ImportModeBlacklistHandler" />
 
