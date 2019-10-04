@@ -423,7 +423,10 @@ public class HtmlUtils {
                         if (StringUtils.equalsIgnoreCase("stylesheet", element.getAttribute("rel"))) {
                             String address = element.getAttribute("href");
                             if (StringUtils.isBlank(element.getAttribute("media")) && StringUtils.isNotBlank(address)) {
-                                address = HttpUtils.resolveRelativeUri(options.getBaseUrl(), address);
+                                if (options.getBaseUrl() != null) {
+                                    address = HttpUtils.resolveRelativeUri(options.getBaseUrl(), address);
+                                }
+
                                 try {
                                     URL remoteResource = new URL(address);
 
@@ -595,7 +598,7 @@ public class HtmlUtils {
                         break;
 
                     case "src":
-                        if (StringUtils.equals(element.getTagName(), "img") && !value.startsWith("[")) {
+                        if (options.getBaseUrl() != null && StringUtils.equals(element.getTagName(), "img") && !value.startsWith("[")) {
                             value = HttpUtils.resolveRelativeUri(options.getBaseUrl(), value);
                         }
                         //$FALL-THROUGH$
@@ -740,7 +743,7 @@ public class HtmlUtils {
 
         private StylesEmbeddingOptions(StylesEmbeddingOptionsBuilder builder) {
             this.encoding = builder.encoding;
-            this.baseUrl = Objects.requireNonNull(builder.baseUrl, "baseUrl == null");
+            this.baseUrl = builder.baseUrl;
             this.mediaType = builder.mediaType;
             this.escapeAgnTags = builder.escapeAgnTags;
             this.prettyPrint = builder.prettyPrint;

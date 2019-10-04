@@ -331,6 +331,23 @@
 	</servlet-mapping>
 
 	<servlet>
+		<servlet-name>RedirectLoginServlet</servlet-name>
+		<servlet-class>com.agnitas.web.RedirectToUrlServlet</servlet-class>
+	     <init-param>
+	         <param-name>httpCode</param-name>
+	         <param-value>301</param-value>
+	     </init-param>
+	     <init-param>
+	         <param-name>destinationUrl</param-name>
+	         <param-value>/logon.action</param-value>
+	     </init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>RedirectLoginServlet</servlet-name>
+		<url-pattern>/logon.do</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
 		<servlet-name>RedirectServletUserForm</servlet-name>
 		<servlet-class>com.agnitas.userform.trackablelinks.web.ComRdirUserForm</servlet-class>
 	</servlet>

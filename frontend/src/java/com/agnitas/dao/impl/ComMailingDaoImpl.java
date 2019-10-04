@@ -34,48 +34,6 @@ import java.util.TreeMap;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.impl.ComMailingImpl;
-import com.agnitas.beans.impl.ComRdirMailingDataImpl;
-import com.agnitas.beans.impl.DynamicTagImpl;
-import com.agnitas.beans.impl.MediatypeEmailImpl;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.ComTrackableLinkDao;
-import com.agnitas.dao.ComUndoDynContentDao;
-import com.agnitas.dao.ComUndoMailingComponentDao;
-import com.agnitas.dao.ComUndoMailingDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.LinkServiceImpl;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.commons.database.DatabaseInformation;
-import com.agnitas.emm.core.commons.database.DatabaseInformationException;
-import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mailing.MailingDataException;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.emm.grid.grid.dao.ComGridTemplateDao;
-import com.agnitas.predelivery.dao.ComPredeliveryDao;
-import com.agnitas.util.SpecialCharactersWorker;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -123,6 +81,49 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
+
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.ComRdirMailingData;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.impl.ComMailingImpl;
+import com.agnitas.beans.impl.ComRdirMailingDataImpl;
+import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.beans.impl.MediatypeEmailImpl;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.ComUndoDynContentDao;
+import com.agnitas.dao.ComUndoMailingComponentDao;
+import com.agnitas.dao.ComUndoMailingDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.core.LinkServiceImpl;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.commons.database.DatabaseInformation;
+import com.agnitas.emm.core.commons.database.DatabaseInformationException;
+import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.MailingDataException;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.agnitas.emm.grid.grid.dao.ComGridTemplateDao;
+import com.agnitas.predelivery.dao.ComPredeliveryDao;
+import com.agnitas.util.SpecialCharactersWorker;
 
 /**
  * TODO: Check concatenated SQl statements for sql-injection possibilities,
@@ -773,6 +774,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
 	}
 	*/
 	
+	@Override
 	@DaoUpdateReturnValueCheck
     public boolean cleanupContentForDynName(int mailingId, int companyId, String dynName) {
         return cleanupContentForDynNames(mailingId, companyId, Collections.singletonList(dynName));
@@ -3313,7 +3315,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
                 + " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND maildrop.status_field = 'W' AND mediatype.mediatype = 0 "
 				+ (isOracleDB() ? "AND maildrop.senddate > CAST(? AS DATE) AND maildrop.senddate < CAST(? AS DATE)" : "AND maildrop.senddate > ? AND maildrop.senddate < ?")
                 + " GROUP BY mailing.mailing_id, mailing.shortname, mediatype.param, mailing.work_status "; //ORDER BY min(maildrop.senddate)";
-        query = addSentMailingSort(query, "date", "desc");
+        query = addSortingToQuery(query, "MIN(maildrop.senddate)", "desc");
         final List<Map<String, Object>> mailingList = select(logger, query, MailingComponent.TYPE_THUMBNAIL_IMAGE, companyId, startDate, endDate);
 		for (final Map<String, Object> mailing : mailingList) {
 			final String param = mailing.get("subject").toString();
