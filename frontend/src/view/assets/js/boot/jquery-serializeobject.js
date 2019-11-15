@@ -19,7 +19,7 @@ $.fn.serializeFormDataObject = function() {
   var map = this.serializeObject();
 
   this.find('input[type=file]').each(function() {
-    if (!$(this).is(':disabled')) {
+    if (!$(this).is(':disabled') && this.name) {
       var files = this.files;
 
       if (files.length == 0) {

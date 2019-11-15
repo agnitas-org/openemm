@@ -11,18 +11,15 @@
 package com.agnitas.emm.core.workflow.beans.impl;
 
 import java.util.List;
-
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import java.util.Objects;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.service.WorkflowIconTypeSerializer;
 
 public class BaseWorkflowIcon implements WorkflowIcon {
     private int id;
     private int x;
     private int y;
-    @JsonSerialize(using = WorkflowIconTypeSerializer.class)
     private int type;
     private boolean filled;
     private String iconTitle;
@@ -118,5 +115,26 @@ public class BaseWorkflowIcon implements WorkflowIcon {
 	@Override
     public List<WorkflowConnection> getConnections() {
         return connections;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BaseWorkflowIcon that = (BaseWorkflowIcon) o;
+        return id == that.id &&
+                x == that.x &&
+                y == that.y &&
+                type == that.type &&
+                filled == that.filled &&
+                editable == that.editable &&
+                Objects.equals(iconTitle, that.iconTitle) &&
+                Objects.equals(iconComment, that.iconComment);
+    }
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, x, y, type, filled, iconTitle, editable, iconComment);
     }
 }

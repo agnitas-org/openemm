@@ -27,6 +27,8 @@ import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPriorityService;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ComMailingSendService;
 import com.agnitas.util.ClassicTemplateGenerator;
 import org.agnitas.beans.Mailing;
@@ -72,13 +74,13 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     @Override
     public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, ActionMessages messages, ActionErrors errors, List<UserAction> userActions) {
     	if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
-    		errors.add("global", new ActionMessage("error.masterCompanyMayNotSendMailings"));
+    		errors.add("global", new ActionMessage("error.company.mailings.sent.forbidden"));
     		return;
     	}
 
         ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
-
-        int mailingType = mailing.getMailingType();
+    
+        MailingTypes mailingType = MailingTypes.getByCode(mailing.getMailingType());
         if (mailing.getId() == 0) {
             logger.error("Mailing #" + mailingId + " (companyId #" + companyId + ") not found so cannot be sent");
             return;
@@ -93,18 +95,18 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         case WORLD:
             world = true;
             switch (mailingType) {
-            case Mailing.TYPE_NORMAL:
-            case Mailing.TYPE_FOLLOWUP:
+            case NORMAL:
+                case FOLLOW_UP:
                 drop.setStatus(MaildropStatus.WORLD.getCode());
                 admin = true;
                 test = true;
                 break;
 
-            case Mailing.TYPE_DATEBASED:
+                case DATE_BASED:
                 drop.setStatus(MaildropStatus.DATE_BASED.getCode());
                 break;
 
-            case Mailing.TYPE_ACTIONBASED:
+                case ACTION_BASED:
                 drop.setStatus(MaildropStatus.ACTION_BASED.getCode());
                 break;
             }
@@ -139,7 +141,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         	blocksize = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyId);
 		}
 
-        if (mailingType == Mailing.TYPE_NORMAL || mailingType == Mailing.TYPE_FOLLOWUP) {
+        if (mailingType == MailingTypes.NORMAL || mailingType == MailingTypes.FOLLOW_UP) {
             Tuple<Integer, Integer> blocksizeAndStepping = AgnUtils.makeBlocksizeAndSteppingFromBlocksize(blocksize, options.getDefaultStepping());
             blocksize = blocksizeAndStepping.getFirst();
             stepping = blocksizeAndStepping.getSecond();
@@ -234,14 +236,14 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         int startGen = MaildropEntry.GEN_NOW;
 
-        switch (mailing.getMailingType()) {
-            case Mailing.TYPE_NORMAL:
+        switch (MailingTypes.getByCode(mailing.getMailingType())) {
+            case NORMAL:
                 if (world && DateUtil.isDateForImmediateGeneration(genDate) && isPrioritized(companyId, mailingId)) {
                     startGen = MaildropEntry.GEN_SCHEDULED;
                 }
                 break;
 
-            case Mailing.TYPE_DATEBASED:
+            case DATE_BASED:
                 if (test) {
                     // Set genstatus equals 0 to trigger WM-specific test sending mode of backend for date-based mailings.
                     startGen = MaildropEntry.GEN_SCHEDULED;
@@ -250,9 +252,231 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         }
 
         if (!DateUtil.isDateForImmediateGeneration(genDate)) {
-            switch (mailing.getMailingType()) {
-                case Mailing.TYPE_NORMAL:
-                case Mailing.TYPE_FOLLOWUP:
+            switch (MailingTypes.getByCode(mailing.getMailingType())) {
+                case NORMAL:
+                case FOLLOW_UP:
+                    startGen = MaildropEntry.GEN_SCHEDULED;
+                    updateStatusByMaildrop(mailingId, drop);
+                    break;
+            }
+        }
+
+        drop.setGenStatus(startGen);
+        drop.setGenDate(genDate);
+        drop.setGenChangeDate(new Date());
+        drop.setMailingID(mailing.getId());
+        drop.setCompanyID(mailing.getCompanyID());
+        drop.setStepping(stepping);
+        drop.setBlocksize(blocksize);
+        drop.setMaxRecipients(options.getMaxRecipients());
+
+        // Remove an existing maildrop entries
+        maildropStatusDao.cleanup(mailing.getMaildropStatus());
+        mailing.getMaildropStatus().add(drop);
+        mailingDao.saveMailing(mailing, false);
+
+        if (startGen == MaildropEntry.GEN_NOW && drop.getStatus() != MaildropStatus.ACTION_BASED.getCode() && drop.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
+            classicTemplateGenerator.generate(mailingId, options.getAdminId(), companyId, true, true);
+            ((ComMailingImpl)mailing).triggerMailing(drop.getId());
+            updateStatusByMaildrop(mailingId, drop);
+        }
+
+        onepixelDao.deleteAdminAndTestOpenings(mailing.getId(), mailing.getCompanyID());
+        trackableLinkDao.deleteAdminAndTestClicks(mailing.getId(), mailing.getCompanyID());
+        mailingDao.cleanTestDataInSuccessTbl(mailing.getId(), mailing.getCompanyID());
+        mailingDao.cleanTestDataInMailtrackTbl(mailing.getId(), mailing.getCompanyID());
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Send mailing id: " + mailing.getId() + " type: " + drop.getStatus());
+        }
+
+        userActions.add(new UserAction("send mailing", String.format("mailing: %s (%d) type: %c", mailing.getShortname(), mailing.getId(), drop.getStatus())));
+    }
+
+    @Override
+    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> messages, List<UserAction> userActions) {
+        if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
+            messages.add(Message.of("global", new ActionMessage("error.company.mailings.sent.forbidden")));
+            return;
+        }
+
+        ComMailing mailing = (ComMailing) mailingDao.getMailing(mailingId, companyId);
+
+        MailingTypes mailingType = MailingTypes.getByCode(mailing.getMailingType());
+        if (mailing.getId() == 0) {
+            logger.error("Mailing #" + mailingId + " (companyId #" + companyId + ") not found so cannot be sent");
+            return;
+        }
+
+        MaildropEntry drop = new MaildropEntryImpl();
+        boolean world = false;
+        boolean admin = false;
+        boolean test = false;
+
+        switch (options.getDeliveryType()) {
+            case WORLD:
+                world = true;
+                switch (mailingType) {
+                    case NORMAL:
+                    case FOLLOW_UP:
+                        drop.setStatus(MaildropStatus.WORLD.getCode());
+                        admin = true;
+                        test = true;
+                        break;
+
+                    case DATE_BASED:
+                        drop.setStatus(MaildropStatus.DATE_BASED.getCode());
+                        break;
+
+                    case ACTION_BASED:
+                        drop.setStatus(MaildropStatus.ACTION_BASED.getCode());
+                        break;
+                }
+                break;
+
+            case TEST:
+                drop.setStatus(MaildropStatus.TEST.getCode());
+                admin = true;
+                test = true;
+                break;
+
+            case ADMIN:
+                drop.setStatus(MaildropStatus.ADMIN.getCode());
+                admin = true;
+                break;
+        }
+
+        if (drop.getStatus() == MaildropStatus.WORLD.getCode() || drop.getStatus() == MaildropStatus.DATE_BASED.getCode() ||
+                drop.getStatus() == MaildropStatus.ACTION_BASED.getCode()) {
+            if (companyDao.checkDeeptrackingAutoActivate(companyId)) {
+                trackableLinkDao.activateDeeptracking(companyId, mailingId);
+            }
+        }
+
+        Mailinglist aList = mailinglistDao.getMailinglist(mailing.getMailinglistID(), companyId);
+        int maxAdminMails = companyDao.getMaxAdminMails(companyId);
+
+        int blocksize = options.getBlockSize();
+        int stepping = 0;
+
+        if (configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyId)) {
+            blocksize = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyId);
+        }
+
+        if (mailingType == MailingTypes.NORMAL || mailingType == MailingTypes.FOLLOW_UP) {
+            Tuple<Integer, Integer> blocksizeAndStepping = AgnUtils.makeBlocksizeAndSteppingFromBlocksize(blocksize, options.getDefaultStepping());
+            blocksize = blocksizeAndStepping.getFirst();
+            stepping = blocksizeAndStepping.getSecond();
+        } else {
+            blocksize = 0;
+        }
+
+        int activeRecipientsCount = mailinglistDao.getNumberOfActiveSubscribers(admin, test, world, mailing.getTargetID(), aList.getCompanyID(), aList.getId());
+        if (activeRecipientsCount == 0) {
+            warnings.add(Message.of("error.mailing.no_subscribers"));
+        } else if (!world && activeRecipientsCount > maxAdminMails) {
+            messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.send.admin.maxMails", maxAdminMails)));
+            return;
+        }
+
+        if (mailingDao.hasEmail(mailing.getId())) {
+            MediatypeEmail param = mailing.getEmailParam();
+
+            // Check the text version of mailing.
+            if (isContentBlank(mailing, mailing.getTextTemplate())) {
+                if (mailingService.isTextVersionRequired(companyId, mailingId)) {
+                    messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_text_version")));
+                    return;
+                } else {
+                    warnings.add(Message.of("error.mailing.no_text_version"));
+                }
+            }
+
+            // Check the HTML version unless mail format is "only text".
+            if (param.getMailFormat() >= ComMailing.INPUT_TYPE_HTML) {
+                if (isContentBlank(mailing, mailing.getHtmlTemplate())) {
+                    messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_html_version")));
+                    return;
+                }
+            }
+
+            if (StringUtils.isBlank(param.getSubject())) {
+                messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.subject.too_short")));
+                return;
+            }
+
+            String senderAddress = null;
+            try {
+                senderAddress = param.getFromAdr();
+            } catch (Exception e) {
+                logger.error("Error occurred: " + e.getMessage(), e);
+            }
+
+            if (StringUtils.isBlank(senderAddress)) {
+                messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.sender_adress")));
+                return;
+            }
+        }
+
+        Date sendDate = options.getDate();
+        Date genDate;
+
+        drop.setSendDate(sendDate);
+
+        if (options.isGenerateAtSendDate()) {
+            genDate = new Date(sendDate.getTime());
+        } else {
+            Date now = new Date();
+
+            if (DateUtil.isSendDateForImmediateDelivery(sendDate)) {
+                genDate = now;
+            } else {
+                genDate = DateUtils.addMinutes(sendDate, -mailingService.getMailGenerationMinutes(companyId));
+                if (DateUtilities.isPast(genDate)) {
+                    genDate = now;
+                }
+            }
+        }
+
+        MediatypeEmail emailParam = mailing.getEmailParam();
+
+        if (emailParam != null) {
+            if (options.getFollowupFor() > 0) {
+                emailParam.setFollowupFor(Integer.toString(options.getFollowupFor()));
+            }
+            emailParam.setDoublechecking(options.isDoubleChecking());
+            emailParam.setSkipempty(options.isSkipEmpty());
+            mailingDao.saveMailing(mailing, false);
+        }
+
+        if (mailing.getMailingType() != Mailing.TYPE_FOLLOWUP && world && this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Mailing id: " + mailing.getId() + " is already scheduled");
+            }
+            return;
+        }
+
+        int startGen = MaildropEntry.GEN_NOW;
+
+        switch (MailingTypes.getByCode(mailing.getMailingType())) {
+            case NORMAL:
+                if (world && DateUtil.isDateForImmediateGeneration(genDate) && isPrioritized(companyId, mailingId)) {
+                    startGen = MaildropEntry.GEN_SCHEDULED;
+                }
+                break;
+
+            case DATE_BASED:
+                if (test) {
+                    // Set genstatus equals 0 to trigger WM-specific test sending mode of backend for date-based mailings.
+                    startGen = MaildropEntry.GEN_SCHEDULED;
+                }
+                break;
+        }
+
+        if (!DateUtil.isDateForImmediateGeneration(genDate)) {
+            switch (MailingTypes.getByCode(mailing.getMailingType())) {
+                case NORMAL:
+                case FOLLOW_UP:
                     startGen = MaildropEntry.GEN_SCHEDULED;
                     updateStatusByMaildrop(mailingId, drop);
                     break;

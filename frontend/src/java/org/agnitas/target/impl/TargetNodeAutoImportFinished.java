@@ -108,29 +108,6 @@ public class TargetNodeAutoImportFinished extends TargetNode implements Serializ
 	}
 
 	@Override
-	public String generateEmbeddedSQL() {
-		StringBuilder builder = new StringBuilder();
-
-		// Get the auto-import ID
-		int autoImportId = Integer.parseInt(this.primaryValue);
-
-		// Negate result if primary operator says to
-		if (primaryOperator == TargetNode.OPERATOR_NO.getOperatorCode()) {
-			builder.append(" NOT ");
-		}
-
-		// Build the WHERE clause
-		builder.append("EXISTS (SELECT 1 FROM auto_import_tbl ")
-				.append("WHERE auto_import_id = ").append(autoImportId)
-				.append(" AND company_id = ").append(companyId)
-				.append(" AND running <= 0")
-				.append(" AND lastresult = 'OK'")
-				.append(" AND laststart >= auto_activation_date)");
-
-		return builder.toString();
-	}
-
-	@Override
 	public String generateBsh() {
 		try {
 			throw new RuntimeException( "BSH generation is not supported!");

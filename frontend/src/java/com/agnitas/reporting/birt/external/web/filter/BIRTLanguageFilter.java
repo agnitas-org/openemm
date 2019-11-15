@@ -23,6 +23,10 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
 public class BIRTLanguageFilter implements Filter {
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		// nothing to do
+	}
 
 	@Override
 	public void destroy() {
@@ -30,20 +34,12 @@ public class BIRTLanguageFilter implements Filter {
 	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain filterChain) throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 		String preferredLanguage = request.getParameter("language");
-		 if( StringUtils.isNotEmpty(preferredLanguage) ) {
-			  filterChain.doFilter(new ForceLocaleRequestWrapper((HttpServletRequest) request,preferredLanguage) ,response);
-			  
-		 }
-		 else {
-			 filterChain.doFilter(request, response);
-		 }		
-	}
-
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		// nothing to do
+		if (StringUtils.isNotEmpty(preferredLanguage)) {
+			filterChain.doFilter(new ForceLocaleRequestWrapper((HttpServletRequest) request, preferredLanguage), response);
+		} else {
+			filterChain.doFilter(request, response);
+		}
 	}
 }

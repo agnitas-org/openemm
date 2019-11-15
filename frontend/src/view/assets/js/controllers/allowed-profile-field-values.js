@@ -28,7 +28,7 @@ AGN.Lib.Controller.new('allowed-profile-field-values', function() {
   });
 
   this.appendRow = function(isLastRow, value) {
-    var $row = $(_.template(AGN.Opt.Templates['allowed-value-new-row'], {isLastRow: isLastRow}));
+    var $row = AGN.Lib.Template.dom('allowed-value-new-row', {isLastRow: isLastRow});
     if (value) {
       this.getField($row).val(value);
     }

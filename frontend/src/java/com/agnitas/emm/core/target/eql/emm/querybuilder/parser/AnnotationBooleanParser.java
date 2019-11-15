@@ -22,12 +22,12 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 public class AnnotationBooleanParser extends GenericEqlNodeParser<AnnotationBooleanEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(AnnotationBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(AnnotationBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractEqlNode child = node.getChild();
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         QueryBuilderGroupNode newGroupNode = new QueryBuilderGroupNode();
         groupNode.addRule(newGroupNode);
-        parser.parse(child, newGroupNode, unknownProfileFields);
+        parser.parse(child, newGroupNode, profileFields);
 
         if (StringUtils.isEmpty(newGroupNode.getCondition())) {
             newGroupNode.setCondition("AND");

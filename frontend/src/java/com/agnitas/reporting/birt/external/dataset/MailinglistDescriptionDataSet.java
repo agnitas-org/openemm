@@ -27,7 +27,7 @@ public class MailinglistDescriptionDataSet extends BIRTDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(MailinglistDescriptionDataSet.class);
 	
-	private static final String ALL_MAILINGLISTS = "All_Mailinglists";
+	private static final String ALL_MAILINGLISTS = "statistic.All_Mailinglists";
 
 	public List<String> getMailinglistDescription (int mailinglistID, String language){
 		if (StringUtils.isBlank(language)){

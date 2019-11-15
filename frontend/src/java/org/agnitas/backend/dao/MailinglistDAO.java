@@ -35,7 +35,7 @@ public class MailinglistDAO {
 			if (row != null) {
 				mailinglistID = dbase.asLong (row.get ("mailinglist_id"));
 				shortName = dbase.asString (row.get ("shortname"));
-				rdirDomain = dbase.asString (row.get ("rdir_domain"));
+				rdirDomain = dbase.asString (row.get ("rdir_domain"), true);
 			} else {
 				mailinglistID = 0L;
 			}

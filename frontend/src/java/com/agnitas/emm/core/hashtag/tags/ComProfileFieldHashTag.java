@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.hashtag.tags;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Objects;
 
 import org.apache.log4j.Logger;
@@ -26,41 +24,25 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
  * with successive URL-encoded of content.
  */
 public class ComProfileFieldHashTag implements HashTag {
-	
 	/** The logger. */
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComProfileFieldHashTag.class);
 	
 	private ProfileFieldHashTagSupport support;
 
 	@Override
 	public boolean canHandle(HashTagContext context, String tagString) {
-		/* 
-		 * Should handle only those tag strings, that does not contain a "command" part
-		 * (like "MD5:xxx")
-		 */
+		// Only handle tag strings, that do not contain a "command" part (like "MD5:xxx")
 		return !tagString.contains(":");
 	}
 
 	@Override
 	public String handle(final HashTagContext context, final String tagString) throws HashTagException {
-		final String unencodedContent = support.evaluateExpression(context, tagString);
-		
-		if (unencodedContent != null) {
-			try {
-				return URLEncoder.encode(unencodedContent, "UTF8");
-			} catch (UnsupportedEncodingException e) {
-				logger.error("UTF-8 not supported???", e);
-				
-				throw new HashTagException("Chosen encoding not supported", e);
-			}
-		} else {
-			return null;
-		}
+		return support.evaluateExpression(context, tagString);
 	}
 	
 	@Required
 	public final void setProfileFieldHashTagSupport(final ProfileFieldHashTagSupport support) {
 		this.support = Objects.requireNonNull(support, "Profile field Hashtag support is null");
 	}
-
 }

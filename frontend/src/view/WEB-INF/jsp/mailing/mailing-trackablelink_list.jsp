@@ -80,7 +80,7 @@
 								<emm:ShowByPermission token="mailing.extend_trackable_links">
 					              <ul class="tile-header-actions">
 					                  <li>
-					                      <button type="button" class="btn btn-regular btn-alert" data-form-action="${ACTION_DELETE_GLOBAL_AND_INDIVIDUAL_EXTENSION}">
+                                          <button type="button" class="btn btn-regular btn-alert" data-action="delete-all-links" data-form-action="${ACTION_DELETE_GLOBAL_AND_INDIVIDUAL_EXTENSION}">
 					                          <i class="icon icon-trash-o"></i>
 					                          <span class="text"><bean:message key="ClearAllProperties"/></span>
 					                      </button>
@@ -98,7 +98,6 @@
                                         <th><bean:message key="URL" /></th>
                                         <th><bean:message key="Description" /></th>
                                         <th><bean:message key="Trackable" /></th>
-                                        <th><bean:message key="Relevance" /></th>
                                         <th><bean:message key="action.Action" /></th>
                                         <th class="js-checkable"><bean:message key="AdminLink" /></th>
 
@@ -158,14 +157,6 @@
                                                 </td>
 
                                                 <td class="align-top">
-                                                    <agn:agnSelect property="linkItemRelevance[${link.id}]" styleClass="form-control">
-                                                        <agn:agnOption value="0"><bean:message key="Relevance_0" /></agn:agnOption>
-                                                        <agn:agnOption value="1"><bean:message key="Relevance_1" /></agn:agnOption>
-                                                        <agn:agnOption value="2"><bean:message key="Relevance_2" /></agn:agnOption>
-                                                    </agn:agnSelect>
-                                                </td>
-
-                                                <td class="align-top">
                                                     <agn:agnSelect property="linkItemAction[${link.id}]" styleClass="form-control js-select">
                                                         <agn:agnOption value="0"><bean:message key="settings.No_Action" /></agn:agnOption>
                                                         <logic:iterate id="action" name="notFormActions" scope="request">
@@ -186,22 +177,22 @@
                                                         <agn:agnOption value="3"><bean:message key="TrackableLink.deepTrack.both" /></agn:agnOption>
                                                     </agn:agnSelect>
                                                 </td>
-
-                                                <td class="align-top">
-                                                    <c:choose>
-                                                        <c:when test="${linkExtensionCount > 0}">
-                                                            <span class="badge badge-success">
-                                                                <bean:message key="Yes" /> (${linkExtensionCount})
-                                                            </span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="badge">
-                                                                <bean:message key="No" />
-                                                            </span>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </td>
-
+												<emm:ShowByPermission token="mailing.extend_trackable_links">
+	                                                <td class="align-top">
+	                                                    <c:choose>
+	                                                        <c:when test="${linkExtensionCount > 0}">
+	                                                            <span class="badge badge-success">
+	                                                                <bean:message key="Yes" /> (${linkExtensionCount})
+	                                                            </span>
+	                                                        </c:when>
+	                                                        <c:otherwise>
+	                                                            <span class="badge">
+	                                                                <bean:message key="No" />
+	                                                            </span>
+	                                                        </c:otherwise>
+	                                                    </c:choose>
+	                                                </td>
+												</emm:ShowByPermission>
                                                 <td class="table-actions hidden">
                                                     <c:set var="editMessage">
                                                         <bean:message key="button.Edit"/>

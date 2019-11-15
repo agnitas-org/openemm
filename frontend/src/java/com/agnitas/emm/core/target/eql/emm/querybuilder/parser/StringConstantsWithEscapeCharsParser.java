@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
+import java.util.Set;
+
 import com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
@@ -17,7 +19,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 
 public class StringConstantsWithEscapeCharsParser extends GenericValueExtractorEqlNodeParser<StringConstantWithEscapeCharsAtomEqlNode> {
     @Override
-    protected QueryBuilderGroupNode parse(StringConstantWithEscapeCharsAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode) {
+    protected QueryBuilderGroupNode parse(StringConstantWithEscapeCharsAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode, Set<String> profileFields) {
         String str = node.getValue();
 
         if (str != null) {

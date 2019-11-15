@@ -472,13 +472,13 @@ public class DateUtilities {
 				}
 			} else if (timingParameter.startsWith("Q:")) {
 				// quarterly execution (Q:1200) at first day of month
-				if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.APRIL)
+				if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.APRIL) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.APRIL);
-				else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.JULY)
+				} else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.JULY) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.JULY);
-				else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.OCTOBER)
+				} else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.OCTOBER) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.OCTOBER);
-				else {
+				} else {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.JANUARY);
 					nextStartByThisParameter.add(GregorianCalendar.YEAR, 1);
 				}
@@ -496,13 +496,13 @@ public class DateUtilities {
 				}
 			} else if (timingParameter.startsWith("QW:")) {
 				// quarterly execution (QW:1200) at first workingday of month
-				if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.APRIL)
+				if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.APRIL) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.APRIL);
-				else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.JULY)
+				} else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.JULY) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.JULY);
-				else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.OCTOBER)
+				} else if (nextStartByThisParameter.get(GregorianCalendar.MONTH) < GregorianCalendar.OCTOBER) {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.OCTOBER);
-				else {
+				} else {
 					nextStartByThisParameter.set(GregorianCalendar.MONTH, GregorianCalendar.JANUARY);
 					nextStartByThisParameter.add(GregorianCalendar.YEAR, 1);
 				}
@@ -556,7 +556,11 @@ public class DateUtilities {
 					} else if (weekDay.equalsIgnoreCase("od")) {
 						onlyWithinOddWeeks = true;
 					} else {
-						weekdayIndexes.add(getWeekdayIndex(weekDay));
+						int weekdayIndex = getWeekdayIndex(weekDay);
+						if (weekdayIndex < 0) {
+							throw new RuntimeException("Invalid weekday in timing data: " + timingString);
+						}
+						weekdayIndexes.add(weekdayIndex);
 					}
 				}
 				nextStartByThisParameter.set(GregorianCalendar.HOUR_OF_DAY, Integer.parseInt(time.substring(0, 2)));
@@ -903,6 +907,16 @@ public class DateUtilities {
 		return defaultValue;
 	}
 
+	public static String formatDatePickerStringToDateString(final String inputString, final  DateTimeFormatter outputFormatter, final Locale locale){
+		final LocalDate localDate = parseDate(inputString, DateTimeFormatter.ofPattern(getDatePickerFormatPattern(locale)));
+		return format(localDate, outputFormatter);
+	}
+
+	public static String formatDateStringToDatePickerString(final String inputString, final  DateTimeFormatter inputFormatter, final Locale locale){
+		final LocalDate localDate = parseDate(inputString, inputFormatter);
+		return format(localDate, DateTimeFormatter.ofPattern(getDatePickerFormatPattern(locale)));
+	}
+
 	public static LocalTime parseTime(String timeAsString, DateTimeFormatter formatter) {
     	return parseTime(timeAsString, formatter, null);
 	}
@@ -958,7 +972,7 @@ public class DateUtilities {
 	/**
 	 * Calculate the day between two Dates
 	 * Watchout for timezone changes because of DST (e.g.: CEST and CET)
-	 *  
+	 * 
 	 * @param date1
 	 * @param date2
 	 * @return

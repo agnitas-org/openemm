@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.beans.ComCompany;
+import net.sf.json.JSONArray;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.Campaign;
 import org.agnitas.beans.CompaniesConstraints;
@@ -268,6 +268,6 @@ public interface ComWorkflowService {
     void deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId);
     
     void convertTargetRepresentationToEQL(@VelocityCheck int companyId);
-    
-    void cleanWorkflowUnusedTargetConditions(ComCompany company);
+
+    JSONArray getWorkflowListJson(int companyId);
 }

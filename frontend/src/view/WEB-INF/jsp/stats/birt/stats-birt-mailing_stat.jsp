@@ -27,7 +27,7 @@
         <div class="${isMailingGrid ? "tile-content-padded" : "row"}">
             <div class="col-xs-12">
 
-                <agn:agnForm action="/mailing_stat2" method="post">
+                <agn:agnForm action="/mailing_stat2" data-form="resource" method="POST">
                     <html:hidden property="reportFormat" value="html"/>
                     <html:hidden property="companyID"/>
                     <html:hidden property="mailingID"/>

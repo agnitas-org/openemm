@@ -121,18 +121,6 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public boolean updateInDB() {
-		Object gender = getCustParameters().get("gender");
-		Object firstname = getCustParameters().get("firstname");
-		Object lastname = getCustParameters().get("lastname");
-		
-		if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:"))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:"))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
-		}
-		
 		return recipientDao.updateInDB(this);
 	}
 
@@ -172,6 +160,18 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public int insertNewCust() {
+		Object gender = getCustParameters().get("gender");
+		Object firstname = getCustParameters().get("firstname");
+		Object lastname = getCustParameters().get("lastname");
+		
+		if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
+		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:"))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" contains http link data");
+		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:"))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
+		}
+		
 		return recipientDao.insertNewCust(this);
 	}
 

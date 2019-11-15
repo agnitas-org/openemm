@@ -159,8 +159,9 @@ public class BC {
 				customerID = data.campaignCustomerID;
 			} else if (data.maildropStatus.isPreviewMailing ()) {
 				customerID = data.previewCustomerID;
-			} else
+			} else {
 				customerID = 0;
+			}
 			
 			rc = setMissingVoucherCode (customerID);
 			if (rc) {
@@ -182,7 +183,7 @@ public class BC {
 			partFrom = partFromPrepare;
 		}
 		if (data.targetExpression.resolveByDatabase ().size () > 0) {
-			partFrom += 
+			partFrom +=
 				data.targetExpression.resolveByDatabase ().stream ()
 				.map (t -> " LEFT OUTER JOIN agn_tg_" + t.getID () + " ON agn_tg_" + t.getID () + ".customer_id = cust.customer_id")
 				.reduce ((s, e) -> s + " " + e).orElse (null);
@@ -192,7 +193,7 @@ public class BC {
 	}
 
 	/**
-	 * return number of subscriber for this newsletter, 
+	 * return number of subscriber for this newsletter,
 	 * i.e. the number of recipients the mail would
 	 * receive, this may differ from receiver when sending
 	 * admin or test mailings
@@ -399,13 +400,14 @@ public class BC {
 			for (int n = 0; n < adds.size (); ++n) {
 				String	add = adds.get (n);
 
-				if (add != null)
+				if (add != null) {
 					try {
 						data.dbase.execute (add);
 					} catch (Exception e) {
 						data.logging (Log.ERROR, "bc", "Failed to add \"" + add + "\": " + e.toString (), e);
 						rc = false;
 					}
+				}
 			}
 		}
 		return rc;
@@ -438,10 +440,12 @@ public class BC {
 
 	private void getRestrictions (List <String> collect) {
 		collect.add (partSubselect);
-		if (! data.maildropStatus.isPreviewMailing ())
+		if (! data.maildropStatus.isPreviewMailing ()) {
 			collect.add (data.getMediaSubselect ());
-		if (data.maildropStatus.isWorldMailing () || data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing ())
+		}
+		if (data.maildropStatus.isWorldMailing () || data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing ()) {
 			collect.add (data.getReferenceSubselect ());
+		}
 	}
 
 	private void getReduction (List <String> collect) {
@@ -595,7 +599,7 @@ public class BC {
 		}
 		String	partFromSource = partSource ();
 		String	partFromCreate = partFromPrepare + (partFromSource != null ? " " + partFromSource : "");
-		String	customerSelect = 
+		String	customerSelect =
 			"SELECT distinct " + selectFields + "\n" +
 			"FROM " + partFromCreate;
 		String	stmt =
@@ -685,8 +689,9 @@ public class BC {
 								if (count % 1000 == 0) {
 									conn.commit ();
 								}
-							} else
+							} else {
 								seen.add (email);
+							}
 						}
 					}
 					conn.commit ();
@@ -706,9 +711,9 @@ public class BC {
 				String	stmt;
 				
 				if (data.dbase.isOracle ()) {
-					stmt = "CREATE TABLE " + ctable + " (customer_id number)";
+					stmt = "CREATE TABLE " + ctable + " (customer_id NUMBER)";
 				} else {
-					stmt = "CREATE TABLE " + ctable + " (customer_id int(11))";
+					stmt = "CREATE TABLE " + ctable + " (customer_id INTEGER UNSIGNED)";
 				}
 
 				ctableCreated = createTable (ctable, stmt, null);
@@ -760,7 +765,7 @@ public class BC {
 			String	query;
 			
 			if (data.dbase.isOracle ()) {
-				query = "DELETE FROM " + table + " self " + 
+				query = "DELETE FROM " + table + " self " +
 					"WHERE NOT EXISTS (SELECT 1 FROM " + table + " cust WHERE self.customer_id = cust.customer_id AND (" + splitExpression + "))";
 			} else {
 				query = "DELETE FROM " + table + " " +
@@ -813,7 +818,7 @@ public class BC {
 					} else {
 						mktable = "CREATE TABLE " + limitTable + "(\n" +
 							  "\tCOMPANY_ID int(11) NOT NULL,\n" +
-							  "\tCUSTOMER_ID int(11) NOT NULL,\n" +
+							  "\tCUSTOMER_ID INTEGER UNSIGNED NOT NULL,\n" +
 							  "\tSENDDATE int(11) NOT NULL,\n" +
 							  "\tSTATUS_FIELD VARCHAR(1) NOT NULL,\n" +
 							  "\tMAILCOUNT int(11) NOT NULL\n" +
@@ -821,12 +826,12 @@ public class BC {
 					}
 					data.dbase.execute (mktable);
 				}
-				upd = "UPDATE " + limitTable + " SET mailcount = mailcount + 1 " + 
-				      "WHERE company_id = :companyID AND senddate = :senddate" + 
+				upd = "UPDATE " + limitTable + " SET mailcount = mailcount + 1 " +
+				      "WHERE company_id = :companyID AND senddate = :senddate" +
 					   " AND status_field = :statusField" +
 					   " AND customer_id IN (SELECT customer_id FROM " + table + ")";
 				data.dbase.update (upd, "companyID", companyID, "senddate", timestamp, "statusField", data.maildropStatus.statusField ());
-				upd = "INSERT INTO " + limitTable + " (company_id, customer_id, senddate, status_field, mailcount) " + 
+				upd = "INSERT INTO " + limitTable + " (company_id, customer_id, senddate, status_field, mailcount) " +
 				      "SELECT :companyID, customer_id, :senddate, :statusField, 1 FROM " + table + " bind " +
 				      "WHERE NOT EXISTS (SELECT 1 FROM " + limitTable + " recv WHERE bind.customer_id = recv.customer_id AND company_id = :companyID AND senddate = :senddate AND status_field = :statusField)";
 				data.dbase.update (upd, "companyID", companyID, "senddate", timestamp, "statusField", data.maildropStatus.statusField ());
@@ -890,7 +895,7 @@ public class BC {
 					if (data.dbase.isOracle ()) {
 						stmt = "CREATE TABLE " + ctable + " (customer_id) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY dbms_random.value";
 					} else {
-						stmt = "CREATE TABLE " + ctable + " (customer_id int(11)) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY rand()";
+						stmt = "CREATE TABLE " + ctable + " (customer_id INTEGER UNSIGNED) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY rand()";
 					}
 					ctableCreated = createTable (ctable, stmt, null);
 					if (ctableCreated) {
@@ -930,7 +935,7 @@ public class BC {
 		
 		if (data.isPriorityMailing) {
 			long	cnt, remain;
-			String	stmt = 
+			String	stmt =
 				"DELETE FROM " + table + " recv " +
 				"WHERE user_type = 'W' AND NOT EXISTS (" +
 				"	SELECT 1 FROM " + data.priorityTable + " prio WHERE prio.customer_id = recv.customer_id AND prio.mailing_id = :mailingID AND prio.status_id = :statusID AND time_id = :timeID" +
@@ -1041,7 +1046,7 @@ public class BC {
 						}
 						String	query =
 							"SELECT bind.customer_id " +
-							"FROM " + table + " bind " + 
+							"FROM " + table + " bind " +
 							"WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)";
 						Voucher	voucher = new Voucher (data, r.name (), vquery);
 						DBase.Retry <Long>	rt = data.dbase.new Retry <Long> ("voucher", data.dbase, data.dbase.jdbc (query)) {
@@ -1209,8 +1214,8 @@ public class BC {
 							"FROM " + bindingTable + " " +
 							"WHERE customer_id = :customerID AND user_status = " + UserStatus.Bounce.getStatusCode();
 				} else {
-					updateAHV = "UPDATE " + data.ahvTable () + " " + 
-						    "SET reactivate = NULL " + 
+					updateAHV = "UPDATE " + data.ahvTable () + " " +
+						    "SET reactivate = NULL " +
 						    "WHERE customer_id = :customerID AND reactivate IS NOT NULL";
 					updateBinding = "UPDATE " + bindingTable + " " +
 							"SET user_status = " + UserStatus.Active.getStatusCode() + ", user_remark = :userRemark, timestamp = CURRENT_TIMESTAMP " +
@@ -1266,10 +1271,11 @@ public class BC {
 	private String partCustomer (String prefix) {
 		String	rc = null;
 
-		if (prefix == null)
+		if (prefix == null) {
 			prefix = "";
-		else
+		} else {
 			prefix += ".";
+		}
 		if (data.maildropStatus.isCampaignMailing ()) {
 			rc = prefix + "customer_id = " + data.campaignCustomerID;
 		} else if (data.maildropStatus.isPreviewMailing ()) {

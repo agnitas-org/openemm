@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailinglist.form;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientStatisticDto;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 
 public class MailinglistForm {
 	
@@ -27,7 +27,7 @@ public class MailinglistForm {
 	
 	private int targetId;
 	
-	private RecipientStatisticDto statistic;
+	private RecipientProgressStatisticDto statistic;
 	
 	public int getId() {
 		return id;
@@ -61,11 +61,11 @@ public class MailinglistForm {
 		this.targetId = targetId;
 	}
 	
-	public RecipientStatisticDto getStatistic() {
+	public RecipientProgressStatisticDto getStatistic() {
         return statistic;
     }
     
-    public void setStatistic(RecipientStatisticDto statistic) {
+    public void setStatistic(RecipientProgressStatisticDto statistic) {
         this.statistic = statistic;
     }
 }

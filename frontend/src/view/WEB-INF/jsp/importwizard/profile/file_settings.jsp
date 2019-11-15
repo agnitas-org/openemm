@@ -119,7 +119,7 @@
   					</label>
             </div>
         </div>
-
+        
            <div class="form-group" id="zipPasswordGroup">
                <div class="col-sm-4">
                    <label for="" class="control-label"><bean:message key="import.zipPassword"/>
@@ -136,8 +136,8 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		toggleZipPasswordVisibility();
-	})
-
+	}) 
+	
 	function toggleZipPasswordVisibility() {
 		if (document.getElementById("zipPasswordCheckbox").checked) {
 		    jQuery('#zipPasswordGroup').show();

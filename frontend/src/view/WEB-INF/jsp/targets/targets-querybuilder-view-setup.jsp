@@ -88,6 +88,10 @@
 			<c:set target="${element}" property="iconBefore" value="icon-angle-left" />
 			<c:set target="${element}" property="type" value="href" />
 			<c:set target="${element}" property="url">
+				<%--todo: GWUA-4271: change after test sucessfully--%>
+                <%--<c:url value="/workflow/${editTargetForm.workflowId}/view.action">--%>
+                    <%--<c:param name="forwardParams" value="${editTargetForm.workflowForwardParams};elementValue=${editTargetForm.targetID}"/>--%>
+                <%--</c:url>--%>
 				<html:rewrite
 					page="/workflow.do?method=view&forwardParams=${editTargetForm.workflowForwardParams};elementValue=${editTargetForm.targetID}&workflowId=${editTargetForm.workflowId}" />
 			</c:set>
@@ -168,21 +172,27 @@
 					</emm:ShowByPermission>
 				</c:if>
 
-				<c:if test="${editTargetForm.locked}">
-					<emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
-						<c:set target="${dropDownItems}" property="7" value="${dropDownItem}" />
-						<c:set target="${dropDownItem}" property="btnCls" value="btn btn-regular btn-secondary" />
-						<c:set target="${dropDownItem}" property="type" value="href" />
-						<c:set target="${dropDownItem}" property="url">
+				<emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
+					<c:set target="${dropDownItems}" property="7" value="${dropDownItem}" />
+					<c:set target="${dropDownItem}" property="btnCls" value="btn btn-regular btn-secondary" />
+					<c:set target="${dropDownItem}" property="type" value="href" />
+					<c:set target="${dropDownItem}" property="url">
+						<emm:HideByPermission token="stats.recipient.migration">
 							<html:rewrite
-								page="/recipient_stats.do?action=2&mailinglistID=0&targetID=${editTargetForm.targetID}" />
-						</c:set>
-						<c:set target="${dropDownItem}" property="icon" value="icon-bar-chart-o" />
-						<c:set target="${dropDownItem}" property="name">
-							<bean:message key="Statistics" />
-						</c:set>
-					</emm:instantiate>
-				</c:if>
+									page="/recipient_stats.do?action=2&mailinglistID=0&targetID=${editTargetForm.targetID}" />
+						</emm:HideByPermission>
+						<emm:ShowByPermission token="stats.recipient.migration">
+                            <c:url var="statUrl" value="/statistic/recipient/view.action">
+                                <c:param name="mailinglistId" value="0"/>
+                                <c:param name="targetId" value="${editTargetForm.targetID}"/>
+                            </c:url>
+						</emm:ShowByPermission>
+					</c:set>
+					<c:set target="${dropDownItem}" property="icon" value="icon-bar-chart-o" />
+					<c:set target="${dropDownItem}" property="name">
+						<bean:message key="Statistics" />
+					</c:set>
+				</emm:instantiate>
 
 				<emm:ShowByPermission token="targets.lock">
 					<emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
@@ -263,19 +273,7 @@
 
 	<c:if test="${not editTargetForm.locked}">
 		<emm:ShowByPermission token="targets.change">
-			<emm:ShowByPermission token="targets.eql.edit">
 				<c:set var="SHOW_SAVE_BUTTON" value="true" scope="page" />
-			</emm:ShowByPermission>
-			<emm:HideByPermission token="targets.eql.edit">
-				<c:choose>
-					<c:when test="${editTargetForm.simpleStructure}">
-						<c:set var="SHOW_SAVE_BUTTON" value="true" scope="page" />
-					</c:when>
-					<c:otherwise>
-						<c:set var="SHOW_SAVE_BUTTON" value="false" scope="page" />
-					</c:otherwise>
-				</c:choose>
-			</emm:HideByPermission>
 		</emm:ShowByPermission>
 		<emm:HideByPermission token="targets.change">
 			<c:set var="SHOW_SAVE_BUTTON" value="false" scope="page" />

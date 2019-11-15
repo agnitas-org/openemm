@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.target.eql.codegen;
 
-import com.agnitas.emm.core.target.eql.codegen.sql.CodeFragment;
-
 /**
  * Exception indicating a data type, that was not handled or cannot be handled during code generation.
  */

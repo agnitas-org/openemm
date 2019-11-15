@@ -72,6 +72,10 @@
             <c:set target="${element0}" property="iconBefore" value="icon-angle-left"/>
             <c:set target="${element0}" property="type" value="href"/>
             <c:set target="${element0}" property="url">
+                <%--todo: GWUA-4271: change after test sucessfully--%>
+                <%--<c:url value="/workflow/${workflowId}/view.action">--%>
+                    <%--<c:param name="forwardParams" value="${workflowForwardParams};elementValue=${userFormEditForm.formID}"/>--%>
+                <%--</c:url>--%>
                 <html:rewrite page="/workflow.do?method=view&forwardParams=${workflowForwardParams};elementValue=${userFormEditForm.formID}&workflowId=${workflowId}"/>
             </c:set>
             <c:set target="${element0}" property="name">

@@ -17,54 +17,70 @@ import java.util.Set;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderBaseNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderHelper;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderOperator;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DateRuleConverter;
 
 public class BinaryOperatorRelationalParser extends GenericEqlNodeParser<BinaryOperatorRelationalEqlNode> {
+    
+    private static final String DATE_FORMAT_UNIVERSAL = "YYYYMMDD";
 
     @Override
-    public QueryBuilderGroupNode parse(BinaryOperatorRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    public QueryBuilderGroupNode parse(BinaryOperatorRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         QueryBuilderRuleNode rule = new QueryBuilderRuleNode();
-        rule.setOperator(QueryBuilderHelper.relationalEqlOperatorToQueryBuilderString(node.getOperator()));
+    
+        String dateFormat = node.getDateFormat();
+        DataType specificType = dateFormat != null ? DataType.DATE : null;
+        QueryBuilderOperator operator = QueryBuilderHelper.relationalEqlOperatorToQueryBuilder(node.getOperator(), specificType);
+        rule.setOperator(operator.queryBuilderName());
+        
         groupNode.addRule(rule);
         AbstractEqlNode left = node.getLeft(),
                 right = node.getRight();
         EqlNodeParser<?> leftParser = configuration.getParserMapping().get(left.getClass()),
                 rightParser = configuration.getParserMapping().get(right.getClass());
         if (leftParser != null && rightParser != null) {
-            leftParser.parse(left, groupNode, unknownProfileFields);
-            rightParser.parse(right, groupNode, unknownProfileFields);
-            updateDateNode(node, groupNode);
+            leftParser.parse(left, groupNode, profileFields);
+            rightParser.parse(right, groupNode, profileFields);
+            if (DataType.DATE == specificType) {
+                updateDateNode(groupNode, operator, dateFormat);
+            }
             return groupNode;
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable parser for node " + node);
     }
-
-    private void updateDateNode(BinaryOperatorRelationalEqlNode node, QueryBuilderGroupNode groupNode) {
-        String dateFormat = node.getDateFormat();
-        if (dateFormat != null) {
-            List<QueryBuilderBaseNode> rules = groupNode.getRules();
-            QueryBuilderRuleNode ruleNode = (QueryBuilderRuleNode) rules.get(rules.size() - 1);
-            Object value = ruleNode.getValue();
-            LinkedList<Object> values = new LinkedList<>();
-            if (value instanceof Object[]){
-                values.addAll(Arrays.asList((Object[]) value));
-            }else {
-                values.add(value);
-            }
-            if (values.size() > DateRuleConverter.MIN_EXPECTED_SIZE) {
-                String operator = ruleNode.getOperator();
-                ruleNode.setOperator(values.removeLast().toString());
-                values.add(operator);
-            }
-            values.add(dateFormat);
-            ruleNode.setValue(values.toArray());
-            ruleNode.setType("date");
+    
+    private void updateDateNode(QueryBuilderGroupNode groupNode, QueryBuilderOperator operator, String dateFormat) throws EqlToQueryBuilderConversionException {
+        validateDateFormat(operator, dateFormat);
+        List<QueryBuilderBaseNode> rules = groupNode.getRules();
+        QueryBuilderRuleNode ruleNode = (QueryBuilderRuleNode) rules.get(rules.size() - 1);
+        Object value = ruleNode.getValue();
+        LinkedList<Object> values = new LinkedList<>();
+        if (value instanceof Object[]){
+            values.addAll(Arrays.asList((Object[]) value));
+        }else {
+            values.add(value);
+        }
+        if (values.size() > DateRuleConverter.MIN_EXPECTED_SIZE) {
+            String operatorString = ruleNode.getOperator();
+            ruleNode.setOperator(values.removeLast().toString());
+            values.add(operatorString);
+        }
+        values.add(dateFormat);
+        ruleNode.setValue(values.toArray());
+        ruleNode.setType("date");
+    }
+    
+    private void validateDateFormat(QueryBuilderOperator operator, String dateFormat) throws EqlToQueryBuilderConversionException {
+        if (!DATE_FORMAT_UNIVERSAL.equals(dateFormat) && (operator == QueryBuilderOperator.AFTER || operator == QueryBuilderOperator.BEFORE)) {
+			final String msg = String.format("Query builder operator %s not supported date format %s", operator.queryBuilderName(), dateFormat);
+            
+            throw new EqlToQueryBuilderConversionException(msg);
         }
     }
-
 }

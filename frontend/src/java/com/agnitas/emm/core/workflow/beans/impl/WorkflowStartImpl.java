@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.workflow.beans.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -103,4 +104,18 @@ public class WorkflowStartImpl extends WorkflowStartStopImpl implements Workflow
 
         return dependencies;
     }
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+		WorkflowStartImpl that = (WorkflowStartImpl) o;
+		return startType == that.startType;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), startType);
+	}
 }

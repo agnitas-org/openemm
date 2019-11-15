@@ -787,7 +787,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         }
 
         queryBuilder.append(" FROM ( SELECT cust.*, rdir.num_parameter AS sys_num_parameter, rdir.mailing_id AS sys_mailing_id FROM rdirlog_<COMPANYID>_val_num_tbl rdir LEFT JOIN " +customerTable + " cust " +
-                "ON ( cust.customer_id = rdir.customer_id) WHERE rdir.mailing_id IN (<MAILING_IDS>) AND rdir.company_id = <COMPANYID> AND rdir.page_tag = 'revenue') cust) main_data GROUP BY sys_mailing_id");
+                "ON ( cust.customer_id = rdir.customer_id) WHERE rdir.mailing_id IN (<MAILING_IDS>) AND rdir.page_tag = 'revenue') cust) main_data GROUP BY sys_mailing_id");
 
         String query = queryBuilder.toString();
         return query;

@@ -153,6 +153,11 @@
 		<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
 	</listener>
 
+	<!-- Check validity of installation configuration -->
+	<listener>
+		<listener-class>com.agnitas.emm.core.ConfigurationValidityCheckListener</listener-class>
+	</listener>
+
 	<!-- Listener to initialize the backend datasource Note: This listener requires
 		that Springs ContextLoaderListener is loaded before this listener! -->
 	<listener>
@@ -448,7 +453,7 @@
 	<!--for JS file with translations-->
 	<servlet>
 		<servlet-name>jsLocalize</servlet-name>
-		<servlet-class>com.agnitas.web.JavascriptContentTypeJspServlet</servlet-class>
+		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>jsLocalize</servlet-name>
@@ -458,7 +463,7 @@
 	<!-- For JS file that contains some data from static context -->
 	<servlet>
 		<servlet-name>jsConfig</servlet-name>
-		<servlet-class>com.agnitas.web.JavascriptContentTypeJspServlet</servlet-class>
+		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>jsConfig</servlet-name>

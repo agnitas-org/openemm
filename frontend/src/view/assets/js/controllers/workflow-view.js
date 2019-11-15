@@ -323,16 +323,25 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
                 var $form = $('form[name="startForm"]');
 
+                var picker = null;
                 if (this.isStartEditor) {
                     switch (data.startType) {
                       case constants.startTypeDate:
-                          return $form.find('#startDate').pickadate('picker').get('select').obj;
-
+                          picker = $form.find('#startDate').pickadate('picker');
+                          break;
                       case constants.startTypeEvent:
-                          return $form.find('#executionDate').pickadate('picker').get('select').obj;
+                          picker = $form.find('#executionDate').pickadate('picker');
+                          break;
                     }
                 } else if (data.endType == constants.endTypeDate) {
-                    return $form.find('#startDate').pickadate('picker').get('select').obj;
+                    picker = $form.find('#startDate').pickadate('picker');
+                }
+
+                if (picker) {
+                    var select = picker.get("select");
+                    if (select) {
+                        return select.obj;
+                    }
                 }
 
                 return null;
@@ -340,7 +349,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
             generateReminderComment: function() {
               var name = $("#workflowForm input[name='workflow.shortname']").val();
-              var dateString = AGN.Lib.DateFormat.format(this.getStartStopDate() || new Date(), startData.localeDatePattern);
+              var dateString = AGN.Lib.WM.DateTimeUtils.getDateStr(this.getStartStopDate(), startData.localeDatePattern);
 
               return (this.isStartEditor ? t('workflow.start.reminder_text') : t('workflow.stop.reminder_text'))
                 .replace(/:campaignName/g, name)
@@ -643,12 +652,12 @@ AGN.Lib.Controller.new('workflow-view', function () {
             updateEditorType: function (isStartEditor) {
                 $('#startStopType').empty();
                 if (isStartEditor) {
-                    $('#startStopType').append(_.template(AGN.Opt.Templates['start-types']));
+                    $('#startStopType').append(AGN.Lib.Template.text('start-types'));
                     jQuery("#eventReaction").html(t('workflow.start.reaction_based'));
                     jQuery("#eventDate").html(t('workflow.start.date_based'));
                 }
                 else {
-                    $('#startStopType').append(_.template(AGN.Opt.Templates['stop-types']));
+                    $('#startStopType').append(AGN.Lib.Template.text('stop-types'));
                     if (campaignManager.isNormalCampaignActionsType()) {
                         jQuery("#endTypeActiomaticLabel").html(t('workflow.stop.automatic_end'));
                     } else {

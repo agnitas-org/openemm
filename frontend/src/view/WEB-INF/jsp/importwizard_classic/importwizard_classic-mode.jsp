@@ -21,7 +21,7 @@
     <div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
         <div class="tile">
             <div class="tile-header">
-                <h2 class="headline"><i class="icon icon-file-o"></i> <bean:message key="ImportClassic"/></h2>
+                <h2 class="headline"><i class="icon icon-file-o"></i> <bean:message key="import.Wizard"/></h2>
                 <ul class="tile-header-actions">
                     <li class="">
                         <ul class="pagination">
@@ -93,21 +93,10 @@
                         </html:select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label">
-                            <bean:message key="import.null_value_handling"/>
-                            <button type="button" class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/NullValueHandling.xml"></button>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <html:select property="status.ignoreNull" size="1" styleClass="form-control js-select">
-                            <html:option value="0"><bean:message key="import.dont_ignore_null_values"/></html:option>
-                            <html:option value="1"><bean:message key="import.ignore_null_values"/></html:option>
-                        </html:select>
-                    </div>
-                </div>
-                <div class="form-group">
+
+ 				<%@include file="/WEB-INF/jsp/importwizard_classic/importwizard_classic-mode_nullvalues.jspf" %>
+
+                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label">
                             <bean:message key="import.keycolumn"/>
@@ -124,7 +113,7 @@
                         </html:select>
                     </div>
                 </div>
-                
+
                 <emm:ShowByPermission token="import.mode.doublechecking">
                     <div class="form-group">
                         <div class="col-sm-4">
@@ -143,7 +132,7 @@
                         </div>
                     </div>
                 </emm:ShowByPermission>
-                
+
                 <emm:ShowByPermission token="import.mode.duplicates">
                     <div class="form-group">
                         <div class="col-sm-4">

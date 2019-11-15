@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.upselling.web;
 
-import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import com.agnitas.emm.core.upselling.form.UpsellingForm;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Controller;
@@ -26,7 +26,8 @@ public class UpsellingController {
     private static final String[] CUSTOM_VIEWS = new String[]{
             "grid_template_upselling",
             "messenger_upselling",
-            "notification_upselling"
+            "notification_upselling",
+            "mailing_predelivery_upselling"
     };
 
     @GetMapping("/upselling.action")
@@ -37,6 +38,7 @@ public class UpsellingController {
         model.addAttribute("featureNameKey", featureName);
         model.addAttribute("sidemenuActive", activeSideMenu);
         model.addAttribute("sidemenuSubActive", StringUtils.trimToEmpty(form.getSidemenuSubActive()));
+        model.addAttribute("navigationKey", StringUtils.trimToEmpty(form.getNavigationKey()));
 
         return getView(form);
     }

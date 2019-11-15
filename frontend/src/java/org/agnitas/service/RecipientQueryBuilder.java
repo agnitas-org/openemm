@@ -19,6 +19,6 @@ import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.web.RecipientForm;
 
 public interface RecipientQueryBuilder {
-	TargetRepresentation createTargetRepresentationFromForm(RecipientForm form, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory, int companyID);
-	SqlPreparedStatementManager getSQLStatement(HttpServletRequest request, RecipientForm aForm, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory) throws Exception;
+    TargetRepresentation createTargetRepresentationFromForm(RecipientForm form, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory, int companyID);
+    SqlPreparedStatementManager getSQLStatement(HttpServletRequest request, RecipientForm aForm, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory) throws Exception;
 }

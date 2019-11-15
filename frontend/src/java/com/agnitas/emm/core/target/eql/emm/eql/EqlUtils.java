@@ -29,15 +29,15 @@ public class EqlUtils {
     }
 
     public static String toEQLDateFormat(String dateFormat) {
-			/*
-			 * Note on date formats:
-			 *
-			 * We do not use Mysql-specific format parameters (like %Y) here.
-			 * We always get something like "yyyymmdd" from UI.
-			 *
-			 * Transformation to Mysql-specific format parameters is done
-			 * in TargetNodeDate by calling AgnUtils.sqlDateString()!
-			 */
+		/*
+		 * Note on date formats:
+		 *
+		 * We do not use Mysql-specific format parameters (like %Y) here.
+		 * We always get something like "yyyymmdd" from UI.
+		 *
+		 * Transformation to Mysql-specific format parameters is done
+		 * in TargetNodeDate by calling AgnUtils.sqlDateString()!
+		 */
 		try {
 			StringBuilder sb = new StringBuilder();
 			for (EqlDateFormat.DateFragment fragment : EqlDateFormat.parse(StringUtils.upperCase(dateFormat))) {

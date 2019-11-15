@@ -48,10 +48,6 @@ public class JavaMailServiceImpl implements JavaMailService {
 
 	/**
 	 * Send an email with error comment and error-Exception and stack trace to the address taken from mailaddress.velocity property.
-	 * 
-	 * @param formUrl
-	 * @param e
-	 * @return
 	 */
 	@Override
 	public boolean sendVelocityExceptionMail(String formUrl, Exception e) {
@@ -96,10 +92,10 @@ public class JavaMailServiceImpl implements JavaMailService {
 			if (StringUtils.isNotBlank(toAddress)) {
 				StringBuilder messageBuilder = new StringBuilder();
 				if (comment != null) {
-					messageBuilder.append(comment + "\n");
+					messageBuilder.append(comment).append("\n");
 				}
-				messageBuilder.append("Exception:\n" + AgnUtils.throwableToString(e, -1));
-		
+				messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
+
 				String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
 		
 				if (logger.isInfoEnabled()) {
@@ -133,8 +129,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	@Override
-	public boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, MailAttachment... attachments) {
+	public boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
 		return sendEmail(null, null, null, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
+	}
+
+	@Override
+	public boolean sendEmail(String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
+		return sendEmail(fromAddress, null, replyToAddress, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
 	}
 
 	/**
@@ -145,7 +146,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	@Override
-	public boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, MailAttachment... attachments) {
+	public boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
 		String smtpMailRelayHostname = configService.getValue(ConfigValue.SmtpMailRelayHostname);
 		if (StringUtils.isBlank(smtpMailRelayHostname)) {
 			logger.error("smtpMailRelayHostname is missing, so no mail was sent. emailSubject: " + subject);
@@ -225,13 +226,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 
 			// Set to-recipient email addresses
 			InternetAddress[] toAddresses = getEmailAddressesFromList(toAddressList);
-			if (toAddresses != null && toAddresses.length > 0) {
+			if (toAddresses.length > 0) {
 				msg.setRecipients(Message.RecipientType.TO, toAddresses);
 			}
 
 			// Set cc-recipient email addresses
 			InternetAddress[] ccAddresses = getEmailAddressesFromList(ccAddressList);
-			if (ccAddresses != null && ccAddresses.length > 0) {
+			if (ccAddresses.length > 0) {
 				msg.setRecipients(Message.RecipientType.CC, ccAddresses);
 			}
 
@@ -296,7 +297,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 			        alternativeMimeBodyPart.setContent(multipartTextContent);
 				}
 				
-				for (MailAttachment attachment : attachments) {
+				for (JavaMailAttachment attachment : attachments) {
 					MimeBodyPart attachmentMimeBodyPart = new MimeBodyPart();
 					attachmentMimeBodyPart.setFileName(MimeUtility.encodeText(attachment.getName(), "UTF-8", null));
 					ByteArrayDataSource bds = new ByteArrayDataSource(attachment.getData(), attachment.getMimeType());
@@ -335,6 +336,6 @@ public class JavaMailServiceImpl implements JavaMailService {
 			}
 		}
 
-		return emailAddresses.toArray(new InternetAddress[emailAddresses.size()]);
+		return emailAddresses.toArray(new InternetAddress[0]);
 	}
 }

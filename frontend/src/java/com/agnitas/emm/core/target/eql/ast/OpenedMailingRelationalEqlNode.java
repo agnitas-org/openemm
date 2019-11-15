@@ -11,11 +11,12 @@
 package com.agnitas.emm.core.target.eql.ast;
 
 import com.agnitas.emm.core.target.eql.ast.devicequery.AbstractDeviceQueryNode;
-import com.agnitas.emm.core.target.eql.ast.transform.TrackingVetoShiftNotDownTransform.SpecialTrackingVetoNotHandling;
+import com.agnitas.emm.core.target.eql.ast.transform.ShiftNotDownTransform.SpecialNotOperatorHandling;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
-public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlNode implements SpecialTrackingVetoNotHandling {
+@SpecialNotOperatorHandling(mustHaveReceivedMailing = true)
+public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlNode {
 
 	private final CodeLocation startLocation;
 	private final int mailingId;

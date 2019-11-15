@@ -25,121 +25,116 @@ import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 import com.agnitas.messages.I18nString;
 
 public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation {
 	
 	private static final Logger logger = Logger.getLogger(ActionOperationGetArchiveMailingImpl.class);
 
-    private PreviewFactory previewFactory;
+	private PreviewFactory previewFactory;
 	private MailingDao mailingDao;
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
-		ActionOperationGetArchiveMailingParameters op =(ActionOperationGetArchiveMailingParameters) operation;
-		int companyID = op.getCompanyId();
-		int expireDay = op.getExpireDay();
-		int expireMonth = op.getExpireMonth();
-		int expireYear = op.getExpireYear();
+		ActionOperationGetArchiveMailingParameters getArchiveActionOperation = (ActionOperationGetArchiveMailingParameters) operation;
+		int companyID = getArchiveActionOperation.getCompanyId();
+		int expireDay = getArchiveActionOperation.getExpireDay();
+		int expireMonth = getArchiveActionOperation.getExpireMonth();
+		int expireYear = getArchiveActionOperation.getExpireYear();
+
+		String archiveSubject = null;
+		String archiveSender = null;
+
+		if (expireDay != 0 && expireMonth != 0 && expireYear != 0) {
+			GregorianCalendar exp = new GregorianCalendar(expireYear, expireMonth - 1, expireDay);
+			GregorianCalendar now = new GregorianCalendar();
+
+			if (now.after(exp)) {
+				return false;
+			}
+		}
 		
-        Integer tmpNum=null;
-        int customerID=0;
-        boolean returnValue=false;
-        int tmpMailingID=0;
-        String archiveHtml=null;
-        String archiveSubject=null;
-        String archiveSender=null;
-        int mobileID = 0;
-
-	if(expireDay != 0 && expireMonth != 0 && expireYear != 0) {
-		GregorianCalendar	exp=new GregorianCalendar(expireYear, expireMonth-1, expireDay);
-		GregorianCalendar	now=new GregorianCalendar();
-
-		if(now.after(exp)) {
+		
+		
+		if (params.get("customerID") == null) {
+			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.MISSING_CUSTOMER_ID);
 			return false;
-		}	
-	}
-        if(params.get("customerID")!=null) {
-            tmpNum=(Integer)params.get("customerID");
-            customerID=tmpNum.intValue();
-        } else {
-            return returnValue;
-        }
+		}
+		if (params.get("mailingID") == null) {
+			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.MISSING_MAILING_ID);
+			return false;
+		}
+		
+		int customerID = ((Number) params.get("customerID")).intValue();
+		int mailingID = ((Number) params.get("mailingID")).intValue();
 
-        if(params.get("mailingID")!=null) {
-            tmpNum=(Integer)params.get("mailingID");
-            tmpMailingID=tmpNum.intValue();
-        } else {
-            return returnValue;
-        }
+		// check for mobile device
+		boolean mobile = false;
+		@SuppressWarnings("unchecked")
+		Map<String, Object> requestParams = (Map<String, Object>) params.get("requestParameters");
+		Object mobileDeviceObject = requestParams.get("mobileDevice");
+		if (mobileDeviceObject == null) {
+			// another way to set the mobile device.
+			mobileDeviceObject = params.get("mobileDevice");
+		}
+		if (mobileDeviceObject != null) {
+			try {
+				mobile = Integer.parseInt((String) mobileDeviceObject) > 0;
+			} catch (Exception e) {
+				logger.error("Error converting mobileDevice ID. Expected Number and got: " + params.get("mobileDevcie"));
+				logger.error("Setting mobile Device ID to 0");
+			}
+		}
 
-        // check for mobile device        
-        @SuppressWarnings("unchecked")
-		Map<String, Object> requestParams = (Map<String, Object>) params.get("requestParameters");       
-        Object mobileDeviceObject = requestParams.get("mobileDevice");
-        if (mobileDeviceObject == null ) {
-        	mobileDeviceObject = params.get("mobileDevice");	// another way to set the mobile device.        	
-        }
-        if (mobileDeviceObject != null ) {
-        	try {
-        		mobileID = Integer.parseInt((String)mobileDeviceObject);
-        	} catch (Exception e) {
-        		logger.error("Error converting mobileDevice ID. Expected Number and got: " + params.get("mobileDevcie"));
-        		logger.error("Setting mobile Device ID to 0");
-        		mobileID = 0;
-        	}        	
-        }
-    
-        try {
-        	Page previewResult = generateBackEndPreview(tmpMailingID, customerID);
+		try {
+			Page previewResult = generateBackEndPreview(mailingID, customerID);
+			
+			String archiveHtml;
+			// Check if mailing deleted - if it deleted change preview to error
+			// message on success form
+			if (mailingDao.exist(mailingID, companyID)) {
+				archiveHtml = generateHTMLPreview(mailingID, customerID, mobile);
+			} else {
+				Locale locale = (Locale) params.get("locale");
+				archiveHtml = I18nString.getLocaleString("mailing.content.not.avaliable", locale != null ? locale : Locale.getDefault());
+			}
+			String header = previewResult.getHeader();
+			if (header != null) {
+				archiveSender = PreviewHelper.getFrom(header);
+				archiveSubject = PreviewHelper.getSubject(header);
+			}
 
-        	boolean mobile = false;
-        	if (mobileID >0 ) {
-        		mobile = true;
-        	}
-            //Check if mailing deleted - if it deleted change preview to error message on success form
-            if (mailingDao.exist(tmpMailingID, companyID)) {
-                archiveHtml = generateHTMLPreview(tmpMailingID, customerID, mobile);
-            } else {
-            	Locale locale = (Locale) params.get("locale");
-            	archiveHtml = I18nString.getLocaleString("mailing.content.not.avaliable", locale != null ? locale : Locale.getDefault());
-            }
-        	String header = previewResult.getHeader();
-        	if (header != null) {
-        		archiveSender = PreviewHelper.getFrom(header);
-        		archiveSubject = PreviewHelper.getSubject(header);
-        	}	
-        	returnValue=true;
-        } catch (Exception e) {
-        	logger.error("archive problem: "+e, e);
-        	returnValue=false;
-        }
-
-        if(returnValue) {
-        	params.put("archiveHtml", archiveHtml);
-        	params.put("archiveSender", archiveSender);
-        	params.put("archiveSubject", archiveSubject);
-        }
-        return returnValue;
+			
+			params.put(UserFormExecutionService.FORM_MIMETYPE_PARAM_NAME, "text/html;charset=utf-8");
+			params.put("archiveHtml", archiveHtml);
+			params.put("archiveSender", archiveSender);
+			params.put("archiveSubject", archiveSubject);
+			
+			return true;
+		} catch (Exception e) {
+			logger.error("archive problem: " + e, e);
+			return false;
+		}
 	}
 
-    private Page generateBackEndPreview(int mailingID,int customerID) {
+	private Page generateBackEndPreview(int mailingID, int customerID) {
 		Preview preview = previewFactory.createPreview();
-		Page output = preview.makePreview (mailingID,customerID, false);
+		Page output = preview.makePreview(mailingID, customerID, false);
 		preview.done();
 		return output;
 	}
 
-    protected String generateHTMLPreview(int mailingID, int customerID, boolean mobile) throws Exception {
-    	logger.debug("entering generateHTMLPreview in ActionOperationGetArchiveMailing.");
-    	Preview preview = previewFactory.createPreview();
+	protected String generateHTMLPreview(int mailingID, int customerID, boolean mobile) throws Exception {
+		logger.debug("entering generateHTMLPreview in ActionOperationGetArchiveMailing.");
+		Preview preview = previewFactory.createPreview();
 		Page page = preview.makePreview(mailingID, customerID, null, false, false);
-		if (page.getError() != null)  {
-			throw new Exception("ScriptHelperService::generateBackEndHTMLPreview: Error generating preview. mailingID: " + mailingID +
-					" customerID: " + customerID + "\n previewError: " + page.getError());
-		} 
-		return page.getHTML();	
-    }
+		if (page.getError() != null) {
+			throw new Exception("ScriptHelperService::generateBackEndHTMLPreview: Error generating preview. mailingID: " + mailingID + " customerID: " + customerID
+					+ "\n previewError: " + page.getError());
+		}
+		return page.getHTML();
+	}
 
 	public void setPreviewFactory(PreviewFactory previewFactory) {
 		this.previewFactory = previewFactory;
@@ -148,5 +143,4 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
-
 }

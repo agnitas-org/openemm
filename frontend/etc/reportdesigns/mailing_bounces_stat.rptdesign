@@ -53,16 +53,6 @@
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
-        <scalar-parameter name="uid" id="388">
-            <property name="valueType">static</property>
-            <property name="dataType">string</property>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <property name="distinct">true</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="ScriptedDataSource" id="28"/>
@@ -90,11 +80,6 @@
                     <property name="name">DETAIL_INDEX</property>
                     <property name="dataType">integer</property>
                 </structure>
-                <structure>
-                    <property name="position">5</property>
-                    <property name="name">encoded_uid</property>
-                    <property name="dataType">string</property>
-                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -108,9 +93,6 @@
                 </structure>
                 <structure>
                     <property name="columnName">DETAIL_INDEX</property>
-                </structure>
-                <structure>
-                    <property name="columnName">encoded_uid</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -135,11 +117,6 @@
                         <property name="name">DETAIL_INDEX</property>
                         <property name="dataType">integer</property>
                     </structure>
-                    <structure>
-                        <property name="position">5</property>
-                        <property name="name">encoded_uid</property>
-                        <property name="dataType">string</property>
-                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">ScriptedDataSource</property>
@@ -152,7 +129,6 @@ currentrow = 0;]]></method>
 	row["DETAIL"] = statList.get(currentrow).getValue_2();
 	row["DETAIL_INDEX"] = statList.get(currentrow).getCategory_index();
 	row["COUNT"] = statList.get(currentrow).getValue_1();
-	row["encoded_uid"] = encoder.encodeURL(params["uid"]);
 	currentrow++;
 	return true;
 } 
@@ -742,11 +718,6 @@ return false;]]></method>
                                 <property name="name">DETAIL_INDEX</property>
                                 <expression name="expression">dataSetRow["DETAIL_INDEX"]</expression>
                                 <property name="dataType">integer</property>
-                            </structure>
-                            <structure>
-                                <property name="name">encoded_uid</property>
-                                <expression name="expression">dataSetRow["encoded_uid"]</expression>
-                                <property name="dataType">string</property>
                             </structure>
                             <structure>
                                 <property name="name">BOUNCES_SUM</property>

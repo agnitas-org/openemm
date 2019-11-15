@@ -11,10 +11,10 @@
 package org.agnitas.web;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -39,6 +39,7 @@ import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
@@ -57,6 +58,7 @@ import org.agnitas.target.impl.TargetNodeIntervalMailing;
 import org.agnitas.target.impl.TargetNodeNumeric;
 import org.agnitas.target.impl.TargetNodeString;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DbUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.beanutils.DynaBean;
@@ -280,7 +282,7 @@ public class RecipientAction extends StrutsActionBase {
 		            }
 					
 					if (errors.isEmpty()) {
-						saveRecipient(aForm, req);
+						saveRecipient(aForm, req, errors);
 						messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 						aForm.setAction(RecipientAction.ACTION_LIST);
 	                	AgnUtils.setAdminDateTimeFormatPatterns(req);
@@ -300,8 +302,21 @@ public class RecipientAction extends StrutsActionBase {
 
 			case ACTION_NEW:
 				if (req.getParameter("cancel.x") == null) {
+					if (StringUtils.isNotBlank(aForm.getEmail()) && !AgnUtils.isEmailValid(aForm.getEmail())) {
+		                errors.add("email",new ActionMessage("error.invalid.email"));
+		            }
+		            if (aForm.getTitle().length() > 100) {
+		                errors.add("title", new ActionMessage("error.recipient.title.tooLong"));
+		            }
+		            if (aForm.getFirstname().length() > 100) {
+		                errors.add("firstname", new ActionMessage("error.recipient.firstname.tooLong"));
+		            }
+		            if (aForm.getLastname().length() > 100) {
+		                errors.add("lastname", new ActionMessage("error.recipient.lastname.tooLong"));
+		            }
+		            
 					aForm.setRecipientID(0);
-					if (saveRecipient(aForm, req)) {
+					if (saveRecipient(aForm, req, errors)) {
 						aForm.setAction(RecipientAction.ACTION_LIST);
 	                	AgnUtils.setAdminDateTimeFormatPatterns(req);
 						destination = mapping.findForward("list");
@@ -349,14 +364,25 @@ public class RecipientAction extends StrutsActionBase {
 					aForm.setColumnwidthsList(getInitializedColumnWidthList(lengthSelectedFields + 1));
 				}
 			}
+		} catch (ViciousFormDataException e) {
+			logger.error("RecipientAction execute: " + e.getMessage(), e);
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.recipient.viciousData", e.getMessage()));
+			aForm.setAction(RecipientAction.ACTION_SAVE);
+			defineMailinglistAttributes(req, AgnUtils.getAdmin(req));
+			AgnUtils.setAdminDateTimeFormatPatterns(req);
+			destination = mapping.findForward("view");
 		} catch (Exception e) {
 			logger.error("RecipientAction execute: " + e.getMessage(), e);
-			// errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(Value.SupportEmergencyUrl)));
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
+			aForm.setAction(RecipientAction.ACTION_SAVE);
+			defineMailinglistAttributes(req, AgnUtils.getAdmin(req));
+			AgnUtils.setAdminDateTimeFormatPatterns(req);
+			destination = mapping.findForward("view");
 		}
 
 		if (destination != null && "list".equals(destination.getName())) {
 			try {
-				Map<String, String> fieldsMap = getRecipientFieldsNames(AgnUtils.getCompanyID(req), aForm.getAdminId());
+				Map<String, String> fieldsMap = getRecipientFieldsNames(AgnUtils.getCompanyID(req), AgnUtils.getAdminId(req));
 				Set<String> recipientDbColumns = fieldsMap.keySet();
 				req.setAttribute("fieldsMap", fieldsMap);
 
@@ -382,8 +408,6 @@ public class RecipientAction extends StrutsActionBase {
 				if (future != null && future.isDone()) {
 					try {
 						PaginatedListImpl<DynaBean> resultingList = future.get();
-						int companyID = AgnUtils.getAdmin(req).getCompanyID();
-						int adminID = AgnUtils.getAdmin(req).getAdminID();
 
 						req.setAttribute("recipientList", resultingList);
 						defineMailinglistAttributes(req, AgnUtils.getAdmin(req));
@@ -533,7 +557,7 @@ public class RecipientAction extends StrutsActionBase {
 	 *            form to put recipient data into
 	 * @param req
 	 *            HTTP request
-     * @throws Exception 
+     * @throws Exception
 	 */
 	protected void loadRecipient(RecipientForm aForm, HttpServletRequest req) throws Exception {
 		throw new UnsupportedOperationException();
@@ -551,20 +575,25 @@ public class RecipientAction extends StrutsActionBase {
 		aForm.clearColumns();
 
 		try {
-			List<ProfileField> list = columnInfoService.getColumnInfos(AgnUtils.getCompanyID(req), aForm.getAdminId());
-			for (ProfileField profileField : list) {
-				if ("DATE".equalsIgnoreCase(profileField.getDataType()) && "sysdate".equalsIgnoreCase(profileField.getDefaultValue())) {
-					GregorianCalendar calendar = new GregorianCalendar();
-					aForm.setColumn(profileField.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, Integer.toString(calendar.get(GregorianCalendar.DAY_OF_MONTH)));
-					aForm.setColumn(profileField.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, Integer.toString(calendar.get(GregorianCalendar.MONTH) + 1));
-					aForm.setColumn(profileField.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, Integer.toString(calendar.get(GregorianCalendar.YEAR)));
+			List<ProfileField> fields = columnInfoService.getColumnInfos(AgnUtils.getCompanyID(req), AgnUtils.getAdminId(req));
+			LocalDate now = LocalDate.now();
+
+			for (ProfileField field : fields) {
+				if ("DATE".equalsIgnoreCase(field.getDataType()) && DbUtilities.isNowKeyword(field.getDefaultValue())) {
+					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY, Integer.toString(now.getDayOfMonth()));
+					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH, Integer.toString(now.getMonthValue()));
+					aForm.setColumn(field.getColumn() + ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR, Integer.toString(now.getYear()));
 				} else {
-					aForm.setColumn(profileField.getColumn(), profileField.getDefaultValue());
+					aForm.setColumn(field.getColumn(), field.getDefaultValue());
 				}
 			}
 		} catch (Exception e) {
-			// nothing to do
+			logger.error("Error occurred: " + e.getMessage(), e);
 		}
+
+		aForm.setFirstname(StringUtils.trimToEmpty(req.getParameter("firstname")));
+		aForm.setLastname(StringUtils.trimToEmpty(req.getParameter("lastname")));
+		aForm.setEmail(StringUtils.trimToEmpty(req.getParameter("email")));
 	}
 
 	/**
@@ -576,7 +605,7 @@ public class RecipientAction extends StrutsActionBase {
 	 * @param request
 	 *            HTTP request
      * @param isNewRecipient
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected void saveBindings(RecipientForm recipientForm, HttpServletRequest request, boolean isNewRecipient) throws Exception {
 		ComAdmin admin = AgnUtils.getAdmin(request);
@@ -643,9 +672,9 @@ public class RecipientAction extends StrutsActionBase {
 	 *            form
 	 * @param req
 	 *            HTTP request
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest req) throws Exception {
+	protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest req, ActionMessages errors) throws Exception {
         throw new UnsupportedOperationException();
 	}
 

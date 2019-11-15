@@ -18,12 +18,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import org.agnitas.util.EmmCalendar;
 import org.apache.log4j.Logger;
+
+import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class ComBirtReportRecipientSettings extends ComBirtReportSettings {
     @SuppressWarnings("unused")
@@ -101,7 +102,7 @@ public class ComBirtReportRecipientSettings extends ComBirtReportSettings {
                 stopDate = getReportSettingAsString(BirtReportSettingsUtils.END_DATE);
                 break;
             case DATE_RANGE_PREDEFINED:
-                final SimpleDateFormat reportDateFormat = BirtReportSettingsUtils.REPORT_DATE_FORMAT;
+                final SimpleDateFormat reportDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT);
                 final Calendar calendar = new GregorianCalendar();
                 calendar.setTime(new Date());
                 stopDate = reportDateFormat.format(calendar.getTime());

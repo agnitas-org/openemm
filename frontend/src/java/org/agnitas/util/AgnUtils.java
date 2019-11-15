@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import javax.crypto.Cipher;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -83,14 +84,6 @@ import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 import javax.sql.DataSource;
 
-import bsh.Interpreter;
-import bsh.NameSpace;
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
-import com.agnitas.util.Version;
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.Company;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -110,6 +103,16 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
+import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import com.agnitas.util.Version;
+
+import bsh.Interpreter;
+import bsh.NameSpace;
 
 public class AgnUtils {
 
@@ -486,22 +489,6 @@ public class AgnUtils {
 		return a.compareTo(b);
 	}
 
-	public static int compareIgnoreCase(String a, String b) {
-		if (a == null || b == null) {
-			if (a != null) {
-				return +1;
-			}
-
-			if (b != null) {
-				return -1;
-			}
-
-			return 0;
-		}
-
-		return a.compareToIgnoreCase(b);
-	}
-
 	/**
 	 * Lower case a String and keep null values
 	 * Used only by BSH-Interpreter
@@ -675,16 +662,20 @@ public class AgnUtils {
     
     public static void saveWorkflowForwardParamsToSession(HttpServletRequest request, WorkflowParameters params, boolean override) {
 		HttpSession session = request.getSession(false);
+		saveWorkflowForwardParamsToSession(session, params, override);
+    }
+
+	public static void saveWorkflowForwardParamsToSession(HttpSession session, WorkflowParameters params, boolean override) {
 		try {
 			if (session == null) {
-                logger.error("no request session found for getAdminPreferences", new Exception());
-            } else {
-			    WorkflowParametersHelper.put(session, params, override);
+				logger.error("no request session found for getAdminPreferences", new Exception());
+			} else {
+				WorkflowParametersHelper.put(session, params, override);
 			}
-        } catch (Exception e) {
-            logger.error("Error while saving workflow forward params to session", e);
-        }
-    }
+		} catch (Exception e) {
+			logger.error("Error while saving workflow forward params to session", e);
+		}
+	}
 
 	public static boolean isUserLoggedIn(HttpServletRequest request) {
 		return getAdmin(request) != null;
@@ -719,7 +710,7 @@ public class AgnUtils {
 			if (admin == null) {
 				logger.error("AgnUtils.getZoneId: admin == null");
 			} else {
-				zone = ZoneId.of(admin.getAdminTimezone());
+				zone = TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId();
 			}
 		} catch (Exception e) {
 			logger.error("Error reading timezone information for current admin", e);
@@ -778,6 +769,7 @@ public class AgnUtils {
 	 * @return Value of property bshInterpreter.
 	 * @throws Exception
 	 */
+	 @Deprecated // TODO EMM-6543 remove (replacement exists)
 	public static Interpreter getBshInterpreter(int cID, int customerID, ApplicationContext con) throws JspException {
 		DataSource ds = (DataSource) con.getBean("dataSource");
 		Interpreter aBsh = new Interpreter();
@@ -1287,7 +1279,8 @@ public class AgnUtils {
 	public static String addUrlParameter(String url, String escapedParameterNameAndValue) throws UnsupportedEncodingException {
 		StringBuilder newUrl = new StringBuilder();
 
-		int hpos = url.indexOf('#');
+		// Find html link anchor but ignore agnHashTags
+		int hpos = indexOf(url, "#", "##");
 		if (hpos > -1) {
 			newUrl.append(url.substring(0, hpos));
 		} else {
@@ -1302,6 +1295,29 @@ public class AgnUtils {
 			newUrl.append(url.substring(hpos));
 		}
 		return newUrl.toString();
+	}
+	
+	public static int indexOf(String text, String searchString, String... ignoreStrings) {
+		int startIndex = 0;
+		while (startIndex >= 0) {
+			startIndex = text.indexOf(searchString, startIndex);
+			if (startIndex >= 0) {
+				boolean ignore = false;
+				if (ignoreStrings != null) {
+					for (String ignoreString : ignoreStrings) {
+						if (text.substring(startIndex).startsWith(ignoreString)) {
+							startIndex = startIndex + ignoreString.length();
+							ignore = true;
+							break;
+						}
+					}
+				}
+				if (!ignore) {
+					return startIndex;
+				}
+			}
+		}
+		return -1;
 	}
 
 	public static int getLineCountOfFile(File file) throws IOException {
@@ -1899,6 +1915,55 @@ public class AgnUtils {
 		}
 	}
 
+	public static boolean isPhoneNumberValid(CharSequence value) {
+		if (value == null || value.length() == 0) {
+			return false;
+		}
+
+		PhoneNumberToken previousToken = PhoneNumberToken.BEGIN;
+		boolean insideParentheses = false;
+		int digitsCount = 0;
+
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+
+			if (Character.isDigit(c)) {
+				digitsCount++;
+				previousToken = PhoneNumberToken.DIGIT;
+			} else if (c == '.' || c == '-' || c == '/') {
+				if (previousToken == PhoneNumberToken.DIGIT || previousToken == PhoneNumberToken.RPAREN) {
+					previousToken = PhoneNumberToken.SEPARATOR;
+				} else {
+					return false;
+				}
+			} else if (c == '(') {
+				if (insideParentheses) {
+					return false;
+				}
+
+				insideParentheses = true;
+				previousToken = PhoneNumberToken.LPAREN;
+			} else if (c == ')') {
+				if (previousToken == PhoneNumberToken.DIGIT && insideParentheses) {
+					insideParentheses = false;
+					previousToken = PhoneNumberToken.RPAREN;
+				} else {
+					return false;
+				}
+			} else if (c == '+') {
+				if (previousToken == PhoneNumberToken.BEGIN) {
+					previousToken = PhoneNumberToken.PLUS;
+				} else {
+					return false;
+				}
+			} else if (!Character.isWhitespace(c)) {
+				return false;
+			}
+		}
+
+		return !insideParentheses && digitsCount >= 3 && digitsCount < 20;
+	}
+
 	/**
 	 * Check if a given e-mail address is valid.
 	 * Notice that a {@code null} value is invalid address.
@@ -1962,7 +2027,6 @@ public class AgnUtils {
 		try {
 			return StringUtils.trimToEmpty(executeOsCommand("mysql", "-V"));
 		} catch (Exception e) {
-			logger.error("Cannot obtain Python SSL", e);
 			return "";
 		}
 	}
@@ -1971,23 +2035,22 @@ public class AgnUtils {
 		try {
 			return StringUtils.trimToEmpty(executeOsCommand("sqlplus", "-v"));
 		} catch (Exception e) {
-			logger.error("Cannot obtain Python SSL", e);
 			return "";
 		}
 	}
 
 	public static String getMailVersion() {
 		String sendmailVersion = getSendMailVersion();
-		if(StringUtils.isNotBlank(sendmailVersion)) {
+		if (StringUtils.isNotBlank(sendmailVersion)) {
 			return "Sendmail " + sendmailVersion;
+		} else {
+			String postfixVersion = getPostfixVersion();
+			if (StringUtils.isNotBlank(postfixVersion)) {
+				return "Postfix " + postfixVersion;
+			} else {
+				return "None";
+			}
 		}
-
-		String postfixVersion = getPostfixVersion();
-		if(StringUtils.isNotBlank(sendmailVersion)) {
-			return "Postfix " + postfixVersion;
-		}
-
-		return "None";
 	}
 
 	public static String getPostfixVersion() {
@@ -2027,12 +2090,14 @@ public class AgnUtils {
 	public static String getTomcatVersion() {
 		String version = "";
 		try {
-			String result = executeOsCommand("java", "-cp", "/opt/agnitas.com/software/tomcat/lib/catalina.jar", "org.apache.catalina.util.ServerInfo");
-
-			Pattern tomcatVersionPattern = Pattern.compile("Server number:[ ]*(\\d+\\.\\d+\\.\\d+\\.\\d+)");
-			Matcher tomcatVersionMatcher = tomcatVersionPattern.matcher(result);
-			if (tomcatVersionMatcher.find()) {
-				version = StringUtils.trimToEmpty(tomcatVersionMatcher.group(1));
+			if (new File("/opt/agnitas.com/software/tomcat/lib/catalina.jar").exists()) {
+				String result = executeOsCommand("java", "-cp", "/opt/agnitas.com/software/tomcat/lib/catalina.jar", "org.apache.catalina.util.ServerInfo");
+	
+				Pattern tomcatVersionPattern = Pattern.compile("Server number:[ ]*(\\d+\\.\\d+\\.\\d+\\.\\d+)");
+				Matcher tomcatVersionMatcher = tomcatVersionPattern.matcher(result);
+				if (tomcatVersionMatcher.find()) {
+					version = StringUtils.trimToEmpty(tomcatVersionMatcher.group(1));
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Cannot obtain tomcat version", e);
@@ -2057,12 +2122,11 @@ public class AgnUtils {
 		return "";
 	}
 
-	public static String getWkhtmlVersion() {
+	public static String getWkhtmlVersion(ConfigService configService) {
 		try {
-			String result = executeOsCommand("/opt/agnitas.com/software/wkhtmltox/bin/wkhtmltoimage", "-V");
+			String result = executeOsCommand(configService.getValue(ConfigValue.WkhtmlToImageToolPath), "-V");
 			return StringUtils.trimToEmpty(result);
 		} catch (Exception e) {
-			logger.error("Cannot obtain Wkhtml version", e);
 			return "";
 		}
 	}
@@ -2078,7 +2142,7 @@ public class AgnUtils {
 	
 	public static int getCompanyMaxRecipients(HttpServletRequest request) {
 		Company company = AgnUtils.getCompany(request);
-		if(company != null) {
+		if (company != null) {
 			return company.getMaxRecipients();
 		}
 		
@@ -2115,7 +2179,7 @@ public class AgnUtils {
 
 		return uniqueName;
     }
-    
+
     public static class TimeIgnoringComparator implements Comparator<Calendar> {
 		@Override
 		public int compare(Calendar c1, Calendar c2) {
@@ -2538,20 +2602,29 @@ public class AgnUtils {
 	}
 
 	/**
-	 * Check if a string starts with a stringpart caseinsensitive
-	 *
-	 * @param str
-	 * @param prefix
-	 * @return
+	 * @deprecated please use {@link org.apache.commons.lang.StringUtils#startsWithIgnoreCase(String, String)} instead.
 	 */
+	@Deprecated
 	public static boolean startsWithIgnoreCase(String str, String prefix) {
-		if (str == null || prefix == null) {
-			return (str == null && prefix == null);
-		} else if (prefix.length() > str.length()) {
-			return false;
-		} else {
-			return str.regionMatches(true, 0, prefix, 0, prefix.length());
+		return StringUtils.startsWithIgnoreCase(str, prefix);
+	}
+
+	public static boolean startsWith(byte[] data, byte[] prefix) {
+		if (data == null || prefix == null) {
+			return data == prefix;
 		}
+
+		if (data.length < prefix.length) {
+			return false;
+		}
+
+		for (int i = 0; i < prefix.length; i++) {
+			if (data[i] != prefix[i]) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits) {
@@ -2725,7 +2798,7 @@ public class AgnUtils {
 	 * @return the file extension with dot
 	 */
 	public static String makeFileExtension(String extension) {
-		if(StringUtils.isEmpty(extension) || StringUtils.startsWith(extension, ".")) {
+		if (StringUtils.isEmpty(extension) || StringUtils.startsWith(extension, ".")) {
 			return StringUtils.trimToEmpty(extension);
 		}
 
@@ -2930,7 +3003,6 @@ public class AgnUtils {
 				throw new Exception("Cannot find CkEditor directory: " + e.getMessage(), e);
 			}
 		} else {
-			logger.warn("Found ckEditorPath path in cache: '" + ckEditorPath + "'");
 			return ckEditorPath;
 		}
 	}
@@ -3188,7 +3260,7 @@ public class AgnUtils {
 	 * @param applicationVersion string like "16.07.123-hf77" or "16.07.123"
 	 */
 	public static Integer transformApplicationVersionToNumber(String applicationVersion){
-		if(isApplicationVersionValid(applicationVersion)){
+		if (isApplicationVersionValid(applicationVersion)){
 			int yearPart = Integer.parseInt(applicationVersion.substring(0,2));
 			int quarterPart = Integer.parseInt(applicationVersion.substring(3,5));
 			int commitPart = Integer.parseInt(applicationVersion.substring(6,9));
@@ -3202,7 +3274,7 @@ public class AgnUtils {
 	 * @param number between 100000 and 9999999
 	 */
 	public static String transformNumberToApplicationVersion(int number){
-		if(number < 100000 || number > 9999999){
+		if (number < 100000 || number > 9999999){
 			return null;
 		}
 		int commitPart = number % 1000;
@@ -3217,7 +3289,7 @@ public class AgnUtils {
 	 * Is application version looks like "16.07.123-hf77" or "16.07.123"
 	 */
 	public static boolean isApplicationVersionValid(String applicationVersion){
-		if(StringUtils.isEmpty(applicationVersion)){
+		if (StringUtils.isEmpty(applicationVersion)){
 			return false;
 		}
 		return APPLICATION_VERSION_PATTERN.matcher(applicationVersion).matches();
@@ -3536,8 +3608,7 @@ public class AgnUtils {
 				return IOUtils.toString(new InputStreamReader(p.getInputStream()));
 			}
 		} catch (Exception e) {
-			logger.error("Cannot execute OS command: " + StringUtils.join(commandAndParameters, ";\n"), e);
-			throw e;
+			throw new Exception("Cannot execute OS command: " + StringUtils.join(commandAndParameters, ";\n"), e);
 		}
 	}
 
@@ -3579,4 +3650,14 @@ public class AgnUtils {
 			return filename + "_" + index;
 		}
 	}
+
+	public static String boolToString(final boolean checkedValue, final String trueValue, final String falseValue){
+		return checkedValue ? trueValue : falseValue;
+	}
+
+	public static String boolToString(final boolean checkedValue){
+		return boolToString(checkedValue, "checked", "unchecked");
+	}
+
+	private enum PhoneNumberToken { BEGIN, PLUS, DIGIT, SEPARATOR, LPAREN, RPAREN }
 }

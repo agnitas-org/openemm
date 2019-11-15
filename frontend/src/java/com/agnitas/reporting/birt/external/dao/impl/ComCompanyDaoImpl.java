@@ -10,11 +10,9 @@
 
 package com.agnitas.reporting.birt.external.dao.impl;
 
-import java.util.List;
-import java.util.Map;
-
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
@@ -24,60 +22,14 @@ public class ComCompanyDaoImpl extends BaseDaoImpl implements ComCompanyDao {
 
 	@Override
 	public boolean hasDeepTrackingTables(@VelocityCheck int companyID) {
-		if (isOracleDB()) {
-			try {
-				int valNumTbl = selectInt(logger, "SELECT COUNT(table_name) FROM user_tables WHERE LOWER(table_name) = 'rdirlog_" + companyID + "_val_num_tbl'");
-				if (valNumTbl == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
-
-			try {
-				int valAlphaTbl = selectInt(logger, "SELECT COUNT(table_name) FROM user_tables WHERE LOWER(table_name) = 'rdirlog_" + companyID + "_val_alpha_tbl'");
-				if (valAlphaTbl == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
-
-			try {
-				int extLinkTbl = selectInt(logger, "SELECT COUNT(table_name) FROM user_tables WHERE LOWER(table_name) = 'rdirlog_" + companyID + "_ext_link_tbl'");
-				if (extLinkTbl == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
-		} else {
-			try {
-				List<Map<String, Object>> existList = select(logger, "SHOW TABLES LIKE 'rdirlog_" + companyID + "_val_num_tbl'");
-				if (existList.size() == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
-
-			try {
-				List<Map<String, Object>> existList = select(logger, "SHOW TABLES LIKE 'rdirlog_" + companyID + "_val_alpha_tbl'");
-				if (existList.size() == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
-
-			try {
-				List<Map<String, Object>> existList = select(logger, "show tables like 'rdirlog_" + companyID + "_ext_link_tbl'");
-				if (existList.size() == 0) {
-					return false;
-				}
-			} catch (Exception e) {
-				logger.error("Error:" + e, e);
-			}
+		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
+			return false;
+		}
+		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
+			return false;
+		}
+		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
+			return false;
 		}
 
 		return true;

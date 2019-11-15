@@ -15,6 +15,9 @@ import javax.servlet.jsp.JspException;
 import org.agnitas.target.TargetRepresentation;
 import org.springframework.context.ApplicationContext;
 
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
+
 import bsh.Interpreter;
 
 /**
@@ -46,7 +49,11 @@ public interface ComTarget extends TargetLight {
      * Getter for property customerInGroup.
      * 
      * @return Value of property customerInGroup.
+     * 
+     * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
+     * @see RecipientTargetGroupMatcher
      */
+    @Deprecated
     boolean isCustomerInGroup(Interpreter interpreter);
 
      /**
@@ -54,7 +61,11 @@ public interface ComTarget extends TargetLight {
      * 
      * @return Value of property customerInGroup.
      * @throws JspException 
+     * 
+     * @see ComTargetService#createRecipientTargetGroupMatcher(int, int)
+     * @see RecipientTargetGroupMatcher
      */
+    @Deprecated
     boolean isCustomerInGroup(int customerID, ApplicationContext con) throws JspException;
 
 
@@ -77,22 +88,22 @@ public interface ComTarget extends TargetLight {
     @Deprecated
     void setTargetStructure(TargetRepresentation targetStructure);
 
-	public boolean isAdminTestDelivery();
-	public void setAdminTestDelivery( boolean adminTestDelivery);
+	boolean isAdminTestDelivery();
+	void setAdminTestDelivery( boolean adminTestDelivery);
 
 	/**
 	 * Set EQL representation of target group.
 	 * 
 	 * @param eql EQL representation of target group
 	 */
-	public void setEQL(String eql);
+	void setEQL(String eql);
 	
 	/**
 	 * Returns EQL representation of target group.
 	 * 
 	 * @return EQL representation of target group
 	 */
-	public String getEQL();
+	String getEQL();
 	
 	/**
 	 * Set flag, if target group is simple structured (and therefore visualizable with
@@ -100,22 +111,14 @@ public interface ComTarget extends TargetLight {
 	 * 
 	 * @param simpleStructured true, if structure of target group is simple
 	 */
-	public void setSimpleStructured(boolean simpleStructured);
+	void setSimpleStructured(boolean simpleStructured);
 	
 	/**
 	 * Returns, if target group is simple structured and visualizable with legacy editor.
 	 * 
 	 * @return true, if target group is simple structured
 	 */
-	public boolean isSimpleStructured();
-    
-    /**
-     * Sets validity flag of target group.
-     * 
-     * @param valid true, if target group is valid.
-     * 
-     * @see #isValid()
-     */
-    public void setValid(boolean valid);
+	boolean isSimpleStructured();
+
 
 }

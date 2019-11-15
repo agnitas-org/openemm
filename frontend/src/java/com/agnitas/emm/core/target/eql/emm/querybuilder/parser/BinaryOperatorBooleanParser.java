@@ -21,7 +21,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderHelper;
 public class BinaryOperatorBooleanParser extends GenericEqlNodeParser<BinaryOperatorBooleanEqlNode> {
 
     @Override
-    public QueryBuilderGroupNode parse(BinaryOperatorBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    public QueryBuilderGroupNode parse(BinaryOperatorBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         String condition = QueryBuilderHelper.booleanEqlOperatorToQueryBuilderString(node.getOperator());
         QueryBuilderGroupNode newGroupNode = groupNode;
         if (groupNode.getCondition() == null) {
@@ -36,8 +36,8 @@ public class BinaryOperatorBooleanParser extends GenericEqlNodeParser<BinaryOper
         EqlNodeParser<?> leftParser = configuration.getParserMapping().get(left.getClass()),
                 rightParser = configuration.getParserMapping().get(right.getClass());
         if (leftParser != null && rightParser != null) {
-            leftParser.parse(left, newGroupNode, unknownProfileFields);
-            rightParser.parse(right, newGroupNode, unknownProfileFields);
+            leftParser.parse(left, newGroupNode, profileFields);
+            rightParser.parse(right, newGroupNode, profileFields);
             return groupNode;
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable parser for node " + node);

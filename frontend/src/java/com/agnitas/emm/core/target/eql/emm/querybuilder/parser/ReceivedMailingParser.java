@@ -20,7 +20,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class ReceivedMailingParser extends GenericEqlNodeParser<ReceivedMailingRelationalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(ReceivedMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(ReceivedMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         groupNode.addRule(new QueryBuilderRuleNode("received mailing", "equal", node.getMailingId()));
         return groupNode;
     }

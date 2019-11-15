@@ -16,26 +16,15 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.LinkService.ErrorneousLink;
-import com.agnitas.emm.core.LinkService.LinkScanResult;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.messages.I18nString;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.TrackableLink;
@@ -56,6 +45,20 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.LinkService.ErrorneousLink;
+import com.agnitas.emm.core.LinkService.LinkScanResult;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.messages.I18nString;
+
 public class ComMailingImpl extends MailingImpl implements ComMailing {
 	
 	/** The logger. */
@@ -67,6 +70,8 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 	protected int splitID;
 	
 	private String statusmailRecipients;
+	
+	private boolean statusmailOnErrorOnly;
 
     protected Date planDate;
     
@@ -316,6 +321,16 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 	}
 
 	@Override
+	public boolean isStatusmailOnErrorOnly() {
+		return statusmailOnErrorOnly;
+	}
+
+	@Override
+	public void setStatusmailOnErrorOnly(boolean statusmailOnErrorOnly) {
+		this.statusmailOnErrorOnly = statusmailOnErrorOnly;
+	}
+
+	@Override
 	public String getFollowUpType() {
 		return followUpType;
 	}
@@ -505,4 +520,31 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 	public void setMailingContentType(MailingContentType mailingContentType) {
 		this.mailingContentType = mailingContentType;
 	}
+
+	@Override
+	public final Set<Integer> getAllReferencedTargetGroups() {
+		final Set<Integer> targetIds = new HashSet<>();
+		
+		// Collect target groups from target expression
+		if(this.getTargetGroups() != null) {
+			targetIds.addAll(this.getTargetGroups());
+		}
+	
+		// Collect target groups from components
+		for(final MailingComponent mailingComponent : this.getComponents().values()) {
+			targetIds.add(mailingComponent.getTargetID());
+		}
+		
+		// Collect target groups from content blocks
+		for(final DynamicTag dynamicTag : this.dynTags.values()) {
+			targetIds.addAll(dynamicTag.getAllReferencedTargetGroups());
+		}
+		
+		// Remove ID 0 (may be added if something has no target group set 
+		targetIds.remove(0);
+
+		return targetIds;
+	}
+	
+	
 }

@@ -19,9 +19,9 @@ import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 public final class BinaryOperatorBooleanEqlNode extends AbstractBooleanEqlNode {
 
 	/**
-	 * Enum of all boolean operators.
+	 * Enum of all boolean infix operators.
 	 */
-	public enum Operator {
+	public enum InfixOperator {
 		/** AND operator. */
 		AND,
 		
@@ -36,7 +36,7 @@ public final class BinaryOperatorBooleanEqlNode extends AbstractBooleanEqlNode {
 	private final AbstractBooleanEqlNode right;
 	
 	/** Binary operator. */
-	private final Operator operator;
+	private final InfixOperator operator;
 
 	/**
 	 * Create a new node.
@@ -45,7 +45,7 @@ public final class BinaryOperatorBooleanEqlNode extends AbstractBooleanEqlNode {
 	 * @param operator binary operator
 	 * @param right sub-tree on right side of operator
 	 */
-	public BinaryOperatorBooleanEqlNode(final AbstractBooleanEqlNode left, final Operator operator, final AbstractBooleanEqlNode right) {
+	public BinaryOperatorBooleanEqlNode(final AbstractBooleanEqlNode left, final InfixOperator operator, final AbstractBooleanEqlNode right) {
 		this.left = left;
 		this.operator = operator;
 		this.right = right;
@@ -74,7 +74,7 @@ public final class BinaryOperatorBooleanEqlNode extends AbstractBooleanEqlNode {
 	 * 
 	 * @return operator
 	 */
-	public final Operator getOperator() {
+	public final InfixOperator getOperator() {
 		return operator;
 	}
 

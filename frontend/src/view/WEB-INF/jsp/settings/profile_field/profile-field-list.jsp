@@ -82,7 +82,7 @@
                         <bean:message key="settings.fieldType.${fields.dataType}"/>
                     </display:column>
 
-                    <display:column headerClass="profile_fields_length_head" class="profile_fields_length" titleKey="Length" sortable="true" sortProperty="dataTypeLength">
+                    <display:column headerClass="profile_fields_length_head" class="profile_fields_length" titleKey="settings.Length" sortable="true" sortProperty="dataTypeLength">
                         <c:if test="${fields.dataTypeLength > 0}">
                             ${fields.dataTypeLength}
                         </c:if>

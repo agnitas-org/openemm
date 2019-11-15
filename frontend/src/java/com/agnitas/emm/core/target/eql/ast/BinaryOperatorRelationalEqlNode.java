@@ -19,9 +19,9 @@ import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEqlNode {
 
 	/**
-	 * Enum of all relational operators.
+	 * Enum of all relational infix operators.
 	 */
-	public enum Operator {
+	public enum InfixOperator {
 		/** Equality. */
 		EQ, 
 		
@@ -38,26 +38,14 @@ public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEql
 		LEQ,
 
 		/** Greater than or equals. */
-		GEQ,
-
-		/** Modulus operator. Finds the remainder of a divided.*/
-		MOD,
-
-		/** String matching operator providing wildcard support */
-		LIKE,
-
-		/** String matching operator (substring check) */
-		CONTAINS,
-
-		/** String matching operator (prefix check) */
-		STARTS_WITH
+		GEQ
 	}
 	
 	/** Sub-tree on left side of operator. */
 	private final AbstractExpressionalEqlNode left;
 	
 	/** Binary operator. */
-	private final Operator operator;
+	private final InfixOperator operator;
 	
 	/** Sub-tree on right side of operator. */
 	private final AbstractExpressionalEqlNode right;
@@ -73,7 +61,7 @@ public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEql
 	 * @param right sub-tree on right side of operator
 	 * @param dateFormat date format used for date comparison
 	 */
-	public BinaryOperatorRelationalEqlNode(final AbstractExpressionalEqlNode left, final Operator operator, final AbstractExpressionalEqlNode right, final String dateFormat) {
+	public BinaryOperatorRelationalEqlNode(final AbstractExpressionalEqlNode left, final InfixOperator operator, final AbstractExpressionalEqlNode right, final String dateFormat) {
 		this.left = left;
 		this.operator = operator;
 		this.right = right;
@@ -94,7 +82,7 @@ public final class BinaryOperatorRelationalEqlNode extends AbstractRelationalEql
 	 * 
 	 * @return operator
 	 */
-	public final Operator getOperator() {
+	public final InfixOperator getOperator() {
 		return operator;
 	}
 

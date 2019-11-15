@@ -23,7 +23,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 
 /**
  * Connect: Connect to a database Table
@@ -35,12 +36,13 @@ public class CustomerMatchTargetTag extends TagSupport implements BodyTag {
 	/** Serial version UID. */
     private static final long serialVersionUID = 5503535991822272855L;
 	
+    /** The logger. */
 	private static final transient Logger logger = Logger.getLogger(CustomerMatchTargetTag.class);
 	
 	private BodyContent bodyContent = null;
     
-	protected int customerID;
-    protected int targetID;
+	private int customerID;
+    private int targetID;
     
     @Override
     public void	doInitBody() {
@@ -78,15 +80,19 @@ public class CustomerMatchTargetTag extends TagSupport implements BodyTag {
         if (targetID == 0) {
             return EVAL_BODY_BUFFERED;
         } else {
-            ApplicationContext aContext = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext());
-            ComTargetDao tDao = (ComTargetDao) aContext.getBean("TargetDao");
-	        ComTarget aTarget = tDao.getTarget(targetID, getCompanyID());
+            final ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext());
+	        final ComTargetService targetService = applicationContext.getBean("targetService", ComTargetService.class);
 	        
-	        if (aTarget == null) {
-	        	return EVAL_BODY_BUFFERED;
-	        } else if (aTarget.isCustomerInGroup(this.customerID, aContext)) {
-            	return EVAL_BODY_BUFFERED;
-	        } else {
+	        try {
+		        final RecipientTargetGroupMatcher matcher = targetService.createRecipientTargetGroupMatcher(customerID, getCompanyID());
+	        	final ComTarget target = targetService.getTargetGroup(targetID, getCompanyID());
+	        	
+	        	return matcher.isInTargetGroup(target)
+	        			? EVAL_BODY_BUFFERED
+	        			: SKIP_BODY;
+	        } catch(final Exception e) {
+	        	logger.warn("Error checking if recipients matches target group", e);
+	        	
 	        	return SKIP_BODY;
 	        }
         }

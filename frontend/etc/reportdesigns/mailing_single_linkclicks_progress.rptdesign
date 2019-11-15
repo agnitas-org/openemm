@@ -110,20 +110,6 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
-        <scalar-parameter name="uid" id="424">
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
-            </simple-property-list>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
         <scalar-parameter name="startDate" id="425">
             <property name="valueType">static</property>
             <property name="isRequired">false</property>
@@ -1367,12 +1353,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -1984,12 +1964,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -2851,12 +2825,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -3468,12 +3436,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -4335,12 +4297,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -4952,12 +4908,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -5819,12 +5769,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -6436,12 +6380,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -7303,12 +7241,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -7920,12 +7852,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -8787,12 +8713,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -9404,12 +9324,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -10271,12 +10185,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -10888,12 +10796,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -11755,12 +11657,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -12372,12 +12268,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -13239,12 +13129,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -13856,12 +13740,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -14723,12 +14601,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;/simple-property-list>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;simple-property-list name=&quot;expression&quot;>
-                &lt;value type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/value>
-            &lt;/simple-property-list>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;simple-property-list name=&quot;expression&quot;>
                 &lt;value type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/value>
@@ -15340,12 +15212,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>

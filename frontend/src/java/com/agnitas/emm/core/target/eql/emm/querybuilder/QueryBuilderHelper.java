@@ -38,9 +38,13 @@ public class QueryBuilderHelper {
 		switch(operator) {
 		case EQ:				return "=";
 		case GEQ:				return ">=";
-		case GT:				return ">";
+		case GT:
+		case AFTER:
+			return ">";
 		case LEQ:				return "<=";
-		case LT:				return "<";
+		case LT:
+		case BEFORE:
+			return "<";
 		case NEQ:				return "<>";
 		
 		default:
@@ -80,7 +84,16 @@ public class QueryBuilderHelper {
 		return operator;
 	}
 
-	public static final String relationalEqlOperatorToQueryBuilderString(final BinaryOperatorRelationalEqlNode.Operator eqlOperator) throws EqlToQueryBuilderConversionException {
+	public static final String relationalEqlOperatorToQueryBuilderString(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
+		return relationalEqlOperatorToQueryBuilder(eqlOperator).queryBuilderName();
+	}
+
+	public static final String relationalEqlOperatorToQueryBuilderString(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
+		return relationalEqlOperatorToQueryBuilder(eqlOperator, dataType).queryBuilderName();
+	}
+
+
+	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator) throws EqlToQueryBuilderConversionException {
 		final QueryBuilderOperator operator = QueryBuilderOperator.findByEqlOperator(eqlOperator);
 
 		if(operator == null) {
@@ -92,11 +105,31 @@ public class QueryBuilderHelper {
 			
 			throw new EqlToQueryBuilderConversionException(msg);
 		} else {
-			return operator.queryBuilderName();
+			return operator;
+		}
+	}
+	
+	public static final QueryBuilderOperator relationalEqlOperatorToQueryBuilder(final BinaryOperatorRelationalEqlNode.InfixOperator eqlOperator, DataType dataType) throws EqlToQueryBuilderConversionException {
+		if (dataType == null) {
+			return relationalEqlOperatorToQueryBuilder(eqlOperator);
+		}
+		
+		final QueryBuilderOperator operator = QueryBuilderOperator.findByEqlOperator(eqlOperator, dataType);
+
+		if(operator == null) {
+			final String msg = String.format("Binary relational operator %s not supported by type %s", eqlOperator, dataType.name());
+			
+			if(logger.isInfoEnabled()) {
+				logger.info(msg);
+			}
+			
+			throw new EqlToQueryBuilderConversionException(msg);
+		} else {
+			return operator;
 		}
 	}
 
-	public static final String booleanEqlOperatorToQueryBuilderString(final BinaryOperatorBooleanEqlNode.Operator operator) throws EqlToQueryBuilderConversionException {
+	public static final String booleanEqlOperatorToQueryBuilderString(final BinaryOperatorBooleanEqlNode.InfixOperator operator) throws EqlToQueryBuilderConversionException {
 		final QueryBuilderCondition condition = QueryBuilderCondition.findByEqlOperator(operator);
 
 		if(condition == null) {

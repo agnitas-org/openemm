@@ -63,7 +63,7 @@
 		<constructor-arg ref="EqlSqlDialect" />
 	</bean>
 	
-	<bean id="SqlCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.DefaultCommonSqlCodeGeneratorCallbackFactory">
+	<bean id="SqlCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.sql.DefaultCommonSqlCodeGeneratorCallbackFactory">
 		<constructor-arg ref="ProfileFieldResolverFactory" />
 		<constructor-arg ref="EqlMailingIdValidator" />
 		<constructor-arg ref="MailingTypeResolverFactory" />
@@ -240,7 +240,7 @@
 		<property name="targetDao" ref="TargetDao" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="eqlFacade" ref="EqlFacade" />
-		<property name="mailinglistService" ref="mailinglistService"/>
+		<property name="mailinglistService" ref="MailinglistService"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 	</bean>
 	

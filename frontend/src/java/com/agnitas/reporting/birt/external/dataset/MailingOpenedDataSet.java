@@ -217,8 +217,8 @@ public class MailingOpenedDataSet extends BIRTDataSet {
         String query = "";
         query = "select * from (select count(*) as customer, substr(cust.email,instr(cust.email, '@')) as domain "
                 + " from customer_<COMPANYID>_tbl cust "
-                + " where cust.customer_id in (select onepix.customer_id from onepixellog_<COMPANYID>_tbl onepix where onepix.company_id = <COMPANYID> "
-                + " and onepix.mailing_id = <MAILINGID> ) "
+                + " where cust.customer_id in (select onepix.customer_id from onepixellog_<COMPANYID>_tbl onepix where "
+                + " onepix.mailing_id = <MAILINGID> ) "
                 + " group by substr(cust.email,instr(cust.email, '@')) order by count(*) desc) ";
         if (isOracleDB()) {
             query = query + " where rownum <= <TOP> ";
@@ -250,8 +250,7 @@ public class MailingOpenedDataSet extends BIRTDataSet {
 	}
 	
 	private String getTotalOpenedQueryTemplate() {
-		return "select '<TOTAL>' as targetgroup, count(customer_id) as total from onepixellog_<COMPANYID>_tbl onepix where onepix.mailing_id=<MAILINGID> "
-				+ " and onepix.company_id=<COMPANYID> ";
+		return "select '<TOTAL>' as targetgroup, count(customer_id) as total from onepixellog_<COMPANYID>_tbl onepix where onepix.mailing_id=<MAILINGID> ";
 	}
 	
 	private String getTargetgroupOpenedQuery(String targetgroup, @VelocityCheck int companyID, int mailingID, String targetSQL) {
@@ -266,7 +265,6 @@ public class MailingOpenedDataSet extends BIRTDataSet {
 	private String getTargetgroupOpenedQueryTemplate() {
 		return "select '<TARGETGROUP>' as targetgroup, count(cust.customer_id) as total from "
 				+ " onepixellog_<COMPANYID>_tbl onepix  join customer_<COMPANYID>_tbl cust on (onepix.customer_id=cust.customer_id)"
-			  +" where onepix.mailing_id=<MAILINGID> and onepix.company_id=<COMPANYID> and "
-			  +	" (<TARGETSQL>) ";
+			  +" where onepix.mailing_id=<MAILINGID> and (<TARGETSQL>) ";
 	}
 }

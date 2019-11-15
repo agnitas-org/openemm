@@ -33,6 +33,40 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponentType;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.GuiConstants;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.SafeString;
+import org.agnitas.web.DispatchBaseAction;
+import org.agnitas.web.forms.FormUtils;
+import org.agnitas.web.forms.WorkflowParameters;
+import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.ActionRedirect;
+import org.springframework.beans.factory.annotation.Required;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DeliveryStat;
@@ -73,39 +107,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 
 import net.sf.json.JSONObject;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.SafeString;
-import org.agnitas.web.DispatchBaseAction;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.WorkflowParameters;
-import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.action.ActionRedirect;
-import org.springframework.beans.factory.annotation.Required;
 
 public class ComWorkflowAction extends DispatchBaseAction {
     private static final transient Logger logger = Logger.getLogger(ComWorkflowAction.class);
@@ -235,7 +236,6 @@ public class ComWorkflowAction extends DispatchBaseAction {
             if (validateStatusTransition(existingStatus, newStatus, errors)) {
                 workflowService.changeWorkflowStatus(existingWorkflow.getWorkflowId(), existingWorkflow.getCompanyId(), newStatus);
             }
-
             writeWorkflowStatusChangeLog(newWorkflow, existingWorkflow, admin);
         }
 
@@ -246,6 +246,7 @@ public class ComWorkflowAction extends DispatchBaseAction {
         }
 
         saveMessages(request, messages);
+        ComWorkflowAction.updateForwardParameters(request, false);
 
         return view(mapping, form, request, response);
     }
@@ -272,6 +273,7 @@ public class ComWorkflowAction extends DispatchBaseAction {
                 List<UserAction> userActions = new ArrayList<>();
                 workflowService.deleteWorkflowTargetConditions(admin.getCompanyID(), workflowId);
                 if (workflowActivationService.activateWorkflow(workflowId, admin, testing, messages, errors, userActions)) {
+
                     for (UserAction action : userActions) {
                         writeUserActivityLog(admin, action);
                     }
@@ -640,7 +642,7 @@ public class ComWorkflowAction extends DispatchBaseAction {
         String jsessionid = request.getSession().getId();
         String workflowId = request.getParameter("workflowId");
         String showStatistics = request.getParameter("showStatistics");
-        String hostUrl = configService.getValue(ConfigValue.SystemUrl);
+        String hostUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
         String url = hostUrl + "/workflow.do;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&method=viewOnlyElements&showStatistics=" + showStatistics;
 
         String workflowName = workflowService.getWorkflow(Integer.parseInt(workflowId), AgnUtils.getCompanyID(request)).getShortname();
@@ -702,8 +704,11 @@ public class ComWorkflowAction extends DispatchBaseAction {
     }
 
     public ActionForward bulkDeleteConfirm(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        checkAmountOfBulkIds((ComWorkflowForm) form, request);
-        return mapping.findForward("bulkDeleteConfirm");
+        if (validateSelectedItems((ComWorkflowForm) form, request)) {
+            return mapping.findForward("bulkDeleteConfirm");
+        } else {
+            return mapping.findForward("messages");
+        }
     }
 
     public ActionForward bulkDelete(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -739,8 +744,11 @@ public class ComWorkflowAction extends DispatchBaseAction {
     }
 
 	public ActionForward bulkDeactivateConfirm(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        checkAmountOfBulkIds((ComWorkflowForm) form, request);
-        return mapping.findForward("bulkDeactivateConfirm");
+        if (validateSelectedItems((ComWorkflowForm) form, request)) {
+            return mapping.findForward("bulkDeactivateConfirm");
+        } else {
+            return mapping.findForward("messages");
+        }
     }
 
     public ActionForward bulkDeactivate(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -783,14 +791,14 @@ public class ComWorkflowAction extends DispatchBaseAction {
         return list(mapping, form, request, response);
     }
 
-    private void checkAmountOfBulkIds(ComWorkflowForm form, HttpServletRequest request) {
+    private boolean validateSelectedItems(ComWorkflowForm form, HttpServletRequest request) {
         if (form.getBulkIds().size() == 0) {
-            ActionMessages messages = new ActionMessages();
             ActionMessages errors = new ActionMessages();
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("bulkAction.nothing.workflow"));
-            messages.add(errors);
-            saveMessages(request, messages);
+            saveErrors(request, errors);
+            return false;
         }
+        return true;
     }
 
 	public ActionForward getMailingLinks(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -1327,28 +1335,24 @@ public class ComWorkflowAction extends DispatchBaseAction {
     }
 
     private String getIconNameByTypeId(WorkflowIcon icon) {
-        String res;
-
         switch (icon.getType()) {
-            case WorkflowIconType.Constants.START_ID: res = WorkflowIconType.Constants.START_VALUE; break;
-            case WorkflowIconType.Constants.STOP_ID: res = WorkflowIconType.Constants.STOP_VALUE; break;
-            case WorkflowIconType.Constants.DECISION_ID: res = WorkflowIconType.Constants.DECISION_VALUE; break;
-            case WorkflowIconType.Constants.DEADLINE_ID: res = WorkflowIconType.Constants.DEADLINE_VALUE; break;
-            case WorkflowIconType.Constants.PARAMETER_ID: res = WorkflowIconType.Constants.PARAMETER_VALUE; break;
-            case WorkflowIconType.Constants.REPORT_ID: res = WorkflowIconType.Constants.REPORT_VALUE; break;
-            case WorkflowIconType.Constants.RECIPIENT_ID: res = WorkflowIconType.Constants.RECIPIENT_VALUE; break;
-            case WorkflowIconType.Constants.ARCHIVE_ID: res = WorkflowIconType.Constants.ARCHIVE_VALUE; break;
-            case WorkflowIconType.Constants.FORM_ID: res = WorkflowIconType.Constants.FORM_VALUE; break;
-            case WorkflowIconType.Constants.MAILING_ID: res = WorkflowIconType.Constants.MAILING_VALUE; break;
-            case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID: res = WorkflowIconType.Constants.ACTION_BASED_MAILING_VALUE; break;
-            case WorkflowIconType.Constants.DATE_BASED_MAILING_ID: res = WorkflowIconType.Constants.DATE_BASED_MAILING_VALUE; break;
-            case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID: res = WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE; break;
-            case WorkflowIconType.Constants.IMPORT_ID: res = WorkflowIconType.Constants.IMPORT_VALUE; break;
-            case WorkflowIconType.Constants.EXPORT_ID: res = WorkflowIconType.Constants.EXPORT_VALUE; break;
+            case WorkflowIconType.Constants.START_ID: return WorkflowIconType.Constants.START_VALUE;
+            case WorkflowIconType.Constants.STOP_ID: return WorkflowIconType.Constants.STOP_VALUE;
+            case WorkflowIconType.Constants.DECISION_ID: return WorkflowIconType.Constants.DECISION_VALUE;
+            case WorkflowIconType.Constants.DEADLINE_ID: return WorkflowIconType.Constants.DEADLINE_VALUE;
+            case WorkflowIconType.Constants.PARAMETER_ID: return WorkflowIconType.Constants.PARAMETER_VALUE;
+            case WorkflowIconType.Constants.REPORT_ID: return WorkflowIconType.Constants.REPORT_VALUE;
+            case WorkflowIconType.Constants.RECIPIENT_ID: return WorkflowIconType.Constants.RECIPIENT_VALUE;
+            case WorkflowIconType.Constants.ARCHIVE_ID: return WorkflowIconType.Constants.ARCHIVE_VALUE;
+            case WorkflowIconType.Constants.FORM_ID: return WorkflowIconType.Constants.FORM_VALUE;
+            case WorkflowIconType.Constants.MAILING_ID: return WorkflowIconType.Constants.MAILING_VALUE;
+            case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID: return WorkflowIconType.Constants.ACTION_BASED_MAILING_VALUE;
+            case WorkflowIconType.Constants.DATE_BASED_MAILING_ID: return WorkflowIconType.Constants.DATE_BASED_MAILING_VALUE;
+            case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID: return WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE;
+            case WorkflowIconType.Constants.IMPORT_ID: return WorkflowIconType.Constants.IMPORT_VALUE;
+            case WorkflowIconType.Constants.EXPORT_ID: return WorkflowIconType.Constants.EXPORT_VALUE;
             default: throw new RuntimeException("Unknown icon type: " + icon.getType());
         }
-
-        return res;
     }
 
     private boolean writeWorkflowRecipientMailingListLog(WorkflowRecipientImpl newIcon, WorkflowRecipientImpl oldIcon, ComAdmin admin, Workflow workflow) {
@@ -1438,7 +1442,7 @@ public class ComWorkflowAction extends DispatchBaseAction {
         if(mailingId == -1) {
         	response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
-        int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponent.TYPE_THUMBNAIL_IMAGE);
+        int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage.getCode());
 
         HttpUtils.responseJson(response, Integer.toString(componentId));
         return null;

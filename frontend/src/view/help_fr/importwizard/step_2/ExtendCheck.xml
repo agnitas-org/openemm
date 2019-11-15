@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title>V&eacute;rification &eacute;tendue</title>
+	<title><![CDATA[V&eacute;rification &eacute;tendue]]</title>
 	<content><![CDATA[L'exp&eacute;rience montre que certaines erreurs de frappe surviennent assez fr&eacute;quemment dans les adresses e-mail, par exemple @tonline.de (au lieu de @t-online.de) ou @aol.de (au lieu de @aol.com). Si la fonction V&eacute;rification &eacute;tendue de l'adresse e-mail a &eacute;t&eacute; activ&eacute;e, la fonction d'importation filtre les destinataires dont le champ d'adresse e-mail contient une telle erreur de frappe et les place dans un t&eacute;l&eacute;chargement destin&eacute; &agrave; la correction.]]></content>
 </HelpBalloon>

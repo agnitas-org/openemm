@@ -16,34 +16,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 import javax.annotation.Resource;
 
-import com.agnitas.beans.ComCampaign;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.ComMailingImpl;
-import com.agnitas.beans.impl.ComTargetImpl;
-import com.agnitas.beans.impl.ComTrackableLinkImpl;
-import com.agnitas.beans.impl.DynamicTagImpl;
-import com.agnitas.dao.ComCampaignDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
-import com.agnitas.json.JsonArray;
-import com.agnitas.json.JsonNode;
-import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonReader;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -61,6 +38,27 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ComCampaign;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.beans.impl.ComMailingImpl;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
+import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.json.JsonArray;
+import com.agnitas.json.JsonNode;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader;
 
 public class MailingImporterImpl extends ActionImporter implements MailingImporter {
 	/** The logger. */
@@ -102,7 +100,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean importGridTemplateAllowed, boolean checkIsTemplate, boolean isGrid) throws Exception {
-		Set<String> warningKeys = new HashSet<>();
+		Map<String, Object[]> warnings = new HashMap<>();
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
 			
@@ -122,7 +120,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			
 			if (!jsonObject.containsPropertyKey("mailingtype")) {
 				logger.error("Data does not contain mailing data (This may be some mailing template data)");
-				return ImportResult.builder().setSuccess(false).setErrorKeys("error.mailing.import").build();
+				return ImportResult.builder().setSuccess(false).addError("error.mailing.import").build();
 			}
 			
 			boolean isTemplate = importAsTemplate;
@@ -130,16 +128,16 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				isTemplate = jsonObject.get("is_template") != null && (Boolean) jsonObject.get("is_template");
 			}
 			
-			Map<Integer, Integer> targetIdMappings = importTargets(companyID, jsonObject, warningKeys);
-			int importedMailingID = importMailingData(companyID, isTemplate, shortName, description, warningKeys, jsonObject, actionIdMappings, targetIdMappings);
+			Map<Integer, Integer> targetIdMappings = importTargets(companyID, jsonObject, warnings);
+			int importedMailingID = importMailingData(companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings);
 			if (importedMailingID <= 0) {
 				logger.error("Cannot save mailing");
-				return ImportResult.builder().setErrorKeys("error.mailing.import").build();
+				return ImportResult.builder().addError("error.mailing.import").build();
 			} else {
 				return ImportResult.builder().setSuccess(true)
 						.setMailingID(importedMailingID)
 						.setIsTemplate(importAsTemplate)
-						.addWarningKeys(warningKeys).build();
+						.addWarnings(warnings).build();
 			}
 		} catch (Exception e) {
 			logger.error("Error in mailing import: " + e.getMessage(), e);
@@ -147,7 +145,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 	}
 
-	protected int importMailingData(int companyID, boolean importAsTemplate, String shortName, String description, Set<String> warningKeys, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
+	protected int importMailingData(int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
 		ComMailing mailing = new ComMailingImpl();
 		mailing.setCompanyID(companyID);
 		
@@ -196,7 +194,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 
 		if (jsonObject.containsPropertyKey("open_action_id")) {
 			mailing.setOpenActionID(actionIdMappings.get(jsonObject.get("open_action_id")));
-			warningKeys.add("warning.mailing.import.action");
+			warnings.put("warning.mailing.import.action", null);
 		}
 
 		if (jsonObject.containsPropertyKey("click_action_id")) {
@@ -210,7 +208,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			if (campaign != null && StringUtils.equals(campaignName, campaign.getShortname())) {
 				mailing.setCampaignID(campaignID);
 			} else {
-				warningKeys.add("warning.mailing.import.archive");
+				warnings.put("warning.mailing.import.archive", null);
 			}
 		}
 
@@ -327,7 +325,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		return mailingDao.saveMailing(mailing, false);
 	}
 
-	protected Map<Integer, Integer> importTargets(int companyID, JsonObject jsonObject, Set<String> warningKeys) {
+	protected Map<Integer, Integer> importTargets(int companyID, JsonObject jsonObject, Map<String, Object[]> warnings) {
 		Map<Integer, Integer> targetIdMappings = new HashMap<>();
 
 		targetIdMappings.put(0, 0);
@@ -335,25 +333,22 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		if (jsonObject.containsPropertyKey("targets")) {
 			for (Object targetObject : (JsonArray) jsonObject.get("targets")) {
 				JsonObject targetJsonObject = (JsonObject) targetObject;
-				ComTarget target = new ComTargetImpl();
-				target.setTargetName((String) targetJsonObject.get("name"));
-				target.setTargetSQL((String) targetJsonObject.get("sql"));
-				target.setEQL((String) targetJsonObject.get("eql"));
 
-				int targetID = 0;
 				// Look for an existing target item with the same data
-				for (TargetLight existingTargetLight : targetDao.getTargetLights(companyID, false, true, true)) {
-					ComTarget existingTarget = targetDao.getTarget(existingTargetLight.getId(), companyID);
-					if (StringUtils.equals(existingTarget.getTargetName(), target.getTargetName())
-						&& StringUtils.equals(existingTarget.getTargetSQL(), target.getTargetSQL())
-						&& StringUtils.equals(existingTarget.getEQL(), target.getEQL())) {
+				int targetID = 0;
+				
+				String targetName = (String) targetJsonObject.get("name");
+				String targetSQL = (String) targetJsonObject.get("sql");
+				for (ComTarget existingTarget : targetDao.getTargetByNameAndSQL(companyID, targetName, targetSQL, false, true, true)) {
+					String eql = (String) targetJsonObject.get("eql");
+					if (StringUtils.equals(existingTarget.getEQL(), eql)) {
 						targetID = existingTarget.getId();
 						break;
 					}
 				}
 
 				if (targetID == 0) {
-					warningKeys.add("warning.mailing.import.targetgroup");
+					warnings.put("warning.mailing.import.targetgroup", null);
 				}
 				targetIdMappings.put((Integer) targetJsonObject.get("id"), targetID);
 			}

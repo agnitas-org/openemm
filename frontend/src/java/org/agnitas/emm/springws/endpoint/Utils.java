@@ -10,15 +10,16 @@
 
 package org.agnitas.emm.springws.endpoint;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
+import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.security.core.GrantedAuthority;
@@ -52,10 +53,20 @@ public class Utils {
 		return object.getTextContent();
 	}
 	
+	public static final boolean isAuthorityGranted(final GrantedAuthority authority) {
+		final Collection<? extends GrantedAuthority> allAuthorities = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities();
+
+		return allAuthorities.contains(authority);
+	}
+	
 	public static int getUserCompany() {
-		Collection<? extends GrantedAuthority> authorities = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities();
-		// assume that authority looks like USER_{companyId}
-		return Integer.valueOf(new ArrayList<GrantedAuthority>(authorities).get(0).getAuthority().substring(5));
+		final Collection<? extends GrantedAuthority> allAuthorities = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities();
+		
+		final Optional<? extends GrantedAuthority> authorityOptional = allAuthorities.stream().filter(auth -> auth instanceof CompanyAuthority).findFirst();
+		
+		return authorityOptional.isPresent()
+				? Integer.valueOf(((CompanyAuthority) authorityOptional.get()).getCompanyID())
+				: -1;
 	}
 
     public static String getUserName(){

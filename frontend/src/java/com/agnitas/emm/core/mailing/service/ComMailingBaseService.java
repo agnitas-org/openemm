@@ -216,4 +216,6 @@ public interface ComMailingBaseService {
     boolean isContentBlank(String content, Map<String, DynamicTag> contentMap);
 
     void doTextTemplateFilling(Mailing mailing, ComAdmin admin, ActionMessages messages);
+    
+    ComMailing getMailing(@VelocityCheck int companyId, int mailingId);
 }

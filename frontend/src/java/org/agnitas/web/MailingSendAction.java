@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -38,7 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.mailing.service.MailingPriorityService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
@@ -48,6 +47,8 @@ import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -63,6 +64,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
+import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -81,6 +83,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.DynamicTag;
@@ -89,11 +92,12 @@ import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.commons.TranslatableMessageException;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingPriorityService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.util.ClassicTemplateGenerator;
@@ -146,7 +150,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     private MailingComponentDao mailingComponentDao;
     private LinkcheckService linkcheckService;
     private MailingFactory mailingFactory;
-    private MailinglistDao mailinglistDao;
+    protected MailinglistDao mailinglistDao;
     private TAGCheckFactory tagCheckFactory;
     private DataSource dataSource;
     protected PreviewFactory previewFactory;
@@ -158,8 +162,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     protected MailingService mailingService;
     private ComMailingDeliveryStatService deliveryStatService;
     protected MailingPriorityService mailingPriorityService;
-    
-    private LinkService linkService;
+    protected ComMailingBaseService mailingBaseService;
+    protected ConfigService configService;
     
     protected ApplicationContext applicationContext;
 
@@ -399,7 +403,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
                     loadMailing(aForm, req);
 
-                    if(validateActivation(req, aForm, errors)) {
+                    if(validateActivation(req, aForm, errors, messages)) {
                         try {
                             sendMailing(aForm, req, messages);
                         } finally {
@@ -425,7 +429,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                 		}
                     } else {
                 		aForm.setHasPreviewRecipient(false);
-                	}                    
+                	}
                     destination=mapping.findForward("preview_select");
                     break;
 
@@ -449,7 +453,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                             req.setAttribute("errorReport", agnTagException.getReport());
                             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.template.dyntags"));
                             destination = mapping.findForward("preview_errors");
-                        }							
+                        }
                     } else {
                         aForm.setHasPreviewRecipient(false);
                         destination = mapping.findForward("preview_errors");
@@ -726,7 +730,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 			}
 		default:
 			//do nothing
-			break;	
+			break;
 		}
 	}
 
@@ -758,14 +762,26 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 		aForm.setTransmissionRunning(mailingDao.isTransmissionRunning(aForm.getMailingID()));
 
 	}
-	
-	protected boolean validateActivation(HttpServletRequest req, MailingSendForm form, ActionMessages errors) {
-        if (WorkflowParametersHelper.isWorkflowDriven(req) &&
+
+	protected boolean validateActivation(HttpServletRequest request, MailingSendForm form, ActionMessages errors, ActionMessages messages) {
+        if (WorkflowParametersHelper.isWorkflowDriven(request) &&
                 (form.getMailingtype() == Mailing.TYPE_DATEBASED || form.getMailingtype() == Mailing.TYPE_ACTIONBASED)) {
             return false;
-        }
-        
-        return validateNeedTarget(form, errors);
+        } else {
+        	Tuple<Long, Long> calculatedMaxMailingSizes = mailingBaseService.calculateMaxSize((ComMailing) form.getMailing());
+        	Long approximateMaxSize = calculatedMaxMailingSizes.getSecond();
+        	long maximumMailingSizeAllowed = configService.getLongValue(ConfigValue.MailingSizeErrorThresholdBytes, AgnUtils.getCompanyID(request));
+        	if (approximateMaxSize > maximumMailingSizeAllowed) {
+        		errors.add("global", new ActionMessage("error.mailing.size.large", maximumMailingSizeAllowed));
+	        	return false;
+	        } else {
+	        	long warningMailingSize = configService.getLongValue(ConfigValue.MailingSizeWarningThresholdBytes, AgnUtils.getCompanyID(request));
+	        	if (approximateMaxSize > warningMailingSize) {
+	        		messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.size.large", warningMailingSize));
+	        	}
+		        return validateNeedTarget(request, form, errors);
+	        }
+		}
     }
     
     /**
@@ -784,6 +800,20 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
             return false;
         }
         return true;
+    }
+    
+    protected boolean validateNeedTarget(HttpServletRequest req, MailingSendForm form, ActionMessages errors) {
+        if (form.getTargetGroups() == null && form.getMailingtype() == Mailing.TYPE_DATEBASED) {
+			errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
+			return false;
+		}
+		
+		if (AgnUtils.getCompanyID(req) == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
+			errors.add("global", new ActionMessage("error.company.mailings.sent.forbidden"));
+			return false;
+		}
+		
+		return true;
     }
 
     /**
@@ -989,13 +1019,15 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     protected void logSendAction(ComAdmin admin, Date sendDate, Mailing aMailing, int sendActionType) {
         final Locale backendLocale = Locale.UK;
         final String mailingType = mailingTypeToString(aMailing.getMailingType());
-
-        switch (aMailing.getMailingType()) {
-            case Mailing.TYPE_ACTIONBASED:
+        MailingTypes type = MailingTypes.getByCode(aMailing.getMailingType());
+        assert(type != null);
+    
+        switch (type) {
+            case ACTION_BASED:
                 writeUserActivityLog(admin, "do activate mailing", "Mailing type: " + mailingType + ". " + getTriggerMailingDescription(aMailing));
                 break;
 
-            case Mailing.TYPE_DATEBASED:
+            case DATE_BASED:
                 writeUserActivityLog(admin, "do activate mailing", "Mailing type: " + mailingType + ", at: " + DateFormat.getTimeInstance(DateFormat.SHORT, backendLocale).format(sendDate) + ". " + getTriggerMailingDescription(aMailing));
                 break;
 
@@ -1426,8 +1458,9 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         this.mailingPriorityService = mailingPriorityService;
     }
 
-    public MailinglistDao getMailinglistDao() {
-        return mailinglistDao;
+    @Required
+    public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
+        this.mailingBaseService = mailingBaseService;
     }
 
     public void setMailinglistDao(MailinglistDao mailinglistDao) {
@@ -1498,7 +1531,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     
     
     protected void setSendButtonsControlAttributes(final HttpServletRequest request, final Mailing mailing) {
-    	request.setAttribute("CAN_SEND_WORLDMAILING", checkCanSendWorldMailing(request, mailing));    	
+    	request.setAttribute("CAN_SEND_WORLDMAILING", checkCanSendWorldMailing(request, mailing));
     }
     
     protected boolean checkCanSendWorldMailing(final HttpServletRequest request, final Mailing mailing) {
@@ -1530,14 +1563,14 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-	
-	@Required
-	public final void setLinkService(final LinkService service) {
-		this.linkService = Objects.requireNonNull(service, "LinkService is null");
-	}
  
 	@Required
     public void setBlacklistService(BlacklistService blacklistService) {
         this.blacklistService = blacklistService;
+    }
+
+    @Required
+    public void setConfigService(final ConfigService service) {
+        this.configService = service;
     }
 }

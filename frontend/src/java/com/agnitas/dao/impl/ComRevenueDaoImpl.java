@@ -74,11 +74,11 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 				// construct SQL-Statement, if no target ID is given, sql_target1 and sql_target2 are empty
 				String sql = "SELECT SUM(deep.NUM_PARAMETER) as total FROM rdirlog_" + companyId + "_val_num_tbl deep";
 				sql += sql_target1;
-				sql += " WHERE deep.mailing_id = ? AND deep.company_id = ? AND deep.page_tag = 'revenue'";
+				sql += " WHERE deep.mailing_id = ? AND deep.page_tag = 'revenue'";
 				sql += sql_target2;
 				
 				try {
-					List<Map<String, Object>> result = select(logger, sql, mailingId, companyId);
+					List<Map<String, Object>> result = select(logger, sql, mailingId);
 
 					// check if we have values in our List.
 					if (result.size() > 0) {
@@ -149,6 +149,6 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 	 * @return revenues
 	 */
 	private int getRdirLogCount(@VelocityCheck int companyId, int mailingId) {
-		return selectInt(logger, "SELECT COUNT(*) FROM rdirlog_" + companyId + "_val_num_tbl WHERE mailing_id = ? AND company_id = ? AND page_tag = 'revenue'", mailingId, companyId);
+		return selectInt(logger, "SELECT COUNT(*) FROM rdirlog_" + companyId + "_val_num_tbl WHERE mailing_id = ? AND page_tag = 'revenue'", mailingId);
 	}
 }

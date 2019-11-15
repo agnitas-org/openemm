@@ -27,15 +27,15 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class BinaryOperatorExpressionalParser extends GenericEqlNodeParser<BinaryOperatorExpressionalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(BinaryOperatorExpressionalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(BinaryOperatorExpressionalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractEqlNode left = node.getLeft(),
                 right = node.getRight();
         Map<Class<?>, EqlNodeParser<?>> map = configuration.getParserMapping();
         EqlNodeParser<?> leftParser = map.get(left.getClass()),
                 rightParser = map.get(right.getClass());
         if (leftParser != null && rightParser != null) {
-            leftParser.parse(left, groupNode, unknownProfileFields);
-            rightParser.parse(right, groupNode, unknownProfileFields);
+            leftParser.parse(left, groupNode, profileFields);
+            rightParser.parse(right, groupNode, profileFields);
             List<QueryBuilderBaseNode> rules = groupNode.getRules();
             QueryBuilderRuleNode rule = (QueryBuilderRuleNode) rules.get(rules.size() - 1);
             rules.remove(rule);

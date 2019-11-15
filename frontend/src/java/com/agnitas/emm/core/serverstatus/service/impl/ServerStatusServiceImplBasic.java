@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComServerStatusDao;
+import com.agnitas.emm.core.JavaMailAttachment;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
@@ -46,7 +47,7 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
 
-public class ServerStatusServiceImplBasic implements ServerStatusService {
+public abstract class ServerStatusServiceImplBasic implements ServerStatusService {
 	
 	private static final Logger logger = Logger.getLogger(ServerStatusService.class);
 	
@@ -55,9 +56,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
-	
-	private static final List<String> EDITABLE_CONFIG_VALUES = Collections.singletonList(ConfigValue.UseLatestCkEditor.toString());
-	
+		
 	@Autowired
 	private ServletContext servletContext;
 	
@@ -142,13 +141,13 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 		
 		// MySQL Client Version
 		String mysqlVersion = AgnUtils.getMysqlClientVersion();
-		if(StringUtils.isNotEmpty(mysqlVersion)) {
+		if (StringUtils.isNotEmpty(mysqlVersion)) {
 			status.put("mysql.client.version", mysqlVersion);
 		}
 		
 		// SqlPlus Client Version
 		String sqlPlusVersion = AgnUtils.getSqlPlusClientVersion();
-		if(StringUtils.isNotEmpty(sqlPlusVersion)) {
+		if (StringUtils.isNotEmpty(sqlPlusVersion)) {
 			status.put("sqlplus.client.version", sqlPlusVersion);
 		}
 
@@ -214,7 +213,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 		status.put("tomcat.version", StringUtils.defaultIfEmpty(AgnUtils.getTomcatVersion(), ERROR));
 		
 		// Wkhtml version
-		status.put("wkhtml.version", StringUtils.defaultString(AgnUtils.getWkhtmlVersion(), ERROR));
+		status.put("wkhtml.version", StringUtils.defaultString(AgnUtils.getWkhtmlVersion(configService), ERROR));
 		
 		// DKIM keys
 		try {
@@ -262,7 +261,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 			}
 
 			success = javaMailService.sendEmail(testMailAddress, subject, textMessage, htmlMessage,
-					new JavaMailService.MailAttachment("Tästfile.txt", "Täxt".getBytes("UTF-8"), "text/plain"));
+					new JavaMailAttachment("Tästfile.txt", "Täxt".getBytes("UTF-8"), "text/plain"));
 			
 			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", testMailAddress,
 					success ? "was successfully" : "wasn't successfully", fromAddress));
@@ -281,9 +280,9 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 		
 		try {
 			String subject = "Server status diagnosis data";
-			String textMessage = "Server status diagnosis data: " +
+			String textMessage = "Server status diagnosis data:\n " +
 					getStatusProperties().entrySet().stream()
-							.map(pair -> String.format("%s,%s", pair.getKey(), String.valueOf(pair.getValue())))
+							.map(pair -> String.format("%s: %s", pair.getKey(), String.valueOf(pair.getValue())))
 							.collect(Collectors.joining("\n"));
 
 			// Create same default from-address for result message as it will be used by javaMailService
@@ -292,7 +291,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 				fromAddress = System.getProperty("user.name") + "@" + AgnUtils.getHostName();
 			}
 
-			success = javaMailService.sendEmail(sendDiagnosisEmail, subject, textMessage, textMessage);
+			success = javaMailService.sendEmail(sendDiagnosisEmail, subject, textMessage, null);
 			
 			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", sendDiagnosisEmail,
 					success ? "was successfully" : "wasn't successfully", fromAddress));
@@ -306,18 +305,13 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	
 	@Override
     public boolean saveServerConfig(int companyId, String configName, String configValue, String description) {
-		if(companyId < 0 || !isServerConfigEditable(configName) || StringUtils.isBlank(configValue)) {
+		if (companyId < 0 || !configService.getListValue(ConfigValue.EditableConfigValues).contains(configName) || StringUtils.isBlank(configValue)) {
 			return false;
 		}
 
 		ConfigValue configValueId = ConfigValue.getConfigValueByName(configName);
 		configService.writeValue(configValueId, companyId, configValue, description);
 		return true;
-	}
-	
-	@Override
-	public List<String> getEditableConfigurations() {
-		return EDITABLE_CONFIG_VALUES;
 	}
 	
 	@Override
@@ -342,11 +336,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 		return configValueDto;
 	}
 	
-	private boolean isServerConfigEditable(String configName) {
-		return EDITABLE_CONFIG_VALUES.contains(configName);
-	}
-    
-    private boolean isOverallStatusOK() {
+	private boolean isOverallStatusOK() {
 		return isDBStatusOK() && isJobQueueRunning() && isJobQueueStatusOK() && !isImportStalling();
 	}
 
@@ -377,7 +367,12 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 							.getResourceAsStream("mandatoryDbChanges_"+ dbVendor + ".csv"),
 							"UTF-8");
 			for (String versionString : versionStringList) {
-				list.add(new Version(versionString));
+				if (!versionString.contains("emm-")) {
+					list.add(new Version(versionString));
+				} else {
+					logger.error("Invalid version sign: '" + versionString + "'");
+					continue;
+				}
 			}
 		} catch (Exception e) {
 			logger.error("mandatoryDbChanges.csv contains invalid data", e);
@@ -395,5 +390,10 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	@Override
 	public List<JobDto> getErrorneousJobs() {
 		return jobQueueService.selectErrorneousJobs();
+	}
+	
+	@Override
+	public List<String> killRunningImports() {
+		return serverStatusDao.killRunningImports();
 	}
 }

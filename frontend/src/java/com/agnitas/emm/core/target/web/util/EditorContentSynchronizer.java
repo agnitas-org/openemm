@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderData;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilderException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
@@ -120,9 +119,8 @@ public final class EditorContentSynchronizer {
 	
 	public final void synchronizeEqlToQuerybuilder(final ComAdmin admin, final QueryBuilderTargetGroupForm form) throws EditorContentSynchronizationException {
 		try {
-			final QueryBuilderData queryBuilderData = this.eqlToQueryBuilderConverter.convertEqlToQueryBuilderJson(form.getEql()); 
-			form.setQueryBuilderRules(queryBuilderData.getTargetGroupJson());
-			form.setQueryBuilderFilters(this.filterListBuilder.buildFilterListJson(admin, queryBuilderData.getUnknownProfileFields()));
+			form.setQueryBuilderRules(eqlToQueryBuilderConverter.convertEqlToQueryBuilderJson(form.getEql(), admin.getCompanyID()));
+			form.setQueryBuilderFilters(filterListBuilder.buildFilterListJson(admin));
 		} catch(final EqlParserException e) {
 			if(logger.isInfoEnabled()) {
 				logger.info("Syntax error in EQL code", e);

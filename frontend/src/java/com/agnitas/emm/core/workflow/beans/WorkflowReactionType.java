@@ -13,26 +13,40 @@ package com.agnitas.emm.core.workflow.beans;
 import com.agnitas.beans.IntEnum;
 
 public enum WorkflowReactionType implements IntEnum {
-    OPENED(1),
-    NOT_OPENED(2),
-    CLICKED(3),
-    NOT_CLICKED(4),
-    BOUGHT(5),
-    NOT_BOUGHT(6),
-    DOWNLOAD(7),
-    CHANGE_OF_PROFILE(8),
-    WAITING_FOR_CONFIRM(9),
-    OPT_IN(10),
-    OPT_OUT(11),
-    CLICKED_LINK(12),
-    OPENED_AND_CLICKED(13),
-    OPENED_OR_CLICKED(14),
-    CONFIRMED_OPT_IN(15);
+    OPENED(1, "icon-eye", "opened"),
+    NOT_OPENED(2, "icon-eye-slash", "not_opened"),
+    CLICKED(3, "icon-paper-plane", "clicked"),
+    NOT_CLICKED(4, "icon-times", "not_clicked"),
+    BOUGHT(5, "icon-shopping-cart", "bought"),
+    NOT_BOUGHT(6, "icon-minus", "not_bought"),
+    DOWNLOAD(7, "icon-download", "download"),
+    CHANGE_OF_PROFILE(8, "icon-exchange", "change_of_profile"),
+    WAITING_FOR_CONFIRM(9, "icon-history", "waiting_for_confirm"),
+    OPT_IN(10, "icon-sign-in", "opt_in"),
+    OPT_OUT(11, "icon-sign-out", "opt_out"),
+    CLICKED_LINK(12, "", "clicled_on_link"),
+    OPENED_AND_CLICKED(13, "", "opened_and_clicked"),
+    OPENED_OR_CLICKED(14, "", "opened_or_clicked"),
+    CONFIRMED_OPT_IN(15, "", "confirmed_opt_in");
 
     private final int id;
 
-    WorkflowReactionType(int id) {
+    private final String iconClass;
+
+    public String getIconClass() {
+        return iconClass;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    private final String name;
+
+    WorkflowReactionType(int id, String iconClass, String name) {
         this.id = id;
+        this.iconClass = iconClass;
+        this.name = name;
     }
 
     public static WorkflowReactionType fromId(int id) {

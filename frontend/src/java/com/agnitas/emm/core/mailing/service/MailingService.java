@@ -23,6 +23,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 
 public interface MailingService {
@@ -50,9 +51,9 @@ public interface MailingService {
 	
 	/**
 	 * Returns the number of minutes, a mailing is generated before delivery.
-	 *
+	 * 
 	 * @param companyID companyID
-	 *
+	 * 
 	 * @return number of minutes
 	 */
 	int getMailGenerationMinutes(@VelocityCheck int companyID);
@@ -83,4 +84,12 @@ public interface MailingService {
 	 * See GWUA-3991 for more details.
 	 */
     boolean isTextVersionRequired(@VelocityCheck int companyId, int mailingId);
+
+	boolean switchStatusmailOnErrorOnly(int companyID, int mailingId, boolean statusmailOnErrorOnly);
+	
+	List<LightweightMailing> listAllActionBasedMailingsForMailinglist(final int companyID, final int mailinglistID);
+
+	LightweightMailing getLightweightMailing(final int companyID, final int mailingId) throws MailingNotExistException;
+
+	List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException;
 }

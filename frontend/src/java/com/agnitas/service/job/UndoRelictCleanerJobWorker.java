@@ -22,7 +22,7 @@ import com.agnitas.dao.ComUndoMailingDao;
  * Example Insert in DB:
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    VALUES ((SELECT MAX(id) + 1 from job_queue_tbl), 'UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '0130', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.UndoRelictCleanerJobWorker', 1);
- *    
+ * 
  *  Optional:
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'UndoRelictCleaner'), 'retentionTime', '60');
  */
@@ -36,11 +36,13 @@ public class UndoRelictCleanerJobWorker extends JobWorker {
 	public static final int DEFAULT_RETENTION_TIME = 60;
 		
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		final int retentionTime = readRetentionTime();
 		final int lastUndoId = findLastUndoId(retentionTime);
 		
 		doCleanUp(lastUndoId);
+		
+		return null;
 	}
 	
 	private final int findLastUndoId(final int retentionTime) {

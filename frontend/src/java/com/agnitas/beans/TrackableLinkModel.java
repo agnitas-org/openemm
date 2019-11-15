@@ -154,12 +154,14 @@ public class TrackableLinkModel {
         this.deepTrackingSession = deepTrackingSession;
     }
 
+    @Deprecated
     public Integer getRelevance() {
-        return relevance;
+        return 0;
     }
 
+    @Deprecated
     public void setRelevance(Integer relevance) {
-        this.relevance = relevance;
+        this.relevance = 0;
     }
 
     public String getAltText() {

@@ -78,6 +78,11 @@
 
 <c:set var="isMailinglistEditable" value="${mailingBaseForm.canChangeMailinglist}"/>
 
+<%--todo: GWUA-4271: change after test sucessfully--%>
+<%--<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowParameters.workflowId}/view.action">--%>
+    <%--<c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>--%>
+<%--</c:url>--%>
+
 <c:url var="editWithCampaignManagerLink" value="/workflow.do">
     <c:param name="method" value="view"/>
     <c:param name="workflowId" value="${workflowId}"/>
@@ -85,18 +90,6 @@
 </c:url>
 
 <script type="text/javascript">
-
-    function onMailingTypeChange() {
-        var mailingType = document.getElementById("settingsGeneralMailType").value;
-        var targetsDisplay = 'block';
-
-        if(mailingType == ${MAILING_TYPE_ACTIONBASED}) {
-            targetsDisplay = 'none';
-        }
-
-        document.getElementById("mailingTargets").style.display = targetsDisplay;
-    }
-
     (function(){
         var splits = {};
         var splitIndex;
@@ -144,7 +137,6 @@
         </a>
     </div>
     <div id="tile-mailingGeneral" class="tile-content tile-content-forms">
-
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">
@@ -158,8 +150,9 @@
             <div class="col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
+                        <c:set var="isMailinglistDisabled" value="${not isMailingEditable or usedInCampaign or not isEmailSettingsEditable or not isMailinglistEditable}"/>
                         <html:select styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
-                                     disabled="${not isMailingEditable or usedInCampaign or not isEmailSettingsEditable or not isMailinglistEditable}">
+                                     disabled="${isMailinglistDisabled}">
                             <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
                                 <html:option value="${mailinglist.id}">${mailinglist.shortname}</html:option>
                             </logic:iterate>
@@ -206,19 +199,17 @@
                         </c:if>
                     </div>
                 </div>
-                <emm:ShowByPermission token="action.op.GetArchiveList">
-                    <div class="col-sm-4">
-                       <input type="hidden" name="__STRUTS_CHECKBOX_archived" value="0"/>
-                       <label class="toggle">
-                           <html:checkbox property="archived" disabled="${not isEmailSettingsEditable}"/>
-                           <div class="toggle-control"></div>
-                           <span class="text">
-                               <bean:message key="mailing.archived"/>
-                               <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/ShowInOnlineArchive.xml" tabindex="-1" type="button" data-original-title="" title=""></button>
-                           </span>
-                       </label>
-                    </div>
-                </emm:ShowByPermission>
+                <div class="col-sm-4">
+                    <input type="hidden" name="__STRUTS_CHECKBOX_archived" value="0"/>
+                    <label class="toggle">
+                        <html:checkbox property="archived" disabled="${not isEmailSettingsEditable}"/>
+                        <div class="toggle-control"></div>
+                        <span class="text">
+                            <bean:message key="mailing.archived"/>
+                        	<button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/ShowInOnlineArchive.xml" tabindex="-1" type="button" data-original-title="" title=""></button>
+                    	</span>
+                	</label>
+            	</div>
             </div>
         </emm:ShowByPermission>
 
@@ -234,7 +225,7 @@
                 <div class="col-sm-8">
                     <div class="input-group">
                         <div class="input-group-controls">
-                            <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control" onchange="onMailingTypeChange()"
+                            <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control" data-action="change-general-mailing-type"
                                            disabled="${not isMailingEditable or usedInCampaign or not isEmailSettingsEditable}">
                                 <html:option value="${MAILING_TYPE_NORMAL}">
                                     <bean:message key="Normal_Mailing"/>
@@ -379,18 +370,20 @@
             </div>
         </c:if>
 
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-                <p class="help-block">
-                    <bean:message key="report.numberRecipients"/>:
-                    <strong id="calculatedRecipientsBadge">?</strong>
-                </p>
+        <c:if test="${mailingBaseForm.mailingID > 0}">
+            <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                    <p class="help-block">
+                        <bean:message key="report.numberRecipients"/>:
+                        <strong id="calculatedRecipientsBadge">?</strong>
+                    </p>
 
-                <button type="button" class="btn btn-regular" data-action="calculateRecipients">
-                    <span><bean:message key="button.Calculate"/></span>
-                </button>
+                    <button type="button" class="btn btn-regular" data-action="calculateRecipients">
+                        <span><bean:message key="button.Calculate"/></span>
+                    </button>
+                </div>
             </div>
-        </div>
+        </c:if>
 
         <c:choose>
             <c:when test="${mailingBaseForm.isTemplate}">

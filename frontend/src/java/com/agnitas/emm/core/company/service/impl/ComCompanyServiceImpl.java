@@ -140,6 +140,8 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         ComCompany company = (ComCompany) companyFactory.newCompany();
         company.setCreatorID(admin.getCompanyID());
         company.setStatus(Company.STATUS_ACTIVE);
+        company.setRdirDomain(configService.getValue(ConfigValue.DefaultRdirDomain));
+        company.setMailloopDomain(configService.getValue(ConfigValue.DefaultMailloopDomain));
 
         setupInfo(company, form.getCompanyInfoDto());
         setupSettings(company, form.getCompanySettingsDto());
@@ -232,6 +234,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setSecretKey(RandomStringUtils.randomAscii(32));
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
+        if (settingsDto.getMaxAdminMails() == 0) {
+        	company.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails));
+        } else {
+        	company.setMaxAdminMails(settingsDto.getMaxAdminMails());
+        }
+
     }
 
     private void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
@@ -265,9 +273,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         }
 
         if (settings.isHasRecipientsCleanup() != configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, companyId)) {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsWithoutBinding,
-                    companyId,
-                    String.valueOf(settings.isHasRecipientsCleanup()));
+            configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsWithoutBinding, companyId, String.valueOf(settings.isHasRecipientsCleanup()));
+        }
+
+        if (settings.isHasRecipientsAnonymisation() != configService.getBooleanValue(ConfigValue.CleanRecipientsData, companyId)) {
+        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsData, companyId, String.valueOf(settings.isHasRecipientsAnonymisation()));
         }
 
         if (settings.isHasTrackingVeto() != configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId)) {
@@ -453,6 +463,15 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(" changed to ")
                     .append(newCompany.getCompanySettingsDto().isHasRecipientsCleanup())
                     .append(")");
+        }
+
+        boolean oldRecipientAnonymiseSettings = configService.getBooleanValue(ConfigValue.CleanRecipientsData, newCompany.getCompanyInfoDto().getId());
+        if (oldRecipientAnonymiseSettings != newCompany.getCompanySettingsDto().isHasRecipientsAnonymisation()) {
+        	description.append(" Recipients Anonymisation (")
+            .append(oldRecipientAnonymiseSettings)
+            .append(" changed to ")
+            .append(newCompany.getCompanySettingsDto().isHasRecipientsAnonymisation())
+            .append(")");
         }
 
         boolean oldAnonymizeSettings = configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, newCompany.getCompanyInfoDto().getId());

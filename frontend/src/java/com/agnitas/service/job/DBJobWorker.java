@@ -18,6 +18,8 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.JavaMailAttachment;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.GenericExportWorker;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
@@ -31,7 +33,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.agnitas.emm.core.JavaMailService.MailAttachment;
 import com.jcraft.jsch.ChannelSftp;
 
 /**
@@ -53,7 +54,7 @@ import com.jcraft.jsch.ChannelSftp;
  *   INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value)
  *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), '1_label', 'Currently available AgnTags');
  *   INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value)
- *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), 'infoMailAddress', 'tester@agnitas.de');
+ *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), 'infoMailAddress', 'test@example.com');
  *   INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value)
  *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), 'infoMailSubject', 'PeriodicalDbChange');
  */
@@ -61,7 +62,7 @@ public class DBJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(DBJobWorker.class);
 
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		DataSource datasource = daoLookupFactory.getBeanDataSource();
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(datasource);
 		
@@ -69,13 +70,27 @@ public class DBJobWorker extends JobWorker {
 		boolean errorOccurred = false;
 		String errorMessage = null;
 		boolean haltExecution = false;
-		String infoMailAddress = job.getParameters().get("infoMailAddress");
+		
+		int companyID = 0;
+		String companyIdString = job.getParameters().get("companyID");
+		if (StringUtils.isNotBlank(companyIdString)) {
+			companyID = Integer.parseInt(companyIdString);
+		}
+		
+		String infoMailAddress;
+		String infoMailAddressConfigValueName = job.getParameters().get("infoMailAddressConfigValueName");
+		if (StringUtils.isNotBlank(infoMailAddressConfigValueName)) {
+			infoMailAddress = configService.getValue(ConfigValue.getConfigValueByName(infoMailAddressConfigValueName), companyID);
+		} else {
+			infoMailAddress = job.getParameters().get("infoMailAddress");
+		}
+		
 		String infoMailSubject = job.getParameters().get("infoMailSubject");
 		String sftpServerCredentials = job.getParameters().get("sftpServerCredentials");
 		
 		StringBuilder infoMailContent = new StringBuilder();
 		
-		List<MailAttachment> mailAttachements = new ArrayList<>();
+		List<JavaMailAttachment> mailAttachments = new ArrayList<>();
 		
 		List<File> createdExportFiles = new ArrayList<>();
 		while (!haltExecution && job.getParameters().containsKey(statementIndex + "_statement")) {
@@ -92,13 +107,17 @@ public class DBJobWorker extends JobWorker {
 			infoMailContent.append(statementLabel);
 			infoMailContent.append("<br />\n");
 			
+			if (StringUtils.isBlank(sqlStatement)) {
+				throw new Exception("SQL statement parameter (" + statementIndex + "_statement) is empty or missing");
+			} else {
+				sqlStatement = sqlStatement.replace("<company_id>", Integer.toString(companyID));
+			}
+			
 			if (StringUtils.isNotEmpty(sftpServerCredentials)) {
 				DataEncryptor dataEncryptor = (DataEncryptor) applicationContext.getBean("DataEncryptor");
 				String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
 				
-				if (StringUtils.isBlank(sqlStatement)) {
-					throw new Exception("SQL statement parameter (" + statementIndex + "_statement) is empty or missing");
-				} else if (StringUtils.isBlank(filename)) {
+				if (StringUtils.isBlank(filename)) {
 					throw new Exception("SFTP file name parameter (" + statementIndex + "_filename) is empty or missing");
 				}
 			
@@ -131,7 +150,7 @@ public class DBJobWorker extends JobWorker {
 					errorOccurred = true;
 					errorMessage = e.getMessage();
 				}
-			} else if (StringUtils.isNotBlank(infoMailAddress)) {
+			} else {
 				try {
 					if (DbUtilities.isSelectStatement(sqlStatement)) {
 						if (StringUtils.isEmpty(format) || "CSV".equalsIgnoreCase(format) || "CSV_ZIP".equalsIgnoreCase(format)) {
@@ -145,7 +164,7 @@ public class DBJobWorker extends JobWorker {
 								} else {
 									mailFilename = DateUtilities.replaceDatePatternsInFileName(filename, 0, null);
 								}
-								mailAttachements.add(new MailAttachment(mailFilename, FileUtils.readFileToByteArray(exportDataFile), "text/comma-separated-values"));
+								mailAttachments.add(new JavaMailAttachment(mailFilename, FileUtils.readFileToByteArray(exportDataFile), "text/comma-separated-values"));
 								infoMailContent.append("For data see attached file<br />\n");
 							} else if ("CSV_ZIP".equalsIgnoreCase(format)) {
 								String mailFilename;
@@ -154,7 +173,7 @@ public class DBJobWorker extends JobWorker {
 								} else {
 									mailFilename = DateUtilities.replaceDatePatternsInFileName(filename, 0, null);
 								}
-								mailAttachements.add(new MailAttachment(mailFilename, FileUtils.readFileToByteArray(exportDataFile), "application/zip"));
+								mailAttachments.add(new JavaMailAttachment(mailFilename, FileUtils.readFileToByteArray(exportDataFile), "application/zip"));
 								infoMailContent.append("For data see attached file<br />\n");
 							}
 						} else {
@@ -182,7 +201,7 @@ public class DBJobWorker extends JobWorker {
 		}
 		
 		if (StringUtils.isNotBlank(infoMailAddress)) {
-			serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString(), mailAttachements.toArray(new MailAttachment[0]));
+			serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString(), mailAttachments.toArray(new JavaMailAttachment[0]));
 		}
 		
 		if (errorOccurred) {
@@ -194,6 +213,8 @@ public class DBJobWorker extends JobWorker {
 				}
 			}
 		}
+		
+		return null;
 	}
 
 	private File createExportDataFile(DataSource datasource, String sqlStatement, String format, String separatorString, String textDelimiterString, boolean alwaysQuote, int statementIndex, String zipFilePassword) throws Exception {

@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.wsmanager.dto;
 
+import java.util.HashSet;
+import java.util.Set;
+
+@Deprecated // TODO Replace by WebserviceUser
 public class WebserviceUserDto {
 
     private String userName;
@@ -23,6 +27,14 @@ public class WebserviceUserDto {
     private String contactInfo;
 
     private boolean active;
+    
+    private Set<String> grantedPermissions;
+    private Set<Integer> grantedPermissionGroups;
+    
+    public WebserviceUserDto() {
+    	setGrantedPermissions(null);
+    	setGrantedPermissionGroupIDs(null);
+    }
 
     public String getUserName() {
         return userName;
@@ -71,4 +83,20 @@ public class WebserviceUserDto {
     public void setActive(boolean active) {
         this.active = active;
     }
+
+	public final void setGrantedPermissions(final Set<String> permissions) {
+		this.grantedPermissions = permissions != null ? permissions : new HashSet<>();
+	}
+	
+	public final Set<String> getGrantedPermissions() {
+		return this.grantedPermissions;
+	}
+	
+	public final void setGrantedPermissionGroupIDs(final Set<Integer> permissionGroups) {
+		this.grantedPermissionGroups = permissionGroups != null ? permissionGroups : new HashSet<>();
+	}
+	
+	public final Set<Integer> getGrantedPermissionGroupIDs() {
+		return this.grantedPermissionGroups;
+	}
 }

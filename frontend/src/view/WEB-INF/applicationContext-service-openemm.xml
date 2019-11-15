@@ -20,6 +20,11 @@
 		http://www.springframework.org/schema/util/spring-util-2.5.xsd
 		http://www.springframework.org/schema/aop
 		http://www.springframework.org/schema/aop/spring-aop.xsd">
+		
+	<bean id="ConfigurationValidityCheck" class="com.agnitas.emm.core.ConfigurationValidityCheckBasicImpl">
+		<property name="configService" ref="ConfigService" />
+		<property name="configTableDao" ref="ConfigTableDao" />
+	</bean>
 
     <bean id="conversionService" class="com.agnitas.service.impl.ExtendedConversionServiceFactoryBean">
         <property name="converters">

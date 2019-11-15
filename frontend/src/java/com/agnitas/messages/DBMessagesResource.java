@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.taglib.bean.WriteTag;
 
@@ -78,7 +79,7 @@ public class DBMessagesResource {
 			Context initCtx = new InitialContext();
 			Context envCtx = (Context) initCtx.lookup("java:comp/env");
 
-			DataSource dataSource = (DataSource) envCtx.lookup("jdbc/" + ConfigService.getInstance().getValue(ConfigValue.EmmDbJndiName));
+			DataSource dataSource = (DataSource) envCtx.lookup("jdbc/emm_db");
 
 			messageDao = new ComMessageDaoImpl();
 			((ComMessageDaoImpl) messageDao).setDataSource(dataSource);
@@ -94,7 +95,14 @@ public class DBMessagesResource {
 		try {
 			ConfigService configService = ConfigService.getInstance();
 			
-			boolean readDeletedMessages = !configService.getBooleanValue(ConfigValue.IgnoreDeletedI18NMessages);
+			boolean readDeletedMessages = true;
+			List<String> hostsToIgnoreDeletedMessages = configService.getListValue(ConfigValue.IgnoreDeletedI18NMessagesHosts);
+			for (String hostToIgnoreDeletedMessages : hostsToIgnoreDeletedMessages) {
+				if (hostToIgnoreDeletedMessages.equalsIgnoreCase(AgnUtils.getHostName())) {
+					readDeletedMessages = false;
+					break;
+				}
+			}
 			
 			if (IMPORT_NEWMESSAGEPROPERTIES) {
 				NewMessagesPropertiesImporter.importNewMessagesProperties(getMessageDao());

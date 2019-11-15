@@ -15,19 +15,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
+import com.agnitas.emm.core.admin.AdminException;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.emm.core.supervisor.common.SupervisorException;
+import com.agnitas.web.ComAdminForm;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
-import com.agnitas.emm.core.admin.AdminException;
-import com.agnitas.emm.core.commons.password.PasswordState;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SupervisorException;
-import com.agnitas.web.ComAdminForm;
 
 public interface AdminService {
     
@@ -39,8 +39,8 @@ public interface AdminService {
      * @param password password of supervisor
      * 
      * @return {@link ComAdmin} for given user name
-     * @throws SupervisorException 
-     * @throws AdminException 
+     * @throws SupervisorException
+     * @throws AdminException
      */
 	ComAdmin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException;
 
@@ -82,6 +82,8 @@ public interface AdminService {
     int getNumberOfAdmins();
 
     boolean adminExists(String username);
+    
+    boolean adminLimitReached(@VelocityCheck int companyID);
 
     List<AdminGroup> getAdminGroups(@VelocityCheck int companyID);
 
@@ -111,4 +113,8 @@ public interface AdminService {
     Date computePasswordExpireDate(ComAdmin admin);
 
     boolean setPassword(int adminId, @VelocityCheck int companyId, String password);
+
+	boolean checkBlacklistedAdminNames(String username);
+    
+    Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit);
 }

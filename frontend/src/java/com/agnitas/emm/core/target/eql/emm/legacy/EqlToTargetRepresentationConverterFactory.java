@@ -15,6 +15,6 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveExcep
 
 public interface EqlToTargetRepresentationConverterFactory {
 
-	public EqlToTargetRepresentationConverter newConverter(final int companyID) throws ProfileFieldResolveException;
+	EqlToTargetRepresentationConverter newConverter(final int companyID) throws ProfileFieldResolveException;
 	
 }

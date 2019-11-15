@@ -75,7 +75,6 @@
 
 		<form-bean name="supportForm" type="com.agnitas.web.ComSupportForm" />
 		
-		<form-bean name="informationForm" type="com.agnitas.web.ComInformationForm" />
 
 		<form-bean name="previewMailingImageGeneratorForm" type="com.agnitas.web.ComPreviewMailingImageGeneratorForm" />
 
@@ -328,6 +327,7 @@
 			<forward name="view_only_elements" path="workflow_view_only_elements" />
 			<forward name="bulkDeleteConfirm" path="workflow_bulkDeleteConfirm_ajax" />
 			<forward name="bulkDeactivateConfirm" path="workflow_bulkDeactivateConfirm_ajax" />
+			<forward name="messages" path="messages" />
 		</action>
 
 		<!-- Process recipients -->
@@ -420,12 +420,11 @@
 			<forward name="stat" path="stats_birt_mailing_stat" />
 			<forward name="list" path="stats_mailing_stats" />
 		</action>
-		
+
 		<!-- Display Recipient Statistics -->
 		<action path="/recipient_stats" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="birtStatForm" scope="request" input="stats_birt_recipient_stat">
 			<forward name="stat" path="stats_birt_recipient_stat" />
 		</action>
-		
 
 		<action path="/followupstats" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" scope="request">
 			<forward name="resultsAjax" path="mailing_predelivery_list" />
@@ -451,6 +450,7 @@
 			<forward name="bulk_delete_confirm" path="targets_bulk_delete_ajax" />
 			<forward name="workflow_view" path="/workflow.do?method=view" />
 			<forward name="view_mailings" path="targets_querybuilder_view_mailings" />
+            <forward name="messages" path="messages" />
 		</action>
 		
 		<action path="/targetQB" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" parameter="method" scope="request">
@@ -490,6 +490,7 @@
 		<action path="/trackuserformlink" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" name="trackableUserFormLinkForm" scope="request">
 			<forward name="view" path="userform_trackablelink_view" />
 			<forward name="list" path="userform_trackablelink_list" />
+			<forward name="messages" path="messages" />
 		</action>
 
 		<action path="/trackuserformlinkstat" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" name="trackableUserFormLinkStatForm" scope="request">
@@ -518,10 +519,7 @@
 			<forward name="ajax_loading" path="settings_admin_loading_ajax" />
 			<forward name="view_mailinglists" path="settings_admin_mailinglists" />
 		</action>
-		
-		<action path="/information" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="informationForm" scope="request" parameter="method" input="list">
-			<forward name="list" path="information_list" />
-		</action>
+
 
 		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />

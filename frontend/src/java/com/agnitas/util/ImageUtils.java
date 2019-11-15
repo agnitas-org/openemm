@@ -28,6 +28,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -48,7 +49,7 @@ public class ImageUtils {
 	}
 
 	public static Set<String> getValidImageFileExtensions() {
-		return new HashSet<>(availableImageExtensions);
+		return SetUtils.unmodifiableSet(availableImageExtensions);
 	}
 
 	/**
@@ -177,24 +178,5 @@ public class ImageUtils {
 		}
 
 		return null;
-	}
-	
-	public static String getDefaultFileExtensionForMimeType(String imageMimeType) throws Exception {
-		if (StringUtils.isBlank(imageMimeType)) {
-			return null;
-		} else if (!imageMimeType.toLowerCase().startsWith("image/")) {
-			throw new Exception("Not an image mimetype: " + imageMimeType);
-		} else {
-			switch (imageMimeType.toLowerCase()) {
-				case "image/bmp": return "bmp";
-				case "image/gif": return "gif";
-				case "image/jpeg": return "jpg";
-				case "image/jpg": return "jpg";
-				case "image/png": return "png";
-				case "image/svg+xml": return "svg";
-				case "image/tiff": return "tif";
-				default: return imageMimeType.substring(6);
-			}
-		}
 	}
 }

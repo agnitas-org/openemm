@@ -7,6 +7,7 @@ import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
 
 public class TargetNodeIntervalMailing extends TargetNode implements Serializable {
+	private static final long serialVersionUID = -6033836340445764186L;
 	
 	public static final String PSEUDO_COLUMN_NAME = "interval_mailing_pseudo_column_name";
 
@@ -22,11 +23,6 @@ public class TargetNodeIntervalMailing extends TargetNode implements Serializabl
 	@Override
 	protected void initializeOperatorLists() {
 		typeOperators = new TargetOperator[0];
-	}
-
-	@Override
-	public String generateSQL() {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

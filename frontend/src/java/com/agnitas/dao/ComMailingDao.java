@@ -17,18 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComRdirMailingData;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
 
 public interface ComMailingDao extends MailingDao {
 	int SEND_STATS_TEXT = 100;
@@ -56,6 +55,8 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean saveStatusmailRecipients(int mailingID, String statusmailRecipients);
 
+	boolean saveStatusmailOnErrorOnly(int companyID, int mailingID, boolean statusmailOnErrorOnly);
+
     /**
      * Get mailings which is set as the followup to given one,
      *
@@ -67,7 +68,7 @@ public interface ComMailingDao extends MailingDao {
     List<Integer> getFollowupMailings(int mailingID, @VelocityCheck int companyID, boolean includeUnscheduled);
 
 	/**
-	 * The last send-date of a mailing. The state 'W' will be preferred even if there a later send-dates with state 'A' or 'T' ! 
+	 * The last send-date of a mailing. The state 'W' will be preferred even if there a later send-dates with state 'A' or 'T' !
 	 * @param mailingID
 	 * @return - the send-date , null if the mailing has not been sent yet
 	 */
@@ -106,14 +107,14 @@ public interface ComMailingDao extends MailingDao {
 	
 	int getFollowUpStat(int mailingID, int followUpFor, String followUpType, @VelocityCheck int companyID, boolean useTargetGroups) throws Exception;
 
-	int getFollowUpStat(int mailingID, int followUpFor, String followUpType, @VelocityCheck int companyID, String sqlTargetExpression) throws Exception;
+	int getFollowUpStat(int followUpFor, String followUpType, @VelocityCheck int companyID, String sqlTargetExpression) throws Exception;
 
 	/**
 	 * returns the type of a Followup Mailing as String.
 	 * The String can be fount in the mailing-class (eg. Mailing.TYPE_FOLLOWUP_CLICKER)
 	 * if no followup is found, null is the returnvalue!
 	 * @param mailingID
-	 * @return 
+	 * @return
 	 */
 	String getFollowUpType(int mailingID);
 
@@ -131,7 +132,7 @@ public interface ComMailingDao extends MailingDao {
 	String getFollowUpFor(int mailingID);
 	
 	/**
-	 * returns the last change timestamp of the given mailing. 
+	 * returns the last change timestamp of the given mailing.
 	 * @param mailingID
 	 * @return
 	 */
@@ -140,12 +141,17 @@ public interface ComMailingDao extends MailingDao {
 	/**
 	 * !! WARNING !! Not all values are loaded.
 	 * At time of this writing, only the shortname and the description are loaded.
-	 * This method loads exactly one mailing from DB. 
+	 * This method loads exactly one mailing from DB.
 	 * 
 	 * @param mailingID ID of mailing
 	 * 
 	 * @return leightweight mailing object
+	 * 
+	 * This method does not check mailing ID <b>and</b> company ID, so don't use it anymore.
+	 * 
+	 * @see #getLightweightMailing(int, int)
 	 */
+	@Deprecated
 	LightweightMailing getLightweightMailing(int mailingID);
 
     PaginatedListImpl<Map<String, Object>> getDashboardMailingList(@VelocityCheck int companyID, String sort, String direction, int rownums);
@@ -162,7 +168,14 @@ public interface ComMailingDao extends MailingDao {
 
     int getLastSentMailingId(@VelocityCheck int companyID);
 	
+    /**
+     * @see #getSendDate(int, int)
+     */
+    @Deprecated
     String getSendDate( String format, @VelocityCheck int companyId, int mailingId);
+    
+    Date getSendDate(@VelocityCheck int companyId, int mailingId);
+    
     
     /**
      * this method returns the mailing-ID for the last sent world mailing.
@@ -174,7 +187,7 @@ public interface ComMailingDao extends MailingDao {
     
     /**
 	 * This method returns the mailing ID for a already sent world-mailing with the given companyID and
-	 * (if given) the mailingListID. If no mailingListID is given (null or "0") it will be ignored. 
+	 * (if given) the mailingListID. If no mailingListID is given (null or "0") it will be ignored.
 	 * @param companyID
 	 * @param mailingListID
 	 * @return
@@ -187,7 +200,7 @@ public interface ComMailingDao extends MailingDao {
 
 	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey);
 
-	List<LightweightMailing> getTemplateOverview(@VelocityCheck int companyID);
+	//List<LightweightMailing> getTemplateOverview(@VelocityCheck int companyID);
 	
 	boolean deleteContentFromMailing(Mailing mailing, int contentID);
 
@@ -369,8 +382,6 @@ public interface ComMailingDao extends MailingDao {
 	List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId);
 
 	boolean deleteAccountSumEntriesByCompany(@VelocityCheck int companyID);
-
-	void migrateOldLinkExtension(int companyID);
 	
 	boolean isAdvertisingContentType(@VelocityCheck int companyId, int mailingId);
 
@@ -378,4 +389,10 @@ public interface ComMailingDao extends MailingDao {
 	 * See GWUA-3991.
 	 */
     boolean isTextVersionRequired(@VelocityCheck int companyId, int mailingId);
+
+	Date getMailingSendDate(int companyID, int mailingID);
+
+	List<LightweightMailing> listAllActionBasedMailingsForMailinglist(int companyID, int mailinglistID);
+
+	LightweightMailing getLightweightMailing(int companyId, int mailingId);
 }

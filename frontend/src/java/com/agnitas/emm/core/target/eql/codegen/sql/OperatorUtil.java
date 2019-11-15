@@ -15,7 +15,7 @@ import com.agnitas.emm.core.target.eql.codegen.UnhandledOperatorException;
 public final class OperatorUtil {
 
 	
-	public static final String eqlOperatorToSqlOperator(final com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode.Operator operator) throws UnhandledOperatorException {
+	public static final String eqlOperatorToSqlOperator(final com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode.InfixOperator operator) throws UnhandledOperatorException {
 		switch (operator) {
 		case EQ: 	return "=";
 		case LT:	return "<";

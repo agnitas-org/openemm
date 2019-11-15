@@ -188,7 +188,7 @@ public class MailingAlphaTrackingPointsDataSet extends BIRTDataSet {
 	private String getTrackingPointsStatTotalQueryTemplate() {
 		String template = "SELECT '<TOTAL>' TARGETGROUP, PAGETAG, SHORTNAME,  count( DISTINCT  customer_id) clicks_net, count (customer_id) clicks_gros" + 
 						  "	from trackpoint_def_tbl trdef join rdirlog_<COMPANYID>_<TABLE_NAME_FRAGMENT>_tbl rdirlog on " +
-						  " ( trdef.pagetag = rdirlog.page_tag   and rdirlog.mailing_id=<MAILINGID> ) " + 
+						  " (trdef.pagetag = rdirlog.page_tag   and rdirlog.mailing_id=<MAILINGID> ) " + 
 						  " where pagetag in (<PAGETAGS>) " +    
 						  "	group by pagetag, shortname ";
 		return template;

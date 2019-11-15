@@ -50,7 +50,7 @@
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Mailings" 				scope="request" />
 <c:set var="agnBreadcrumbsRootUrl"	value="${mailingsOverviewLink}"	scope="request" />
-<c:set var="agnHelpKey" 			value="Preview" 				scope="request" />
+<c:set var="agnHelpKey" 			value="mailingPreview" 		    scope="request" />
 
 
 <c:choose>

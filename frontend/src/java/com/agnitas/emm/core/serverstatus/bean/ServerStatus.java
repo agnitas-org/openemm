@@ -17,11 +17,12 @@ import java.util.List;
 import java.util.Locale;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.util.AgnUtils;
 
 public class ServerStatus {
-    
+    private String licenseName;
     private String hostName;
     private String version;
     private String javaVersion;
@@ -40,7 +41,10 @@ public class ServerStatus {
     private String dbUrl;
     private boolean dbConnectStatus;
     private List<VersionStatus> dbVersionStatuses;
-    
+
+    public String getLicenseName() {
+        return licenseName;
+    }
     
     public String getHostName() {
         return hostName;
@@ -170,6 +174,10 @@ public class ServerStatus {
         public ServerStatus build() {
             Date now = new Date();
             ServerStatus serverStatus = new ServerStatus();
+            
+            ConfigService configService = ConfigService.getInstance();
+            serverStatus.licenseName = "\"" + configService.getValue(ConfigValue.System_License_Holder) + "\" (ID: " + configService.getValue(ConfigValue.System_Licence) + ", Type: " + configService.getValue(ConfigValue.System_License_Type) + ")";
+            
             serverStatus.hostName = AgnUtils.getHostName();
             
             serverStatus.version = version;

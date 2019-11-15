@@ -44,6 +44,12 @@
 
 <fmt:formatDate var="currentServerTime" value="${emm:now()}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
 
+<c:set var="isStatisticsViewPermitted" value="${false}"/>
+
+<emm:ShowByPermission token="stats.mailing">
+    <c:set var="isStatisticsViewPermitted" value="${true}"/>
+</emm:ShowByPermission>
+
 <div class="calendar" data-initializer="calendar-table">
     <div class="tile">
         <c:url var="mailingViewUrl" value="/mailingbase.do">
@@ -68,6 +74,7 @@
                 "pushStatusSent": "${PUSH_STATUS_SENT}",
                 "pushStatusScheduled": "${PUSH_STATUS_SCHEDULED}",
                 "secondsBeforeWaitMessage": ${SECONDS_BEFORE_WAIT_MESSAGE},
+                "isStatisticsViewPermitted": ${isStatisticsViewPermitted},
                 "urls": {
                     "CALENDAR_UNSENT_MAILINGS": "<c:url value="/calendar/getUnsentMailings.action"/>",
                     "CALENDAR_PLANNED_MAILINGS": "<c:url value="/calendar/getPlannedMailings.action"/>",
@@ -439,7 +446,7 @@
                 <p>{{- mailsSent }}</p>
                 <p><b><mvc:message code="calendar.Openers"/></b></p>
                 <p>{{- openers }}</p>
-                <p><b><mvc:message code="statistic.MonthlyStat.Top10Metrics.RecipientsClicks"/></b></p>
+                <p><b><mvc:message code="statistic.clicker"/></b></p>
                 <p>{{- clickers }}</p>
                 {{ } }}
             </div>

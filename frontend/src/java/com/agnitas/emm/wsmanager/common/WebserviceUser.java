@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.wsmanager.common;
 
+import java.util.Set;
+
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 /**
@@ -56,5 +58,13 @@ public interface WebserviceUser extends WebserviceUserListItem {
 	 */
 	void setContactEmail(final String contactEmail);
 	
+	public Set<String> getGrantedPermissions();
 	
+	public void setGrantedPermissions(final Set<String> grantedPermissions);
+	
+	
+	public void setGrantedPermissionGroupIDs(final Set<Integer> permissionGroups);
+	
+	public Set<Integer> getGrantedPermissionGroupIDs();
+
 }

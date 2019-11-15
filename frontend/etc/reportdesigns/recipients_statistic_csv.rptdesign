@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -573,7 +573,8 @@ row["countTargetGroup"] = statData.get(currentRow).getCountTargetGroup();
 row["active_count_asOf"] = statData.get(currentRow).getCountActiveAsOf();
 
 // do some i18n stuff
-if (statData.get(currentRow).getTargetGroupId() == 0) {
+targetGroupID = statData.get(currentRow).getTargetGroupId();
+if (targetGroupID == 1) {
 	row["targetGroupName"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 } else {
 	row["targetGroupName"] = statData.get(currentRow).getTargetGroupName();
@@ -760,13 +761,19 @@ row["mailingListGroupId"] = listData.get(currentRow).getMailingListGroupId();
 row["targetGroupId"] = listData.get(currentRow).getTargetGroupId();
 row["targetGroupGroupId"] = listData.get(currentRow).getTargetGroupGroupId();
 row["mailingListName"] = listData.get(currentRow).getMailingListName();
-row["targetGroupName"] = listData.get(currentRow).getTargetGroupName();
 row["countActive"] = listData.get(currentRow).getCountActive();
 row["countOptout"] = listData.get(currentRow).getCountOptout();
 row["countBounced"] = listData.get(currentRow).getCountBounced();
 row["countWaitingForConfirm"] = listData.get(currentRow).getCountWaitingForConfirm();
 row["countBlacklisted"] = listData.get(currentRow).getCountBlacklisted();
 row["date"] = listData.get(currentRow).getDate();
+
+// do some i18n stuff
+if (listData.get(currentRow).getTargetGroupId() == 1) {
+	row["targetGroupName"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+} else {
+	row["targetGroupName"] = listData.get(currentRow).getTargetGroupName();
+}
 
 currentRow++;
 return true;
@@ -775,49 +782,54 @@ return true;
         <script-data-set name="RecipientStatisticsWithDevices2" id="6478">
             <list-property name="resultSetHints">
                 <structure>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                     <property name="name">mailingListGroupId</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                     <property name="name">mailingList</property>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                     <property name="name">mailingListId</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
-                    <property name="position">3</property>
+                    <property name="position">4</property>
                     <property name="name">category</property>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>
-                    <property name="position">4</property>
+                    <property name="position">5</property>
                     <property name="name">categoryindex</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
-                    <property name="position">5</property>
+                    <property name="position">6</property>
                     <property name="name">targetgroup</property>
                     <property name="dataType">string</property>
                 </structure>
                 <structure>
-                    <property name="position">6</property>
+                    <property name="position">7</property>
                     <property name="name">targetgroupindex</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
-                    <property name="position">7</property>
+                    <property name="position">8</property>
                     <property name="name">count</property>
                     <property name="dataType">integer</property>
                 </structure>
                 <structure>
-                    <property name="position">8</property>
+                    <property name="position">9</property>
                     <property name="name">rate</property>
                     <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">targetGoupId</property>
+                    <property name="dataType">integer</property>
                 </structure>
             </list-property>
             <list-property name="columnHints">
@@ -847,6 +859,9 @@ return true;
                 </structure>
                 <structure>
                     <property name="columnName">rate</property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetGoupId</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -896,6 +911,11 @@ return true;
                         <property name="name">rate</property>
                         <property name="dataType">float</property>
                     </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">targetGoupId</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -911,10 +931,17 @@ row["mailingList"] = statList.get(currentRow).getMailingList();
 row["mailingListId"] = statList.get(currentRow).getMailingListId();
 row["category"] = statList.get(currentRow).getCategory();
 row["categoryindex"] = statList.get(currentRow).getCategoryindex();
-row["targetgroup"] = statList.get(currentRow).getTargetgroup();
 row["targetgroupindex"] = statList.get(currentRow).getTargetgroupindex();
+row["targetgroupId"] = statList.get(currentRow).getTargetgroupId();
 row["count"] = statList.get(currentRow).getCount();
 row["rate"] = statList.get(currentRow).getRate();
+
+// do some i18n stuff
+if (statList.get(currentRow).getTargetgroupId() == 1) {
+	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+} else {
+	row["targetgroup"] = statList.get(currentRow).getTargetgroup();
+}
 
 currentRow++;
 return true;]]></method>
@@ -2586,7 +2613,7 @@ return true;]]></method>
                     <list-property name="arguments">
                         <structure>
                             <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.ACTIVE_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString(dataSetRow["category"], reportContext.getLocale())} else {""}</expression>
+                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.ACTIVE_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString(CommonKeys.ACTIVE, reportContext.getLocale())} else {""}</expression>
                         </structure>
                     </list-property>
                 </structure>
@@ -2602,7 +2629,7 @@ return true;]]></method>
                     <list-property name="arguments">
                         <structure>
                             <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.OPENERS_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString("birt.report.opens", reportContext.getLocale())} else {""}</expression>
+                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.OPENERS_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString(RecipientsStatisticDataSet.OPENERS, reportContext.getLocale())} else {""}</expression>
                         </structure>
                     </list-property>
                 </structure>
@@ -2618,7 +2645,7 @@ return true;]]></method>
                     <list-property name="arguments">
                         <structure>
                             <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.TotalClickSubscribers.short", reportContext.getLocale())} else {""}</expression>
+                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString(CommonKeys.CLICKER, reportContext.getLocale())} else {""}</expression>
                         </structure>
                     </list-property>
                 </structure>
@@ -2640,6 +2667,12 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["targetgroupindex"]</expression>
                         </structure>
                     </list-property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupId</property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGoupId"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
                 </structure>
             </list-property>
             <column id="6507"/>
@@ -2745,8 +2778,10 @@ return true;]]></method>
                 <property name="groupName">group_targetgroupindex</property>
                 <property name="interval">none</property>
                 <property name="sortDirection">asc</property>
-                <expression name="keyExpr" type="javascript">row["targetgroupindex"]</expression>
-                <structure name="toc"/>
+                <expression name="keyExpr" type="javascript">row["targetGroupId"]</expression>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["targetGroupId"]</expression>
+                </structure>
                 <property name="repeatHeader">true</property>
                 <property name="hideDetail">false</property>
                 <property name="pageBreakAfter">auto</property>
@@ -3784,7 +3819,7 @@ return true;]]></method>
                     <property name="name">mailingList_</property>
                     <property name="dataType">string</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3793,12 +3828,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["mailingList"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">targetGroup_</property>
                     <property name="dataType">string</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3807,6 +3843,7 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["targetgroup"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">targetGroupTitle</property>
@@ -3877,7 +3914,7 @@ return true;]]></method>
                     <property name="name">clickerTrackedEndDateValue_</property>
                     <property name="dataType">integer</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3886,12 +3923,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerTrackedEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerTrackedEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3900,12 +3938,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">if (row["clickerTrackedEndDateValue"] > 0) {1} else {0}</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerPcEndDateValue_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3914,12 +3953,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerPcEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerPcEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3928,12 +3968,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerPcEndDateRate"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerMobileEndDateValue_</property>
                     <property name="dataType">integer</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3942,12 +3983,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerMobileEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerMobileEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3956,12 +3998,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerMobileEndDateRate"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerTabletEndDateValue_</property>
                     <property name="dataType">integer</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3970,12 +4013,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerTabletEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerTabletEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3984,12 +4028,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerTabletEndDateRate"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerSmarttvEndDateValue_</property>
                     <property name="dataType">integer</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -3998,12 +4043,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerSmarttvEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerSmarttvEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -4012,12 +4058,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerSmarttvEndDateRate"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerMultipleEndDateValue_</property>
                     <property name="dataType">integer</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -4026,12 +4073,13 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerMultipleEndDateValue"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerMultipleEndDateRate_</property>
                     <property name="dataType">float</property>
                     <simple-property-list name="aggregateOn">
-                        <value>group_targetgroupindex</value>
+                        <value>group_targetgroupId</value>
                     </simple-property-list>
                     <property name="aggregateFunction">MAX</property>
                     <list-property name="arguments">
@@ -4040,6 +4088,7 @@ return true;]]></method>
                             <expression name="value" type="javascript">row["clickerMultipleEndDateRate"]</expression>
                         </structure>
                     </list-property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">clickerTrackedValueTitle</property>
@@ -4048,7 +4097,7 @@ return true;]]></method>
                     <list-property name="arguments">
                         <structure>
                             <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_TRACKED_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.TotalClickSubscribers.short", reportContext.getLocale())} else {""}</expression>
+                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_TRACKED_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString(CommonKeys.CLICKER_TRACKED, reportContext.getLocale())} else {""}</expression>
                         </structure>
                     </list-property>
                 </structure>
@@ -4136,6 +4185,12 @@ return true;]]></method>
                     <property name="name">clickerMultipleRateTitle</property>
                     <expression name="expression" type="javascript">row["clickerMultipleValueTitle"] + " in %"</expression>
                     <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">targetgroupId</property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGoupId"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
                 </structure>
             </list-property>
             <column id="6946"/>
@@ -4231,7 +4286,9 @@ return true;]]></method>
                 <property name="interval">none</property>
                 <property name="sortDirection">asc</property>
                 <expression name="keyExpr" type="javascript">row["mailingListId"]</expression>
-                <structure name="toc"/>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["mailingListId"]</expression>
+                </structure>
                 <property name="repeatHeader">true</property>
                 <property name="hideDetail">false</property>
                 <property name="pageBreakAfter">auto</property>
@@ -4246,11 +4303,13 @@ return true;]]></method>
                 </list-property>
             </group>
             <group id="6992">
-                <property name="groupName">group_targetgroupindex</property>
+                <property name="groupName">group_targetgroupId</property>
                 <property name="interval">none</property>
                 <property name="sortDirection">asc</property>
-                <expression name="keyExpr" type="javascript">row["targetgroupindex"]</expression>
-                <structure name="toc"/>
+                <expression name="keyExpr" type="javascript">row["targetgroupId"]</expression>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["targetgroupId"]</expression>
+                </structure>
                 <property name="repeatHeader">true</property>
                 <property name="hideDetail">false</property>
                 <property name="pageBreakAfter">auto</property>
@@ -4673,8 +4732,9 @@ return true;]]></method>
                     <property name="operator">eq</property>
                     <expression name="expr" type="javascript">row["targetGroupId"]</expression>
                     <simple-property-list name="value1">
-                        <value>0</value>
+                        <value>1</value>
                     </simple-property-list>
+                    <property name="updateAggregation">true</property>
                 </structure>
             </list-property>
             <column id="6866"/>

@@ -181,6 +181,7 @@ public class UserActivityLogController {
                 .setExportFile(exportTempFile.getAbsolutePath())
                 .setDateFormat(admin.getDateFormat())
                 .setDateTimeFormat(admin.getDateTimeFormatWithSeconds())
+                .setExportTimezone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId())
                 .build();
         exportWorker.call();
 

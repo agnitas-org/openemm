@@ -339,7 +339,7 @@ public class CsvImportExportDescription {
 			}
 			
 			if (csvColumns == null) {
-				throw new ImportError(ImportErrorKey.cannotReadImportFile);
+				throw new ImportError(ImportErrorKey.emptyImportFile);
 			}
 				
 			String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvColumns, autoMapping);

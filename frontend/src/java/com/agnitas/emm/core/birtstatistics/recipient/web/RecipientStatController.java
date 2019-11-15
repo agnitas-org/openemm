@@ -1,0 +1,132 @@
+/*
+
+    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.birtstatistics.recipient.web;
+
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
+import com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticForm;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.web.forms.FormDate;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.context.request.RequestContextHolder;
+
+@Controller
+@RequestMapping("/statistics/recipient")
+@PermissionMapping("recipient.stats.new")
+public class RecipientStatController {
+    
+    private static Logger logger = Logger.getLogger(RecipientStatController.class);
+
+    private BirtStatisticsService birtStatisticsService;
+    private ComTargetService targetService;
+    private MediaTypesService mediaTypesService;
+    private ConversionService conversionService;
+    private MailinglistApprovalService mailinglistApprovalService;
+    private UserActivityLogService userActivityLogService;
+    
+    public RecipientStatController(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
+                                   MediaTypesService mediaTypesService, ConversionService conversionService,
+                                   MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService) {
+        this.birtStatisticsService = birtStatisticsService;
+        this.targetService = targetService;
+        this.mediaTypesService = mediaTypesService;
+        this.conversionService = conversionService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
+        this.userActivityLogService = userActivityLogService;
+    }
+    
+    @RequestMapping("/view")
+    public String view(ComAdmin admin, @ModelAttribute(name="form") RecipientStatisticForm form, Model model, Popups popups) throws Exception {
+        if(!validateDates(admin.getLocale(), form.getStartDate(), form.getEndDate(), popups)){
+            return "messages";
+        }
+    
+        SimpleDateFormat datePickerFormat = AgnUtils.getDatePickerFormat(admin, true);
+        setDefaultDateValuesIfEmpty(form, datePickerFormat);
+    
+        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
+        RecipientStatisticDto statisticDto = conversionService.convert(form, RecipientStatisticDto.class);
+    
+        model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, sessionId, statisticDto));
+        
+        model.addAttribute("localeDatePattern", datePickerFormat.toPattern());
+        
+        model.addAttribute("targetlist", targetService.getTargetLights(admin.getCompanyID()));
+        model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
+        model.addAttribute("mediatypes", mediaTypesService.getAllowedMediaTypes(admin));
+        
+        model.addAttribute("yearlist", AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
+        model.addAttribute("monthlist", AgnUtils.getMonthList());
+        
+        userActivityLogService.writeUserActivityLog(admin, "recipient statistics", "active submenu - recipient overview", logger);
+
+        return "stats_birt_recipient_stat_new";
+    }
+
+    private void setDefaultDateValuesIfEmpty(final RecipientStatisticForm form, SimpleDateFormat datePickerFormat) {
+        LocalDate now = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePickerFormat.toPattern());
+    
+        if (form.getMonth() < 0) {
+            form.setMonth(now.getMonthValue()-1);
+        }
+        if (form.getYear() <= 0) {
+            form.setYear(now.getYear());
+        }
+        
+        LocalDate endDate = form.getEndDate().get(formatter);
+        if (StringUtils.isBlank(form.getEndDate().getDate())) {
+            endDate = now;
+            form.getEndDate().set(endDate, formatter);
+        }
+        
+        if (StringUtils.isBlank(form.getStartDate().getDate())) {
+            form.getStartDate().set(endDate.minusMonths(1), formatter);
+        }
+    }
+
+    private boolean validateDates(final Locale locale, final FormDate startDate, final FormDate endDate, final Popups popups) {
+        if(StringUtils.isBlank(startDate.getDate()) && StringUtils.isBlank(endDate.getDate())){
+            return true;
+        }
+        
+        String pattern = AgnUtils.getLocaleDateFormatSpecific(locale).toPattern();
+        if (!AgnUtils.isDateValid(startDate.getDate(), pattern) || !AgnUtils.isDateValid(endDate.getDate(), pattern)) {
+            popups.alert("error.date.format");
+            return false;
+        }
+
+        if (StringUtils.isNotBlank(startDate.getDate()) && StringUtils.isNotBlank(endDate.getDate())
+                && !AgnUtils.isDatePeriodValid(startDate.getDate(), endDate.getDate(), pattern)) {
+            popups.alert("error.period.format");
+            return false;
+        }
+        return true;
+    }
+}

@@ -30,7 +30,18 @@
       placement: placementFunction
     }, options));
 
-    return $e.data('bs.popover');
+    var popover = $e.data('bs.popover');
+
+    if (options && options.enableAgnRunAll) {
+      $e.on('shown.bs.popover', function() {
+        var $tip = popover.tip();
+
+        AGN.Lib.Controller.init($tip);
+        AGN.runAll($tip);
+      });
+    }
+
+    return popover;
   };
 
   Popover.get = function($e) {
@@ -38,7 +49,12 @@
       return null;
     }
 
-    return $e.data('bs.popover');
+    var popover = $e.data('bs.popover');
+    if (popover) {
+      return popover;
+    }
+
+    return $e.closest('div.popover').data('bs.popover');
   };
 
   Popover.remove = function($e) {

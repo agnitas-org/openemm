@@ -32,7 +32,7 @@ import com.agnitas.web.mvc.Popups;
 @Order(2)
 public class HtmlContentValidator implements DynTagValidator {
     private static final Logger logger = Logger.getLogger(HtmlContentValidator.class);
-    private final Pattern LINK_PATTER = Pattern.compile("(http|https):/+.*", Pattern.CASE_INSENSITIVE);
+    public static final Pattern LINK_PATTER = Pattern.compile("(http|https):/+.*", Pattern.CASE_INSENSITIVE);
 
     private HttpServletRequest request;
     private LinkService linkService;

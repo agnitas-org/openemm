@@ -8,7 +8,7 @@
             var context = canvas.getContext('2d');
             var imageObj = new Image();
             imageObj.src = $('#editor-img').attr('src');
-            $('#editorResult').val("");
+            $('#editor-result').val("");
 
             imageObj.onload = function() {
                 var width = imageObj.width;
@@ -25,7 +25,7 @@
                 $('#l-img-editor').css('min-width', newWidthOfEditor);
 
                 var newSrc = context.canvas.toDataURL();
-                $('#editorResult').attr('value', newSrc);
+                $('#editor-result').attr('value', newSrc);
             };
         });
     }

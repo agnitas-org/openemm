@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">MailingSummaryDataCube.MailingSummaryDataSet.x</property>
@@ -35,6 +35,7 @@
 importPackage(Packages.org.eclipse.birt.report.model.api.util);
 importPackage(org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.com.agnitas.messages);
+importPackage(Packages.org.apache.commons.lang);
 
 
 if(reportContext.getOutputFormat() == "pdf" || reportContext.getOutputFormat() == "csv") {
@@ -254,19 +255,6 @@ reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslati
             <property name="isRequired">false</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
-        <scalar-parameter name="uid" id="388">
-            <property name="valueType">static</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
-            </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -1921,9 +1909,8 @@ return false;]]></method>
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
-      <WidthHint>-1.0</WidthHint>
       <HorizontalSpacing>0</HorizontalSpacing>
-      <VerticalSpacing>0</VerticalSpacing>
+      <VerticalSpacing>20</VerticalSpacing>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -2098,52 +2085,38 @@ return false;]]></method>
   <Dimension>Two_Dimensional</Dimension>
   <Script>importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.com.agnitas.messages);
+importPackage(Packages.org.apache.commons.lang);
 
 var	ignoredBarIndexes = {}
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart Chart
  * @param icsc IChartScriptContext
  */
 function beforeGeneration(chart, icsc){
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
-	
+
 	// global functions
-	var getTranslationByCategory = externalScriptableContext.getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 	var hasPercentageRepresentation = externalScriptableContext.getGlobalVariable(&quot;hasPercentageRepresentationFunction&quot;);
-	var isDataDefinitionContainsColor = externalScriptableContext.getGlobalVariable(&quot;isDataDefinitionContainsColorFunction&quot;);
-	var getColorByCategory = externalScriptableContext.getGlobalVariable(&quot;getColorByCategoryFunction&quot;);
 
 	// axis
 	var xAxis = chart.getAxes().get(0);
 	var xSeriesDefinition = xAxis.getSeriesDefinitions().get(0);
-	var xSeriesPaletteEntries = xSeriesDefinition.getSeriesPalette().getEntries();
 	var xValues = xSeriesDefinition.getRunTimeSeries().get(0).getDataSet().getValues()
-	
+
 	for (i = 0; i &lt; xValues.length; i++) {
  		 var categoryKey = xValues[i];
- 		 
  		 // find out indexes of ignored burs.
  		 // uses in beforeDrawDataPointLabel method
  		 if (!hasPercentageRepresentation(categoryKey)) {
  		 	ignoredBarIndexes[i] = 0;
  		 }
- 		 
-		 // replace translation key to translation
- 		 // and change key if some other key present in data definition for this item 
- 		 xValues[i] = getTranslationByCategory(categoryKey);
-		 if (isDataDefinitionContainsColor(categoryKey)) {
-		 	// adds color in corresponding position for current item 
-		 	// if color present in data definition for this item
-		 	xSeriesPaletteEntries.add(i, getColorByCategory(categoryKey));
-		 }
 	}
 	chart.setSeriesThickness(30);
 
-	//max = reportContext.getPersistentGlobalVariable(&quot;total_sent&quot;);
 	max = reportContext.getPersistentGlobalVariable(&quot;maxValue&quot;);
 	if (max > 0) {
 		yAxis = chart.getOrthogonalAxes(chart.getBaseAxes()[0], true)[0];
@@ -2153,7 +2126,6 @@ function beforeGeneration(chart, icsc){
 		yAxis.setScale(yscale);
 	}
 };
-
 
 /**
  * Called before rendering the label for each datapoint.
@@ -2165,9 +2137,9 @@ function beforeGeneration(chart, icsc){
 function beforeDrawDataPointLabel(dph, label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
-	
+
 	var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
-	
+
 	// code to display the percent value
 	if (!(dph.getIndex() in ignoredBarIndexes)) {
 		currentValue = label.getCaption().getValue();
@@ -2182,7 +2154,62 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 		percentFormatted = formatter.format(percent);
 		label.getCaption().setValue(label.getCaption().getValue() + ' (' + percentFormatted +'%)');
 	}
-};</Script>
+};
+
+/**
+ * Called before drawing each datapoint graphical representation or marker.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param fill
+ *            Fill
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPoint( dph, fill, icsc )
+{
+	var externalScriptableContext = icsc.getExternalContext().getScriptable();	
+	var getColorByCategory = externalScriptableContext.getGlobalVariable(&quot;getColorByCategoryFunction&quot;);
+	var isDataDefinitionContainsColor = externalScriptableContext.getGlobalVariable(&quot;isDataDefinitionContainsColorFunction&quot;);
+	
+	var categoryKey = dph.getBaseDisplayValue();
+	// and change key if some other key present in data definition for this item
+	 if (isDataDefinitionContainsColor(categoryKey)) {
+	 	// color in corresponding position for current item
+	 	// if color present in data definition for this item
+ 		color = getColorByCategory(categoryKey);
+ 		//ColorDefinition::set(int iRed, int iGreen, int iBlue, int iAlpha) 
+ 		fill.set(color.getRed(), color.getGreen(), color.getBlue(), color.getTransparency()); 
+	 }
+}
+
+/**
+ * Called before rendering each label on a given Axis.
+ * 
+ * @param axis
+ *            Axis
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawAxisLabel( axis, label, icsc )
+{
+	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
+
+	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
+	if (axis.getType() == AxisType.TEXT_LITERAL){
+		 // replace translation key to translation
+ 	 	caption = label.getCaption();
+ 	 			 
+		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
+	 	caption.setValue(translated);
+	 	axis.setLabel(label);
+	}
+}
+</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <GridColumnCount>0</GridColumnCount>
@@ -2651,11 +2678,6 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
         </Insets>
         <Visible>true</Visible>
       </Label>
-      <FormatSpecifier xsi:type="attribute:NumberFormatSpecifier">
-        <Prefix></Prefix>
-        <Suffix></Suffix>
-        <FractionDigits>0</FractionDigits>
-      </FormatSpecifier>
       <LabelPosition>Left</LabelPosition>
       <MajorGrid>
         <LineAttributes>
@@ -2723,6 +2745,7 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
       </Origin>
       <PrimaryAxis>true</PrimaryAxis>
       <Percent>false</Percent>
+      <SideBySide>false</SideBySide>
     </AssociatedAxes>
     <AncillaryAxes>
       <Type>Text</Type>
@@ -3376,6 +3399,12 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
     <LineAttributes>
       <Style>Solid</Style>
       <Thickness>1</Thickness>
+      <Color>
+        <Transparency>255</Transparency>
+        <Red>0</Red>
+        <Green>0</Green>
+        <Blue>0</Blue>
+      </Color>
       <Visible>false</Visible>
     </LineAttributes>
     <Label>
@@ -3415,10 +3444,10 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
         <Top>0.0</Top>
         <Left>0.0</Left>
         <Bottom>0.0</Bottom>
-        <Right>20.0</Right>
+        <Right>0.0</Right>
       </Insets>
       <Visible>true</Visible>
-      <Ellipsis>0</Ellipsis>
+      <Ellipsis>40</Ellipsis>
     </Label>
     <LabelPosition>Below</LabelPosition>
     <Staggered>false</Staggered>
@@ -3480,6 +3509,9 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
     </Scale>
     <Origin>
       <Type>Min</Type>
+      <Value xsi:type="data:NumberDataElement">
+        <Value>0.0</Value>
+      </Value>
     </Origin>
     <PrimaryAxis>true</PrimaryAxis>
     <CategoryAxis>true</CategoryAxis>
@@ -3648,7 +3680,7 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
       </Outline>
       <Visible>true</Visible>
       <HorizontalSpacing>0</HorizontalSpacing>
-      <VerticalSpacing>0</VerticalSpacing>
+      <VerticalSpacing>20</VerticalSpacing>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -3828,50 +3860,36 @@ importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.util);
-importPackage(Packages.java.lang);
 importPackage(Packages.java.text);
+importPackage(Packages.org.apache.commons.lang);
 
 var	ignoredBarIndexes = {}
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart Chart
  * @param icsc IChartScriptContext
  */
 function beforeGeneration(chart, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
-	
+
 	// global functions
-	var getTranslationByCategory = externalScriptableContext.getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
 	var hasPercentageRepresentation = externalScriptableContext.getGlobalVariable(&quot;hasPercentageRepresentationFunction&quot;);
-	var isDataDefinitionContainsColor = externalScriptableContext.getGlobalVariable(&quot;isDataDefinitionContainsColorFunction&quot;);
-	var getColorByCategory = externalScriptableContext.getGlobalVariable(&quot;getColorByCategoryFunction&quot;);
-	
+
 	var xAxis = chart.getAxes().get(0);
 	var xSeriesDefinition = xAxis.getSeriesDefinitions().get(0);
-	var xSeriesPaletteEntries = xSeriesDefinition.getSeriesPalette().getEntries();
-	var xValues = xSeriesDefinition.getRunTimeSeries().get(0).getDataSet().getValues()
+	var xValues = xSeriesDefinition.getRunTimeSeries().get(0).getDataSet().getValues();
 
 	for (i = 0; i &lt; xValues.length; i++) {
  		 categoryKey = xValues[i];
- 		 
+
  		 // find out indexes of ignored burs.
  		 // uses in beforeDrawDataPointLabel method
  		 if (!hasPercentageRepresentation(categoryKey)) {
  		 	ignoredBarIndexes[i] = 0;
  		 }
- 		 
- 		 
-		 // replace translation key to translation
- 		 // and change key if some other key present in data definition for this item 
- 		 xValues[i] = getTranslationByCategory(categoryKey);
-			 if (isDataDefinitionContainsColor(categoryKey)) {
-		 	// adds color in corresponding position for current item 
-		 	// if color present in data definition for this item
-		 	xSeriesPaletteEntries.add(i, getColorByCategory(categoryKey));
-		 }
 	}
 	chart.setSeriesThickness(30);
 
@@ -3896,10 +3914,10 @@ function beforeGeneration(chart, icsc) {
 function beforeDrawDataPointLabel(dph, label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
-	
+
 	var totalSent = parseInt(reportContext.getGlobalVariable(&quot;total_sent&quot;));
 	var totalDelivered = parseInt(getGlobalVariable(&quot;total_delivered&quot;));
-	
+
 	// code to display the percent value
 	if (!(dph.getIndex() in ignoredBarIndexes)) {
 		currentValue = label.getCaption().getValue();
@@ -3919,7 +3937,61 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 		percentFormatted = formatter.format(percent);
 		label.getCaption().setValue(label.getCaption().getValue() + ' (' + percentFormatted +'%)');
 	}
-};</Script>
+};
+
+/**
+ * Called before drawing each datapoint graphical representation or marker.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param fill
+ *            Fill
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPoint( dph, fill, icsc )
+{
+	var externalScriptableContext = icsc.getExternalContext().getScriptable();	
+	var getColorByCategory = externalScriptableContext.getGlobalVariable(&quot;getColorByCategoryFunction&quot;);
+	var isDataDefinitionContainsColor = externalScriptableContext.getGlobalVariable(&quot;isDataDefinitionContainsColorFunction&quot;);
+	
+	var categoryKey = dph.getBaseDisplayValue();
+	// and change key if some other key present in data definition for this item
+	 if (isDataDefinitionContainsColor(categoryKey)) {
+	 	// color in corresponding position for current item
+	 	// if color present in data definition for this item
+ 		color = getColorByCategory(categoryKey);
+ 		//ColorDefinition::set(int iRed, int iGreen, int iBlue, int iAlpha) 
+ 		fill.set(color.getRed(), color.getGreen(), color.getBlue(), color.getTransparency()); 
+	 }
+}
+
+/**
+ * Called before rendering each label on a given Axis.
+ * 
+ * @param axis
+ *            Axis
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawAxisLabel( axis, label, icsc )
+{
+	var getTranslationByCategory = icsc.getExternalContext().getScriptable().getGlobalVariable(&quot;getTranslationByCategoryFunction&quot;);
+
+	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
+	if (axis.getType() == AxisType.TEXT_LITERAL){
+		 // replace translation key to translation
+		caption = label.getCaption();
+		 
+		var translated = StringUtils.abbreviate(getTranslationByCategory(caption.getValue()), 30);
+	 	caption.setValue(translated);
+	 	axis.setLabel(label);
+	}
+}</Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <GridColumnCount>0</GridColumnCount>
@@ -5151,9 +5223,10 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
         <Top>0.0</Top>
         <Left>0.0</Left>
         <Bottom>0.0</Bottom>
-        <Right>20.0</Right>
+        <Right>0.0</Right>
       </Insets>
       <Visible>true</Visible>
+      <Ellipsis>40</Ellipsis>
     </Label>
     <LabelPosition>Below</LabelPosition>
     <MajorGrid>

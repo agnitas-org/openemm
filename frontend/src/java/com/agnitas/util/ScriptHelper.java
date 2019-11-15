@@ -39,7 +39,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Recipient;
 import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
@@ -52,6 +51,7 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.Preview;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
 import org.agnitas.util.XmlUtilities;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -64,14 +64,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.agnitas.beans.ComRecommendation;
-import com.agnitas.beans.ComRecommendationStatistic;
-import com.agnitas.beans.ComRecommendationStatistic.RecommendationStatisticStatus;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComRecommendationDao;
-import com.agnitas.dao.ComRecommendationStatisticDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
@@ -81,8 +77,9 @@ import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
-import com.agnitas.emm.core.scripthelper.bean.ScriptHelperParameter;
 import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
 
 public class ScriptHelper {
 
@@ -93,7 +90,7 @@ public class ScriptHelper {
 	private static final int MAXIMUM_EMAIL_ADDRESS_LENGTH = 100;	// 100 is same size as of column CUSTOMER_?_TBL.email
 
 	/** DAO accessing mailing data. */
-	private MailingDao mailingDao;
+	private ComMailingDao mailingDao;
 
 	private MaildropStatusDao maildropStatusDao;
 
@@ -117,11 +114,6 @@ public class ScriptHelper {
 	private final transient Sha512Encoder sha512Encoder;
 
 	long timers[] = new long[10];
-
-	private ComRecommendationDao recommendationDao;
-
-	private ComRecommendationStatisticDao recommendationStatisticDao;
-
 
 	private RecipientService recipientService;
 
@@ -700,7 +692,7 @@ public class ScriptHelper {
 		}
 	}
 
-	public ScriptHelperParameter getScriptHelperParameter(final String prefix, final HashMap<String, String> requestParameter) {
+	public boolean storeRecipient(final Recipient recipient) {
 
     	/*
     	 * **************************************************
@@ -710,7 +702,12 @@ public class ScriptHelper {
     	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
     	 */
 
-		return new ScriptHelperParameter(prefix, requestParameter);
+		try {
+			return recipientDao.updateInDB(recipient);
+		} catch (Exception e) {
+			logger.error("Error in storeRecipient: " + e.getMessage());
+			return false;
+		}
 	}
 
 	public boolean updateDatasourceID(final Recipient cust) {
@@ -724,49 +721,6 @@ public class ScriptHelper {
     	 */
 
 		return recipientDao.updateDataSource(cust);
-	}
-
-	/**
-	 * Insert a new RecommendationStatistic entry
-	 */
-	public boolean writeRecommendationStatistic(final String recommendationKeyName, final int senderCustomerId, final String senderEmail, final int receiverCustomerId, final String receiverEmail, final int isNewValue, final int statusValue) {
-
-    	/*
-    	 * **************************************************
-    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
-    	 * **************************************************
-    	 *
-    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
-    	 */
-
-		try {
-			if (StringUtils.isBlank(recommendationKeyName)) {
-				throw new Exception("Invalid empty recommendationKeyName");
-			}
-
-			// Read Recommendation entry
-			final ComRecommendation recommendation = recommendationDao.getRecommendationByKeyName(recommendationKeyName);
-
-			if (recommendation == null) {
-				throw new Exception("Unknown recommendationKeyName");
-			}
-
-			// Insert new RecommendationStatistic entry
-			final ComRecommendationStatistic comRecommendationStatistic = new ComRecommendationStatistic();
-			comRecommendationStatistic.setRecommendationId(recommendation.getId());
-			comRecommendationStatistic.setCreationDate(new Date());
-			comRecommendationStatistic.setSenderCustomerId(senderCustomerId);
-			comRecommendationStatistic.setSenderEmail(senderEmail);
-			comRecommendationStatistic.setReceiverCustomerId(receiverCustomerId);
-			comRecommendationStatistic.setReceiverEmail(receiverEmail);
-			comRecommendationStatistic.setStatus(RecommendationStatisticStatus.getFromInt(statusValue));
-			comRecommendationStatistic.setIsNew(isNewValue);
-			recommendationStatisticDao.insert(comRecommendationStatistic);
-
-			return true;
-		} catch (final Exception e) {
-			return false;
-		}
 	}
 
 	/**
@@ -1264,8 +1218,23 @@ public class ScriptHelper {
 			return false;
 		}
 	}
+	
+	public boolean validateReCaptcha(String apiKey, String captchaResponseToken) {
+		try {
+			Map<String, Object> httpPostParameter = new HashMap<>();
+			httpPostParameter.put("secret", apiKey);
+			httpPostParameter.put("response", captchaResponseToken);
+			String response = HttpUtils.executeHttpPostRequest("https://www.google.com/recaptcha/api/siteverify", httpPostParameter);
+			JsonObject jsonResponse = (JsonObject) Json5Reader.readJsonItemString(response).getValue();
+			Boolean success = (Boolean) jsonResponse.get("success");
+			return success != null && success;
+		} catch (Exception e) {
+			logger.error("Recaptcha validate error: " + e.getMessage(), e);
+			return false;
+		}
+	}
 
-	public void setMailingDao(final MailingDao mailingDao) {
+	public void setMailingDao(final ComMailingDao mailingDao) {
 
     	/*
     	 * **************************************************
@@ -1334,13 +1303,9 @@ public class ScriptHelper {
 	public void setHelperService(final ScriptHelperService helperService) {
 		this.helperService = helperService;
 	}
-
-	public void setRecommendationDao(final ComRecommendationDao recommendationDao) {
-		this.recommendationDao = recommendationDao;
-	}
-
-	public void setRecommendationStatisticDao(final ComRecommendationStatisticDao recommendationStatisticDao) {
-		this.recommendationStatisticDao = recommendationStatisticDao;
+	
+	public Date getMailingSendDate(final int companyID, final int mailingID) {
+		return mailingDao.getMailingSendDate(companyID, mailingID);
 	}
 
 	@Required
@@ -1367,5 +1332,4 @@ public class ScriptHelper {
 	public final void setExtensibleUIDService(final ExtensibleUIDService extensibleUIDService) {
 		this.extensibleUIDService = extensibleUIDService;
 	}
-
 }

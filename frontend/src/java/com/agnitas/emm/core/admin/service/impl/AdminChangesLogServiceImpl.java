@@ -78,7 +78,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             if (oldAdmin.getGroup().getGroupID() != newAdminData.getGroupID()) {
                 String oldGroupName = oldAdmin.getGroup().getGroupID() == 0 ? "None" : oldAdmin.getGroup().getShortname();
-                String newGroupName = newAdminData.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(newAdminData.getGroupID()).getShortname();
+                String newGroupName = newAdminData.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(newAdminData.getGroupID(), newAdminData.getCompanyID()).getShortname();
 
                 userActions.add(new UserAction("edit user",
                         "Username: " + userName + ". User Group changed from " + oldGroupName + " to " + newGroupName));

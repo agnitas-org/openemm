@@ -195,7 +195,7 @@
                             <c:when test="${workflow.generalStartEvent == EVENT_DATE}">
                                 <span class="badge badge-campaigntype-datebased">
                                     <i class="icon icon-calendar-o"></i>
-                                    <strong><bean:message key="workflowlist.dateBased"/></strong>
+                                    <strong><bean:message key="mailing.date"/></strong>
                                 </span>
                             </c:when>
                             <c:otherwise>

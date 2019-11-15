@@ -14,24 +14,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.impl.ComCompanyImpl;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
-import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Company;
 import org.agnitas.beans.DynamicTagContent;
@@ -48,12 +37,26 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.Tuple;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.impl.ComCompanyImpl;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
+import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
 	/** The logger. */
@@ -62,8 +65,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private static final int DEFAULT_EXPIRATION_DAYS = 1100;
 	
 	private static final int DEFAULT_RECIPIENT_EXPIRATION_DAYS = 30;
-
-	private static final String COMPANY_STATUS_ACTIVE = "active";
 
 	/** Configuration service. */
 	private ConfigService configService;
@@ -401,7 +402,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	/**
 	 * Because the companyid is not aquired yet we use 1 (always existing company of emm-master) as interim companyid and update this later
-	 *
+	 * 
 	 * @return
 	 */
 	@DaoUpdateReturnValueCheck
@@ -448,6 +449,14 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		update(logger, sql, status, companyID);
 	}
 
+	@Override
+	public List<Integer> getOpenEMMCompanyForClosing() {
+		final Date lifeTimeExpire = DateUtilities.getDateOfDaysAgo(configService.getIntegerValue(ConfigValue.System_License_MaximumLifetimeOfTestAccounts));
+		final int creatorCompany = configService.getIntegerValue(ConfigValue.System_License_OpenEMMMasterCompany);
+		String sql = "SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status = 'active' AND timestamp < ?";
+		return select(logger, sql, new IntegerRowMapper(), creatorCompany, lifeTimeExpire);
+	}
+	
 	/**
 	 * Use {@link ComCompanyDaoImpl#getCompanyListNew(int, String, String, int, int)} instead.
 	 */
@@ -491,7 +500,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId) {
 		return select(logger, "SELECT company_id, shortname, description FROM company_tbl WHERE status = 'active' AND (company_id = ? OR creator_company_id = ?) ORDER BY LOWER(shortname)", new CompanyEntryRowMapper(), companyId, companyId);
 	}
-
+	
 	@Override
 	public CompanyEntry getCompanyLight(int id) {
 		return select(logger, "SELECT company_id, shortname, description FROM company_tbl WHERE company_id = ?", new CompanyEntryRowMapper(), id).get(0);
@@ -522,7 +531,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (DbUtilities.checkOracleTablespaceExists(getDataSource(), TABLESPACE_DATA_CUSTOMER_TABLE)) {
 					tablespaceClauseCustomerTable = " TABLESPACE " + TABLESPACE_DATA_CUSTOMER_TABLE;
 				}
-				
+				 
 				String tablespaceClauseDataWarehouse = "";
 				if (DbUtilities.checkOracleTablespaceExists(getDataSource(), TABLESPACE_DATA_WAREHOUSE)) {
 					tablespaceClauseDataWarehouse = " TABLESPACE " + TABLESPACE_DATA_WAREHOUSE;
@@ -610,7 +619,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE TABLE rdir_traffic_agr_" + newCompanyId + "_tbl (mailing_id NUMBER, content_name VARCHAR2(3000), content_size NUMBER, demand_date TIMESTAMP, amount NUMBER)" + tablespaceClauseCustomerTable;
 				execute(logger, sql);
 			} else {
-				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id INT(11) NOT NULL, mailing_id INT(11) NOT NULL, send_date TIMESTAMP NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id INTEGER UNSIGNED NOT NULL, mailing_id INT(11) NOT NULL, send_date TIMESTAMP NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX intervtrack$" + newCompanyId + "mid$idx ON interval_track_" + newCompanyId + "_tbl (mailing_id)";
 				execute(logger, sql);
@@ -618,19 +627,19 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				initCustomerTables(newCompanyId);
 				
 				// Watch out: Mysql does not support check constraints
-				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id INT(11), maildrop_status_id INT(11) NOT NULL, customer_id INT(11) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id INT(11), maildrop_status_id INT(11) NOT NULL, customer_id INTEGER UNSIGNED NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$cid$idx ON mailtrack_" + newCompanyId + "_tbl (customer_id)";
 				execute(logger, sql);
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$mid$idx ON mailtrack_" + newCompanyId + "_tbl (mailing_id)";
 				execute(logger, sql);
 				
-				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogTableName(newCompanyId) + " (customer_id INT(11) NOT NULL, mailing_id INT(11) NOT NULL, company_id INT(11) NOT NULL, ip_adr VARCHAR(15) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, open_count INT(11), mobile_count INT(11), first_open TIMESTAMP NULL, last_open TIMESTAMP NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogTableName(newCompanyId) + " (customer_id INTEGER UNSIGNED NOT NULL, mailing_id INT(11) NOT NULL, company_id INT(11) NOT NULL, ip_adr VARCHAR(15) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, open_count INT(11), mobile_count INT(11), first_open TIMESTAMP NULL, last_open TIMESTAMP NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX onepix" + newCompanyId + "$mlid_cuid$idx ON " + OnepixelDaoImpl.getOnepixellogTableName(newCompanyId) + " (mailing_id, customer_id)";
 				execute(logger, sql);
 				
-				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogDeviceTableName(newCompanyId) + " (company_id INT(11) NOT NULL, mailing_id INT(11) NOT NULL, customer_id INT(11) NOT NULL, device_id INT(11), device_class_id INT(2) NOT NULL, creation TIMESTAMP, client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogDeviceTableName(newCompanyId) + " (company_id INT(11) NOT NULL, mailing_id INT(11) NOT NULL, customer_id INTEGER UNSIGNED NOT NULL, device_id INT(11), device_class_id INT(2) NOT NULL, creation TIMESTAMP, client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX onedev" + newCompanyId + "$creat$idx ON " + OnepixelDaoImpl.getOnepixellogDeviceTableName(newCompanyId) + " (creation)";
 				execute(logger, sql);
@@ -639,7 +648,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE INDEX onedev" + newCompanyId + "$ciddevclidmlid$idx ON " + OnepixelDaoImpl.getOnepixellogDeviceTableName(newCompanyId) + " (customer_id, device_class_id, mailing_id)";
 				execute(logger, sql);
 				
-				sql = "CREATE TABLE rdirlog_" + newCompanyId + "_tbl (customer_id INT(11) NOT NULL, url_id INT(11) NOT NULL, company_id INT(11) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ip_adr VARCHAR(15) NOT NULL, mailing_id INT(11), device_class_id INT(2) NOT NULL, device_id INT(11), client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE rdirlog_" + newCompanyId + "_tbl (customer_id INTEGER UNSIGNED NOT NULL, url_id INT(11) NOT NULL, company_id INT(11) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ip_adr VARCHAR(15) NOT NULL, mailing_id INT(11), device_class_id INT(2) NOT NULL, device_id INT(11), client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX rlog" + newCompanyId + "$mlid_urlid_cuid$idx ON rdirlog_" + newCompanyId + "_tbl (mailing_id, url_id, customer_id)";
 				execute(logger, sql);
@@ -648,13 +657,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE INDEX rlog" + newCompanyId + "$tmst$idx ON rdirlog_" + newCompanyId + "_tbl (timestamp)";
 				execute(logger, sql);
 				
-				sql = "CREATE TABLE rdirlog_userform_" + newCompanyId + "_tbl (form_id INT(11), customer_id INT(11) NULL, url_id INT(11) NOT NULL, company_id INT(11) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ip_adr VARCHAR(15), mailing_id INT(11), device_class_id INT(2) NOT NULL, device_id INT(11), client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE rdirlog_userform_" + newCompanyId + "_tbl (form_id INT(11), customer_id INTEGER UNSIGNED NULL, url_id INT(11) NOT NULL, company_id INT(11) NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ip_adr VARCHAR(15), mailing_id INT(11), device_class_id INT(2) NOT NULL, device_id INT(11), client_id INT(11)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX rlogform" + newCompanyId + "$fid_urlid$idx ON rdirlog_userform_" + newCompanyId + "_tbl (form_id, url_id)";
 				execute(logger, sql);
 				
 				// Create success_tbl_xxx for this new company
-				sql = "CREATE TABLE success_" + newCompanyId + "_tbl (customer_id INT(11), mailing_id INT(11), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE success_" + newCompanyId + "_tbl (customer_id INTEGER UNSIGNED, mailing_id INT(11), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
 				sql = "CREATE INDEX suc" + newCompanyId + "$mid$idx ON success_" + newCompanyId + "_tbl (mailing_id)";
 				execute(logger, sql);
@@ -709,7 +718,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, firstname, lastname, email, mailtype) (SELECT " + newCustomerID + ", gender, firstname, lastname, email, mailtype FROM customer_1_tbl WHERE customer_id = " + customerToCopyID + ")";
 					update(logger, sql);
 				} else {
-					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(?, 2, 0, 'tester@agnitas.de', 1)", newCustomerID);
+					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype) VALUES(?, 2, 0, 'test@example.com', 1)", newCustomerID);
 				}
 				if (customerToCopyID > 0) {
 					// Set binding for new customer
@@ -729,7 +738,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 				// Default mediapool categories
 				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'grid.mediapool.category.generic', 0, '', 1, 1)";
+					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'General', 0, '', 1, 1)";
 				update(logger, sql);
 				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, hidden, description, in_floating_bar, translatable)"
 					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'grid.mediapool.category.editorial', 0, '', 1, 1)";
@@ -743,13 +752,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					nextRangeStart += CLICK_STAT_RANGES[i];
 				}
 				
-				String createCustHistoryTblSql = "CREATE TABLE cust_" + newCompanyId + "_devicehistory_tbl (device_id INT(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, customer_id INT(11), mailing_id INT(11), creation_date TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+				String createCustHistoryTblSql = "CREATE TABLE cust_" + newCompanyId + "_devicehistory_tbl (device_id INT(11) PRIMARY KEY AUTO_INCREMENT NOT NULL, customer_id INTEGER UNSIGNED, mailing_id INT(11), creation_date TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 				try {
 					execute(logger, createCustHistoryTblSql);
 				} catch (Exception e) {
 					logger.error("Error creating devicehistory_tbl: " + e);
 				}
-				
+								
 				// Copy mailinglist
 				int mailingListToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = 1 AND deleted = 0", 0);
 				if (mailingListToCopyID > 0) {
@@ -762,7 +771,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (customerToCopyID > 0) {
 					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype) (SELECT gender, firstname, lastname, email, mailtype FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
 				} else {
-					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES (2, 0, 'tester@agnitas.de', 1)");
+					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype) VALUES (2, 0, 'test@example.com', 1)");
 				}
 				if (newCustomerID > 0) {
 					// Set binding for new customer
@@ -782,7 +791,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 				// Default mediapool categories
 				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", 'grid.mediapool.category.generic', 0, '', 1, 1)";
+					+ " VALUES (" + newCompanyId + ", 'General', 0, '', 1, 1)";
 				update(logger, sql);
 				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, hidden, description, in_floating_bar, translatable)"
 					+ " VALUES (" + newCompanyId + ", 'grid.mediapool.category.editorial', 0, '', 1, 1)";
@@ -879,6 +888,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@DaoUpdateReturnValueCheck
 	public void copySampleMailings(@VelocityCheck int newCompanyId, int mailinglistID, String rdirDomain) throws Exception {
 		Map<Integer, Integer> mailingsMapping = new HashMap<>();
+		
 		doCopySampleMailings(newCompanyId, mailinglistID, rdirDomain, mailingsMapping);
 	}
 	
@@ -973,7 +983,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		} else {
 			String sql;
 			// Create reveue tracking table for this new company
-			sql = "CREATE TABLE rdirlog_" + newCompanyId + "_val_num_tbl (company_id INT(11) NOT NULL, customer_id INT(11), ip_adr VARCHAR(15), mailing_id INT(11), session_id INT(11), `timestamp` timestamp DEFAULT CURRENT_TIMESTAMP, num_parameter DOUBLE, page_tag VARCHAR(30)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+			sql = "CREATE TABLE rdirlog_" + newCompanyId + "_val_num_tbl (company_id INT(11) NOT NULL, customer_id INTEGER UNSIGNED, ip_adr VARCHAR(15), mailing_id INT(11), session_id INT(11), `timestamp` timestamp DEFAULT CURRENT_TIMESTAMP, num_parameter DOUBLE, page_tag VARCHAR(30)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 			execute(logger, sql);
 			sql = "ALTER TABLE rdirlog_" + newCompanyId + "_val_num_tbl ADD CONSTRAINT rdvalnum" + newCompanyId + "$coid$nn CHECK (company_id IS NOT NULL)";
 			execute(logger, sql);
@@ -1025,7 +1035,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ STANDARD_FIELD_LASTSEND_DATE + " DATE, "
 					+ STANDARD_FIELD_LATEST_DATASOURCE_ID + " NUMBER, "
 					+ STANDARD_FIELD_DO_NOT_TRACK + " NUMBER(1), "
-					+ STANDARD_FIELD_CLEANED_DATE + " DATE "
+					+ STANDARD_FIELD_CLEANED_DATE + " DATE"
 					+ ")"
 					+ tablespaceClauseCustomer;
 				execute(logger, sql);
@@ -1041,10 +1051,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_tbl ADD CONSTRAINT cust" + newCompanyId + "$mailtype$nn CHECK (mailtype IS NOT NULL)";
 				execute(logger, sql);
+				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
+				execute(logger, sql);
 				sql = "CREATE INDEX cust" + newCompanyId + "$email$idx ON customer_" + newCompanyId + "_tbl (email)" + tablespaceClauseCustomerBindIndex;
 				execute(logger, sql);
 				
-				sql = "CREATE TABLE customer_" + newCompanyId + "_binding_tbl (customer_id NUMBER, mailinglist_id NUMBER, user_type CHAR(1), user_status NUMBER, user_remark VARCHAR2(150), timestamp DATE DEFAULT SYSDATE, creation_date DATE default SYSDATE, exit_mailing_id NUMBER, mediatype number DEFAULT 0, referrer VARCHAR2(4000))" + tablespaceClauseCustomer;
+				sql = "CREATE TABLE customer_" + newCompanyId + "_binding_tbl ("
+					+ "customer_id NUMBER, "
+					+ "mailinglist_id NUMBER, "
+					+ "user_type CHAR(1), "
+					+ "user_status NUMBER, "
+					+ "user_remark VARCHAR2(150), "
+					+ "timestamp DATE DEFAULT SYSDATE, "
+					+ "creation_date DATE default SYSDATE, "
+					+ "exit_mailing_id NUMBER, "
+					+ "entry_mailing_id NUMBER, "
+					+ "mediatype NUMBER DEFAULT 0, "
+					+ "referrer VARCHAR2(4000)"
+					+ ")" + tablespaceClauseCustomer;
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$cid$fk FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
 				execute(logger, sql);
@@ -1084,7 +1108,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			} else {
 				// Watch out: Mysql does not support check constraints
 				sql = "CREATE TABLE customer_" + newCompanyId + "_tbl ("
-					+ STANDARD_FIELD_CUSTOMER_ID + " INT(11) PRIMARY KEY AUTO_INCREMENT, "
+					+ STANDARD_FIELD_CUSTOMER_ID + " INT(11) UNSIGNED PRIMARY KEY AUTO_INCREMENT, "
 					+ STANDARD_FIELD_EMAIL + " VARCHAR(100) NOT NULL, "
 					+ STANDARD_FIELD_FIRSTNAME + " VARCHAR(100), "
 					+ STANDARD_FIELD_LASTNAME + " VARCHAR(100), "
@@ -1103,12 +1127,14 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ STANDARD_FIELD_CLEANED_DATE + " TIMESTAMP NULL "
 					+ ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				execute(logger, sql);
+				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
+				execute(logger, sql);
 				sql = "CREATE INDEX cust" + newCompanyId + "$email$idx ON customer_" + newCompanyId + "_tbl (email)";
 				execute(logger, sql);
 				
 			 // Watch out for collation of user_type in customer_*_binding_tbl
 				sql = "CREATE TABLE customer_" + newCompanyId + "_binding_tbl ("
-					+ "customer_id INT(11) NOT NULL,"
+					+ "customer_id INTEGER UNSIGNED NOT NULL,"
 					+ " mailinglist_id INT(11) UNSIGNED DEFAULT NULL,"
 					+ " user_type CHAR(1) COLLATE utf8_bin,"
 					+ " user_status INT(11) NOT NULL,"
@@ -1116,15 +1142,16 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					+ " timestamp TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
 					+ " creation_date TIMESTAMP NULL DEFAULT NULL,"
 					+ " exit_mailing_id INT(11),"
-					+ " mediatype INT(11) DEFAULT 0,"
+					+ " entry_mailing_id INT(11),"
+					+ " mediatype INTEGER UNSIGNED DEFAULT 0,"
 					+ " referrer VARCHAR(4000)"
 					+ ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				execute(logger, sql);
+				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$cid_mid_mt$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype)";
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$cid$fk FOREIGN KEY (customer_id) REFERENCES customer_" + newCompanyId + "_tbl (customer_id)";
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$mid$fk FOREIGN KEY (mailinglist_id) REFERENCES mailinglist_tbl (mailinglist_id)";
-				execute(logger, sql);
-				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$cid_mid_mt$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype)";
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$cid$nn CHECK (customer_id IS NOT NULL)";
 				execute(logger, sql);
@@ -1132,10 +1159,14 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				execute(logger, sql);
 				sql = "ALTER TABLE customer_" + newCompanyId + "_binding_tbl ADD CONSTRAINT cust" + newCompanyId + "b$ustat$nn CHECK (user_status IS NOT NULL)";
 				execute(logger, sql);
+				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + newCompanyId + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + newCompanyId + "_binding_tbl (customer_id, mailinglist_id, mediatype)";
+				execute(logger, sql);
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_ustat_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_status, mailinglist_id)";
 				execute(logger, sql);
 				
 				sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR(150) NOT NULL, timestamp timestamp DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				execute(logger, sql);
+				sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + newCompanyId + "ban_tbl FOREIGN KEY (text) REFERENCES cust" + newCompanyId + "_ban_tbl (email)";
 				execute(logger, sql);
 			}
 		} catch (Exception e) {
@@ -1190,7 +1221,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public String getRedirectDomain(@VelocityCheck int companyId) {
-		String sql = "SELECT rdir_domain FROM company_tbl WHERE company_id = ?";
+		final String sql = "SELECT rdir_domain FROM company_tbl WHERE company_id = ?";
 		return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("rdir_domain"), companyId);
 	}
 	
@@ -1211,7 +1242,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	/**
 	 * This method gets a list with all NOT DELETED companys from our DB.
-	 *
+	 * 
 	 * @return
 	 */
 	@Override
@@ -1265,6 +1296,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 							+ "timestamp DATE, "
 							+ "creation_date DATE, "
 							+ "exit_mailing_id NUMBER, "
+							+ "entry_mailing_id NUMBER, "
 							+ "mediatype NUMBER, "
 							+ "change_type NUMBER, "
 							+ "timestamp_change DATE, "
@@ -1282,18 +1314,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$email$idx ON hst_customer_" + companyID + "_binding_tbl (email)" + tablespaceClauseIndex);
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$mlidcidl$idx ON hst_customer_" + companyID + "_binding_tbl (mailinglist_id, customer_id)" + tablespaceClauseIndex);
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$tsch$idx ON hst_customer_" + companyID + "_binding_tbl (timestamp_change)" + tablespaceClauseIndex);
+
+					sql = "ALTER TABLE hst_customer_" + companyID + "_binding_tbl ADD CONSTRAINT hstcb1$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype, timestamp_change)";
+					execute(logger, sql);
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
+					execute(logger, sql);
 				} else {
 					sql = "CREATE TABLE hst_customer_" + companyID + "_binding_tbl "
 							+ "("
-							+ "customer_id INT(11), "
-							+ "mailinglist_id INT(11), "
+							+ "customer_id INTEGER UNSIGNED, "
+							+ "mailinglist_id INTEGER UNSIGNED, "
 							+ "user_type CHAR(1), "
 							+ "user_status INT(11), "
 							+ "user_remark VARCHAR(150), "
 							+ "timestamp TIMESTAMP, "
 							+ "creation_date TIMESTAMP, "
 							+ "exit_mailing_id INT(11), "
-							+ "mediatype INT(11), "
+							+ "entry_mailing_id INT(11), "
+							+ "mediatype INTEGER UNSIGNED, "
 							+ "change_type INT(11), "
 							+ "timestamp_change TIMESTAMP, "
 							+ "client_info VARCHAR(150), "
@@ -1305,6 +1343,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$email$idx ON hst_customer_" + companyID + "_binding_tbl (email)");
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$mlidcidl$idx ON hst_customer_" + companyID + "_binding_tbl (mailinglist_id, customer_id)");
 					execute(logger, "CREATE INDEX hstcb" + companyID + "$tsch$idx ON hst_customer_" + companyID + "_binding_tbl (timestamp_change)");
+
+					sql = "ALTER TABLE hst_customer_" + companyID + "_binding_tbl ADD CONSTRAINT hstcb1$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype, timestamp_change)";
+					execute(logger, sql);
+					sql = "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)";
+					execute(logger, sql);
 				}
 				
 				bindingHistoryDao.recreateBindingHistoryTrigger(companyID);
@@ -1378,13 +1421,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public int getNumberOfCompanies() {
-		return selectInt(logger, "SELECT COUNT(*) FROM company_tbl WHERE status = ?", COMPANY_STATUS_ACTIVE);
+		return selectInt(logger, "SELECT COUNT(*) FROM company_tbl WHERE status = ?", Company.STATUS_ACTIVE);
 	}
 
 	@Override
 	public int getMaximumNumberOfCustomers() {
 		int maximumNumberOfCustomers = 0;
-		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), COMPANY_STATUS_ACTIVE)) {
+		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), Company.STATUS_ACTIVE)) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
 				int numberOfCustomers = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
 				maximumNumberOfCustomers = Math.max(maximumNumberOfCustomers, numberOfCustomers);
@@ -1396,7 +1439,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public int getMaximumNumberOfProfileFields() throws Exception {
 		int maximumNumberOfProfileFields = 0;
-		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), COMPANY_STATUS_ACTIVE)) {
+		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), Company.STATUS_ACTIVE)) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
 				int numberOfProfileFields = DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
 				maximumNumberOfProfileFields = Math.max(maximumNumberOfProfileFields, numberOfProfileFields);
@@ -1431,7 +1474,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	private List<Integer> getSampleFormIDs() {
 		return select(logger, "SELECT form_id FROM userform_tbl WHERE company_id = 1 AND (LOWER(formname) LIKE '%sample%' OR LOWER(formname) LIKE '%example%' OR LOWER(formname) LIKE '%muster%' OR LOWER(formname) LIKE '%beispiel%')", new IntegerRowMapper());
 	}
-
 	@Override
 	public void createCompanyPermission(int companyID, Permission permission) {
 		if (companyID >= 0  && !hasCompanyPermission(companyID, permission)) {
@@ -1560,7 +1602,90 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	
 	@Override
+	public int selectForTestCompany() {
+		return selectIntWithDefaultValue(logger, "SELECT company_id FROM company_tbl WHERE shortname like 'OpenEMM Test%' AND status = 'locked' LIMIT 1", 0);
+	}
+	
+	@Override
+	public int selectNumberOfExistingTestCompanies() {
+		return selectIntWithDefaultValue(logger, "SELECT COUNT(*) FROM company_tbl WHERE shortname like 'OpenEMM Test%'", 0);
+	}
+	
+	@Override
 	public boolean isCompanyNameUnique(String shortname) {
 		return selectInt(logger, "SELECT count(*) FROM company_tbl WHERE shortname = ?", shortname) == 0;
+	}
+
+	@Override
+	public void addMissingForeignKeysForPreventTableDrop() {
+		if (!isOracleDB()) {
+			for (CompanyEntry companyEntry : getActiveCompaniesLight()) {
+				int companyID = companyEntry.getCompanyId();
+				try {
+					if (!DbUtilities.checkForeignKeyExists(getDataSource(), "prevent_table_drop", "customer_" + companyID + "_tbl")) {
+						String columnTypeCustomerId = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "customer_" + companyID + "_tbl", "customer_id");
+						if (!columnTypeCustomerId.toLowerCase().contains("unsigned")) {
+							// This is a fallback for old customer_id of signed integer type
+							execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + companyID + "_tbl FOREIGN KEY (signed_id) REFERENCES customer_" + companyID + "_tbl (customer_id)");
+						} else {
+							execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + companyID + "_tbl FOREIGN KEY (customer_id) REFERENCES customer_" + companyID + "_tbl (customer_id)");
+						}
+					}
+					
+					if (!DbUtilities.checkForeignKeyExists(getDataSource(), "prevent_table_drop", "customer_" + companyID + "_binding_tbl")) {
+						String columnTypeMailinglistId = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "customer_" + companyID + "_binding_tbl", "mailinglist_id");
+						if (!columnTypeMailinglistId.toLowerCase().contains("unsigned")) {
+							execute(logger, "ALTER TABLE customer_" + companyID + "_binding_tbl MODIFY mailinglist_id INTEGER UNSIGNED DEFAULT NULL");
+						}
+						
+						String columnTypeMediatype = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "customer_" + companyID + "_binding_tbl", "mediatype");
+						if (!columnTypeMediatype.toLowerCase().contains("unsigned")) {
+							execute(logger, "ALTER TABLE customer_" + companyID + "_binding_tbl MODIFY mediatype INTEGER UNSIGNED DEFAULT 0");
+						}
+						
+						String columnTypeCustomerId = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "customer_" + companyID + "_binding_tbl", "customer_id");
+						if (!columnTypeCustomerId.toLowerCase().contains("unsigned")) {
+							// This is a fallback for old customer_id of signed integer type
+							execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + companyID + "_binding_tbl FOREIGN KEY (signed_id, mailinglist_id, mediatype) REFERENCES customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype)");
+						} else {
+							execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_" + companyID + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype) REFERENCES customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype)");
+						}
+					}
+
+					if (!DbUtilities.checkForeignKeyExists(getDataSource(), "prevent_table_drop", "cust" + companyID + "_ban_tbl")) {
+						if (DbUtilities.getPrimaryKeyColumns(getDataSource(), "cust" + companyID + "_ban_tbl").size() != 1) {
+							execute(logger, "ALTER TABLE cust" + companyID + "_ban_tbl ADD CONSTRAINT ban" + companyID + "$pk PRIMARY KEY (email)");
+						}
+						execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$cust" + companyID + "_ban_tbl FOREIGN KEY (text) REFERENCES cust" + companyID + "_ban_tbl (email)");
+					}
+					
+					if (DbUtilities.checkIfTableExists(getDataSource(), "hst_customer_" + companyID + "_binding_tbl")) {
+						if (DbUtilities.getPrimaryKeyColumns(getDataSource(), "hst_customer_" + companyID + "_binding_tbl").size() != 4) {
+							execute(logger, "ALTER TABLE hst_customer_" + companyID + "_binding_tbl ADD CONSTRAINT hstcb" + companyID + "$pk PRIMARY KEY (customer_id, mailinglist_id, mediatype, timestamp_change)");
+						}
+						if (!DbUtilities.checkForeignKeyExists(getDataSource(), "prevent_table_drop", "hst_customer_" + companyID + "_binding_tbl")) {
+							String columnTypeCustomerId = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "hst_customer_" + companyID + "_binding_tbl", "customer_id");
+							if (!columnTypeCustomerId.toLowerCase().contains("unsigned")) {
+								execute(logger, "ALTER TABLE hst_customer_" + companyID + "_binding_tbl MODIFY customer_id INTEGER UNSIGNED DEFAULT NULL");
+							}
+
+							String columnTypeMailinglistId = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "hst_customer_" + companyID + "_binding_tbl", "mailinglist_id");
+							if (!columnTypeMailinglistId.toLowerCase().contains("unsigned")) {
+								execute(logger, "ALTER TABLE hst_customer_" + companyID + "_binding_tbl MODIFY mailinglist_id INTEGER UNSIGNED DEFAULT NULL");
+							}
+
+							String columnTypeMediatype = select(logger, "SELECT column_type FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)", String.class, "hst_customer_" + companyID + "_binding_tbl", "mediatype");
+							if (!columnTypeMediatype.toLowerCase().contains("unsigned")) {
+								execute(logger, "ALTER TABLE hst_customer_" + companyID + "_binding_tbl MODIFY mediatype INTEGER UNSIGNED DEFAULT NULL");
+							}
+							
+							execute(logger, "ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$hcustomer_" + companyID + "_binding_tbl FOREIGN KEY (customer_id, mailinglist_id, mediatype, change_date) REFERENCES hst_customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, timestamp_change)");
+						}
+					}
+				} catch (Exception e) {
+					logger.error("Cannot add missing foreign keys for prevent_table_drop (CID " + companyID + "): " + e.getMessage(), e);
+				}
+			}
+		}
 	}
 }

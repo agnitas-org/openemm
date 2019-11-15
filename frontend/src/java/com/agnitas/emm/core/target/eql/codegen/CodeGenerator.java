@@ -41,7 +41,7 @@ import com.agnitas.emm.core.target.eql.ast.StartsWithRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantListItemEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.TodayAtomEqlNode;
-import com.agnitas.emm.core.target.eql.ast.transform.TrackingVetoShiftNotDownTransform;
+import com.agnitas.emm.core.target.eql.ast.transform.ShiftNotDownTransform;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
 
 /**
@@ -65,7 +65,7 @@ public class CodeGenerator {
 	
 	protected final void doGenerateCode(final BooleanExpressionTargetRuleEqlNode root, final CodeGeneratorCallback callback) throws CodeGeneratorException {
 		try {
-			final BooleanExpressionTargetRuleEqlNode transformedRoot = TrackingVetoShiftNotDownTransform.shiftNotDown(root);
+			final BooleanExpressionTargetRuleEqlNode transformedRoot = ShiftNotDownTransform.shiftNotDown(root);
 			
 			if(root.getChild().isPresent()) {
 				handleAbstractBooleanEqlNode(transformedRoot.getChild().get(), callback);

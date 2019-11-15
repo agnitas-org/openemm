@@ -13,6 +13,7 @@ package com.agnitas.beans;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.Mailing;
 import org.agnitas.preview.AgnTagError;
@@ -51,6 +52,9 @@ public interface ComMailing extends Mailing {
 
     String getStatusmailRecipients();
     void setStatusmailRecipients(String statusmailRecipients);
+
+    boolean isStatusmailOnErrorOnly();
+    void setStatusmailOnErrorOnly(boolean statusmailOnErrorOnly);
     
     String getFollowUpType();
 	void setFollowUpType(String followUpType);
@@ -80,4 +84,5 @@ public interface ComMailing extends Mailing {
 	
 	MailingContentType getMailingContentType();
 	void setMailingContentType(MailingContentType mailingContentType);
+	public Set<Integer> getAllReferencedTargetGroups();
 }

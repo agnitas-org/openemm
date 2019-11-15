@@ -27,13 +27,15 @@ public class Imagepool {
 		inUse = new HashMap <> ();
 	}
 
-	public void addImage (BlockData block) {
+	public void addImage (BlockData block, boolean use) {
 		if ((block != null) &&
 		    (block.type == BlockData.RELATED_BINARY) &&
 		    (block.cid != null) &&
 		    block.isImage) {
 			imageNames.add (block.cid);
-			markInUse (block.cid, MAILING, new Image (block.id, block.cid, block.cid, null), block.cidEmit);
+			if (use) {
+				markInUse (block.cid, MAILING, new Image (block.id, block.cid, block.cid, null), block.cidEmit);
+			}
 		}
 	}
 

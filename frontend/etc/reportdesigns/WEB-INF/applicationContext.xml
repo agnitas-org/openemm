@@ -27,9 +27,4 @@
 	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
 		<constructor-arg value="10" type="int" />
 	</bean>
-
-	<!-- public key for encryption, especially for birt report uid-parameter -->
-	<bean id="publickeyfile" class="java.lang.String">
-		<constructor-arg value="${birt.publickeyfile}" />
-	</bean>
 </beans>

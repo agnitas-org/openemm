@@ -51,7 +51,6 @@ data-form | Form | Ajax | Description
 not set | AGN.Lib.Form | yes | default, will send the data via an ajax request and replace its content with the content of form which is found in the servers response
 `search` | AGN.Lib.SearchForm | yes | similar to AGN.Lib.Form, but the replaceable area is defined via the `data-form-content` attribute, to be used when only the search results should be replaced
 `resource` | AGN.Lib.ResourceForm | yes | similar to AGN.Lib.Form, but will replace either the whole page content or a replaceable area (specified by `data-resource-selector` attribute placed on form element) - should be used if changes could occur outside of the the form (e.g. header, navigation)
-`upload` | AGN.Lib.UploadForm | yes | used for ajax file uploads
 `static` | AGN.Lib.StaticForm | no | disabled ajax submit
 `polling` | AGN.Lib.PollingForm | yes | intermediary form, used for polling the server until the rendering of a result table is finished
 `loading` | AGN.Lib.LoadingForm | yes | intermediary form, similar to the polling form but it will replace the content on each polling step (useful in case the server returns a loading bar)
@@ -74,7 +73,7 @@ Directive | Description
 `data-form-url="new-url"` | Sets an `action` form attribute for the next submit, the new value is stored in js object so the actual form element is untouched
 `data-form-resource="new-resource-selector"` | Only applicable for resource forms (`data-form="resource"`). Sets a `resource-selector` for the next submit
 `data-form-reset` | Resets the form to its original state
-`data-form-abort` | Aborts the request to the server, only implemented for UploadForms
+`data-form-abort` | Aborts the current request to the server (if any is being performed at the moment)
 `data-form-submit` | Submits the form
 `data-form-submit-event` | Triggers `submission` javascript event on the form (if validation succeeds) element instead of an actual form submission. Allows to implement asynchronous form validation (like sending an ajax request that validates some input).
 `data-form-submit-static` | Submits the form without using ajax

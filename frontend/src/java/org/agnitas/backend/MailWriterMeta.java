@@ -612,13 +612,20 @@ public class MailWriterMeta extends MailWriter {
 		getMediaInformation (cinfo, c);
 		c.add ("mailtype", mailtype);
 		c.add ("mediatypes", mediatypes);
-		if (data.bcc != null) {
-			c.add ("bcc", data.bcc.stream ()
-			       .map ((s) -> StringOps.punycodeEMail (s.trim ()))
-			       .filter ((s) -> s.length () > 0)
-			       .reduce ((s, e) -> s + "," + e)
-			       .orElse (null)
-			);
+		
+		if (icustomer_id > 0) {
+			//
+			// Add Bcc only for non sample receviers
+			List <String> bcc	= data.bcc ();
+			
+			if ((bcc != null) && (bcc.size () > 0)) {
+				c.add ("bcc", bcc.stream ()
+				       .map ((s) -> StringOps.punycodeEMail (s.trim ()))
+				       .filter ((s) -> s.length () > 0)
+				       .reduce ((s, e) -> s + "," + e)
+				       .orElse (null)
+				);
+			}
 		}
 				       
 		writer.opennode (c);
@@ -968,26 +975,6 @@ public class MailWriterMeta extends MailWriter {
 		c.addIfTrue ("is_precoded", ((b.type == BlockData.RELATED_BINARY) || (b.type == BlockData.ATTACHMENT_BINARY)) && b.isParseable);
 		c.addIfTrue ("is_pdf", b.isPDF);
 		c.addIfTrue ("is_font", b.isFont);
-		c.addIfTrue ("is_signature", b.isSignature);
-		if (b.signatureType > 0) {
-			String	styp;
-			
-			switch (b.signatureType) {
-			case BlockData.SIG_NONE:
-				styp = "none";
-				break;
-			case BlockData.SIG_EXTERN:
-				styp = "extern";
-				break;
-			case BlockData.SIG_INTERN:
-				styp = "intern";
-				break;
-			default:
-				styp = Integer.toString (b.signatureType);
-				break;
-			}
-			c.add ("signature_type", styp);
-		}
 	}
 
 	/** Write content part for a single block

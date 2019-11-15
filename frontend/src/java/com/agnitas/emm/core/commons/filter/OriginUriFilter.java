@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 
 public class OriginUriFilter implements Filter {
     public static final String ORIGIN_URI_KEY = "com.agnitas.emm.ORIGIN_URI";
+    public static final String ORIGIN_QUERY_STRING_KEY = "com.agnitas.emm.ORIGIN_QUERY_STRING";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -37,6 +38,7 @@ public class OriginUriFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (request instanceof HttpServletRequest) {
             request.setAttribute(ORIGIN_URI_KEY, ((HttpServletRequest) request).getRequestURI());
+            request.setAttribute(ORIGIN_QUERY_STRING_KEY, ((HttpServletRequest) request).getQueryString());
         }
         chain.doFilter(request, response);
     }

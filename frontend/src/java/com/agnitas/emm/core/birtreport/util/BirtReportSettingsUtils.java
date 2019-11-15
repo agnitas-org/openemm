@@ -11,13 +11,12 @@
 package com.agnitas.emm.core.birtreport.util;
 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +61,10 @@ import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MA
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_MAILINGS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGETS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGET_GROUPS_KEY;
+import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_CUSTOM;
+import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_DAY;
+import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_MONTH;
+import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_WEEK;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVATE_LINK_STATISTICS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVITY_ANALYSIS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKERS_AFTER_DEVICE;
@@ -83,10 +86,6 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Prope
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SIGNED_OFF;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SOFT_BOUNCES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.TEXT;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_CUSTOM;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_DAY;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_MONTH;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_WEEK;
 
 public class BirtReportSettingsUtils {
     
@@ -113,13 +112,16 @@ public class BirtReportSettingsUtils {
     private static final int MAX_TARGET_GROUPS_FOR_RECIPIENTS = 10;
     private static final int MAX_TARGET_GROUPS = 5;
     
+    public static final int MAX_MAILINGS_PER_REPORT = 60;
+    public static final int MAX_MAILINGLISTS_PER_REPORT = 60;
+    
     public static final int FILTER_NO_FILTER_VALUE = FilterType.FILTER_NO_FILTER.getKey();
     public static final int FILTER_ARCHIVE_VALUE = FilterType.FILTER_ARCHIVE.getKey();
     public static final int FILTER_MAILINGLIST_VALUE = FilterType.FILTER_MAILINGLIST.getKey();
     public static final int FILTER_MAILING_VALUE = FilterType.FILTER_MAILING.getKey();
     
-    public static final SimpleDateFormat REPORT_DATE_FORMAT = new SimpleDateFormat(DateUtilities.YYYY_MM_DD);
-    public static final SimpleDateFormat REPORT_DATE_FORMAT_FOR_DAY = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM);
+    public static final String REPORT_DATE_FORMAT = DateUtilities.YYYY_MM_DD;
+    public static final String REPORT_DATE_FORMAT_FOR_DAY = DateUtilities.YYYY_MM_DD_HH_MM;
     
     public static final List<BirtReportSettingsUtils.Properties> COMPARISON_GENERAL_GROUP = Arrays.asList(CLICKING_RECIPIENT, CLICKING_ANONYM, HARD_BOUNCES, SIGNED_OFF);
     public static final List<BirtReportSettingsUtils.Properties> COMPARISON_OPENER_GROUP = Arrays.asList(OPENERES_TOTAL, OPENERS_MEASURED, OPENERS_INVISIBLE, OPENING_ANONYM);
@@ -317,29 +319,23 @@ public class BirtReportSettingsUtils {
         return StringUtils.equals(String.valueOf(paramValue), String.valueOf(expectedValue));
     }
     
-    public static void convertReportDate(String startKey, String stopKey, SimpleDateFormat clientDateFormat, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
-        SimpleDateFormat fromFormat = convertIntoClientFormat ? REPORT_DATE_FORMAT : clientDateFormat;
-        SimpleDateFormat toFormat = convertIntoClientFormat ? clientDateFormat : REPORT_DATE_FORMAT;
-    
-        String startDate = convertDateFormats(fromFormat, toFormat, getSettingsProperty(settingsByType, startKey));
+    public static void convertReportDate(String startKey, String stopKey, Locale locale, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
+        final DateTimeFormatter backendFormatter = DateTimeFormatter.ofPattern(REPORT_DATE_FORMAT);
+
+        String startDate = getSettingsProperty(settingsByType, startKey);
+        String stopDate = getSettingsProperty(settingsByType, stopKey);
+
+        if(convertIntoClientFormat) {
+            startDate = DateUtilities.formatDateStringToDatePickerString(startDate, backendFormatter, locale);
+            stopDate = DateUtilities.formatDateStringToDatePickerString(stopDate, backendFormatter, locale);
+        } else {
+            startDate = DateUtilities.formatDatePickerStringToDateString(startDate, backendFormatter, locale);
+            stopDate = DateUtilities.formatDatePickerStringToDateString(stopDate, backendFormatter, locale);
+        }
         settingsByType.put(startKey, startDate);
-        String stopDate = convertDateFormats(fromFormat, toFormat, getSettingsProperty(settingsByType, stopKey));
         settingsByType.put(stopKey, stopDate);
     }
-    
-    private static String convertDateFormats(final SimpleDateFormat fromFormat, final SimpleDateFormat toFormat, String dateString) {
-        String formattedDate = dateString;
-        if (StringUtils.isNotEmpty(dateString)) {
-            try {
-                Date date = fromFormat.parse(dateString);
-                formattedDate = toFormat.format(date);
-            } catch (ParseException e) {
-                logger.warn("convertDateFormats: exception while parsing client date", e);
-            }
-        }
-        return formattedDate;
-    }
-    
+
     public static boolean validateComparisonDateRange(Map<String, Object> settings) {
         int mailingType = NumberUtils.toInt(getSettingsProperty(settings, MAILING_TYPE_KEY), -1);
         if(mailingType == 0) {
@@ -390,7 +386,7 @@ public class BirtReportSettingsUtils {
     }
     
     public enum Properties {
-        CLICKING_RECIPIENT("clickingRecipients", "statistic.TotalClickSubscribers.short"),
+        CLICKING_RECIPIENT("clickingRecipients", "statistic.clicker"),
         CLICKING_ANONYM("clickingAnonymous", "statistic.clicks.anonym"),
         SOFT_BOUNCES("softbounces", "report.softbounces"),
         HARD_BOUNCES("hardbounces", "statistic.bounces.hardbounce"),

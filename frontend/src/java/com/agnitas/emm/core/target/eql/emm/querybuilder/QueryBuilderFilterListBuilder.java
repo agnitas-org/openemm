@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -45,20 +44,19 @@ public class QueryBuilderFilterListBuilder {
 	private QueryBuilderConfiguration queryBuilderConfiguration;
 
 	/**
-	 * Creates the filter list as JSON string from profile fields and unknown profile fields for given company ID.
+	 * Creates the filter list as JSON string from profile fields for given company ID.
 	 * 
 	 * @param admin admin that's bound to profile fields
-	 * @param unknownProfileFields set of names of unknown profile fields
 	 * 
 	 * @return JSON string for the QueryBuilder filter list
 	 * 
 	 * @throws QueryBuilderFilterListBuilderException on errors creating filter list
 	 */
-	public String buildFilterListJson(final ComAdmin admin, final Set<String> unknownProfileFields) throws QueryBuilderFilterListBuilderException {
+	public String buildFilterListJson(final ComAdmin admin) throws QueryBuilderFilterListBuilderException {
 		final List<ComProfileField> profileFields = listProfileFields(admin.getCompanyID());
 		createIndependentFilters(profileFields);
 
-		final List<Map<String, Object>> map = createFilterList(profileFields, unknownProfileFields, admin);
+		final List<Map<String, Object>> map = createFilterList(profileFields, admin);
 		
 		return JSONSerializer.toJSON(map).toString();
 	}
@@ -70,12 +68,11 @@ public class QueryBuilderFilterListBuilder {
 	/**
 	 * Creates a list of filter settings for JSON encoding.
 	 * 
-	 * @param profileFields list of known profile fields 
-	 * @param unknownProfileFields set of name of unknown profile fields
+	 * @param profileFields list of known profile fields
 	 * 
 	 * @return list of filter settings for JSON encoding
 	 */
-	private List<Map<String, Object>> createFilterList(final List<ComProfileField> profileFields, final Set<String> unknownProfileFields, ComAdmin admin) {
+	private List<Map<String, Object>> createFilterList(final List<ComProfileField> profileFields, ComAdmin admin) {
 
 		// TODO: Respect unknown profile fields somehow
 		

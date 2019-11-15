@@ -15,18 +15,47 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.codegen.DateFormatFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.InvalidTypeException;
+import com.agnitas.emm.core.target.eql.codegen.UnknownLinkIdFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.UnknownMailingIdFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.UnknownProfileFieldFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableColumnFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableFaultyCodeException;
+import com.agnitas.emm.core.target.eql.codegen.UnsupportedOperatorForDataTypeException;
+import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
+import com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConversionException;
+import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
+import com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink;
+import com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.forms.ComTargetForm;
 import org.agnitas.dao.TrackableLinkDao;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.target.exception.TargetGroupException;
 import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
@@ -61,41 +90,6 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.ActionRedirect;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.codegen.DateFormatFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.InvalidTypeException;
-import com.agnitas.emm.core.target.eql.codegen.UnknownLinkIdFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.UnknownMailingIdFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.UnknownProfileFieldFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableColumnFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.UnsupportedOperatorForDataTypeException;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
-import com.agnitas.emm.core.target.eql.emm.legacy.TargetRepresentationToEqlConversionException;
-import com.agnitas.emm.core.target.eql.parser.EqlParserException;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
-import com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink;
-import com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
-import com.agnitas.reporting.birt.util.URLUtils;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.forms.ComTargetForm;
 
 /**
  * Struts {@link Action} dealing with target groups.
@@ -148,7 +142,7 @@ public class ComTargetAction extends StrutsActionBase {
 	public static final int ACTION_REBUILD_STRUCTURE_DATA = ACTION_LAST + 10;
 	public static final int ACTION_VIEW_MAILINGS = ACTION_LAST + 11;
 
-    private ComMailinglistService mailinglistService;
+    private BirtStatisticsService birtStatisticsService;
     private ComBirtReportDao birtReportDao;
     private MailinglistApprovalService mailinglistApprovalService;
     
@@ -165,8 +159,6 @@ public class ComTargetAction extends StrutsActionBase {
 
     /** Facade providing full EQL functionality. */
     private EqlFacade eqlFacade;
-
-    protected String publicKeyFilename;
     
     protected ColumnInfoService columnInfoService;
 	
@@ -194,7 +186,7 @@ public class ComTargetAction extends StrutsActionBase {
         case ACTION_UNLOCK_TARGET_GROUP:
             return "unlock_target_group";
         case ACTION_REBUILD_STRUCTURE_DATA:
-            return "rebuild_structure_data"; 
+            return "rebuild_structure_data";
             
         case ACTION_CREATE_ML:
             return "create_ml";
@@ -350,12 +342,10 @@ public class ComTargetAction extends StrutsActionBase {
         				destination = mapping.findForward("view");
         			}
 
-                if (AgnUtils.allowed(req, Permission.TARGETS_EQL_EDIT)) {
-	                errors = checkForEqlErrors(targetForm, AgnUtils.getCompanyID(req), errors);
+                errors = checkForEqlErrors(targetForm, AgnUtils.getCompanyID(req), errors);
 
-	                if (errors != null && errors.size() > 0) {
-	                	saveErrors(req, errors);
-	                }
+                if (errors != null && errors.size() > 0) {
+                	saveErrors(req, errors);
                 }
                 break;
 
@@ -436,21 +426,13 @@ public class ComTargetAction extends StrutsActionBase {
 				loadAdditionalData(targetForm, req);
 
                 if ("success".equals(destination.getName()) && targetForm.isShowStatistic()) {
-                    String statisticUrl = null;
-                    try {
-                        statisticUrl = getReportUrl(req, targetForm);
-                    } catch (Exception e) {
-                        logger.error("Error during generation statistic url " + e);
-                    }
-                    req.setAttribute("statisticUrl", statisticUrl);
+                    req.setAttribute("statisticUrl", getReportUrl(req, targetForm));
                 }
 
-                if (AgnUtils.allowed(req, Permission.TARGETS_EQL_EDIT)) {
-	                errors = checkForEqlErrors(targetForm, AgnUtils.getCompanyID(req), errors);
+                errors = checkForEqlErrors(targetForm, AgnUtils.getCompanyID(req), errors);
 
-	                if (errors != null && errors.size() > 0) {
-	                	saveErrors(req, errors);
-	                }
+                if (errors != null && errors.size() > 0) {
+                	saveErrors(req, errors);
                 }
                 break;
 
@@ -493,8 +475,8 @@ public class ComTargetAction extends StrutsActionBase {
 
             case ACTION_BULK_CONFIRM_DELETE:
                 if (targetForm.getBulkIds().size() == 0) {
-                    messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("bulkAction.nothing.target"));
-                    saveErrors(req, messages);
+                    errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("bulkAction.nothing.target"));
+                    saveErrors(req, errors);
 
                     destination = mapping.findForward(listTargetGroups(targetForm, req));
                 } else {
@@ -601,7 +583,7 @@ public class ComTargetAction extends StrutsActionBase {
 					try {
 						if (saveTarget(targetForm, req, rulesValidationErrors) != 0) {
 							targetForm.setAction(ACTION_SAVE);
-							messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved")); 
+							messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 						} else {
 							targetForm.setAction(ACTION_SAVE);
 							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.saving"));
@@ -763,8 +745,9 @@ public class ComTargetAction extends StrutsActionBase {
         		String column = form.getColumnAndType(index);
         		updateFormFromNode(column, index, form, request);
         	} else {
-        		if (removeIndex != -1)
-        			throw new RuntimeException( "duplicate remove??? (removeIndex = " + removeIndex + ", index = " + index + ")");
+        		if (removeIndex != -1) {
+					throw new RuntimeException( "duplicate remove??? (removeIndex = " + removeIndex + ", index = " + index + ")");
+				}
         		removeIndex = index;
         	}
 		}
@@ -776,7 +759,7 @@ public class ComTargetAction extends StrutsActionBase {
         } else {
         	return false;
         }
-	}    
+	}
 	
 	protected void updateFormFromNode(String column, final int index, final TargetForm form, final HttpServletRequest request) {
 		if( TargetNodeMailingReceived.PSEUDO_COLUMN_NAME.equalsIgnoreCase( column)) {
@@ -925,7 +908,7 @@ public class ComTargetAction extends StrutsActionBase {
 		aForm.setDescription(aTarget.getTargetDescription());
 		((ComTargetForm) aForm).setUseForAdminAndTestDelivery(aTarget.isAdminTestDelivery());
 		
-		if(updateForm) {
+		if (updateForm) {
 			fillFormFromTargetRepresentation(aForm, aTarget.getTargetStructure(), aTarget.getCompanyID());
 		}
 		
@@ -993,16 +976,13 @@ public class ComTargetAction extends StrutsActionBase {
         targetForm.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(req)));
     }
 
-    public void setMailinglistService(ComMailinglistService mailinglistService) {
-        this.mailinglistService = mailinglistService;
-    }
+    @Required
+	public void setBirtStatisticsService(BirtStatisticsService birtStatisticsService) {
+		this.birtStatisticsService = birtStatisticsService;
+	}
 
     public void setBirtReportDao(ComBirtReportDao birtReportDao) {
         this.birtReportDao = birtReportDao;
-    }
-
-    public void setPublicKeyFilename(String publicKeyFilename) {
-        this.publicKeyFilename = publicKeyFilename;
     }
 
     @Required
@@ -1010,26 +990,21 @@ public class ComTargetAction extends StrutsActionBase {
     	this.eqlFacade = eqlFacade;
     }
 
-    private String getReportUrl(HttpServletRequest request, ComTargetForm form) throws Exception {
-        String language = "en";
-        ComAdmin admin = AgnUtils.getAdmin(request);
-        if (admin != null) {
-            language = admin.getAdminLang();
-        }
-
-        StringBuffer br = new StringBuffer();
-        br.append(configService.getValue(ConfigValue.BirtUrl) + "/run?");
-        br.append("__report=recipient_status.rptdesign");
-        br.append("&companyID=" + AgnUtils.getCompanyID(request));
-        br.append("&mediaType=0");
-        br.append("&targetID=" + form.getTargetID());
-        br.append("&mailinglistID=" + form.getMailinglistId());
-        br.append("&language=" + language);
-        br.append("&__format=html");
-        br.append("&uid="+ URLUtils.encodeURL(RSACryptUtil.encrypt(UIDUtils.createUID(AgnUtils.getAdmin(request)), RSACryptUtil.getPublicKey(publicKeyFilename))));
-        br.append("&emmsession=" + request.getSession(false).getId());
-        return br.toString();
-    }
+    private String getReportUrl(HttpServletRequest request, ComTargetForm form) {
+		try {
+			RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
+			statisticDto.setMediaType(0);
+			statisticDto.setTargetId(form.getTargetID());
+			statisticDto.setMailinglistId(form.getMailinglistId());
+			statisticDto.setFormat("html");
+			
+			return birtStatisticsService.getRecipientStatusStatisticUrl(AgnUtils.getAdmin(request), request.getSession(false).getId(), statisticDto);
+		} catch (Exception e) {
+			logger.error("Error during generation statistic url " + e);
+		}
+		
+		return null;
+	}
     
     /**
 	 * Saves target.
@@ -1104,7 +1079,7 @@ public class ComTargetAction extends StrutsActionBase {
 
 		if (savedTarget.id == form.getTargetID()) {
 			// Check changes in EQL only if user has permission to edit EQL. Otherwise target group will be cleared from any rule.
-			if (AgnUtils.allowed(request, Permission.TARGETS_EQL_EDIT) && !StringUtils.equals(form.getEql(), savedTarget.eql)) {
+			if (!StringUtils.equals(form.getEql(), savedTarget.eql)) {
 				// Build target structure from EQL
 
 				if (logger.isInfoEnabled()) {
@@ -1213,7 +1188,7 @@ public class ComTargetAction extends StrutsActionBase {
     protected TargetRepresentation createTargetRepresentationFromForm(TargetForm form, HttpServletRequest request) throws Exception {
         TargetRepresentation target = targetRepresentationFactory.newTargetRepresentation();
        
-        int lastIndex = form.getNumTargetNodes(); 
+        int lastIndex = form.getNumTargetNodes();
        
         for(int index = 0; index < lastIndex; index++) {
     		String column = form.getColumnAndType(index);
@@ -1360,26 +1335,26 @@ public class ComTargetAction extends StrutsActionBase {
         }
 		
     	return targetNodeFactory.newNumericNode(
-				form.getChainOperator(index), 
-				form.getParenthesisOpened(index), 
-				column, 
-				type, 
-				primaryOperator, 
-				form.getPrimaryValue(index), 
-				secondaryOperator, 
-				secondaryValue, 
+				form.getChainOperator(index),
+				form.getParenthesisOpened(index),
+				column,
+				type,
+				primaryOperator,
+				form.getPrimaryValue(index),
+				secondaryOperator,
+				secondaryValue,
 				form.getParenthesisClosed(index));
 	}
 	
 	private TargetNodeDate createDateNode(TargetForm form, String column, String type, int index) { // TODO: Why not implemented in a factory class?
 		return targetNodeFactory.newDateNode(
-				form.getChainOperator(index), 
-				form.getParenthesisOpened(index), 
-				column, 
-				type, 
-				form.getPrimaryOperator(index), 
-				form.getDateFormat(index), 
-				form.getPrimaryValue(index), 
+				form.getChainOperator(index),
+				form.getParenthesisOpened(index),
+				column,
+				type,
+				form.getPrimaryOperator(index),
+				form.getDateFormat(index),
+				form.getPrimaryValue(index),
 				form.getParenthesisClosed(index));
 	}
 	
@@ -1425,12 +1400,12 @@ public class ComTargetAction extends StrutsActionBase {
 	
 	private TargetNodeString createStringNode(TargetForm form, String column, String type, int index) { // TODO: Why not implemented in a factory class?
 		return targetNodeFactory.newStringNode(
-				form.getChainOperator(index), 
-				form.getParenthesisOpened(index), 
-				column, 
-				type, 
-				form.getPrimaryOperator(index), 
-				form.getPrimaryValue(index), 
+				form.getChainOperator(index),
+				form.getParenthesisOpened(index),
+				column,
+				type,
+				form.getPrimaryOperator(index),
+				form.getPrimaryValue(index),
 				form.getParenthesisClosed(index));
 	}
 	
@@ -1438,7 +1413,7 @@ public class ComTargetAction extends StrutsActionBase {
 		int mailingId = 0;
 		int linkId = 0;
 		
-		// Try to parse mailing ID 
+		// Try to parse mailing ID
 		try {
 			mailingId = Integer.parseInt(form.getPrimaryValue(index));
 		} catch(NumberFormatException e) {
@@ -1449,7 +1424,7 @@ public class ComTargetAction extends StrutsActionBase {
 			mailingId = 0;
 		}
 
-		// Try to parse link ID 
+		// Try to parse link ID
 		try {
 			linkId = Integer.parseInt(form.getSecondaryValue(index));
 		} catch(NumberFormatException e) {
@@ -1463,12 +1438,12 @@ public class ComTargetAction extends StrutsActionBase {
 		
 		
 		return new TargetNodeMailingClickedOnSpecificLink(
-				companyID, 
-				form.getChainOperator(index), 
-				form.getParenthesisOpened(index), 
-				form.getPrimaryOperator(index), 
-				mailingId, 
-				linkId, 
+				companyID,
+				form.getChainOperator(index),
+				form.getParenthesisOpened(index),
+				form.getPrimaryOperator(index),
+				mailingId,
+				linkId,
 				form.getParenthesisClosed(index));
 	}
 

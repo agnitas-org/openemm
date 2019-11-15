@@ -62,7 +62,6 @@ import org.apache.struts.action.ActionMessages;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
 /**
  * Implementation of <strong>Action</strong> that validates a user logon.
  */
@@ -152,7 +151,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
             req.setAttribute("isMailingGrid", req.getParameter("isMailingGrid"));
             req.setAttribute("templateId", req.getParameter("templateId"));
             req.setAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, aForm.getMailingID()));
-	
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Action: " + aForm.getAction());
 			}
@@ -175,46 +174,30 @@ public class ComTrackableLinkAction extends StrutsActionBase {
                         break;
 
                     case ACTION_SAVE:
-                		if (!StringUtils.isBlank( aForm.getIntelliAdIdString()) && !intelliAdChecker.isValidTrackingString( aForm.getIntelliAdIdString())) {
-                			errors.add( ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.invalid_format"));
-                		}
-                		if (aForm.isIntelliAdEnabled() && !StringUtils.isBlank( aForm.getIntelliAdIdString())) {
-                			errors.add( ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.no_tracking_string"));
-                		}
-
-                		try {
-                			updateLinkUrl(aForm, req);
-                		} catch(InsufficientPermissionException e) {
-                			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
-                		}
-
-                		if (errors.isEmpty()) {
-	                		saveLink(aForm, req);
-	                        destination = proceedWithList(mapping, aForm, req, admin);
-                            aForm.setScrollToLinkId(aForm.getLinkID());
-	                        aForm.setLinkAction(0);
-	                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-                		} else {
-                			destination = mapping.findForward( "view");
-                		}
+						boolean intelliAdSettings = intelliAdSettingsValid(aForm, errors);
+						boolean updateLinks = updateLinkUrlSuccessfully(aForm, req, errors);
+						if (intelliAdSettings && updateLinks) {
+							saveLink(aForm, req);
+							aForm.setScrollToLinkId(aForm.getLinkID());
+							aForm.setLinkAction(0);
+							messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+							destination = proceedWithList(mapping, aForm, req, admin);
+							break;
+						}
+						
+						destination = mapping.findForward( "view");
                         break;
 
                     case ACTION_SAVE_ALL:
-                		if (!StringUtils.isBlank( aForm.getIntelliAdIdString()) && !intelliAdChecker.isValidTrackingString( aForm.getIntelliAdIdString())) {
-                			errors.add( ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.invalid_format"));
-                		}
-                		if (aForm.isIntelliAdEnabled() && StringUtils.isBlank( aForm.getIntelliAdIdString())) {
-                			errors.add( ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.no_tracking_string"));
-                		}
-
-                		if (errors.isEmpty()) {
-	                        saveAll(aForm, req, admin);
+						if (intelliAdSettingsValid(aForm, errors)) {
+							saveAll(aForm, req, admin);
 	                        destination = proceedWithList(mapping, aForm, req, admin);
 	                        aForm.setLinkAction(0);
 	                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-                		} else {
-                			destination = mapping.findForward( "view");
-                		}
+	                        break;
+						}
+						
+						destination = mapping.findForward( "view");
                         break;
 
                     case ACTION_DELETE_GLOBAL_AND_INDIVIDUAL_EXTENSION:
@@ -222,11 +205,13 @@ public class ComTrackableLinkAction extends StrutsActionBase {
                     		trackeableLinkService.removeGlobalAndIndividualLinkExtensions(admin.getCompanyID(), aForm.getMailingID());
 							writeUserActivityLog(admin, "edit mailing", "ID = " + aForm.getMailingID() + ". Removed global and individual link extensions");
 	                        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+                            destination = proceedWithList(mapping, aForm, req, admin);
                     	} catch (Exception e) {
                     		logger.error("Error removing global and individual link extensions (mailing ID: " + aForm.getMailingID() + ")", e);
                     		errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.trackablelinks.cannotRemoveExtensions"));
-                    	}
-                        destination = mapping.findForward("view");
+                            destination = mapping.findForward("view");
+                        }
+
                     	break;
 
                     default:
@@ -257,6 +242,31 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		}
 	}
 
+	private boolean updateLinkUrlSuccessfully(ComTrackableLinkForm aForm, HttpServletRequest req, ActionMessages errors) throws TrackableLinkException {
+		try {
+			updateLinkUrl(aForm, req);
+		} catch (InsufficientPermissionException e) {
+			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean intelliAdSettingsValid(ComTrackableLinkForm aForm, ActionMessages errors) {
+		if (aForm.isIntelliAdEnabled()) {
+			if (StringUtils.isBlank(aForm.getIntelliAdIdString())) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.no_tracking_string"));
+				return false;
+			}
+			
+			if (!intelliAdChecker.isValidTrackingString(aForm.getIntelliAdIdString())) {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage( "error.intelliad.invalid_format"));
+				return false;
+			}
+		}
+		return true;
+	}
 
 	protected void loadLinks(TrackableLinkForm form, HttpServletRequest req) throws Exception {
 		loadTrackableLinks(form, req);
@@ -318,7 +328,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	}
 
     private boolean isUrlEditingAllowed(ComAdmin admin, int mailingID) {
-    	return admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_EDIT) && this.trackeableLinkService.isUrlEditingAllowed(mailingID, admin.getCompanyID());
+    	return admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE) && this.trackeableLinkService.isUrlEditingAllowed(mailingID, admin.getCompanyID());
 	}
 
     protected ActionForward proceedWithList(ActionMapping mapping, ComTrackableLinkForm aForm, HttpServletRequest req, ComAdmin admin) throws Exception {
@@ -357,7 +367,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         ComMailing aMailing = (ComMailing) mailingDao.getMailing(aForm.getMailingID(), admin.getCompanyID());
         if (aForm.isIntelliAdShown()) {
         	updateIntelliAdSettings(aForm, aMailing);
-        }
+		}
 
         saveAllProceed(aMailing, aForm, req, admin);
         mailingDao.saveMailing(aMailing, false);
@@ -370,8 +380,10 @@ public class ComTrackableLinkAction extends StrutsActionBase {
     		MediatypeEmail mediatype = (MediatypeEmail) mediaTypes.get(MediaTypes.EMAIL.getMediaCode());
     		
     		if (mediatype != null) {
-    			mediatype.setIntelliAdEnabled(form.isIntelliAdEnabled());
-    			mediatype.setIntelliAdString(form.getIntelliAdIdString());
+				mediatype.setIntelliAdEnabled(form.isIntelliAdEnabled());
+				if (form.isIntelliAdEnabled()) {
+					mediatype.setIntelliAdString(form.getIntelliAdIdString());
+				}
     		}
     	} catch (ClassCastException e) {
     		logger.warn( "No EMM email?", e);
@@ -388,6 +400,10 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         if (admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
             if (!aForm.isKeepExtensionsUnchanged()) {
 				List<LinkProperty> linkProperties = getLinkPropertiesForReplaceCommonExtensions(req);
+				for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
+					ComTrackableLink comTrackableLink = (ComTrackableLink)trackableLink;
+					writeLinkExtensionsChangesLog(linkProperties, comTrackableLink, req);
+				}
 				
 				trackeableLinkService.addExtensions(aMailing, bulkLinkIds, linkProperties);
 
@@ -445,6 +461,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			int linkAction = aForm.getLinkAction();
 			int globalUsage = aForm.getGlobalUsage();
 			int globalRelevance = trackableLinkForm.getGlobalRelevance();
+			final int globalDeepTracking = trackableLinkForm.getDeepTracking();
 			StringBuilder logMessage = new StringBuilder();
 			Set<Integer> bulkIds = aForm.getBulkIDs();
 			for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
@@ -477,6 +494,17 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 				if (!newName.equals(aLink.getShortname())) {
 					writeTrackableLinkDescriptionChange(aLink, newName, logMessage);
 				}
+				final boolean newIsAdministrativeLink = trackableLinkForm.getAdminLink(id);
+				if(aLink.isAdminLink() != newIsAdministrativeLink){
+					writeTrackableLinkAdministrativeChange(aLink, newIsAdministrativeLink, logMessage);
+				}
+				final int newDeepTracking = trackableLinkForm.getLinkItemDeepTracking(id);
+				if(aLink.getDeepTracking() != newDeepTracking) {
+					writeTrackableLinkDeepTrackableChange(aLink, newDeepTracking ,logMessage);
+				} else if(globalDeepTracking != KEEP_UNCHANGED && bulkIds.contains(id)){
+					writeTrackableLinkDeepTrackableChange(aLink, globalDeepTracking ,logMessage);
+				}
+
 				//Write UAL for single ling as a one entry
 				if (logMessage.length() != 0) {
 					logMessage.insert(0,
@@ -557,6 +585,15 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		ComTrackableLink aLink = (ComTrackableLink) linkDao.getTrackableLink(aForm.getLinkID(), AgnUtils.getCompanyID(req));
 		if (aLink != null) {
 
+			//User activity logging
+			StringBuilder logMessage = new StringBuilder();
+			writeTrackableLinkDescriptionChange(aLink, aForm.getLinkName(), logMessage);
+			writeTrackableLinkTrackableChange(aLink, aForm.getTrackable(), logMessage);
+			writeTrackableLinkActionChange(aLink, aForm.getLinkAction(), logMessage);
+			writeTrackableLinkRelevanceChange(aLink, aForm.getRelevance(), logMessage);
+			writeTrackableLinkAdministrativeChange(aLink, aForm.isAdministrativeLink(), logMessage);
+			writeTrackableLinkStaticChange(aLink, aForm.isStaticLink(), logMessage);
+
 			aLink.setShortname(aForm.getLinkName());
 			aLink.setUsage(aForm.getTrackable());
 			aLink.setActionID(aForm.getLinkAction());
@@ -565,6 +602,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			aLink.setStaticValue(aForm.isStaticLink());
 
 			if (req.getParameter("deepTracking") != null) { // only if parameter is provided in form
+				writeTrackableLinkDeepTrackableChange(aLink, aForm.getDeepTracking(), logMessage);
 				aLink.setDeepTracking(aForm.getDeepTracking());
 			}
 
@@ -572,25 +610,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			// Only change link properties if adminuser is allowed to
 			if (admin != null && admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
 				// search for link properties
-				List<LinkProperty> linkProperties = new ArrayList<>();
-				Enumeration<String> parameterNamesEnum = req.getParameterNames();
-				while (parameterNamesEnum.hasMoreElements()) {
-					String parameterName = parameterNamesEnum.nextElement();
-					if (parameterName.startsWith(ComTrackableLinkForm.PROPERTY_NAME_PREFIX)) {
-						int propertyID = Integer.parseInt(parameterName.substring(ComTrackableLinkForm.PROPERTY_NAME_PREFIX.length()));
-						String[] extensionNames = req.getParameterValues(parameterName);
-						String[] extensionValues = req.getParameterValues(ComTrackableLinkForm.PROPERTY_VALUE_PREFIX + propertyID);
-						if (extensionNames != null && extensionNames.length > 0) {
-							LinkProperty newProperty;
-							if (extensionValues != null && extensionValues.length > 0 && StringUtils.isNotBlank(extensionValues[0])) {
-								newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], extensionValues[0]);
-							} else {
-								newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], "");
-							}
-							linkProperties.add(newProperty);
-						}
-					}
-				}
+				List<LinkProperty> linkProperties = getLinkPropertiesForReplaceCommonExtensions(req);
                 writeLinkExtensionsChangesLog(linkProperties, aLink, req);
 
                 for (Iterator<LinkProperty> iter = linkProperties.listIterator(); iter.hasNext(); ) {
@@ -605,12 +625,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			}
 			linkDao.saveTrackableLink(aLink);
 
-			//User activity logging
-			StringBuilder logMessage = new StringBuilder();
-			writeTrackableLinkDescriptionChange(aLink, aForm.getShortname(), logMessage);
-			writeTrackableLinkActionChange(aLink, aForm.getLinkAction(), logMessage);
-			writeTrackableLinkRelevanceChange(aLink, aForm.getRelevance(), logMessage);
-			writeTrackableLinkTrackableChange(aLink, aForm.getTrackable(), logMessage);
 			if (logMessage.length() != 0) {
 				logMessage.insert(0, String.format(LINK_TEMPLATE, aLink.getId(), aLink.getFullUrl()));
 				writeUserActivityLog(admin, EDIT_LINKS_ACTION, logMessage.toString().trim());
@@ -633,13 +647,13 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			ComTrackableLink link = (ComTrackableLink) this.linkDao.getTrackableLink(form.getLinkID(), admin.getCompanyID());
 			
 			if (!form.getLinkUrl().equals(link.getFullUrl())) {
-				if (admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_EDIT)) {
+				if (admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
 					this.trackeableLinkService.updateLinkTarget(link, form.getLinkUrl());
 
 					this.writeUserActivityLog(admin, "edit link target", "Set target of link " + link.getId() + " to " + form.getLinkUrl());
 				} else {
 					logger.warn("Admin " + admin.getUsername() + " (ID " + admin.getAdminID() + ") has no permission to edit link URLs");
-					throw new InsufficientPermissionException(admin.getAdminID(), "mailing.trackablelinks.url.edit");
+					throw new InsufficientPermissionException(admin.getAdminID(), "mailing.trackablelinks.url.change");
 				}
 			}
 		}
@@ -783,9 +797,39 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	private void writeTrackableLinkTrackableChange(TrackableLink link, int newTrackable, StringBuilder logMessage){
 		int oldTrackable = link.getUsage();
 		if (oldTrackable != newTrackable) {
-			logMessage.append(String.format(CHANGE_TEMPLATE, "Trackable",
+			logMessage.append(String.format(CHANGE_TEMPLATE, "Measurable ",
 					getTrackableName(oldTrackable),
 					getTrackableName(newTrackable)));
+		}
+	}
+
+	private void writeTrackableLinkDeepTrackableChange(TrackableLink link, int newDeepTrackable, StringBuilder
+			logMessage){
+		int oldDeepTrackable = link.getDeepTracking();
+		if (oldDeepTrackable != newDeepTrackable) {
+			logMessage.append(String.format(CHANGE_TEMPLATE, "Tracking at shop/website ",
+					getDeepTrackableName(oldDeepTrackable),
+					getDeepTrackableName(newDeepTrackable)));
+		}
+	}
+
+	private void writeTrackableLinkAdministrativeChange(final TrackableLink aLink, final boolean newIsAdminValue,
+														final StringBuilder logMessage) {
+		boolean adminLink = aLink.isAdminLink();
+		if (adminLink != newIsAdminValue) {
+			logMessage.append(String.format(CHANGE_TEMPLATE, "Is administrative link",
+					AgnUtils.boolToString(adminLink),
+					AgnUtils.boolToString(newIsAdminValue)));
+		}
+	}
+
+	private void writeTrackableLinkStaticChange(final ComTrackableLink aLink, final boolean newIsStatic,
+														final StringBuilder logMessage) {
+		boolean staticValue = aLink.isStaticValue();
+		if (staticValue != newIsStatic) {
+			logMessage.append(String.format(CHANGE_TEMPLATE, "Is static",
+					AgnUtils.boolToString(staticValue),
+					AgnUtils.boolToString(newIsStatic)));
 		}
 	}
 
@@ -837,6 +881,22 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 				return "only HTML version";
 			case 3:
 				return "text and HTML version";
+			default:
+				return "unknown type";
+		}
+	}
+
+	private String getDeepTrackableName(final int type){
+
+		switch (type){
+			case 0:
+				return "no";
+			case 1:
+				return "with cookie";
+			case 2:
+				return "with URL-parameters";
+			case 3:
+				return "Cookie and URL";
 			default:
 				return "unknown type";
 		}

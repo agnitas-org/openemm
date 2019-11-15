@@ -13,6 +13,7 @@ package com.agnitas.emm.core.workflow.beans.impl;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -214,5 +215,30 @@ public class WorkflowDecisionImpl extends BaseWorkflowIcon implements WorkflowDe
         }
 
         return dependencies;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowDecisionImpl that = (WorkflowDecisionImpl) o;
+        return mailingId == that.mailingId &&
+                linkId == that.linkId &&
+                includeVetoed == that.includeVetoed &&
+                decisionType == that.decisionType &&
+                decisionCriteria == that.decisionCriteria &&
+                reaction == that.reaction &&
+                Objects.equals(profileField, that.profileField) &&
+                Objects.equals(dateFormat, that.dateFormat) &&
+                aoDecisionCriteria == that.aoDecisionCriteria &&
+                Objects.equals(threshold, that.threshold) &&
+                Objects.equals(decisionDate, that.decisionDate) &&
+                Objects.equals(rules, that.rules);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), decisionType, decisionCriteria, reaction, mailingId, linkId, profileField, dateFormat, aoDecisionCriteria, threshold, decisionDate, rules, includeVetoed);
     }
 }

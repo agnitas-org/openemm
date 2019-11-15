@@ -88,20 +88,6 @@ reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(s
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
-        <scalar-parameter name="uid" id="388">
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
-            </simple-property-list>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
         <scalar-parameter name="emmsession" id="100">
             <property name="valueType">static</property>
             <property name="isRequired">false</property>
@@ -259,11 +245,6 @@ return false;]]></method>
                     <property name="name">COUNTPERCENT</property>
                     <property name="dataType">integer</property>
                 </structure>
-                <structure>
-                    <property name="position">5</property>
-                    <property name="name">encoded_uid</property>
-                    <property name="dataType">string</property>
-                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -277,9 +258,6 @@ return false;]]></method>
                 </structure>
                 <structure>
                     <property name="columnName">COUNTPERCENT</property>
-                </structure>
-                <structure>
-                    <property name="columnName">encoded_uid</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -304,11 +282,6 @@ return false;]]></method>
                         <property name="name">COUNTPERCENT</property>
                         <property name="dataType">integer</property>
                     </structure>
-                    <structure>
-                        <property name="position">5</property>
-                        <property name="name">encoded_uid</property>
-                        <property name="dataType">string</property>
-                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -322,7 +295,6 @@ currentrow = 0;]]></method>
 	row["DETAIL"] = statList.get(currentrow).getDetail();
 	row["COUNT"] = statList.get(currentrow).getCount();
 	row["COUNTPERCENT"] = statList.get(currentrow).getCountPercent();
-	row["encoded_uid"] = encoder.encodeURL(params["uid"]);
 	
 	if (row["DETAIL"] == 33) {
 		reportContext.setPersistentGlobalVariable("bouncesInitSum", new Integer(-row["COUNT"]));
@@ -593,11 +565,6 @@ return false;]]></method>
                     <property name="name">COUNTPERCENT</property>
                     <expression name="expression">dataSetRow["COUNTPERCENT"]</expression>
                     <property name="dataType">integer</property>
-                </structure>
-                <structure>
-                    <property name="name">encoded_uid</property>
-                    <expression name="expression">dataSetRow["encoded_uid"]</expression>
-                    <property name="dataType">string</property>
                 </structure>
                 <structure>
                     <property name="name">Column Binding</property>

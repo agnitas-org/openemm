@@ -109,31 +109,6 @@ public class TargetNodeMailingClicked extends TargetNode implements Serializable
 	}
 
 	@Override
-	public String generateEmbeddedSQL() {
-		StringBuffer buffer = new StringBuffer();
-		
-		// Get the mailing ID
-		int mailingId = Integer.parseInt( this.primaryValue);
-		
-		// Negate result if primary operator says to
-		if( primaryOperator == TargetNode.OPERATOR_NO.getOperatorCode())
-			buffer.append( " NOT ");
-		
-		// Build the WHERE clause
-		buffer.append( " EXISTS (SELECT 1 FROM ");
-		buffer.append( "rdirlog_");
-		buffer.append( companyId);
-		buffer.append( "_tbl");
-		buffer.append( " rl WHERE rl.customer_id=cust.customer_id AND rl.mailing_id=");
-		buffer.append( mailingId);
-		buffer.append( " AND rl.company_id=");
-		buffer.append( companyId);
-		buffer.append( ")");
-		
-		return buffer.toString();
-	}
-
-	@Override
 	public String generateBsh() {
 		try {
 			throw new RuntimeException( "BSH generation is not supported!");

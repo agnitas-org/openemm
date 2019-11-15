@@ -317,7 +317,38 @@
                                         <div class="btn-group pull-right">
                                             <button type="button" class="btn btn-regular"
                                                     data-form-set="resetSearch:true" data-action="reset-search">
-                                                <bean:message key="button.search.reset"/></button>
+                                                <bean:message key="button.search.reset"/>
+                                            </button>
+
+                                            <c:if test="${recipientList.getFullListSize() <= 0}">
+                                                <c:set var="isCreateRecipientButtonShown" value="false"/>
+
+                                                <c:url var="createNewRecipientUrl" value="/recipient.do">
+                                                    <c:param name="action" value="${ACTION_VIEW}"/>
+                                                    <c:param name="trgt_clear" value="1"/>
+
+                                                    <c:if test="${not empty fn:trim(recipientForm.searchFirstName)}">
+                                                        <c:param name="firstname" value="${recipientForm.searchFirstName}"/>
+                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
+                                                    </c:if>
+                                                    <c:if test="${not empty fn:trim(recipientForm.searchLastName)}">
+                                                        <c:param name="lastname" value="${recipientForm.searchLastName}"/>
+                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
+                                                    </c:if>
+                                                    <c:if test="${not empty fn:trim(recipientForm.searchEmail)}">
+                                                        <c:param name="email" value="${recipientForm.searchEmail}"/>
+                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
+                                                    </c:if>
+                                                </c:url>
+
+                                                <c:if test="${isCreateRecipientButtonShown}">
+                                                    <a href="${createNewRecipientUrl}" class="btn btn-primary btn-regular">
+                                                        <i class="icon icon-plus"></i>
+                                                        <span class="text"><bean:message key="button.create.recipient"/></span>
+                                                    </a>
+                                                </c:if>
+                                            </c:if>
+
                                             <button class="btn btn-primary btn-regular pull-right" type="button"
                                                     data-form-submit data-form-persist="page: '1'">
                                                 <i class="icon icon-search"></i>

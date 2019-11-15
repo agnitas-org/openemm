@@ -10,12 +10,10 @@
 
 package org.agnitas.service;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.agnitas.dao.JobQueueDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -199,17 +197,12 @@ public class JobQueueService implements ApplicationContextAware {
 	private boolean checkActiveNode() {
 		// Using direct access for no caching delay time of changes
 		try {
-			String searchKey = "system." + AgnUtils.getHostName() + ".IsActive";
-			Map<String, String> configValues = configDao.getAllEntries();
-			boolean isActive = false;
-			if (configValues.get(searchKey) != null) {
-				isActive = Integer.parseInt(configValues.get(searchKey)) > 0;
-			}
+			boolean isActive = configDao.getJobqueueHostStatus(AgnUtils.getHostName()) > 0;
 			if (logger.isDebugEnabled()) {
 				logger.debug("Jobqueue of " + AgnUtils.getHostName() + " is " + (isActive ? "active" : "inactive"));
 			}
 			return isActive;
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			logger.error("Cannot check for active server node", e);
 			return false;
 		}
@@ -218,17 +211,12 @@ public class JobQueueService implements ApplicationContextAware {
 	private boolean checkShutdownNode() {
 		// Using direct access for no caching delay time of changes
 		try {
-			String searchKey = "system." + AgnUtils.getHostName() + ".IsActive";
-			Map<String, String> configValues = configDao.getAllEntries();
-			boolean shutdownNow = false;
-			if (configValues.get(searchKey) != null) {
-				shutdownNow = Integer.parseInt(configValues.get(searchKey)) < 0;
-			}
+			boolean shutdownNow = configDao.getJobqueueHostStatus(AgnUtils.getHostName()) < 0;
 			if (logger.isDebugEnabled()) {
 				logger.debug("Jobqueue of " + AgnUtils.getHostName() + " is" + (shutdownNow ? "" : " NOT") + " requested to shutdown");
 			}
 			return shutdownNow;
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			logger.error("Cannot check for active server node", e);
 			return false;
 		}

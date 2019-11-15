@@ -42,7 +42,7 @@ public class SendMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
 		if (Utils.getUserCompany() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
-    		throw new Exception("error.masterCompanyMayNotSendMailings");
+    		throw new Exception("error.company.mailings.sent.forbidden");
     	} else {
 			SendMailingRequest request = (SendMailingRequest) arg0;
 	

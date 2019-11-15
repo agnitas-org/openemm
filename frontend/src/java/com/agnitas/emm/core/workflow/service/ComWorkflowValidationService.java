@@ -10,23 +10,6 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_GT;
-import static org.agnitas.target.TargetNode.OPERATOR_GT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_IS;
-import static org.agnitas.target.TargetNode.OPERATOR_LIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_LT;
-import static org.agnitas.target.TargetNode.OPERATOR_LT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_MOD;
-import static org.agnitas.target.TargetNode.OPERATOR_NEQ;
-import static org.agnitas.target.TargetNode.OPERATOR_NLIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_NO;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_YES;
-
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,27 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
@@ -97,6 +59,45 @@ import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
+import com.agnitas.messages.Message;
+import com.agnitas.web.mvc.Popups;
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetOperator;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbColumnType.SimpleDataType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.springframework.beans.factory.annotation.Required;
+
+import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
+import static org.agnitas.target.TargetNode.OPERATOR_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_GT;
+import static org.agnitas.target.TargetNode.OPERATOR_GT_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_IS;
+import static org.agnitas.target.TargetNode.OPERATOR_LIKE;
+import static org.agnitas.target.TargetNode.OPERATOR_LT;
+import static org.agnitas.target.TargetNode.OPERATOR_LT_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_MOD;
+import static org.agnitas.target.TargetNode.OPERATOR_NEQ;
+import static org.agnitas.target.TargetNode.OPERATOR_NLIKE;
+import static org.agnitas.target.TargetNode.OPERATOR_NO;
+import static org.agnitas.target.TargetNode.OPERATOR_NOT_CONTAINS;
+import static org.agnitas.target.TargetNode.OPERATOR_NOT_STARTS_WITH;
+import static org.agnitas.target.TargetNode.OPERATOR_STARTS_WITH;
+import static org.agnitas.target.TargetNode.OPERATOR_YES;
 
 public class ComWorkflowValidationService {
     private static final Logger logger = Logger.getLogger(ComWorkflowValidationService.class);
@@ -363,6 +364,44 @@ public class ComWorkflowValidationService {
         return errors;
     }
 
+    public List<Message> validateStartTrigger(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+        List<Message> messages = new ArrayList<>();
+
+        for (WorkflowIcon icon : icons) {
+            if (icon.getType() == WorkflowIconType.START.getId() && icon.isFilled()) {
+                WorkflowStart start = (WorkflowStart) icon;
+
+                switch (StartType.of(start)) {
+                    case REACTION:
+                        int mailingListId = getMailingListId(icons);
+
+                        if (WorkflowReactionType.CHANGE_OF_PROFILE == start.getReaction() && mailingListId > 0) {
+                            for (Workflow workflow : getActiveWorkflowsDrivenByProfileChange(companyId, mailingListId, start)) {
+                                String name = StringEscapeUtils.escapeHtml(workflow.getShortname());
+                                messages.add(Message.of("error.workflow.reaction.trigger.unique", name));
+                            }
+                        }
+                        break;
+                    case RULE:
+                        String rule = start.getDateFieldValue();
+
+                        if (rule != null && !validateStartRuleExpression(rule)) {
+                            messages.add(Message.of("error.workflow.rule.invalid"));
+                        }
+                        break;
+                    case REGULAR:
+                        break;
+                    case UNKNOWN:
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        return messages;
+    }
+
     public boolean isAutoImportMisused(List<WorkflowIcon> icons) {
         WorkflowGraph graph = new WorkflowGraph(icons);
 
@@ -424,7 +463,7 @@ public class ComWorkflowValidationService {
                                     minDate = DateUtils.addHours(minDate, WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT);
 
                                     // Use default timezone here since getMaxPossibleDate uses it as well.
-                                    Date deadlineDate = DateUtilities.merge(deadline.getDate(), deadline.getHour(), deadline.getMinute(), TimeZone.getDefault());
+                                    Date deadlineDate = WorkflowUtils.mergeIconDateAndTime(deadline.getDate(), deadline.getHour(), deadline.getMinute(), TimeZone.getDefault());
 
                                     if (deadlineDate.before(minDate)) {
                                         return true;
@@ -1324,14 +1363,8 @@ public class ComWorkflowValidationService {
                 if (icon.isFilled() && WorkflowIconType.fromId(icon.getType()) == WorkflowIconType.DEADLINE) {
                     WorkflowDeadline deadline = (WorkflowDeadline) icon;
                     if (deadline.getDeadlineType() == WorkflowDeadlineType.TYPE_FIXED_DEADLINE) {
-                        Calendar calendar = DateUtilities.calendar(deadline.getDate(), timezone);
-                        calendar.set(Calendar.HOUR_OF_DAY, deadline.getHour());
-                        calendar.set(Calendar.MINUTE, deadline.getMinute());
-
-                        // FIXME: validation code should never make changes to data.
-                        deadline.setDate(calendar.getTime());
-
-                        if (deadline.getDate().before(maxStartDate)) {
+                        Date deadlineDate = WorkflowUtils.mergeIconDateAndTime(deadline.getDate(), deadline.getHour(), deadline.getMinute(), timezone);
+                        if (deadlineDate.before(maxStartDate)) {
                             return false;
                         }
                     }
@@ -1651,6 +1684,56 @@ public class ComWorkflowValidationService {
         }
 
         return errors;
+    }
+
+    public List<Message> validateDecisionRules(WorkflowDecision decision, int companyId) {
+        // checking is field exist in recipient table
+        DbColumnType columnType = profileFieldDao.getColumnType(companyId, decision.getProfileField());
+        List<Message> messages = new ArrayList<>();
+
+        if (columnType == null) {
+            messages.add(Message.of("error.workflow.field.missing", decision.getProfileField()));
+            return messages;
+        }
+
+        SimpleDataType simpleColumnType = columnType.getSimpleDataType();
+
+        for (WorkflowRule rule : decision.getRules()) {
+            final int operatorCode = rule.getPrimaryOperator();
+            TargetOperator operator = TargetNode.getOperatorByCode(operatorCode);
+            String operatorReadableName = Objects.nonNull(operator) ? operator.getOperatorSymbol() : operatorCode + " code";
+
+            // checking if special handling operator
+            if (operator == OPERATOR_YES || operator == OPERATOR_NO) {
+                // stop validation for special handling
+                continue;
+            }
+
+            if (isOperatorApplicable(simpleColumnType, operator)) {
+                String value = rule.getPrimaryValue();
+
+                if (operator == OPERATOR_IS) {
+                    if (!NULL_VALUE.equalsIgnoreCase(value) && !NOT_NULL_VALUE.equalsIgnoreCase(value)) {
+                        messages.add(Message.of("error.workflow.value.operator", value, operatorReadableName));
+                    }
+                } else {
+                    if (simpleColumnType == SimpleDataType.Numeric) {
+                        if (!AgnUtils.isDouble(value)) {
+                            messages.add(Message.of("error.workflow.value.type", value, simpleColumnType));
+                        }
+                    } else if (simpleColumnType == SimpleDataType.Date) {
+                        String dateFormat = ALLOWED_DATE_FORMATS.get(StringUtils.lowerCase(decision.getDateFormat()));
+                        if (!validateDateRuleExpression(value, dateFormat)) {
+                            messages.add(Message.of("error.workflow.value.type", value, simpleColumnType));
+                        }
+                    }
+                }
+            } else {
+                messages.add(Message.of("error.workflow.operator", operatorReadableName, simpleColumnType));
+            }
+        }
+
+        return messages;
     }
 
     // Make sure that given operator is applicable to data type that selected column belongs to.

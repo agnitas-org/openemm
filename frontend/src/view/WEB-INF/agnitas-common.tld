@@ -676,4 +676,16 @@
         </example>
     </function>
 
+    <function>
+        <description>
+            Normalizes absolute URL prefix (makes sure it's either empty or it has leading slash but doesn't have trailing one).
+        </description>
+        <name>absUrlPrefix</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String absUrlPrefix(java.lang.String)</function-signature>
+        <example>
+            &lt;c:url var=&quot;editionLogoSrc&quot; value=&quot;${emm:absUrlPrefix(emmLayout.cssUrl)}/images/facelift/edition_logo.png&quot;/&gt;
+        </example>
+    </function>
+
 </taglib>

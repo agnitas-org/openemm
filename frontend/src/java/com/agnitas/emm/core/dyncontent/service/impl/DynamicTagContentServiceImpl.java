@@ -30,6 +30,7 @@ import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.annotation.Validate;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -222,7 +223,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 
 		// Set new content text
 		boolean textContentWasChanged = false;
-		if (!dynamicTagContentToChange.getDynContent().equals(contentModel.getContent())) {
+		if (!StringUtils.equals(dynamicTagContentToChange.getDynContent(), contentModel.getContent())) {
 			dynamicTagContentToChange.setDynContent(contentModel.getContent());
 			textContentWasChanged = true;
 		}

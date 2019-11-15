@@ -13,10 +13,14 @@ package com.agnitas.emm.wsmanager.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -81,7 +85,10 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	@Override
 	public WebserviceUser getWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserDaoException {
 		WebserviceUser webserviceUser = selectObjectDefaultNull(logger, "SELECT * FROM webservice_user_tbl WHERE username = ?", USER_ROWMAPPER, username);
+		
 		if (webserviceUser != null) {
+			webserviceUser.setGrantedPermissions(loadGrantedPermissions(username));
+			webserviceUser.setGrantedPermissionGroupIDs(loadGrantedPermissionGroups(username));
 			return webserviceUser;
 		} else {
 			throw new UnknownWebserviceUsernameException(username);
@@ -180,5 +187,43 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	@Override
 	public int getNumberOfWebserviceUsers() {
 		return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl");
+	}
+	
+	private final Set<String> loadGrantedPermissions(final String username) {
+		final String sql = "SELECT endpoint FROM webservice_permission_tbl WHERE username=?";
+		
+		return new HashSet<>(select(logger, sql, new StringRowMapper(), username));
+	}
+	
+	private final Set<Integer> loadGrantedPermissionGroups(final String username) {
+		final String sql = "SELECT group_ref FROM webservice_user_group_tbl WHERE username=?";
+		
+		return new HashSet<>(select(logger, sql, new IntegerRowMapper(), username));
+	}
+
+	@Override
+	public final void saveGrantedPermissionsAndGroups(final WebserviceUser user) {
+		saveGrantedPermissions(user);
+		saveGrantedPermissionGroups(user);
+	}
+	
+	private final void saveGrantedPermissions(final WebserviceUser user) {
+		final String deletePermissions = "DELETE FROM webservice_permission_tbl WHERE username=?";
+		this.update(logger, deletePermissions, user.getUsername());
+		
+		final String insertPermission = "INSERT INTO webservice_permission_tbl (username, endpoint) VALUES (?,?)";
+		for(final String permission : user.getGrantedPermissions()) {
+			this.update(logger, insertPermission, user.getUsername(), permission);
+		}
+	}
+	
+	private final void saveGrantedPermissionGroups(final WebserviceUser user) {
+		final String deleteGroupsSql = "DELETE FROM webservice_user_group_tbl WHERE username=?";
+		this.update(logger, deleteGroupsSql, user.getUsername());
+		
+		final String insertGroups = "INSERT INTO webservice_user_group_tbl (username, group_ref) VALUES (?,?)";
+		for(final int groupID : user.getGrantedPermissionGroupIDs()) {
+			this.update(logger, insertGroups, user.getUsername(), groupID);
+		}
 	}
 }

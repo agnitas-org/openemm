@@ -29,14 +29,14 @@
                 <entry key="admin.delete" value="admin.delete" />
                 <entry key="admin.confirm_delete" value="admin.delete" />
                 <entry key="admin.unspecified" value="admin.show" />
-
+                
                 <entry key="user.group.list" value="role.show" />
                 <entry key="user.group.save" value="role.change" />
                 <entry key="user.group.create" value="role.change" />
                 <entry key="user.group.delete" value="role.delete" />
                 <entry key="user.group.confirmDelete" value="role.delete" />
 
-               <!-- datasource tokens -->
+                <!-- datasource tokens -->
                 <entry key="datasource.list" value="always.allowed" />
 
                 <!-- bounce filter permissions-->
@@ -151,9 +151,10 @@
                 <entry key="recipient.view" value="recipient.show" />
                 <entry key="recipient.mailings_view" value="recipient.history.mailing" />
                 <entry key="recipient.history_view" value="recipient.history" />
+                <!--Spring MVC import/export edit field content -->
                 <entry key="recipient.bulkView" value="recipient.change.bulk" />
                 <entry key="recipient.bulkSave" value="recipient.change.bulk" />
-                 <entry key="recipient.calculateRecipients" value="recipient.change.bulk" />
+                <entry key="recipient.calculateRecipients" value="recipient.change.bulk" />
                 <entry key="recipient.bulk_confirm_delete" value="recipient.delete" />
                 <entry key="recipient.bulk_delete" value="recipient.delete" />
                 <entry key="recipient.list" value="recipient.show" />
@@ -164,7 +165,7 @@
                 <entry key="recipient.view_without_load" value="recipient.show" />
                 <entry key="recipient.unspecified" value="recipient.show" />
                 <entry key="recipient.check_address" value="recipient.show" />
-
+               
                 <!-- GWUA-3764 test feature -->
                 <entry key="report.recipients" value="always.allowed"/>
 
@@ -172,7 +173,10 @@
                 <entry key="recipientsreport.view" value="wizard.import|wizard.export"/>
                 <entry key="recipientsreport.download" value="wizard.import|wizard.export"/>
 
-                <entry key="recipient_chart.ajaxStatistic" value="recipient.show" />
+                <!-- GWUA-4247 'recipientsreport.migration' should be changed to 'wizard.import|wizard.export' -->
+                <entry key="recipientsreport_new.list" value="recipientsreport.migration"/>
+                <entry key="recipientsreport_new.view" value="recipientsreport.migration"/>
+                <entry key="recipientsreport_new.download" value="recipientsreport.migration"/>
 
                 <entry key="newimportwizard.start" value="wizard.import" />
                 <entry key="newimportwizard.init" value="wizard.import|wizard.importclassic"/>
@@ -236,7 +240,7 @@
                 <entry key="salutation.confirm_delete" value="salutation.delete" />
                 <entry key="salutation.delete" value="salutation.delete" />
                 <entry key="salutation.unspecified" value="salutation.show" />
-                
+
                 <entry key="mailing_stat.list" value="stats.mailing" />
                 <entry key="mailing_stat.mailingstat" value="stats.mailing" />
                 <entry key="mailing_stat.weekstat" value="stats.mailing" />
@@ -247,25 +251,31 @@
                 <entry key="mailing_stat.mailing_optout" value="stats.mailing" />
                 <entry key="mailing_stat.mailing_bounces" value="stats.mailing" />
                 <entry key="mailing_stat.unspecified" value="stats.mailing" />
+
+                <entry key="mailing_stat_new.list" value="stats.mailing.migration" />
+                <entry key="mailing_stat_new.view" value="stats.mailing.migration" />
+                <entry key="mailing_stat_new.unspecified" value="stats.mailing.migration" />
                 
                 <entry key="mailing_compare.list" value="stats.mailing" />
                 <entry key="mailing_compare.compare" value="stats.mailing" />
                 <entry key="mailing_compare.unspecified" value="stats.mailing" />
-                
+
                 <entry key="domain.statistics.view" value="stats.domains"/>
 
+                <!-- GWUA-4275: permissions for Struts Actions -->
                 <entry key="recipient_stats.list" value="stats.mailing" />
                 <entry key="recipient_stats.view" value="stats.mailing" />
                 <entry key="recipient_stats.unspecified" value="stats.mailing" />
-                
+
+                <!-- GWUA-4275: permissions for Spring MVC controller -->
+                <entry key="recipient.stats.new.view" value="stats.recipient.migration" />
+
                 <entry key="monthly.statistics.view" value="stats.month"/>
 
                 <!--Mvc dashboard permissions-->
                 <entry key="dashboard.view" value="always.allowed" />
                 <entry key="dashboard.getStatistics" value="stats.mailing" />
 
-                <entry key="information.list" value="always.allowed" />
-                <entry key="information.unspecified" value="always.allowed" />
                 
                 <entry key="calendar.view" value="calendar.show" />
                 <entry key="calendar.getUnsentMailings" value="calendar.show" />
@@ -341,7 +351,7 @@
                 <entry key="mwStart.previous" value="mailing.change" />
                 <entry key="mwStart.next" value="mailing.change" />
                 <entry key="mwStart.skip" value="mailing.change" />
-                
+
                 <entry key="workflow.unspecified" value="workflow.show" />
                 <entry key="workflow.list" value="workflow.show" />
                 <entry key="workflow.create" value="workflow.edit" />
@@ -366,6 +376,32 @@
                 <entry key="workflow.copy" value="workflow.edit" />
                 <entry key="workflow.validateDependency" value="workflow.show" />
                 <entry key="workflow.getMailingThumbnail" value="workflow.show" />
+
+                <!--WORKFLOW MIGRATION-->
+                <entry key="workflow_new.confirmDelete" value="temp.beta"/>
+                <entry key="workflow_new.delete" value="temp.beta"/>
+                <entry key="workflow_new.confirmBulkDelete" value="temp.beta"/>
+                <entry key="workflow_new.bulkDelete" value="temp.beta"/>
+                <entry key="workflow_new.confirmBulkDeactivate" value="temp.beta" />
+                <entry key="workflow_new.bulkDeactivate" value="temp.beta" />
+                <entry key="workflow_new.create" value="temp.beta" />
+                <entry key="workflow_new.view" value="temp.beta" />
+                <entry key="workflow_new.list" value="temp.beta" />
+                <entry key="workflow_new.save" value="temp.beta" />
+                <entry key="workflow_new.validateDependency" value="temp.beta" />
+                <entry key="workflow_new.getCurrentAdminTime" value="temp.beta" />
+                <entry key="workflow_new.getMailingContent" value="temp.beta" />
+                <entry key="workflow_new.getMailingLinks" value="temp.beta" />
+                <entry key="workflow_new.getMailingsByWorkStatus" value="temp.beta" />
+                <entry key="workflow_new.copy" value="temp.beta" />
+                <entry key="workflow_new.getAllMailingSorted" value="temp.beta" />
+                <entry key="workflow_new.loadStatistics" value="temp.beta" />
+                <entry key="workflow_new.viewOnlyElements" value="temp.beta" />
+                <entry key="workflow_new.generatePDF" value="temp.beta" />
+                <entry key="workflow_new.getAllMailingSorted" value="temp.beta" />
+                <entry key="workflow_new.getWorkflowContent" value="temp.beta" />
+                <entry key="workflow_new.getSampleWorkflowContent" value="temp.beta" />
+                <entry key="workflow_new.getMailingThumbnail" value="temp.beta" />
 
                 <entry key="importwizard.start" value="wizard.importclassic" />
                 <entry key="importwizard.mode" value="wizard.importclassic" />
@@ -403,7 +439,6 @@
                 <entry key="mailingcontent.change_order_top" value="mailing.content.show" />
                 <entry key="mailingcontent.change_order_bottom" value="mailing.content.show" />
                 <entry key="mailingcontent.generate_text_from_html" value="mailing.content.show" />
-                <entry key="mailing.content.save" value="mailing.content.show" />
 
                 <entry key="mcomponents.list" value="mailing.components.show" />
                 <entry key="mcomponents.save_components" value="mailing.components.change" />
@@ -463,7 +498,7 @@
                 
                 <entry key="webservice.manager.user.list" value="webservice.user.show"/>
                 <entry key="webservice.manager.user.create" value="webservice.user.create"/>
-                <entry key="webservice.manager.user.save" value="webservice.user.change"/>
+                <entry key="webservice.manager.user.update" value="webservice.user.change"/>
                 <entry key="webservice.manager.user.view" value="webservice.user.change"/>
 
                 <entry key="session.info" value="always.allowed"/>
@@ -485,6 +520,8 @@
                 <entry key="server.status.logFileDownload" value="server.status"/>
                 <entry key="server.status.logFileView" value="server.status"/>
                 <entry key="server.status.jobQueueView" value="server.status"/>
+                <entry key="server.status.licenseFileUpload" value="server.status"/>
+                <entry key="server.status.updateCheck" value="server.status"/>
             
 			</map>
 		</property>

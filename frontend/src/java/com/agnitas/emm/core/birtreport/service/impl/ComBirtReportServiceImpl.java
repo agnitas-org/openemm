@@ -301,7 +301,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
 
     @Override
     public boolean isExistBenchmarkMailingStatTbl() {
-        return DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_stat_tbl");
+    	return DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_tbl") && DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_stat_tbl");
     }
     
     /**

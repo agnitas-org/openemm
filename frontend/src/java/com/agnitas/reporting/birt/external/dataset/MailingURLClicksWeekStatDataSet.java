@@ -199,7 +199,7 @@ public class MailingURLClicksWeekStatDataSet extends BIRTDataSet {
 		return "select to_char(rdir.timestamp, '<PATTERN>') as mydate "
 				+ ",count(rdir.customer_id ) as clicks_gros, count(distinct rdir.customer_id ) as clicks_net from rdirlog_<COMPANYID>_tbl rdir "
 				+ "join customer_<COMPANYID>_tbl cust on ( rdir.customer_id = cust.customer_id and (<TARGETSQL>) ) "
-				+ "where rdir.company_id=<COMPANYID>  and rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> "
+				+ "where rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> "
 				+ "and (rdir.timestamp >= TO_DATE('<STARTDATE>', '<PATTERN>')   and rdir.timestamp <= TO_DATE('<ENDDATE>', '<PATTERN>') ) "
 				+ "group by to_char(rdir.timestamp, '<PATTERN>') ) clicksperday";
 	}
@@ -219,7 +219,7 @@ public class MailingURLClicksWeekStatDataSet extends BIRTDataSet {
         String ifNull = getIfNull();
         return "(select myday,  "+ifNull+"( clicksperday.clicks_net,0) clicks_net, "+ifNull+"( clicksperday.clicks_gros,0) clicks_gros, '<TOTAL>' targetgroup from "
 				+ "( SELECT ( to_date('<STARTDATE>','YYYYMMDD')  + LEVEL  -1 ) myday  FROM    DUAL  CONNECT BY LEVEL <= 7 ) dummydays left join  ( select to_char(rdir.timestamp, 'YYYYMMDD') as mydate ,count(rdir.customer_id ) as clicks_gros, count(distinct rdir.customer_id ) as clicks_net from rdirlog_<COMPANYID>_tbl rdir "
-				+ " where rdir.company_id=<COMPANYID>  and rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> and (rdir.timestamp >= TO_DATE('<STARTDATE>', 'YYYYMMDD')   and rdir.timestamp <= TO_DATE('<ENDDATE>', 'YYYYMMDD') ) group by to_char(rdir.timestamp, 'YYYYMMDD') ) clicksperday ON ( to_char( dummydays.myday,'YYYYMMDD') = clicksperday.mydate ) ) ";
+				+ " where rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> and (rdir.timestamp >= TO_DATE('<STARTDATE>', 'YYYYMMDD')   and rdir.timestamp <= TO_DATE('<ENDDATE>', 'YYYYMMDD') ) group by to_char(rdir.timestamp, 'YYYYMMDD') ) clicksperday ON ( to_char( dummydays.myday,'YYYYMMDD') = clicksperday.mydate ) ) ";
 	}
 
 	private String getSelect7Days() {

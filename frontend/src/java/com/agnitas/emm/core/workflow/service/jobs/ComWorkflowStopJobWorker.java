@@ -21,9 +21,8 @@ import com.agnitas.emm.core.workflow.service.ComWorkflowService;
  * Handles campaign stop
  */
 public class ComWorkflowStopJobWorker extends JobWorker {
-
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		ComWorkflowService workflowService = serviceLookupFactory.getBeanWorkflowService();
 		List<Workflow> workflowsToDeactivate = workflowService.getWorkflowsToDeactivate(getCompaniesConstrains());
 
@@ -44,6 +43,7 @@ public class ComWorkflowStopJobWorker extends JobWorker {
 					break;
 			}
 		}
+		
+		return null;
 	}
-
 }

@@ -13,26 +13,41 @@ package com.agnitas.web;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.dao.ComAdminDao;
+import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComEmmLayoutBaseDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminChangesLogService;
+import com.agnitas.emm.core.admin.service.AdminSavingResult;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.service.ComCSVService;
+import com.agnitas.service.ComPDFService;
+import com.agnitas.service.impl.ComAdminListQueryWorker;
+import com.agnitas.util.FutureHolderMap;
+import com.lowagie.text.Document;
+import com.lowagie.text.pdf.PdfWriter;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.AdminPreferencesDao;
@@ -57,27 +72,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.dao.ComAdminDao;
-import com.agnitas.dao.ComAdminGroupDao;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComEmmLayoutBaseDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminChangesLogService;
-import com.agnitas.emm.core.admin.service.AdminSavingResult;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.admin.service.PermissionFilter;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.service.ComCSVService;
-import com.agnitas.service.ComPDFService;
-import com.agnitas.service.impl.ComAdminListQueryWorker;
-import com.agnitas.util.FutureHolderMap;
-import com.lowagie.text.Document;
-import com.lowagie.text.pdf.PdfWriter;
 
 public class ComAdminAction extends StrutsActionBase {
 	/** The logger. */
@@ -124,8 +118,6 @@ public class ComAdminAction extends StrutsActionBase {
 
 	protected WebStorage webStorage;
 	
-	private PermissionFilter permissionFilter;
-
 	public static final int ACTION_VIEW_RIGHTS = ACTION_LAST + 1;
 	public static final int ACTION_SAVE_RIGHTS = ACTION_LAST + 2;
 	public static final int ACTION_VIEW_WITHOUT_LOAD = ACTION_LAST + 3;
@@ -540,7 +532,7 @@ public class ComAdminAction extends StrutsActionBase {
 	 *
 	 * @param aForm the formular passed from the jsp
 	 * @param request the Servlet Request (needed to get the company id)
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected ComAdmin loadAdmin(ComAdminForm aForm, HttpServletRequest request, boolean loadPermissionData, ActionMessages errors) throws Exception {
 		int adminIdToEdit = aForm.getAdminID();
@@ -589,78 +581,12 @@ public class ComAdminAction extends StrutsActionBase {
 
 			writeUserActivityLog(AgnUtils.getAdmin(request), "view user", adminToEdit.getUsername());
 			
+			Map<String, PermissionsOverviewData.PermissionCategoryEntry> permissionsOverview = Collections.emptyMap();
 			if (loadPermissionData) {
-				ComAdmin admin = AgnUtils.getAdmin(request);
-
-				List<String> permissionCategories = new ArrayList<>();
-				Map<String, Map<String, List<String>>> permissionsByCategory = new HashMap<>();
-				Map<String, String> permissionGranted = new HashMap<>();
-				Map<String, String> permissionChangeable = new HashMap<>();
-				Map<String, List<String>> subCategoriesByCategory = new HashMap<>();
-
-				// For information on rules for changing user rights, see:
-				// http://wiki.agnitas.local/doku.php?id=abteilung:allgemein:premiumfeatures&s[]=rechtevergabe#rechtevergabe-moeglichkeiten_in_der_emm-gui
-				List<String> standardCategories = Arrays.asList(Permission.ORDERED_STANDARD_RIGHT_CATEGORIES);
-				List<String> premiumCategories = Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES);
-				permissionCategories.addAll(standardCategories);
-				permissionCategories.addAll(premiumCategories);
-				if (admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == 1) {
-					permissionCategories.add(Permission.CATEGORY_KEY_SYSTEM);
-					permissionCategories.add(Permission.CATEGORY_KEY_OTHERS);
-				}
-				
-				Set<Permission> companyPermissions = companyDao.getCompanyPermissions(adminToEdit.getCompanyID());
-				
-				for (Permission permission : Permission.getAllPermissionsAndCategories().keySet()) {
-					if(this.permissionFilter.isVisible(permission)) {
-						String subCategory = StringUtils.isEmpty(permission.getSubCategory()) ? "" : permission.getSubCategory();
-						if (permissionCategories.contains(permission.getCategory())) {
-							String permissionName = permission.toString();
-							if (!permissionsByCategory.containsKey(permission.getCategory())) {
-								permissionsByCategory.put(permission.getCategory(), new HashMap<String, List<String>>());
-							}
-							if (!permissionsByCategory.get(permission.getCategory()).containsKey(subCategory)) {
-								permissionsByCategory.get(permission.getCategory()).put(subCategory, new ArrayList<>());
-							}
-							if (!subCategoriesByCategory.containsKey(permission.getCategory())) {
-								subCategoriesByCategory.put(permission.getCategory(), new ArrayList<>());
-							}
-							if (!subCategoriesByCategory.get(permission.getCategory()).contains(subCategory)) {
-								subCategoriesByCategory.get(permission.getCategory()).add(subCategory);
-							}
-							permissionsByCategory.get(permission.getCategory()).get(subCategory).add(permissionName);
-							permissionGranted.put(permissionName, adminToEdit.permissionAllowed(permission) ? "checked" : "");
-							boolean isChangeable;
-							if (adminToEdit.getGroup().permissionAllowed(permission)) {
-								isChangeable = false;
-							} else if (standardCategories.contains(permission.getCategory())) {
-								isChangeable = true;
-							} else if (premiumCategories.contains(permission.getCategory())) {
-								isChangeable = companyPermissions.contains(permission);
-							} else {
-								isChangeable = admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == 1;
-							}
-							permissionChangeable.put(permissionName, isChangeable ? "" : "disabled");
-						}
-					}
-				}
-				
-				for (Map<String,List<String>> categoryMap : permissionsByCategory.values()) {
-					for (List<String> permissionList : categoryMap.values()) {
-						Collections.sort(permissionList);
-					}
-				}
-				
-				for (List<String> subCategoriesList : subCategoriesByCategory.values()) {
-					Collections.sort(subCategoriesList);
-				}
-
-				request.setAttribute("permissionCategories", permissionCategories);
-				request.setAttribute("permissionsByCategory", permissionsByCategory);
-				request.setAttribute("permissionGranted", permissionGranted);
-				request.setAttribute("permissionChangeable", permissionChangeable);
-				request.setAttribute("subCategoriesByCategory", subCategoriesByCategory);
+				permissionsOverview = adminService.getPermissionOverviewData(AgnUtils.getAdmin(request), adminToEdit);
 			}
+			
+			request.setAttribute("permissionCategories", permissionsOverview.values());
 		} else {
 			aForm.setAdminID(0);
 			aForm.setCompanyID(compID);
@@ -686,6 +612,13 @@ public class ComAdminAction extends StrutsActionBase {
 		if (!isNew) {
 			oldSavingAdmin = adminDao.getAdmin(aForm.getAdminID(), aForm.getCompanyID());
 			oldSavingAdminPreferences = adminPreferencesDao.getAdminPreferences(aForm.getAdminID());
+			if (!StringUtils.equals(oldSavingAdmin.getUsername(), aForm.getUsername()) && adminService.checkBlacklistedAdminNames(aForm.getUsername())) {
+				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.username.duplicate"));
+				return null;
+			}
+		} else if (adminService.adminLimitReached(aForm.getCompanyID())) {
+			messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.admin.limit"));
+			return null;
 		}
 
 		AdminSavingResult result = adminService.saveAdmin(aForm, admin);
@@ -961,7 +894,7 @@ public class ComAdminAction extends StrutsActionBase {
 	 * @param aForm the form passed from the client.
 	 * @param errors storage for error messages (if any) to be shown to user.
 	 *
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected void saveAdminRights(ComAdmin admin, ComAdminForm aForm, ActionMessages errors) throws Exception {
 		if (!admin.permissionAllowed(Permission.ADMIN_CHANGE)) {
@@ -1003,10 +936,5 @@ public class ComAdminAction extends StrutsActionBase {
 	protected void loadMailinglists(ComAdminForm form, HttpServletRequest request){
 		ComAdmin editedAdmin = adminService.getAdmin(form.getAdminID(), AgnUtils.getCompanyID(request));
 		loadMailinglists(editedAdmin, form);
-	}
-	
-	@Required
-	public final void setPermissionFilter(final PermissionFilter filter) {
-		this.permissionFilter = Objects.requireNonNull(filter, "Permission filter is null");
 	}
 }

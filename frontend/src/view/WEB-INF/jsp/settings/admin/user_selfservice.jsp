@@ -177,7 +177,7 @@
                     <div class="col-sm-8">
                         <div class="input-group">
                             <div class="input-group-controls">
-                                <html:password property="password" styleId="password" styleClass="form-control js-password-strength" size="52" maxlength="99"/>
+                                <html:password property="password" styleId="password" styleClass="form-control js-password-strength" size="52" />
                             </div>
                             <div class="input-group-addon">
                                 <span class="addon js-password-strength-indicator hidden">
@@ -194,7 +194,7 @@
                     <div class="col-sm-8">
                         <div class="input-group">
                             <div class="input-group-controls">
-                                <html:password property="passwordConfirm" styleId="repeat" styleClass="form-control js-password-match" size="52" maxlength="99"/>
+                                <html:password property="passwordConfirm" styleId="repeat" styleClass="form-control js-password-match" size="52" />
                             </div>
                             <div class="input-group-addon">
                                 <span class="addon js-password-match-indicator hidden">

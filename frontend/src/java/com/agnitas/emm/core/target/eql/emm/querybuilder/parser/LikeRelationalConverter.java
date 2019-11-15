@@ -22,7 +22,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class LikeRelationalConverter extends GenericEqlNodeParser<LikeRelationalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(LikeRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(LikeRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractEqlNode left = node.getLeft(),
                 right = node.getRight();
         EqlNodeParser<?> leftParser = configuration.getParserMapping().get(left.getClass()),
@@ -34,8 +34,8 @@ public class LikeRelationalConverter extends GenericEqlNodeParser<LikeRelational
                 ruleNode.setOperator(QueryBuilderOperator.NOT_LIKE.queryBuilderName());
             }
             groupNode.addRule(ruleNode);
-            leftParser.parse(left, groupNode, unknownProfileFields);
-            rightParser.parse(right, groupNode, unknownProfileFields);
+            leftParser.parse(left, groupNode, profileFields);
+            rightParser.parse(right, groupNode, profileFields);
             return groupNode;
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable parser for node " + node);

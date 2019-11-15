@@ -25,6 +25,7 @@ import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Mediatype;
+import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingBaseAction;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,6 +50,8 @@ public class MailingBaseForm extends StrutsFormBase {
     private static final long serialVersionUID = 8995916091799817822L;
     
     public static final int TEXTAREA_WIDTH = 75;
+    
+    private String templateSort;
 
 	/** 
      * Holds value of property mailinglistID. 
@@ -342,11 +345,16 @@ public class MailingBaseForm extends StrutsFormBase {
         
         this.shortname = "";
         this.description = "";
-       
+
         mediatypes = new HashMap<>();
-        Mediatype mt = (Mediatype) getWebApplicationContext().getBean("MediatypeEmail");
+
+        Mediatype mt = getWebApplicationContext()
+                .getBean("MediatypeFactory", MediatypeFactory.class)
+                .create(MediaTypes.EMAIL.getMediaCode());
+
         mt.setStatus(Mediatype.STATUS_ACTIVE);
         mediatypes.put(MediaTypes.EMAIL.getMediaCode(), mt);
+
         this.emailReplytoEmail = "";
         this.emailReplytoFullname = "";
         this.emailCharset = "UTF-8";
@@ -1056,18 +1064,22 @@ public class MailingBaseForm extends StrutsFormBase {
         }
         return mediatypes;
     }
-   
+
     public Mediatype getMedia(int id) {
         Mediatype media = getMediatypes().get(id);
 
-        if (media == null && id == MediaTypes.EMAIL.getMediaCode()) {
-            media = (Mediatype) getWebApplicationContext().getBean("MediatypeEmail");
-            mediatypes.put(id, media);
+        if (media == null) {
+            MediatypeFactory factory = getWebApplicationContext().getBean("MediatypeFactory", MediatypeFactory.class);
+
+            if (factory.isTypeSupported(id)) {
+                media = factory.create(id);
+                mediatypes.put(id, media);
+            }
         }
 
         return media;
     }
- 
+
     public MediatypeEmail getMediaEmail() {
         return (MediatypeEmail) getMedia(MediaTypes.EMAIL.getMediaCode());
     }
@@ -1343,5 +1355,13 @@ public class MailingBaseForm extends StrutsFormBase {
 
     public void setMailingEditable(boolean mailingEditable) {
         this.mailingEditable = mailingEditable;
+    }
+    
+    public final void setTemplateSort(final String sort) {
+    	this.templateSort = templateSort;
+    }
+    
+    public final String getTemplateSort() {
+    	return this.templateSort != null ? this.templateSort : "";
     }
 }

@@ -15,6 +15,7 @@ import java.net.URLEncoder;
 import java.util.Date;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.NetworkUtil;
 import org.apache.commons.httpclient.Header;
@@ -58,6 +59,8 @@ public class MailingComponentImpl implements MailingComponent {
 
 	public static final int TYPE_FONT = 6;
 
+	private int present;
+
 	public MailingComponentImpl() {
 		id = 0;
 		componentName = null;
@@ -86,12 +89,17 @@ public class MailingComponentImpl implements MailingComponent {
 			&& type != TYPE_PERSONALIZED_ATTACHMENT
 			&& type != TYPE_HOSTED_IMAGE
 			&& type != TYPE_FONT
-            && type != TYPE_THUMBNAIL_IMAGE
+            && type != MailingComponentType.ThumbnailImage.getCode()
 			&& type != TYPE_PREC_ATTACHMENT) {
 			this.type = TYPE_IMAGE;
 		} else {
 			this.type = type;
 		}
+	}
+
+	@Override
+	public void setPresent(int present) {
+		this.present = present;
 	}
 
 	@Override
@@ -139,6 +147,13 @@ public class MailingComponentImpl implements MailingComponent {
 			if (mimeType != null) {
 				this.mimeType = mimeType;
 			} else {
+				// TODO EMM-6740: Added this try-catch to get stack trace, if no mimetype is given
+				try {
+					throw new Exception("setBinaryBlock() called with no Mimetype");
+				} catch(final Exception e) {
+					logger.error("setBinaryBlock() called with no Mimetype", e);
+				}
+				
 				this.mimeType = "unknown";
 			}
 		}
@@ -155,6 +170,13 @@ public class MailingComponentImpl implements MailingComponent {
 			if (mimeType != null) {
 				this.mimeType = mimeType;
 			} else {
+				// TODO EMM-6740: Added this try-catch to get stack trace, if no mimetype is given
+				try {
+					throw new Exception("setBinaryBlock() called with no Mimetype");
+				} catch(final Exception e) {
+					logger.error("setBinaryBlock() called with no Mimetype", e);
+				}
+				
 				this.mimeType = "unknown";
 			}
 		}
@@ -180,7 +202,7 @@ public class MailingComponentImpl implements MailingComponent {
 			
 			httpClient.getParams().setParameter("http.connection.timeout", 5000);
 
-			if (httpClient.executeMethod(get) == 200) {	
+			if (httpClient.executeMethod(get) == 200) {
 				get.getResponseHeaders();
 				
 				// TODO: Due to data types of DB columns binblock and emmblock, replacing getResponseBody() cannot be replaced by safer getResponseBodyAsStream(). Better solutions?
@@ -200,8 +222,9 @@ public class MailingComponentImpl implements MailingComponent {
 			get.releaseConnection();
 		}
 		
-		if( logger.isInfoEnabled())
+		if( logger.isInfoEnabled()) {
 			logger.info("loadContentFromURL: loaded " + componentName);
+		}
 		
 		return returnValue;
 	}
@@ -250,6 +273,11 @@ public class MailingComponentImpl implements MailingComponent {
 	@Override
 	public int getType() {
 		return this.type;
+	}
+
+	@Override
+	public int getPresent() {
+		return this.present;
 	}
 
 	/**
@@ -354,10 +382,10 @@ public class MailingComponentImpl implements MailingComponent {
 	 * See here for more information:
 	 * http://www.ietf.org/rfc/rfc3986.txt
 	 * http://stackoverflow.com/questions/40568/square-brackets-in-urls
-	 * http://www.blooberry.com/indexdot/html/topics/urlencoding.htm  
+	 * http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
 	 * 
 	 * @return "cleaned" URI
-     * @throws Exception 
+     * @throws Exception
 	 */
 	private String encodeURI(String uri) {
 		// TODO Replace this version with a more generic approach. Now only one special

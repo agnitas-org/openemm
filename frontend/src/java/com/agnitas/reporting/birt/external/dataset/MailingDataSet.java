@@ -382,7 +382,12 @@ public class MailingDataSet extends BIRTDataSet {
     }
 
 	public LightMailing getMailing(Integer mailingId, @VelocityCheck Integer companyId) {
-		return new LightMailingDaoImpl(getDataSource()).getMailing(mailingId, companyId);
+		LightMailing mailing = new LightMailingDaoImpl(getDataSource()).getMailing(mailingId, companyId);
+		if (mailing == null) {
+			return new LightMailing();
+		}
+		
+		return mailing;
 	}
 
 	public Campaign getCampaign(Integer campaignId, @VelocityCheck Integer companyId) {

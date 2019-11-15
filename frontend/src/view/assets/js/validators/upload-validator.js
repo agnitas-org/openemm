@@ -1,9 +1,9 @@
 AGN.Lib.Validator.new('upload-file/form', {
   valid: function (uploadForm, options) {
     var isSuccessfully = true;
-    var $dropzone = $('#dropzone');
+    var $upload = $('[data-initializer="upload"]');
 
-    if ($dropzone.exists() && uploadForm.fileData.length < 1) {
+    if ($upload.exists() && $upload.data('upload-selection').length < 1) {
       AGN.Lib.Messages(t('defaults.error'), t('error.upload.file'), 'alert');
       isSuccessfully = false;
     }

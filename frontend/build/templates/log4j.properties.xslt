@@ -227,6 +227,16 @@ log4j.appender.TARGETGROUP_MIGRATION.layout.ConversionPattern=%d: %-5p [%t] %c -
 log4j.logger.com.agnitas.emm.core.target.web.listener.TargetGroupMigrationListener=DEBUG, TARGETGROUP_MIGRATION
 </xsl:if>
 
+log4j.appender.FACEBOOKLOG=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.FACEBOOKLOG.DatePattern='.'yyyy-MM-dd
+log4j.appender.FACEBOOKLOG.File=${HOME}/logs/webapps/facebook.log
+log4j.appender.FACEBOOKLOG.Append=true
+log4j.appender.FACEBOOKLOG.Threshold=DEBUG
+log4j.appender.FACEBOOKLOG.layout=org.apache.log4j.PatternLayout
+log4j.appender.FACEBOOKLOG.layout.ConversionPattern=%d: %-5p [%t] %c - %m%n
+log4j.logger.com.agnitas.emm.facebook=DEBUG, FACEBOOKLOG
+
+
 ## Debuglog for CleanDBDao
 log4j.appender.CLEANLOG=org.apache.log4j.DailyRollingFileAppender
 log4j.appender.CLEANLOG.DatePattern='.'yyyy-MM-dd

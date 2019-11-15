@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang.StringUtils;
@@ -44,6 +45,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     private ComTargetService targetService;
     private ComColumnInfoService columnInfoService;
     private ComWorkflowService workflowService;
+    private ConfigService configService;
 
     @Required
     public void setColumnInfoService(ComColumnInfoService columnInfoService) {
@@ -62,6 +64,11 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 
     @Override

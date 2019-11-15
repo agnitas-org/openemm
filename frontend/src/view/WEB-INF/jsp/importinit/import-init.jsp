@@ -18,7 +18,7 @@
                 <li>
                     <html:link page="/newimportwizard.do?action=1" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_mailing-new-standard.png">
+                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_import_standard.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">

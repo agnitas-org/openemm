@@ -19,8 +19,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
@@ -28,9 +31,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 
 public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements RecipientsReportDao {
 
@@ -152,7 +152,16 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
             return null;
         }
     }
-
+    
+    @Override
+    public RecipientsReport.RecipientReportType getReportType(int companyId, int reportId) {
+        String typeValue = selectObjectDefaultNull(logger,
+                "SELECT type FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id " +
+                        "WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
+                new StringRowMapper(), companyId, reportId);
+        return typeValue != null ? RecipientsReport.RecipientReportType.valueOf(typeValue) : null;
+    }
+    
     @Override
     public PaginatedListImpl<RecipientsReport> getReports(@VelocityCheck int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types) {
         sortProperty = SORTABLE_COLUMNS.getOrDefault(sortProperty, DEFAULT_SORTABLE_COLUMN);
@@ -175,8 +184,8 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public RecipientsReport getReport(int companyId, int id) {
-        return selectObjectDefaultNull(logger, "SELECT ir.*, a.username FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?", REPORT_ROWS_MAPPER, companyId, id);
+    public RecipientsReport getReport(@VelocityCheck int companyId, int reportId) {
+        return selectObjectDefaultNull(logger, "SELECT ir.*, a.username FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?", REPORT_ROWS_MAPPER, companyId, reportId);
     }
 
     @Override
@@ -205,7 +214,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
             report.setType(RecipientsReport.RecipientReportType.valueOf(resultSet.getString("type")));
             report.setFileId(resultSet.getObject("download_id") == null ? null : resultSet.getInt("download_id"));
             report.setAutoImportID(resultSet.getObject("autoimport_id") == null ? -1 : resultSet.getInt("autoimport_id"));
-            report.setIsError(resultSet.getObject("error") == null ? false : resultSet.getInt("error") > 0);
+            report.setIsError(resultSet.getObject("error") != null && resultSet.getInt("error") > 0);
 
             return report;
         }

@@ -20,11 +20,11 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 public class AtomExpressionalParser extends GenericEqlNodeParser<AtomExpressionalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(AtomExpressionalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(AtomExpressionalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractEqlNode child = node.getChild();
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         if (parser != null) {
-            return parser.parse(child, groupNode, unknownProfileFields);
+            return parser.parse(child, groupNode, profileFields);
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable parser for node" + node);
     }

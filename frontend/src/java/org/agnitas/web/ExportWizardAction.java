@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -348,6 +349,7 @@ public class ExportWizardAction extends StrutsActionBase {
             			exportWorker.setDateFormat(admin.getDateFormat());
             			exportWorker.setDateTimeFormat(admin.getDateTimeFormatWithSeconds());
             			exportWorker.setMaximumExportLineLimit(configService.getIntegerValue(ConfigValue.ProfileRecipientExportMaxRows, companyID));
+            			exportWorker.setExportTimezone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
                     	Future<GenericExportWorker> future = workerExecutorService.submit(exportWorker);
                     	futureHolder.put(futureKey, future);
                     }

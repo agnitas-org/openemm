@@ -1,3 +1,4 @@
+<%@page import="org.agnitas.beans.MailingComponentType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
@@ -26,7 +27,7 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponent.TYPE_THUMBNAIL_IMAGE %>" scope="request"/>
+<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>" scope="request"/>
 <c:set var="mailingExists" value="${mailingBaseForm.mailingID ne 0}"/>
 
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
@@ -148,7 +149,7 @@
 
             <c:set var="sidemenu_sub_active"	value="none" 																							scope="request" />
             <c:set var="agnHighlightKey" 		value="default.settings" 																				scope="request" />
-            <c:set var="agnHelpKey" 			value="create_a_mailing_E-Mail_Creator" 																scope="request" />
+            <c:set var="agnHelpKey" 			value="newMailingNormal" 																scope="request" />
 
             <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
                 <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -161,7 +162,7 @@
             <c:set var="agnNavigationKey" 		value="GridMailingNew" 		scope="request" />
             <c:set var="sidemenu_sub_active"	value="mailing.New_Mailing" scope="request" />
             <c:set var="agnHighlightKey" 		value="mailing.New_Mailing"	scope="request" />
-            <c:set var="agnHelpKey" 			value="NewGridMailing" 		scope="request" />
+            <c:set var="agnHelpKey" 			value="newMailingNormal"    scope="request" />
             
             <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
                 <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

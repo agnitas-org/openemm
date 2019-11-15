@@ -266,5 +266,6 @@ public interface ComTargetDao {
 	List<RawTargetGroup> getTargetsCreatedByWorkflow(@VelocityCheck int companyId, boolean onlyEmptyEQL);
 	
 	List<Integer> getTargetIdsCreatedByWorkflow(@VelocityCheck int companyId);
-	
+    
+	List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
 }

@@ -356,7 +356,7 @@ return false;]]></method>
                                     <property name="paddingLeft">2pt</property>
                                     <property name="paddingBottom">2pt</property>
                                     <property name="paddingRight">2pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("ClickStat", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.KlickStats", reportContext.getLocale())</expression>
                                 </text-data>
                             </cell>
                         </row>

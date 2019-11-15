@@ -136,7 +136,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 	
-	public ActionForward showChangeForm(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {		
+	public ActionForward showChangeForm(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (form == null || !(form instanceof ComAdminForm)) {
 			throw new RuntimeException("Invalid Form for showChangeForm in ComUserSelfServiceAction");
 		}
@@ -262,7 +262,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 				admin.setAdminTimezone(adminForm.getAdminTimezone());
 
                 //Set user group
-                AdminGroup group = adminGroupDao.getAdminGroup(adminForm.getGroupID());
+                AdminGroup group = adminGroupDao.getAdminGroup(adminForm.getGroupID(), adminForm.getCompanyID());
                 //Set gender
                 admin.setGender(adminForm.getGender());
 
@@ -531,7 +531,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
             // Log changes of userGroup
             if (admin.getGroup().getGroupID() != adminForm.getGroupID()){
                 String oldGroupName = admin.getGroup().getGroupID() == 0 ? "None" : admin.getGroup().getShortname();
-                String newGroupName = adminForm.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(adminForm.getGroupID()).getShortname();
+                String newGroupName = adminForm.getGroupID() == 0 ? "None" : adminGroupDao.getAdminGroup(adminForm.getGroupID(), adminForm.getCompanyID()).getShortname();
 
                 writeUserActivityLog(admin, "edit user",
                         userName + ". User Group changed from " + oldGroupName + " to " + newGroupName);

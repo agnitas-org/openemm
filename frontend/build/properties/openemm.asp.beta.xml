@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+	<server>
+		<url>http://[to be defined]</url>
+	</server>
+	
+	<reporting>
+		<birt>
+			<url>http://[to be defined]/birt</url>
+			<drilldownurl>http://[to be defined]</drilldownurl>
+		</birt>
+	</reporting>
+	
+	<mailgun>
+		<system>localhost</system>
+		<ini>
+			<domain>openemm.org</domain>
+			<mailer>Agnitas OpenEMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}</mailer>
+			<metadir>/home/openemm/var/spool/META</metadir>
+			<xmlback>/home/openemm/bin/xmlback</xmlback>
+			<account_logfile>/home/openemm/log/account.log</account_logfile>
+			<directdir>/home/openemm/var/spool/DIRECT</directdir>
+		</ini>
+	</mailgun>
+	
+	<mailaddresses>
+		<sender>openemm@example.com</sender>
+		<sender_name>OpenEMM</sender_name>
+		<replyto>openemm@example.com</replyto>
+		<replyto_name>OpenEMM</replyto_name>
+		<bounce>openemm@example.com</bounce>
+		
+		<frontend>openemm@example.com</frontend>
+		<support>openemm@example.com</support>
+		<error>openemm@example.com</error>
+		<upload_database>openemm@example.com</upload_database>
+		<upload_support>openemm@example.com</upload_support>
+		<report_archive>openemm@example.com</report_archive>
+	</mailaddresses>
+	
+	<htmlPdfConverter>${wkhtmltopdf}</htmlPdfConverter>
+	<htmlImageConverter>${wkhtmltoimage}</htmlImageConverter>
+	
+	<birt-hostuser>openemm</birt-hostuser>
+</properties>

@@ -25,7 +25,7 @@
                 </label>
             </div>
             <div class="col-sm-8">
-                <mvc:password path="password" id="password" maxlength="99" cssClass="form-control"/>
+                <mvc:password path="password" id="password" cssClass="form-control" />
             </div>
         </div>
 
@@ -34,7 +34,7 @@
                 <label for="password-repeat" class="control-label"><i class="icon icon-key"></i> <s:message code="password.repeat"/></label>
             </div>
             <div class="col-sm-8">
-                <input type="password" id="password-repeat" class="form-control" maxlength="99"/>
+                <input type="password" id="password-repeat" class="form-control" />
             </div>
         </div>
 

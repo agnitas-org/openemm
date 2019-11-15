@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -25,18 +26,23 @@ public class CompanyInfoDao extends BaseDaoImpl {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(CompanyInfoDao.class);
 	
-	public Map<String, String> getAllEntries() throws SQLException {
-		List<Map<String, Object>> results = select(logger, "SELECT company_id, cname, cvalue FROM company_info_tbl");
-		Map<String, String> returnMap = new HashMap<>();
+	public Map<ConfigKey, String> getAllEntries() throws SQLException {
+		List<Map<String, Object>> results = select(logger, "SELECT company_id, hostname, cname, cvalue FROM company_info_tbl");
+		Map<ConfigKey, String> returnMap = new HashMap<>();
 		for (Map<String, Object> resultRow : results) {
 			String configValueName = (String) resultRow.get("cname");
+			String hostname = (String) resultRow.get("hostname");
+			if (StringUtils.isBlank(hostname)) {
+				hostname = null;
+			}
 			Number companyID = (Number) resultRow.get("company_id");
+			int companyIDInt = 0;
 			if (companyID != null && companyID.intValue() != 0) {
-				configValueName = configValueName + "." + companyID;
+				companyIDInt = companyID.intValue();
 			}
 			String value = (String) resultRow.get("cvalue");
 			
-			returnMap.put(configValueName, value);
+			returnMap.put(new ConfigKey(configValueName, companyIDInt, hostname), value);
 		}
 		return returnMap;
 	}

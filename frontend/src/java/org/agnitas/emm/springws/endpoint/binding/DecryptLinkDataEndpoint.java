@@ -8,7 +8,7 @@
 
 */
 
-package org.agnitas.emm.springws.endpoint.binding;
+package org.agnitas.emm.springws.endpoint.binding; // FIXME Wrong package
 
 import javax.annotation.Resource;
 

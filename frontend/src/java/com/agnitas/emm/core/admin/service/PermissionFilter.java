@@ -10,8 +10,12 @@
 
 package com.agnitas.emm.core.admin.service;
 
+import java.util.Set;
+
 import com.agnitas.emm.core.Permission;
 
 public interface PermissionFilter {
-	public boolean isVisible(final Permission permission);
+	boolean isVisible(final Permission permission);
+	
+	Set<Permission> getAllVisiblePermissions();
 }

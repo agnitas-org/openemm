@@ -53,7 +53,6 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
-import com.agnitas.emm.core.hashtag.exception.HashTagException;
 import com.agnitas.emm.core.hashtag.service.HashTagEvaluationService;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
@@ -105,6 +104,7 @@ public class LinkServiceImpl implements LinkService {
 	private HashTag unencodedProfileFieldHashTag;
 	
 	private HashTagEvaluationService hashTagEvaluationService;
+	
 
 	/**
 	 * Map cache from mailingID to baseUrl
@@ -322,7 +322,7 @@ public class LinkServiceImpl implements LinkService {
 	private static final String executeHashTag(final HashTag tag, final String tagString, final HashTagContext context) {
 		try {
 			return tag.handle(context, tagString);
-		} catch(HashTagException e) {
+		} catch(final Exception e) {
 			logger.error("Error processing tag string: " + tagString + " (company " + context.getCompanyID() + ", link " + context.getCurrentTrackableLink().getId() + ", tag class " + tag.getClass().getCanonicalName() + ")", e);
 			return "";
 		}
@@ -339,7 +339,7 @@ public class LinkServiceImpl implements LinkService {
 	 * AgnTag [agnPROFILE] will be resolved.
 	 * AgnTag [agnUNSUBSCRIBE] will be resolved.
 	 * AgnTag [agnFORM] will be resolved.
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	// TODO: Check availablility and mimetype of image links
 	@Override
@@ -390,7 +390,7 @@ public class LinkServiceImpl implements LinkService {
 				final Matcher schemaMatcher = PROTOCOL_SCHEMA_PATTERN.matcher(linkUrl);
 				final String schema = schemaMatcher.matches() ? schemaMatcher.group(1) : null;
 				
-				if(schema != null && schema.length() < 2) { // Schema present, but length too short -> Treat as local 
+				if(schema != null && schema.length() < 2) { // Schema present, but length too short -> Treat as local
 					localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
 				} else if(schema != null && ("file".equalsIgnoreCase(schema))) {	// "file:" is always local
 					localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
@@ -410,18 +410,16 @@ public class LinkServiceImpl implements LinkService {
 						} else {
 							if(linkUrl.toLowerCase().startsWith("http://") || linkUrl.toLowerCase().startsWith("https://")) {
 								foundImages.add(linkUrl);
-							} else {						
+							} else {
 								if (linkUrl.contains("[agn") || linkUrl.contains("[gridPH")) {
 									foundImages.add(linkUrl);
-								} else {	
+								} else {
 									localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
 								}
 							}
 						}
 					} else {
 						if (linkUrl.contains("[agn") || linkUrl.contains("[gridPH")) {
-							foundNotTrackableLinks.add(linkUrl);
-						} else if (checkLinkDomainIsPreselectedForNoTrack(linkUrl, companyID)) {
 							foundNotTrackableLinks.add(linkUrl);
 						} else {
 							if(linkUrl.toLowerCase().startsWith("http://") || linkUrl.toLowerCase().startsWith("https://")) {
@@ -445,19 +443,6 @@ public class LinkServiceImpl implements LinkService {
 		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErrorneousLinks, localLinks);
 	}
 
-	private boolean checkLinkDomainIsPreselectedForNoTrack(String linkUrl, int companyID) {
-		String noTrackPatterns = configService.getValue(ConfigValue.NoLinkTrackingByDomainPreselection, companyID);
-		if (StringUtils.isNotBlank(noTrackPatterns)) {
-			for (String wildCardDomain : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(noTrackPatterns))) {
-				String patternString = "https?://" + wildCardDomain.replace(".", "\\.").replace("*", ".*").replace("?", ".") + ".*";
-				if (Pattern.matches(patternString, linkUrl)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	@Override
 	// TODO EMM-6128: After complete rollout, replace this method by findAllLinksNews
 	public final void findAllLinks(final int companyID, String text, BiConsumer<Integer, Integer> consumer) {
@@ -465,7 +450,7 @@ public class LinkServiceImpl implements LinkService {
 			findAllLinksNew(text, consumer);
 		} else {
 			findAllLinksLegacy(text, consumer);
-		}		
+		}
 	}
 	
 	// TODO EMM-6128: After complete rollout, rename to "findAllLinks"
@@ -481,7 +466,7 @@ public class LinkServiceImpl implements LinkService {
 				start += attributeLength;	// Skip attribute
 							
 				switch(text.charAt(start)) {
-				case '\'':		
+				case '\'':
 					start++; // Skip quote
 					end = text.indexOf('\'', start);
 					break;
@@ -551,7 +536,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 
 	// TODO EMM-6128: After complete rollout, remove this method
-	private final void findAllLinksLegacy(final String text, final BiConsumer<Integer, Integer> consumer) { 
+	private final void findAllLinksLegacy(final String text, final BiConsumer<Integer, Integer> consumer) {
 		int position = 0;
 		Matcher matcher = HTTP_PATTERN.matcher(text);
 		while (matcher.find(position)) {

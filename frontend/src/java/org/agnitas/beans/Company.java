@@ -10,11 +10,9 @@
 
 package org.agnitas.beans;
 
-import java.io.Serializable;
-
-public interface Company extends Serializable {
+public interface Company {
 	
-	public final static String STATUS_DELETED = "deleted"; 
+	public final static String STATUS_DELETED = "deleted";
 	public final static String STATUS_ACTIVE = "active";
 	public final static String STATUS_INACTIVE = "inactive";
 	public final static String STATUS_TODELETE = "todelete";

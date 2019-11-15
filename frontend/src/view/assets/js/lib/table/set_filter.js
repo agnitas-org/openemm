@@ -77,7 +77,7 @@
   SetFilter.prototype.doesFilterPass = function (params) {
     var value = this.valueGetter(params.node);
 
-    return _.contains(this.valuesFiltered, value)
+    return _.includes(this.valuesFiltered, value)
   };
 
   SetFilter.prototype.isFilterActive = function () {
@@ -91,4 +91,4 @@
 
 
   AGN.Lib.TableSetFilter = SetFilter;
-})()
+})();

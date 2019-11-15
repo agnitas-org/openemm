@@ -51,6 +51,9 @@ public class WsUserDtoToWebserviceUserConverter implements Converter<WebserviceU
             user.setContact(userDto.getContactInfo());
 
             user.setActive(userDto.isActive());
+            user.setGrantedPermissions(userDto.getGrantedPermissions());
+            user.setGrantedPermissionGroupIDs(userDto.getGrantedPermissionGroupIDs());
+            
             return user;
         } catch (GeneralSecurityException | UnsupportedEncodingException e) {
             throw new RuntimeException("Cannot converted to webservice user: " + e.getMessage());

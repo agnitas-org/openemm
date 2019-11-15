@@ -139,7 +139,10 @@ window.I18n = {
             number_not_integer: '<agn:agnMessage key="querybuilder.error.number_not_integer"/>',
             number_not_double: '<agn:agnMessage key="querybuilder.error.number_not_double"/>',
             number_exceed_min: '<agn:agnMessage key="querybuilder.error.number_exceed_min" arg0="%s"/>',
-            number_exceed_max: '<agn:agnMessage key="querybuilder.error.number_exceed_max" arg0="%s"/>'
+            number_exceed_max: '<agn:agnMessage key="querybuilder.error.number_exceed_max" arg0="%s"/>',
+            phone_number_invalid: '<agn:agnMessage key="error.phoneNumber.invalidFormat"/>',
+            string_exceed_min_length: '<agn:agnMessage key="querybuilder.error.string_exceed_min_length" arg0="%s"/>',
+            string_exceed_max_length: '<agn:agnMessage key="querybuilder.error.string_exceed_max_length" arg0="%s"/>'
         },
         mailing: {
             parameter: '<agn:agnMessage key="MailingParameter"/>',
@@ -152,7 +155,7 @@ window.I18n = {
         error: {
             headline: '<agn:agnMessage key="error.global.headline"/>',
             text: '<agn:agnMessage key="error.default.message"/>',
-            reload: '<agn:agnMessage key="error.default.reload"/>',
+            reload: '<agn:agnMessage key="error.reload"/>',
             nothing_selected: '<agn:agnMessage key="error.default.nothing_selected"/>'
         },
         permission: {
@@ -188,7 +191,6 @@ window.I18n = {
             OR: '<agn:agnMessage key="condition.or"/>'
         },
         operators: {
-
             equal: '<agn:agnMessage key="operator.equal"/>',
             not_equal: '<agn:agnMessage key="operator.not_equal"/>',
             less: '<agn:agnMessage key="operator.less"/>',
@@ -208,7 +210,9 @@ window.I18n = {
             is_empty: '<agn:agnMessage key="operator.is_empty"/>',
             is_not_empty: '<agn:agnMessage key="operator.is_not_empty"/>',
             is_null: '<agn:agnMessage key="operator.is_null"/>',
-            is_not_null: '<agn:agnMessage key="operator.is_not_null"/>'
+            is_not_null: '<agn:agnMessage key="operator.is_not_null"/>',
+            before: '<agn:agnMessage key="target.operator.before"/>',
+            after: '<agn:agnMessage key="target.operator.after"/>'
         },
         errors: {
             no_filter: '<agn:agnMessage key="querybuilder.error.no_filter"/>',
@@ -261,7 +265,8 @@ window.I18n = {
             start_event: '<agn:agnMessage key="workflow.start.StartEvent"/>',
             reminder_text: '<agn:agnMessage key="workflow.start.reminderText"/>',
             reaction_based: '<agn:agnMessage key="workflow.start.ReactionBasedStart"/>',
-            date_based: '<agn:agnMessage key="workflowlist.dateBased"/>'
+            date_based: '<agn:agnMessage key="mailing.date"/>',
+            action_based: '<agn:agnMessage key="workflowlist.actionBased"/>'
         },
         stop: {
             title: '<agn:agnMessage key="workflow.stop.title"/>',
@@ -364,7 +369,18 @@ window.I18n = {
         recipient: '<agn:agnMessage key="Recipient"/>',
         parameter: '<agn:agnMessage key="workflow.parameter"/>',
         single: '<agn:agnMessage key="workflow.single"/>',
-        undo_history: '<agn:agnMessage key="workflow.undo.historyIsEmptyDialog.title"/>'
+        undo_history: '<agn:agnMessage key="workflow.undo.historyIsEmptyDialog.title"/>',
+        status: {
+            NONE: 'NONE',
+            open: '<agn:agnMessage key="workflow.view.status.open"/>',
+            active: '<agn:agnMessage key="default.status.active"/>',
+            inactive: '<agn:agnMessage key="workflow.view.status.inActive"/>',
+            completed: '<agn:agnMessage key="workflow.view.status.complete"/>',
+            testing: '<agn:agnMessage key="workflow.view.status.testing"/>',
+            tested: '<agn:agnMessage key="workflow.view.status.tested"/>',
+            failed: 'FAILED',
+            testing_failed: 'TESTING_FAILED'
+        }
     },
     logon: {
         info: {

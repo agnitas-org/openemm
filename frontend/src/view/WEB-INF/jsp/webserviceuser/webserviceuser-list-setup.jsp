@@ -10,7 +10,6 @@
 <c:set var="agnHighlightKey" 		    value="settings.webservice.user" 	scope="request" />
 <c:set var="isBreadcrumbsShown" 	    value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	    value="Administration" 				scope="request" />
-<c:set var="formFieldErrorDontShow"     value="true"                	    scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

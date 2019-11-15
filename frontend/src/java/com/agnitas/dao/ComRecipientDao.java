@@ -20,7 +20,6 @@ import java.util.Set;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -95,7 +94,7 @@ public interface ComRecipientDao {
      * @param pageNumber the 1-based page index.
      * @param rownums number of rows per page.
      * @return a list of recipients.
-     * @throws Exception 
+     * @throws Exception
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
@@ -111,7 +110,7 @@ public interface ComRecipientDao {
 	int getNumberOfRecipients(@VelocityCheck int companyId, int mailingListId, String sqlConditions, Object... sqlConditionParameters) throws Exception;
 
 	/**
-	 * For bulk insert of new recipients only. 
+	 * For bulk insert of new recipients only.
 	 * There is no check for CompanyId == 0 and different CompanyId inside.
 	 * 
 	 * @param custParameters
@@ -164,11 +163,10 @@ public interface ComRecipientDao {
      */
 	boolean updateInDB(Recipient cust);
 
-
 	/**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData
-     * Depending on <code>missingFieldsToNull</code>, profile fields not listed in given customer are either untouched in 
-     * database (<code>missingFieldsToNull</code> is set to <code>false</code>) or the fields are set to <code>null</code> 
+     * Depending on <code>missingFieldsToNull</code>, profile fields not listed in given customer are either untouched in
+     * database (<code>missingFieldsToNull</code> is set to <code>false</code>) or the fields are set to <code>null</code>
      * in database (<code>missingFieldsToNull</code> is set to <code>true</code>).
      *
      * @param cust customer data to be saved to database
@@ -296,26 +294,6 @@ public interface ComRecipientDao {
     Map<Integer, Map<Integer, BindingEntry>>	getAllMailingLists(int customerID, @VelocityCheck int companyID);
 
     /**
-     * Create an empty temporary table for the given customer.
-     * The table can then be used for import operations.
-     *
-     * @param companyID the id of the company.
-     * @param datasourceID the unique id for the import operation.
-     * @param status the object of the column that should be use as unique key.
-     * @return true on success.
-     */
-    boolean createImportTables(@VelocityCheck int companyID, int datasourceID, CustomerImportStatus status);
-
-	/**
-     * Delete a temporary table that was created with createImportTables.
-     *
-     * @param companyID the id of the company.
-     * @param datasourceID the unique id for the import operation.
-     * @return true on success.
-     */
-    boolean deleteImportTables(@VelocityCheck int companyID, int datasourceID);
-
-    /**
      * Load number of recipients for given condition
      *
      * @param companyID the id of the company.
@@ -416,6 +394,8 @@ public interface ComRecipientDao {
 	RecipientDates getRecipientDates(@VelocityCheck int companyId, int recipientId);
 
 	DataSource getDataSource();
+	
+	boolean isOracleDB();
 
     List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, List<String> addresses);
 

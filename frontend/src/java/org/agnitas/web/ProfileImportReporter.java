@@ -12,20 +12,18 @@ package org.agnitas.web;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TimeZone;
 
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.ImportLoggerDao;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -35,7 +33,6 @@ import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.ImportReportEntry;
-import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -50,7 +47,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.NoSuchMessageException;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
@@ -60,6 +56,8 @@ import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.web.forms.ComNewImportWizardForm;
 
+import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
+
 public class ProfileImportReporter {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ProfileImportReporter.class);
@@ -68,8 +66,6 @@ public class ProfileImportReporter {
 	
 	private JavaMailService javaMailService;
 
-	private ImportLoggerDao importLoggerDao;
-	
 	private MailinglistDao mailinglistDao;
 	
 	private ComCompanyDao companyDao;
@@ -77,11 +73,6 @@ public class ProfileImportReporter {
 	private ConfigService configService;
 	
 	private ImportRecipientsDao importRecipientsDao;
-
-	@Required
-	public void setImportLoggerDao(ImportLoggerDao importLoggerDao) {
-		this.importLoggerDao = importLoggerDao;
-	}
 
 	@Required
 	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
@@ -155,38 +146,13 @@ public class ProfileImportReporter {
 			File resultFile = new File(profileImportWorker.getImportFile().getLocalFile().getAbsolutePath()
 				+ "_CID" + admin.getCompanyID()
 				+ "_" + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(profileImportWorker.getStartTime())
-				+ "_ImportResult.txt");
+				+ "_" + RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX + TXT_EXTENSION);
 			FileUtils.writeStringToFile(resultFile, resultFileContent, "UTF-8");
 			return resultFile;
 		} catch (Exception e) {
 			logger.error("writeProfileImportResultFile: " + e, e);
 			return null;
 		}
-	}
-	
-	public void writeProfileImportLog(ProfileImportWorker profileImportWorker, int adminID) throws Exception {
-		Map<String, String> statusReportMap = new HashMap<>();
-		List<ImportReportEntry> reportStatusEntries = generateImportStatusEntries(profileImportWorker, profileImportWorker.getImportProfile().getCompanyId(), Locale.ENGLISH, profileImportWorker.getImportProfile().isNoHeaders());
-		for (ImportReportEntry entry : reportStatusEntries) {
-			final String messageKey = entry.getKey();
-			String localizedMessage;
-			try {
-				localizedMessage = I18nString.getLocaleString(messageKey, (Locale) null);
-			} catch (NoSuchMessageException e) {
-				logger.error("Error occured: " + e.getMessage(), e);
-				localizedMessage = messageKey;
-			}
-			statusReportMap.put(localizedMessage, entry.getValue());
-		}
-
-		importLoggerDao.log(
-			profileImportWorker.getImportProfile().getCompanyId(),
-			adminID,
-			profileImportWorker.getDatasourceId(),
-			profileImportWorker.getStatus().getInserted() + profileImportWorker.getStatus().getUpdated(),
-			ImportUtils.describeMap(statusReportMap),
-			profileImportWorker.getImportProfile().toString()
-		);
 	}
 	
 	public int writeProfileImportReport(ProfileImportWorker profileImportWorker, ComAdmin admin, boolean isError) throws Exception {
@@ -196,9 +162,9 @@ public class ProfileImportReporter {
 			autoImportID = profileImportWorker.getAutoImport().getAutoImportId();
 		}
 		if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null) {
-			recipientsReportService.createSupplementalReportData(admin.getAdminID(), admin.getCompanyID(), "InvalidRecipients.csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
+			recipientsReportService.createSupplementalReportData(admin, RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
 		}
-		return recipientsReportService.createAndSaveImportReport(admin.getAdminID(), admin.getCompanyID(), "ImportResult.txt", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
+		return recipientsReportService.createAndSaveImportReport(admin, RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
 	}
 	
 	/**
@@ -661,8 +627,8 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("KeyColumn", locale), StringUtils.join(importWorker.getImportProfile().getKeyColumns(), ", ")));
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), DateUtilities.getDateTimeString(importWorker.getStartTime(), ZoneId.of(admin.getAdminTimezone()), admin.getDateTimeFormatter())));
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), DateUtilities.getDateTimeString(importWorker.getEndTime(), ZoneId.of(admin.getAdminTimezone()), admin.getDateTimeFormatter())));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), DateUtilities.getDateTimeString(importWorker.getStartTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter())));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), DateUtilities.getDateTimeString(importWorker.getEndTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter())));
 
 		if (importWorker.getAutoImport() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), importWorker.getAutoImport().getFileServerWithoutCredentials()));
@@ -761,7 +727,7 @@ public class ProfileImportReporter {
 		}
 		
 		if (profileImportWorker.getUsername() != null) {
-			resultFileContent += "User: " + profileImportWorker.getUsername();
+			resultFileContent += "User: " + profileImportWorker.getUsername() + "\n";
 		}
 		
 		resultFileContent += "Remote filename: " + (StringUtils.isBlank(profileImportWorker.getImportFile().getRemoteFilePath()) ? "unknown" : profileImportWorker.getImportFile().getRemoteFilePath()) + "\n";

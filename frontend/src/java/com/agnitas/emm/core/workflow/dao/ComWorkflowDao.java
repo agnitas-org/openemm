@@ -172,4 +172,10 @@ public interface ComWorkflowDao {
     List<Integer> getAllWorkflowUsedTargets(@VelocityCheck int companyId);
     
     int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId);
+    
+    void removeMailingsTargetExpressions(int companyId, Set<Integer> mailingIds);
+    
+    void deactivateWorkflowScheduledReports(int workflowId, @VelocityCheck int companyId);
+    
+    void deleteWorkflowScheduledReports(int workflowId, int companyId);
 }

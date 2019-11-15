@@ -12,10 +12,10 @@ package org.agnitas.web;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -345,8 +345,8 @@ public class RecipientExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Target", locale), I18nString.getLocaleString("statistic.all_subscribers", locale)));
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), ZoneId.of(admin.getAdminTimezone()), admin.getDateTimeFormatterWithSeconds()))));
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), ZoneId.of(admin.getAdminTimezone()), admin.getDateTimeFormatterWithSeconds()))));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatterWithSeconds()))));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatterWithSeconds()))));
 
 		if (exportWorker.getRemoteFile() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(exportWorker.getRemoteFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getRemoteFile().getRemoteFilePath()));
@@ -420,7 +420,7 @@ public class RecipientExportReporter {
 	}
 	
 	public void createAndSaveExportReport(RecipientExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
-		recipientsReportService.createAndSaveExportReport(admin.getAdminID(), admin.getCompanyID(), new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		recipientsReportService.createAndSaveExportReport(admin, new File(exportWorker.getExportFile()).getName(), exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
 	}
 }
 

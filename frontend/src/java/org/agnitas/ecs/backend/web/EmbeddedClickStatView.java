@@ -145,7 +145,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 
 								URL base = null;
 								try {
-									base = new URL(getConfigService().getValue(ConfigValue.SystemUrl));
+									base = new URL(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
 								} catch (MalformedURLException e) {
 									logger.error("Error occurred: " + e.getMessage(), e);
 								}
@@ -176,7 +176,7 @@ public class EmbeddedClickStatView extends HttpServlet {
     }
 
 	private String getScriptsAndStyles(EcsPreviewSize previewSize) {
-		final String contextPath = getConfigService().getValue(ConfigValue.SystemUrl);
+		final String contextPath = getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
 
 		return  "<script type=\"text/javascript\" src=\"" + contextPath + "/js/lib/jquery-1.6.2.min.js\"></script>\n" +
 				"<script type=\"text/javascript\" src=\"" + contextPath + "/js/lib/ecs/statLabelAdjuster.js\"></script>\n" +

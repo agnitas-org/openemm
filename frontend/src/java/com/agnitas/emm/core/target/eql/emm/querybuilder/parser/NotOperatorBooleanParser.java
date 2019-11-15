@@ -22,12 +22,12 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class NotOperatorBooleanParser extends GenericEqlNodeParser<NotOperatorBooleanEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(NotOperatorBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(NotOperatorBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         //Get rid of obligatory wrapping parenthesis
         AbstractEqlNode child = ((AnnotationBooleanEqlNode) node.getChild()).getChild();
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         if (parser != null) {
-            parser.parse(child, groupNode, unknownProfileFields);
+            parser.parse(child, groupNode, profileFields);
             QueryBuilderRuleNode ruleNode = groupNode.lastAddedRule();
             if (ruleNode != null) {
                 ruleNode.setNegated(true);

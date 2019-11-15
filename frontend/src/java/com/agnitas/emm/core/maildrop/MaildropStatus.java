@@ -16,7 +16,7 @@ public enum MaildropStatus {
 	ADMIN('A'),
 	DATE_BASED('R'), // formerly rule-based
 	ACTION_BASED('E'), // formerly event-based
-	ON_DEMAND('D'),
+	ON_DEMAND('D'), // to be executed as normal mailing when a dataagent demands it
 	PREDELIVERY('V'), // Verification
 	
 	UNKNOWN_C('C'), // Relict of old value for eventbased mailings. Will never be used again, New value is 'E'

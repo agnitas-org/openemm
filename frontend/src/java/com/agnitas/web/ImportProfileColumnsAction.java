@@ -213,7 +213,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
                     break;
 
                 case ACTION_UPLOAD:
-                	setColumnsFromFile(aForm, request, errors);
+					setColumnsFromFile(aForm, request, errors);
                     aForm.setAction(ImportProfileColumnsAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
                     break;
@@ -572,94 +572,101 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      *
      * @param aForm   a form
      * @param request request
+     * @throws Exception
      */
-    protected void setColumnsFromFile(ImportProfileColumnsForm aForm, HttpServletRequest request, ActionMessages errors) {
-        if (aForm.getProfile() == null) {
-            loadImportProfile(aForm, request);
-        }
-        ImportProfile profile = aForm.getProfile();
-        File file = getCurrentFile(request);
-        if (file == null) {
-            return;
-        }
+    protected void setColumnsFromFile(ImportProfileColumnsForm aForm, HttpServletRequest request, ActionMessages errors) throws Exception {
         try {
-            Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
+			if (aForm.getProfile() == null) {
+			    loadImportProfile(aForm, request);
+			}
+			ImportProfile profile = aForm.getProfile();
+			File file = getCurrentFile(request);
+			if (file == null) {
+			    return;
+			}
+			
+			if (!ImportUtils.checkIfFileHasData(file, profile)) {
+				errors.add("global", new ActionMessage("autoimport.error.emptyFile", getCurrentFileName(request)));
+				return;
+			}
 
-            char separator = Separator.getSeparatorById(profile.getSeparator()).getValueChar();
-            Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(profile.getTextRecognitionChar()).getValueCharacter();
+			Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
 
-            @SuppressWarnings("resource")
+			char separator = Separator.getSeparatorById(profile.getSeparator()).getValueChar();
+			Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(profile.getTextRecognitionChar()).getValueCharacter();
+
+			@SuppressWarnings("resource")
 			CsvReader csvReader = null;
-            @SuppressWarnings("resource")
+			@SuppressWarnings("resource")
 			InputStream dataInputStream = null;
-            File unzipPath = null;
-            try {
-                if (profile.isZipped()) {
-                	try {
-	                    if (profile.getZipPassword() == null) {
-	                        dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));
-	                        ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-	                        if (zipEntry == null) {
-	                        	throw new ImportException(false, "error.unzip.noEntry");
-	                        }
-	                    } else {
-	                        unzipPath = new File(file.getAbsolutePath() + ".unzipped");
-	                        unzipPath.mkdir();
-	                        ZipUtilities.decompressFromEncryptedZipFile(file, unzipPath, profile.getZipPassword());
-	
-	                        // Check if there was only one file within the zip file and use it for import
-	                        String[] filesToImport = unzipPath.list();
-	                        if (filesToImport.length != 1) {
-	                            throw new Exception("Invalid number of files included in zip file");
-	                        }
-	                        dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-	                    }
-    				} catch (ImportException e) {
-    					throw e;
-    				} catch (Exception e) {
-    					throw new ImportException(false, "error.unzip", e.getMessage());
-    				}
-                } else {
-                    dataInputStream = new FileInputStream(file);
-                }
-                csvReader = new CsvReader(dataInputStream, Charset.getCharsetById(profile.getCharset()).getCharsetName(), separator, stringQuote);
-                csvReader.setAlwaysTrim(true);
+			File unzipPath = null;
+			try {
+			    if (profile.isZipped()) {
+			    	try {
+			            if (profile.getZipPassword() == null) {
+			                dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));
+			                ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+			                if (zipEntry == null) {
+			                	throw new ImportException(false, "error.unzip.noEntry");
+			                }
+			            } else {
+			                unzipPath = new File(file.getAbsolutePath() + ".unzipped");
+			                unzipPath.mkdir();
+			                ZipUtilities.decompressFromEncryptedZipFile(file, unzipPath, profile.getZipPassword());
 
-                List<String> fileHeaders = csvReader.readNextCsvLine();
+			                // Check if there was only one file within the zip file and use it for import
+			                String[] filesToImport = unzipPath.list();
+			                if (filesToImport.length != 1) {
+			                    throw new Exception("Invalid number of files included in zip file");
+			                }
+			                dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
+			            }
+					} catch (ImportException e) {
+						throw e;
+					} catch (Exception e) {
+						throw new ImportException(false, "error.unzip", e.getMessage());
+					}
+			    } else {
+			        dataInputStream = new FileInputStream(file);
+			    }
+			    csvReader = new CsvReader(dataInputStream, Charset.getCharsetById(profile.getCharset()).getCharsetName(), separator, stringQuote);
+			    csvReader.setAlwaysTrim(true);
 
-                if (!fileHeaders.isEmpty()) {
-                    ComAdmin admin = AgnUtils.getAdmin(request);
-                    writeUserActivityLog(admin, UAL_ACTION, "Found columns based on csv - file import : " + fileHeaders.toString());
-                }
+			    List<String> fileHeaders = csvReader.readNextCsvLine();
 
-                if (profile.isNoHeaders()) {
-                    List<String> fileColumnIdentifiers = new ArrayList<>();
-                    for (int i = 1; i <= fileHeaders.size(); i++) {
-                        fileColumnIdentifiers.add("column_" + i);
-                    }
-                    fileHeaders = fileColumnIdentifiers;
-                }
+			    if (!fileHeaders.isEmpty()) {
+			        ComAdmin admin = AgnUtils.getAdmin(request);
+			        writeUserActivityLog(admin, UAL_ACTION, "Found columns based on csv - file import : " + fileHeaders.toString());
+			    }
 
-                // Check for duplicate csv file columns
-                if (fileHeaders.contains("")) {
-                    errors.add("global", new ActionMessage("error.import.column.name.empty"));
-                }
-                String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(fileHeaders, profile.isAutoMapping());
-                if (duplicateCsvColumn != null) {
-                    errors.add("global", new ActionMessage("error.import.column.csv.duplicate"));
-                }
+			    if (profile.isNoHeaders()) {
+			        List<String> fileColumnIdentifiers = new ArrayList<>();
+			        for (int i = 1; i <= fileHeaders.size(); i++) {
+			            fileColumnIdentifiers.add("column_" + i);
+			        }
+			        fileHeaders = fileColumnIdentifiers;
+			    }
 
-                List<ColumnMapping> newMappings = new ArrayList<>();
-                // Set the file columns for a new profile mapping
-                for (String newCsvColumn : fileHeaders) {
-                	ColumnMapping existingColumnMapping = null;
-                	for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
-                		if (columnMmapping.getFileColumn() != null && columnMmapping.getFileColumn().equals(newCsvColumn)) {
-                			existingColumnMapping = columnMmapping;
-                			break;
-                		}
-                	}
-                	if (existingColumnMapping == null) {
+			    // Check for duplicate csv file columns
+			    if (fileHeaders.contains("")) {
+			        errors.add("global", new ActionMessage("error.import.column.name.empty"));
+			    }
+			    String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(fileHeaders, profile.isAutoMapping());
+			    if (duplicateCsvColumn != null) {
+			        errors.add("global", new ActionMessage("error.import.column.csv.duplicate"));
+			    }
+
+			    List<ColumnMapping> newMappings = new ArrayList<>();
+			    // Set the file columns for a new profile mapping
+			    for (String newCsvColumn : fileHeaders) {
+			    	ColumnMapping existingColumnMapping = null;
+			    	for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
+			    		if (columnMmapping.getFileColumn() != null && columnMmapping.getFileColumn().equals(newCsvColumn)) {
+			    			existingColumnMapping = columnMmapping;
+			    			break;
+			    		}
+			    	}
+			    	if (existingColumnMapping == null) {
 						ColumnMapping newMapping = new ColumnMappingImpl();
 						newMapping.setProfileId(profile.getId());
 						newMapping.setMandatory(false);
@@ -676,41 +683,39 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 							newMapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);
 						}
 						newMappings.add(newMapping);
-                	} else {
+			    	} else {
 						newMappings.add(existingColumnMapping);
-                	}
-                }
-            
-            	// Keep the already set column mappings for non-data-file columns
-            	for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
-        			if (StringUtils.isEmpty(columnMmapping.getFileColumn())) {
-        				newMappings.add(columnMmapping);
-        			}
-            	}
-                profile.setColumnMapping(newMappings);
-            } finally {
-                if (csvReader != null) {
-                    try {
-                        csvReader.close();
-                    } catch (Exception e) {
-                        // Do nothing
-                    }
-                }
+			    	}
+			    }
+			
+				// Keep the already set column mappings for non-data-file columns
+				for (ColumnMapping columnMmapping : profile.getColumnMapping()) {
+					if (StringUtils.isEmpty(columnMmapping.getFileColumn())) {
+						newMappings.add(columnMmapping);
+					}
+				}
+			    profile.setColumnMapping(newMappings);
+			} finally {
+			    if (csvReader != null) {
+			        try {
+			            csvReader.close();
+			        } catch (Exception e) {
+			            // Do nothing
+			        }
+			    }
 
-                if (dataInputStream != null) {
-                    IOUtils.closeQuietly(dataInputStream);
-                }
+			    if (dataInputStream != null) {
+			        IOUtils.closeQuietly(dataInputStream);
+			    }
 
-                if (unzipPath != null) {
-                    FileUtils.removeRecursively(unzipPath);
-                }
-            }
-        } catch (IOException e) {
-            logger.error("Error reading csv-file: " + e, e);
-        } catch (Exception e) {
-            logger.error("Error reading csv-file: " + e, e);
-        }
-
+			    if (unzipPath != null) {
+			        FileUtils.removeRecursively(unzipPath);
+			    }
+			}
+		} catch (Exception e) {
+			logger.error("Error while mapping import columns: " + e.getMessage(), e);
+			errors.add("global", new ActionMessage("error.import.exception", e.getMessage()));
+		}
     }
 
     /**

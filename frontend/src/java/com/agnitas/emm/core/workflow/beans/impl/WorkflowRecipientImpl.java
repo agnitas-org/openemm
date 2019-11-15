@@ -12,6 +12,7 @@ package com.agnitas.emm.core.workflow.beans.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
@@ -74,5 +75,21 @@ public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowR
 		}
 
 		return dependencies;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+		WorkflowRecipientImpl that = (WorkflowRecipientImpl) o;
+		return mailinglistId == that.mailinglistId &&
+				Objects.equals(targets, that.targets) &&
+				targetsOption == that.targetsOption;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), mailinglistId, targets, targetsOption);
 	}
 }

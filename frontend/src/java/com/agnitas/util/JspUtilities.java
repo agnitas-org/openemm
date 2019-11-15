@@ -80,4 +80,15 @@ public class JspUtilities {
 
         throw new JspException("emm:contains() accepts either Collection or String");
     }
+
+    public static String absUrlPrefix(String url) {
+
+        url = StringUtils.removeEnd(StringUtils.removeStart(url, "/"), "/");
+
+        if (StringUtils.isEmpty(url)) {
+            return "";
+        }
+
+        return "/" + url;
+    }
 }

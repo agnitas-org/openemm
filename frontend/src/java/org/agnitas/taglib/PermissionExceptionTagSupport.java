@@ -16,8 +16,9 @@ import javax.servlet.jsp.tagext.TagSupport;
 import org.apache.log4j.Logger;
 
 public abstract class PermissionExceptionTagSupport extends TagSupport {
-    
-    private static final Logger logger = Logger.getLogger(ShowByPermissionTag.class);
+	private static final long serialVersionUID = -1443531291551216008L;
+
+	private static final Logger logger = Logger.getLogger(ShowByPermissionTag.class);
     
     protected boolean ignoreException;
 

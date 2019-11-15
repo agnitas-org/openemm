@@ -47,7 +47,7 @@ public class ZipUtilities {
 	 * 
 	 * @param data
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static byte[] zip(byte[] data, String entryFileName) throws IOException {
 		try(final ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
@@ -87,11 +87,13 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void zipFile(File sourceFile, File destinationZipFile) throws IOException {
-		if (!sourceFile.exists())
+		if (!sourceFile.exists()) {
 			throw new IOException("SourceFile does not exist");
+		}
 			
-		if (destinationZipFile.exists())
+		if (destinationZipFile.exists()) {
 			throw new IOException("DestinationFile already exists");
+		}
 		
 		try(final ZipOutputStream zipOutputStream = openNewZipOutputStream(destinationZipFile)) {
 			addFileToOpenZipFileStream(sourceFile, zipOutputStream);
@@ -124,14 +126,17 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileToOpenZipFileStream(final File sourceFile, final String relativeDirPath, final ZipOutputStream destinationZipFileSream) throws IOException {
-		if (!sourceFile.exists())
+		if (!sourceFile.exists()) {
 			throw new IOException("SourceFile does not exist");
+		}
 			
-		if (destinationZipFileSream == null)
+		if (destinationZipFileSream == null) {
 			throw new IOException("DestinationStream is not ready");
+		}
 		
-		if (relativeDirPath == null)
+		if (relativeDirPath == null) {
 			throw new IOException("RelativeDirPath is invalid");
+		}
 		
 		try {
 			if (!sourceFile.isDirectory()) {
@@ -150,7 +155,7 @@ public class ZipUtilities {
 					destinationZipFileSream.closeEntry();
 				}
 			}
-			else {	
+			else {
 				for (File sourceSubFile : sourceFile.listFiles()) {
 					addFileToOpenZipFileStream(sourceSubFile, relativeDirPath + sourceFile.getName() + File.separator, destinationZipFileSream);
 				}
@@ -181,16 +186,17 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static ZipOutputStream openNewZipOutputStream(File destinationZipFile) throws IOException {
-		if (destinationZipFile.exists() && destinationZipFile.length() > 0)
+		if (destinationZipFile.exists() && destinationZipFile.length() > 0) {
 			throw new IOException("DestinationFile already exists: " + destinationZipFile.getAbsolutePath());
-		else if (!destinationZipFile.getParentFile().exists())
+		} else if (!destinationZipFile.getParentFile().exists()) {
 			throw new IOException("DestinationDirectory does not exist: " + destinationZipFile.getParentFile().getAbsolutePath());
+		}
 		
 		try {
 			return new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(destinationZipFile)));
 		}
 		catch (IOException e) {
-			if (destinationZipFile.exists()) {	
+			if (destinationZipFile.exists()) {
 				destinationZipFile.delete();
 			}
 			throw e;
@@ -205,8 +211,9 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static ZipOutputStream openNewZipOutputStream(OutputStream destinationZipStream) throws IOException {
-		if (destinationZipStream == null)
+		if (destinationZipStream == null) {
 			throw new IOException("DestinationStream is missing");
+		}
 		
 		return new ZipOutputStream(new BufferedOutputStream(destinationZipStream));
 	}
@@ -280,20 +287,24 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static void addFileDataToOpenZipFileStream(byte[] fileData, String relativeDirPath, String filename, ZipOutputStream destinationZipFileSream) throws IOException {
-		if (fileData == null)
+		if (fileData == null) {
 			throw new IOException("FileData is missing");
+		}
 		
-		if (StringUtils.isEmpty(filename) || filename.trim().length() == 0)
+		if (StringUtils.isEmpty(filename) || filename.trim().length() == 0) {
 			throw new IOException("Filename is missing");
+		}
 			
-		if (destinationZipFileSream == null)
+		if (destinationZipFileSream == null) {
 			throw new IOException("DestinationStream is not ready");
+		}
 		
 		if (relativeDirPath == null
 				|| (!relativeDirPath.endsWith("/")
 				&& !relativeDirPath.endsWith("\\")
-				&& !relativeDirPath.equals("")))
+				&& !relativeDirPath.equals(""))) {
 			throw new IOException("RelativeDirPath is invalid");
+		}
 		
 		ZipEntry entry = new ZipEntry(relativeDirPath + filename);
 		entry.setTime(new Date().getTime());
@@ -358,10 +369,11 @@ public class ZipUtilities {
 	 * @throws IOException
 	 */
 	public static ZipOutputStream openExistingZipFileForExtensionOrCreateNewZipFile(File zipFile) throws IOException {
-		if (zipFile.exists())
+		if (zipFile.exists()) {
 			return ZipUtilities.openExistingZipFileForExtension(zipFile);
-		else
+		} else {
 			return ZipUtilities.openNewZipOutputStream(zipFile);
+		}
 	}
 	
 	/**
@@ -370,8 +382,8 @@ public class ZipUtilities {
 	 * 
 	 * @param zipFile
 	 * @return
-	 * @throws IOException 
-	 * @throws ZipException 
+	 * @throws IOException
+	 * @throws ZipException
 	 */
 	public static ZipOutputStream openExistingZipFileForExtension(File zipFile) throws IOException {
 		// Rename source Zip file (Attention: the String path and name of the zipFile are preserved
@@ -414,7 +426,7 @@ public class ZipUtilities {
 						// nothing to do
 					}
 					zipOutputStream = null;
-				}	
+				}
 				zipFile.delete();
 			}
 			
@@ -508,6 +520,15 @@ public class ZipUtilities {
 		try {
 			net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(encryptedZipFile);
 			zipFile.setPassword(zipPassword);
+			zipFile.extractAll(decompressToPath.getAbsolutePath());
+		} catch (Exception e) {
+			throw new ZipDataException("Cannot unzip data: " + e.getMessage(), e);
+		}
+	}
+	
+	public static void decompress(File zipFileToDecompress, File decompressToPath) throws Exception {
+		try {
+			net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(zipFileToDecompress);
 			zipFile.extractAll(decompressToPath.getAbsolutePath());
 		} catch (Exception e) {
 			throw new ZipDataException("Cannot unzip data: " + e.getMessage(), e);

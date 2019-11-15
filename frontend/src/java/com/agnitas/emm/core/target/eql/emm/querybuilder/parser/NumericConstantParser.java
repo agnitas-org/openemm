@@ -13,6 +13,7 @@ package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.emm.core.target.eql.ast.NumericConstantAtomEqlNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
@@ -21,7 +22,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class NumericConstantParser extends GenericValueExtractorEqlNodeParser<NumericConstantAtomEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(NumericConstantAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode) {
+    protected QueryBuilderGroupNode parse(NumericConstantAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode, Set<String> profileFields) {
         String value = node.getValue();
         Object ruleValue = ruleNode.getValue();
 

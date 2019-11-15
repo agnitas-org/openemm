@@ -11,25 +11,25 @@
 package org.agnitas.web;
 
 import java.util.Iterator;
-
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MediatypeEmail;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.TrackableLink;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.upload.FormFile;
-import com.agnitas.beans.ComMailing.MailingContentType;
-
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MediatypeEmail;
 
 public class MailingWizardForm extends StrutsFormBase {
 	
@@ -40,6 +40,14 @@ public class MailingWizardForm extends StrutsFormBase {
 
 	/** Creates a new instance of TemplateForm */
     public MailingWizardForm() {
+    }
+    
+    @Override
+    protected void loadNonFormDataForErrorView(ActionMapping mapping, HttpServletRequest request) {
+        super.loadNonFormDataForErrorView(mapping, request);
+        
+        request.setAttribute("isEnableTrackingVeto", getConfigService()
+				.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(request)));
     }
     
     /**
@@ -58,35 +66,24 @@ public class MailingWizardForm extends StrutsFormBase {
             HttpServletRequest request) {
     	ActionErrors errors = new ActionErrors();
 
-
-        if (this.action.equals(MailingWizardAction.ACTION_NAME) &&
-                this.getMailing().getShortname().length() < 3) {
+        if (MailingWizardAction.ACTION_NAME.equals(this.action) &&
+                StringUtils.length(this.getMailing().getShortname()) < 3) {
             errors.add("shortname", new ActionMessage("error.name.too.short"));
         }
-
-        // NEW CODE (to be inserted):
-        if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS) &&
-                this.getReplyFullname() != null && this.getReplyFullname().length() > 255) {
-            errors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
-        }
-        if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS) &&
-                getSenderFullname() != null && getSenderFullname().length() > 255) {
-            errors.add("senderFullname", new ActionMessage("error.sender_fullname_too_long"));
-        }
-        if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS) &&
-                getReplyFullname() != null && this.getReplyFullname().trim().length() == 0) {
-            this.replyFullname = getSenderFullname();
-        }
-
-        if (action.equals(MailingWizardAction.ACTION_SENDADDRESS) &&
-                senderEmail.length() < 3)
-            errors.add("shortname", new ActionMessage("error.invalid.email"));
-
-        if (action.equals(MailingWizardAction.ACTION_SUBJECT) && getEmailSubject().length() < 2) {
-            errors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
-        }
-
-        if (action.equals(MailingWizardAction.ACTION_SENDADDRESS)) {
+        
+        if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS)) {
+            if (StringUtils.length(getReplyFullname()) > 255) {
+                errors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
+            }
+            if (StringUtils.length(getSenderFullname()) > 255) {
+                errors.add("senderFullname", new ActionMessage("error.sender_fullname_too_long"));
+            }
+            if (StringUtils.length(getSenderFullname())== 0) {
+                this.replyFullname = getSenderFullname();
+            }
+            if (StringUtils.length(senderEmail) < 3) {
+                errors.add("shortname", new ActionMessage("error.invalid.email"));
+            }
             try {
                 InternetAddress adr = new InternetAddress(senderEmail);
                 String email = adr.getAddress();
@@ -94,15 +91,20 @@ public class MailingWizardForm extends StrutsFormBase {
                     errors.add("sender", new ActionMessage("error.mailing.sender_adress"));
                 }
             } catch (Exception e) {
-                if (senderEmail.indexOf("[agn") == -1) {
+                if (!StringUtils.contains(senderEmail, "[agn")) {
                     errors.add("sender", new ActionMessage("error.mailing.sender_adress"));
                 }
             }
         }
 
+        if (action.equals(MailingWizardAction.ACTION_SUBJECT) && getEmailSubject().length() < 2) {
+            errors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
+        }
+
         if (mailing != null && (MailingWizardAction.ACTION_TARGET.equalsIgnoreCase(action) ||
                 MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
-    	  if((mailing.getTargetGroups()==null || mailing.getTargetGroups().isEmpty() ) && getTargetID()== 0  && mailing.getMailingType()==Mailing.TYPE_DATEBASED) {
+    	  if ((mailing.getTargetGroups() == null ||
+                  mailing.getTargetGroups().isEmpty() ) && getTargetID() == 0  && mailing.getMailingType() == Mailing.TYPE_DATEBASED) {
               errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
           }
     	}
@@ -112,10 +114,11 @@ public class MailingWizardForm extends StrutsFormBase {
 
 	@Override
 	protected ActionMessages checkForHtmlTags(HttpServletRequest request) {
-		if( this.dynName == null || !this.dynName.equals("HTML-Version"))
-			return super.checkForHtmlTags(request);
-		else
-			return new ActionErrors();
+		if (this.dynName == null || !this.dynName.equals("HTML-Version")) {
+            return super.checkForHtmlTags(request);
+        } else {
+            return new ActionErrors();
+        }
 	}
 
 	/**
@@ -689,7 +692,7 @@ public class MailingWizardForm extends StrutsFormBase {
     }
     
 	private MailingContentType mailingContentType;
-    
+ 
 	public MailingContentType getMailingContentType() throws Exception {
 		return mailingContentType;
 	}

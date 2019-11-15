@@ -17,6 +17,9 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 public interface CommonKeys {
 
+	String ACTIVE = "recipient.MailingState1";
+	int ACTIVE_INDEX = 1;
+	
 	// indices represent the position in the report
     String RECIPIENTS_NUMBER = "Recipients";
     int RECIPIENTS_NUMBER_INDEX = 0;

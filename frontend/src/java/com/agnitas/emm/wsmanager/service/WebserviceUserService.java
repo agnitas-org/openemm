@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.wsmanager.service;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
@@ -20,6 +21,7 @@ import com.agnitas.emm.wsmanager.common.WebserviceUserException;
  * Service-layer interface for webservice users.
  */
 public interface WebserviceUserService {
+	
 	/**
 	 * Returns the data of given webservice user.
 	 *
@@ -68,7 +70,7 @@ public interface WebserviceUserService {
 	 * @throws WebserviceUserServiceException on errors concerning the webservice user itself (like unknown username)
 	 * @throws WebserviceUserException on errors during processing the request
 	 */
-    void saveWebServiceUser(WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException;
+	void saveWebServiceUser(ComAdmin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException;
 
 	int getNumberOfWebserviceUsers();
 

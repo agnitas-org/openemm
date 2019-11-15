@@ -195,6 +195,9 @@ public class Title {
 					}
 				} else {
 					s = e.custom.makeTitle (titleType, gender, title, firstname, lastname, columns, error);
+					if (s == null) {
+						s = "";
+					}
 				}
 			}
 		}

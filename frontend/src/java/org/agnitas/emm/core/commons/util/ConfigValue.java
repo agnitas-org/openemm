@@ -31,25 +31,32 @@ public class ConfigValue {
 
 	public static final ConfigValue SystemSaltFile = new ConfigValue("system.salt.file");
 
-	public static final ConfigValue EmmDbJndiName = new ConfigValue("jdbc.emmDB.jndiName", "emm_db");
-	public static final ConfigValue TempDbJndiName = new ConfigValue("jdbc.tmpDB.jndiName", "embedded");
-
+	public static final ConfigValue BirtPrivateKey = new ConfigValue("birt.privatekey");
+	public static final ConfigValue BirtPublicKey = new ConfigValue("birt.publickey");
+	
+	/** To be removed in near future, replaced by BirtPrivateKey **/
 	public static final ConfigValue BirtPrivateKeyFile = new ConfigValue("birt.privatekeyfile");
+	/** To be removed in near future, replaced by BirtPublicKey **/
 	public static final ConfigValue BirtPublicKeyFile = new ConfigValue("birt.publickeyfile");
+	
+	public static final ConfigValue BirtErrorPage = new ConfigValue("birt.errorPage", "/webcontent/birt/pages/common/Error.jsp");
 	public static final ConfigValue BirtHostUser = new ConfigValue("birt.host.user");
 	public static final ConfigValue BirtPluginDirectory = new ConfigValue("birt.plugin.directory");
 	public static final ConfigValue BirtDrilldownUrl = new ConfigValue("birt.drilldownurl");
 
-	public static final ConfigValue IgnoreDeletedI18NMessages = new ConfigValue("ignoreDeletedMessages");
+	public static final ConfigValue IgnoreDeletedI18NMessagesHosts = new ConfigValue("system.ignoreDeletedMessagesHosts");
+	
+	public static final ConfigValue DefaultMailloopDomain = new ConfigValue("system.defaultMailloopDomain");
+	public static final ConfigValue DefaultRdirDomain = new ConfigValue("system.defaultRdirDomain");
 
 	public static final ConfigValue PreviewUrl = new ConfigValue("preview.url");
 
 	public static final ConfigValue MailingUndoLimit = new ConfigValue("undo.limit", "10");
 
-	/** The mailing size (in KB) that should trigger a warning message **/
-	public static final ConfigValue MailingSizeWarningThreshold = new ConfigValue("company.mailingSizeWarningThreshold", "2048");
-	/** The mailing size (in KB) that should trigger an error message **/
-	public static final ConfigValue MailingSizeErrorThreshold = new ConfigValue("company.mailingSizeErrorThreshold", "10240");
+	/** The mailing size (in Bytes) that should trigger a warning message (Default 2 MB) **/
+	public static final ConfigValue MailingSizeWarningThresholdBytes = new ConfigValue("company.mailingSizeWarningThresholdBytes", "2097152");
+	/** The mailing size (in Bytes) that should trigger an error message (Default 10 MB) **/
+	public static final ConfigValue MailingSizeErrorThresholdBytes = new ConfigValue("company.mailingSizeErrorThresholdBytes", "10485760");
 	
 	public static final ConfigValue GridTemplateImportAllowed = new ConfigValue("import.gridTemplateAllowed", "false");
 
@@ -64,6 +71,7 @@ public class ConfigValue {
 	public static final ConfigValue System_Licence = new ConfigValue("system.licence"); // LicenseID
 	/** License types: SaaS, Inhouse **/
 	public static final ConfigValue System_License_Type = new ConfigValue("licenseType");
+	public static final ConfigValue System_License_Holder = new ConfigValue("licenseHolder");
 	public static final ConfigValue System_License_ExpirationDate = new ConfigValue("expirationDate");
 	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies");
 	public static final ConfigValue System_License_MaximumNumberOfAdmins = new ConfigValue("maximumNumberOfAdmins");
@@ -72,10 +80,12 @@ public class ConfigValue {
 	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers");
 	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields");
 	public static final ConfigValue System_License_MaximumNumberOfTestAccounts = new ConfigValue("maximumNumberOfTestAccounts", "100");
-	public static final ConfigValue System_License_MaximumLifetimeOfTestAccounts = new ConfigValue("maximumLifetimeOfTestAccounts", "30");
+	public static final ConfigValue System_License_MaximumLifetimeOfTestAccounts = new ConfigValue("maximumLifetimeOfTestAccounts", "3");
 	public static final ConfigValue System_License_AllowedPremiumFeatures = new ConfigValue("allowedPremiumFeatures");
 	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables");
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
+	public static final ConfigValue System_License_OpenEMMMasterCompany = new ConfigValue("openEMMMasterCompany");
+	public static final ConfigValue System_License_OpenEMMLoginUrl = new ConfigValue("openEMMLoginURL");
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
@@ -129,9 +139,13 @@ public class ConfigValue {
 	public static final ConfigValue WebserviceDatasourceGroupId = new ConfigValue("webservice.DatasourceGroupId", "6");
 	public static final ConfigValue WebserviceConvertPasswordsMD5toSHA512OnStartup = new ConfigValue("webservice.password.convertMD5toSHA512onStartup", "false");
 	
+	// TODO This is a temporary config value and will be removed after successful rollout of webservice user permissions
+	public static final ConfigValue WebserviceEnablePermissions = new ConfigValue("webservice.enablePermissions", "false");
+	
+	
+	
 	/* TODO (EMM-6234) Remove after complete migration. */
 	public static final ConfigValue MigrateTargetGroupsOnStartup = new ConfigValue("targetgroups.migrateOnStartup", "false");
-
 
 	/** Default SFTP Server and credentials (encrypted) */
 	public static final ConfigValue DefaultSftpServerAndCredentials = new ConfigValue("company.default_sftp_server_and_credentials");
@@ -139,18 +153,21 @@ public class ConfigValue {
 	/** Default SFTP PrivateKey */
 	public static final ConfigValue DefaultSftpPrivateKey = new ConfigValue("company.default_sftp_privatekey");
 
-	/** Only store images in rdir cache if they are not too big. Default 2 MB */
+	/** Maximum size (in Bytes) of images to cache them im rdir cache. (Default 2 MB) */
 	public static final ConfigValue MaximumCachedImageSize = new ConfigValue("system.MaximumCachedImageSize", Integer.toString(2 * 1024 * 1024));
-	/** Show warning when uploading an image with size of more than x bytes. Default 1 MB */
+	/** Warning size (in Bytes) for uploading an image. (Default 1 MB) */
 	public static final ConfigValue MaximumWarningImageSize = new ConfigValue("system.MaximumWarningImageSize", Integer.toString(1 * 1024 * 1024));
-	/** Prevent uploading an image with size of more than x bytes. Default 5 MB */
+	/** Maximum size of images (in Bytes). (Default 5 MB) */
 	public static final ConfigValue MaximumUploadImageSize = new ConfigValue("system.MaximumUploadImageSize", Integer.toString(5 * 1024 * 1024));
 
-	/** Show warning when uploading an attachment with size of more than x bytes. Default 1 MB */
+	/** Warning attachment size (in Bytes). (Default 1 MB) */
 	public static final ConfigValue MaximumWarningAttachmentSize = new ConfigValue("system.MaximumWarningAttachmentSize", Integer.toString(1 * 1024 * 1024));
-	/** Prevent uploading an attachment with size of more than x bytes. Default 10 MB */
+	/** Maximum attachment size (in Bytes). (Default 10 MB) */
 	public static final ConfigValue MaximumUploadAttachmentSize = new ConfigValue("system.MaximumUploadAttachmentSize", Integer.toString(10 * 1024 * 1024));
 
+	/** Default number of allowed user */
+	public static final ConfigValue UserAllowed = new ConfigValue("UserAllowed", "10");
+	
 	/** Allow company to use webservice "SendServiceMailing". */
 	public static final ConfigValue WebserviceEnableSendServiceMailing = new ConfigValue("webservice.SendServiceMailing");
 
@@ -184,11 +201,12 @@ public class ConfigValue {
 
 	public static final ConfigValue HeatmapProxy = new ConfigValue("system.heatmap.proxy");
 
+	/** Maximum mailing attachment size (in Bytes) (Default 2 MB) **/
 	public static final ConfigValue AttachmentMaxSize = new ConfigValue("attachment.maxSize", "2097152");
 
 	/** Maximum number of rows included in an import file for classic import **/
 	public static final ConfigValue ClassicImportMaxRows = new ConfigValue("import.classic.maxRows", "200000");
-	/** Maximum filesize of an import file for classic import in byte **/
+	/** Maximum filesize of an import file for classic import (in Bytes). (Default 25000000 Bytes) **/
 	public static final ConfigValue ClassicImportMaxFileSize = new ConfigValue("import.classic.maxSize", "25000000");
 
 	/** Maximum number of rows included in an import file for profile recipient import **/
@@ -257,6 +275,7 @@ public class ConfigValue {
 
 	public static final ConfigValue Mailaddress_Error = new ConfigValue("mailaddress.error");
 	public static final ConfigValue Mailaddress_Support = new ConfigValue("mailaddress.support");
+	public static final ConfigValue Mailaddress_FeatureSupport = new ConfigValue("mailaddress.feature_support");
 	public static final ConfigValue Mailaddress_Velocity = new ConfigValue("mailaddress.velocity");
 	public static final ConfigValue Mailaddress_Frontend = new ConfigValue("mailaddress.frontend");
 	public static final ConfigValue Mailaddress_ReportArchive = new ConfigValue("mailaddress.report_archive");
@@ -305,15 +324,6 @@ public class ConfigValue {
 
 	/** Maximum cachetime of miscellaneous keys in the rdir application */
 	public static final ConfigValue RedirectKeysMaxCacheTimeMillis = new ConfigValue("rdir.keys.maxCacheTimeMillis", "300000");
-
-	/** Global CDN activation (if value = "activated") */
-	/* Replaces by "component-storage" entry in company_info_tbl
-	// public static final ConfigValue SystemCdn = new ConfigValue("system.cdn");
-
-	/** Value for Backend CDN synchronisation */
-	// TODO REMOVE: public static final ConfigValue CdnDestination = new ConfigValue("cdn.destination");
-	/** Value for Backend CDN synchronisation */
-	// TODO REMOVE: public static final ConfigValue CdnMaster = new ConfigValue("cdnmaster.cdnctrl");
 
 	public static final ConfigValue BirtUrlIntern = new ConfigValue("birt.url.intern");
 	public static final ConfigValue BirtUrl = new ConfigValue("birt.url");
@@ -377,9 +387,6 @@ public class ConfigValue {
 	/** Maximum number of parallel JobQueue Jobs **/
 	public static final ConfigValue MaximumParallelJobQueueJobs = new ConfigValue("import.MaximumParallelJobQueueJobs", "3");
 
-	/** Trackable Links, which contain these domains are preselected as not tracked. Wildcards (*, ?) allowed **/
-	public static final ConfigValue NoLinkTrackingByDomainPreselection = new ConfigValue("links.nolinktrackingbydomainpreselection");
-
 	public static final ConfigValue ImageLinkTemplate = new ConfigValue("imagelink-template");
 	public static final ConfigValue ImageLinkTemplate_NoCache = new ConfigValue("imagelink-template-no-cache");
 	public static final ConfigValue LimitBlockOperations = new ConfigValue("limit-block-operations");
@@ -399,7 +406,7 @@ public class ConfigValue {
 
 	public static final ConfigValue EnabledUIDVersion = new ConfigValue("company.enabledUIDVersion", "3");
 
-	public static final ConfigValue EnableTrackingVeto = new ConfigValue("recipients.enableTrackingVeto", "false");
+	public static final ConfigValue EnableTrackingVeto = new ConfigValue("recipients.enableTrackingVeto", "true");
 	public static final ConfigValue AnonymizeTrackingVetoRecipients = new ConfigValue("anonymizeTrackingVetoRecipients", "false");
 	public static final ConfigValue TrackingVetoAllowTransactionTracking = new ConfigValue("recipient.trackingVeto.allowTransactionTracking", "false");
 	public static final ConfigValue AnonymizeAllRecipients = new ConfigValue("recipient.trackingVeto.anonymizeAllRecipients", "false");
@@ -409,15 +416,14 @@ public class ConfigValue {
 	/** Name of fullview form. Default is <i>fullview</i>. */
 	public static final ConfigValue FullviewFormName = new ConfigValue("formname.fullview", "fullview");
 
+	/** Maximum size of restful request data (in Bytes). (Default 1 MB) **/
 	public static final ConfigValue MaxRestfulRequestDataSize = new ConfigValue("restful.maxRestfulRequestDataSize", Integer.toString(1024 * 1024)); // 1 MB
 
 	public static final ConfigValue CleanRecipientsWithoutBinding = new ConfigValue("cleanup.deleteRecipientsWithoutBinding", "false");
 	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "false");
 	public static final ConfigValue CleanMailingData = new ConfigValue("cleanup.deleteMailingData", "true");
 	
-	public static final ConfigValue MigrateLinkExtensions = new ConfigValue("MigrateLinkExtensions", "true");
-	public static final ConfigValue CleanWorkflowTargets = new ConfigValue("system.CleanWorkflowTargets", "true");
-	public static final ConfigValue MigrateWorkflowTargetRepresentation = new ConfigValue("system.MigrateWorkflowTargetRepresentation", "true");
+	public static final ConfigValue MigrateWorkflowTargetRepresentation = new ConfigValue("system.MigrateWorkflowTargetRepresentation", "false");
 
 	/**
 	 * Values allowed: none, warning, error
@@ -427,12 +433,43 @@ public class ConfigValue {
 	public static final ConfigValue RecipientEmailInUseWarning = new ConfigValue("recipient.emailInUseWarning", "true");
 
 	public static final ConfigValue AllowEmailWithWhitespace = new ConfigValue("AllowEmailWithWhitespace", "false");
+	public static final ConfigValue AllowEmptyEmail = new ConfigValue("AllowEmptyEmail", "false");
 	
 	public static final ConfigValue ForceSteppingBlocksize = new ConfigValue("force.steppingBlocksize", "false");
 	public static final ConfigValue DefaultBlocksizeValue = new ConfigValue("default.blocksize.value", "0");
 
 	public static final ConfigValue UseBindingHistoryForRecipientStatistics = new ConfigValue("UseBindingHistoryForRecipientStatistics", "false");
 
+	public static final ConfigValue CdnImageRedirectLinkBase = new ConfigValue("CdnImageRedirectLinkBase");
+	public static final ConfigValue CdnMediaImageRedirectLinkBase = new ConfigValue("CdnMediaImageRedirectLinkBase");
+	public static final ConfigValue CdnMediaBgImageRedirectLinkBase = new ConfigValue("CdnMediaBgImageRedirectLinkBase");
+	
+	/**
+	 * Maximum overall size of mediapool per company in bytes (1610612736 = 1,5 GB)
+	 */
+	public static final ConfigValue MediapoolMaximumSizeBytes = new ConfigValue("MediapoolMaximumSizeBytes", "1610612736");
+
+	public static final ConfigValue ImageTrafficMeasuring = new ConfigValue("ImageTrafficMeasuring", "true");
+
+	public static final ConfigValue EditableConfigValues = new ConfigValue("EditableConfigValues", "");
+	
+	public static final ConfigValue SessionHijackingPrevention = new ConfigValue("security.sessionHijackingPrevention", "enabled");
+	
+	public static final ConfigValue MaximumNumberOfEntriesForColumnDrop = new ConfigValue("recipient.MaximumNumberOfEntriesForColumnDrop", "750000");
+	public static final ConfigValue MaximumNumberOfEntriesForDefaultValueChange = new ConfigValue("recipient.MaximumNumberOfEntriesForDefaultValueChange", "750000");
+
+	public static final ConfigValue UpdateInformationLink = new ConfigValue("UpdateInformationLink", "https://www.agnitas.de");
+	
+	/** All config values related to Facebook. */
+	public static final class Facebook {
+		public static final ConfigValue FacebookLeadAdsWebhookVerifyToken = new ConfigValue("facebook.leadads.webhook.verifyToken");
+
+		public static final ConfigValue FacebookLeadAdsAppId = new ConfigValue("facebook.leadads.app.id");
+		public static final ConfigValue FacebookLeadAdsAppSecret = new ConfigValue("facebook.leadads.app.accessToken");
+	}
+	
+	
+	
 	private final String name;
 	private final String defaultValue;
 
@@ -479,4 +516,5 @@ public class ConfigValue {
 		}
 		throw new RuntimeException("Unknown config value name: " + name);
 	}
+	
 }

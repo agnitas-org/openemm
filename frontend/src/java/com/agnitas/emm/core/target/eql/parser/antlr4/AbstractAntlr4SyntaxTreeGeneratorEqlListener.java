@@ -165,7 +165,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractBooleanEqlNode right = (AbstractBooleanEqlNode) nodeStack.pop();
 		AbstractBooleanEqlNode left = (AbstractBooleanEqlNode) nodeStack.pop();
 
-		BinaryOperatorBooleanEqlNode node = new BinaryOperatorBooleanEqlNode(left, BinaryOperatorBooleanEqlNode.Operator.AND, right);
+		BinaryOperatorBooleanEqlNode node = new BinaryOperatorBooleanEqlNode(left, BinaryOperatorBooleanEqlNode.InfixOperator.AND, right);
 		
 		nodeStack.push(node);
 	}
@@ -177,7 +177,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractBooleanEqlNode right = (AbstractBooleanEqlNode) nodeStack.pop();
 		AbstractBooleanEqlNode left = (AbstractBooleanEqlNode) nodeStack.pop();
 
-		BinaryOperatorBooleanEqlNode node = new BinaryOperatorBooleanEqlNode(left, BinaryOperatorBooleanEqlNode.Operator.OR, right);
+		BinaryOperatorBooleanEqlNode node = new BinaryOperatorBooleanEqlNode(left, BinaryOperatorBooleanEqlNode.InfixOperator.OR, right);
 		
 		nodeStack.push(node);
 	}
@@ -229,7 +229,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.EQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.EQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -243,7 +243,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.GEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.GEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -257,7 +257,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.LT, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.LT, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -271,7 +271,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.NEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.NEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -285,7 +285,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.LEQ, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.LEQ, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -299,7 +299,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 
-		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.Operator.GT, right, dateFormat);
+		BinaryOperatorRelationalEqlNode node = new BinaryOperatorRelationalEqlNode(left, BinaryOperatorRelationalEqlNode.InfixOperator.GT, right, dateFormat);
 		
 		nodeStack.push(node);
 	}
@@ -395,7 +395,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.Operator.ADD, right);
+		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.InfixOperator.ADD, right);
 		
 		nodeStack.push(node);
 	}
@@ -407,7 +407,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.Operator.SUB, right);
+		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.InfixOperator.SUB, right);
 		
 		nodeStack.push(node);
 	}
@@ -419,7 +419,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.Operator.MUL, right);
+		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.InfixOperator.MUL, right);
 		
 		nodeStack.push(node);
 	}
@@ -431,7 +431,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.Operator.DIV, right);
+		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.InfixOperator.DIV, right);
 		
 		nodeStack.push(node);
 	}
@@ -443,7 +443,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 		AbstractExpressionalEqlNode right = (AbstractExpressionalEqlNode) nodeStack.pop();
 		AbstractExpressionalEqlNode left = (AbstractExpressionalEqlNode) nodeStack.pop();
 		
-		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.Operator.MOD, right);
+		BinaryOperatorExpressionalEqlNode node = new BinaryOperatorExpressionalEqlNode(left, BinaryOperatorExpressionalEqlNode.InfixOperator.MOD, right);
 		
 		nodeStack.push(node);
 	}

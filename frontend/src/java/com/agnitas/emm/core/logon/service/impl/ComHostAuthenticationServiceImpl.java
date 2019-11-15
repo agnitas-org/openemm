@@ -36,31 +36,33 @@ import com.agnitas.emm.core.supervisor.service.SupervisorUtil;
 import com.agnitas.messages.I18nString;
 
 /**
- * Implementation of {@link com.agnitas.emm.core.logon.service.ComHostAuthenticationService}.
+ * Implementation of
+ * {@link com.agnitas.emm.core.logon.service.ComHostAuthenticationService}.
  */
 public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationService {
 
 	/** Validity period of authenticated hosts in days. */
 	public static final transient int HOST_AUTHENTICATION_VALIDITY_PERIOD_DAYS = 90;
-	
+
 	/** Placeholder in mail for security code. */
 	private static final transient String SECURITY_CODE_PLACEHOLDER = "SECURITY_CODE";
-	
+
 	/** Placeholder in mail for user name. */
 	private static final transient String USERNAME_PLACEHOLDER = "USERNAME";
-	
+
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger( ComHostAuthenticationServiceImpl.class);
-	
+	private static final transient Logger logger = Logger.getLogger(ComHostAuthenticationServiceImpl.class);
+
 	@Override
-	public String createHostId() { // TODO: This method cannot be unit-tested. Move generator code behind interface (see security code generator)
-		if( logger.isInfoEnabled()) {
-			logger.info( "Creating new UUID for host identification");
+	public String createHostId() { // TODO: This method cannot be unit-tested. Move generator code behind interface
+									// (see security code generator)
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating new UUID for host identification");
 		}
-		
+
 		UUID uuid0 = UUID.randomUUID();
 		UUID uuid1 = UUID.randomUUID();
-		
+
 		return uuid0.toString() + "-" + uuid1.toString();
 	}
 
@@ -69,16 +71,18 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
 
 		try {
-			if(supervisor == null) {
+			if (supervisor == null) {
 				return this.hostAuthenticationDao.isHostAuthenticated(admin, hostId);
 			} else {
 				return this.hostAuthenticationDao.isHostAuthenticated(supervisor, hostId);
-			} 
-		} catch( HostAuthenticationDaoException e) {
-			String message = supervisor == null ? "Error check host authentication for admin " + admin.getAdminID() + " on host " + hostId : "Error check host authentication for supervisor " + supervisor.getId() + " on host " + hostId;
-			
-			logger.error( message);
-			
+			}
+		} catch (HostAuthenticationDaoException e) {
+			String message = supervisor == null
+					? "Error check host authentication for admin " + admin.getAdminID() + " on host " + hostId
+					: "Error check host authentication for supervisor " + supervisor.getId() + " on host " + hostId;
+
+			logger.error(message);
+
 			throw new HostAuthenticationServiceException(message, e);
 		}
 	}
@@ -86,124 +90,141 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	@Override
 	public boolean isHostAuthenticationEnabled(@VelocityCheck int companyID) {
 
-		// Host authentication is enabled by default and will be disabled by special configuration
+		// Host authentication is enabled by default and will be disabled by special
+		// configuration
 		boolean enabled = this.configService.getBooleanValue(ConfigValue.HostAuthentication, companyID);
-		
-		if(logger.isInfoEnabled()) {
-			if(enabled) {
-				logger.info( "Host authentication is ENABLED for company " + companyID);
+
+		if (logger.isInfoEnabled()) {
+			if (enabled) {
+				logger.info("Host authentication is ENABLED for company " + companyID);
 			} else {
-				logger.info( "Host authentication is DISABLED for company " + companyID);
+				logger.info("Host authentication is DISABLED for company " + companyID);
 			}
 		}
-		
+
 		return enabled;
 	}
 
 	@Override
 	public void sendSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
-		// TODO: Method cannot be unit-tested. Final code for sending mail should be moved behind interface.
-		
+		// TODO: Method cannot be unit-tested. Final code for sending mail should be
+		// moved behind interface.
+
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
 		try {
 			String securityCode = null;
-			
+
 			try {
-				if(supervisor == null) {
+				if (supervisor == null) {
 					securityCode = this.hostAuthenticationDao.getSecurityCode(admin, hostID);
-					
-					if( logger.isInfoEnabled()) {
+
+					if (logger.isInfoEnabled()) {
 						logger.info("Found security code for admin " + admin.getAdminID() + " on host " + hostID);
 					}
 				} else {
 					securityCode = this.hostAuthenticationDao.getSecurityCode(supervisor, hostID);
-					
-					if(logger.isInfoEnabled()) {
+
+					if (logger.isInfoEnabled()) {
 						logger.info("Found security code for supervisor " + admin.getAdminID() + " on host " + hostID);
 					}
 				}
-			} catch(NoSecurityCodeHostAuthenticationDaoException e) {
+			} catch (NoSecurityCodeHostAuthenticationDaoException e) {
 				securityCode = this.securityCodeGenerator.createSecurityCode();
 
-				if(supervisor == null) {
-					if(logger.isInfoEnabled()) {
-						logger.info("Found no security code for admin " + admin.getAdminID() + " on host " + hostID + ". Creating new one.");
+				if (supervisor == null) {
+					if (logger.isInfoEnabled()) {
+						logger.info("Found no security code for admin " + admin.getAdminID() + " on host " + hostID
+								+ ". Creating new one.");
 					}
-					
+
 					this.hostAuthenticationDao.writePendingSecurityCode(admin, hostID, securityCode);
 				} else {
-					if(logger.isInfoEnabled()) {
-						logger.info("Found no security code for supervisor " + admin.getAdminID() + " on host " + hostID + ". Creating new one.");
+					if (logger.isInfoEnabled()) {
+						logger.info("Found no security code for supervisor " + admin.getAdminID() + " on host " + hostID
+								+ ". Creating new one.");
 					}
-					
+
 					this.hostAuthenticationDao.writePendingSecurityCode(supervisor, hostID, securityCode);
 				}
 			}
-			
-			if(supervisor == null) {
-				sendSecurityCodeByEmail(admin, securityCode);	// TODO: This method call prevents unit-testing. Code of this method should be move to own class
+
+			if (supervisor == null) {
+				sendSecurityCodeByEmail(admin, securityCode); // TODO: This method call prevents unit-testing. Code of
+																// this method should be move to own class
 			} else {
-				sendSecurityCodeByEmail(supervisor, admin, securityCode);	// TODO: This method call prevents unit-testing. Code of this method should be move to own class
+				sendSecurityCodeByEmail(supervisor, admin, securityCode); // TODO: This method call prevents
+																			// unit-testing. Code of this method should
+																			// be move to own class
 			}
-			
-		} catch(CannotSendSecurityCodeException e) {
-			String msg = supervisor == null ? "Error sending security code (admin " + admin.getAdminID() + ", host " + hostID + ")" : "Error sending security code (supervisor " + supervisor.getId() + ", host " + hostID + ")";
-				
+
+		} catch (CannotSendSecurityCodeException e) {
+			String msg = supervisor == null
+					? "Error sending security code (admin " + admin.getAdminID() + ", host " + hostID + ")"
+					: "Error sending security code (supervisor " + supervisor.getId() + ", host " + hostID + ")";
+
 			logger.error(msg, e);
-			
+
 			throw e;
-		} catch(Exception e) {
-			String msg = supervisor == null ? "Error sending security code (admin " + admin.getAdminID() + ", host " + hostID + ")" : "Error sending security code (supervisor " + supervisor.getId() + ", host " + hostID + ")";
+		} catch (Exception e) {
+			String msg = supervisor == null
+					? "Error sending security code (admin " + admin.getAdminID() + ", host " + hostID + ")"
+					: "Error sending security code (supervisor " + supervisor.getId() + ", host " + hostID + ")";
 			logger.error(msg, e);
-			
+
 			throw new CannotSendSecurityCodeException(msg, e);
 		}
-				
+
 	}
-	
+
 	/**
 	 * Send mail with security code.
 	 * 
-	 * @param admin receiving admin
-	 * @param securityCode security code
+	 * @param admin
+	 *            receiving admin
+	 * @param securityCode
+	 *            security code
 	 *
-	 * @throws CannotSendSecurityCodeException on errors sending mail
+	 * @throws CannotSendSecurityCodeException
+	 *             on errors sending mail
 	 */
 	private void sendSecurityCodeByEmail(ComAdmin admin, String securityCode) throws CannotSendSecurityCodeException {
-		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject", admin.getLocale());
-		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content", admin.getLocale());
+		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject",
+				admin.getLocale());
+		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content",
+				admin.getLocale());
 
 		Map<String, String> replacements = new HashMap<>();
 		replacements.put(SECURITY_CODE_PLACEHOLDER, securityCode);
 		replacements.put(USERNAME_PLACEHOLDER, admin.getUsername());
 		StrSubstitutor substitutor = new StrSubstitutor(replacements);
-		
+
 		String subject = substitutor.replace(subjectTemplate).replace("\\n", "\n");
 		String message = substitutor.replace(messageTemplate).replace("\\n", "\n");
-		
+
 		try {
 			boolean result = javaMailService.sendEmail(admin.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
-			
-			if(!result) {
+			if (!result) {
 				logger.error("Unable to send email with security code?");
-			
 				throw new CannotSendSecurityCodeException("Error sending mail with security code");
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			logger.error("Error sending email with security code", e);
-
 			throw new CannotSendSecurityCodeException(admin.getEmail(), e);
 		}
 	}
-	
+
 	/**
 	 * Send mail with security code.
 	 * 
-	 * @param supervisor receiver
-	 * @param admin admin used at supervisor login
-	 * @param securityCode security code
+	 * @param supervisor
+	 *            receiver
+	 * @param admin
+	 *            admin used at supervisor login
+	 * @param securityCode
+	 *            security code
 	 *
-	 * @throws CannotSendSecurityCodeException on errors sending mail
+	 * @throws CannotSendSecurityCodeException
+	 *             on errors sending mail
 	 */
 	private void sendSecurityCodeByEmail(Supervisor supervisor, ComAdmin admin, String securityCode) throws CannotSendSecurityCodeException {
 		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject_supervisor", admin.getLocale());
@@ -213,123 +234,133 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 		replacements.put(SECURITY_CODE_PLACEHOLDER, securityCode);
 		replacements.put(USERNAME_PLACEHOLDER, admin.getUsername());
 		StrSubstitutor substitutor = new StrSubstitutor(replacements);
-		
+
 		String subject = substitutor.replace(subjectTemplate).replace("\\n", "\n");
 		String message = substitutor.replace(messageTemplate).replace("\\n", "\n");
-		
+
 		try {
 			boolean result = javaMailService.sendEmail(supervisor.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
-			
-			if(!result) {
+
+			if (!result) {
 				logger.error("Unable to send email with security code?");
-			
+
 				throw new CannotSendSecurityCodeException("Error sending mail with security code");
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			logger.error("Error sending email with security code", e);
 
 			throw new CannotSendSecurityCodeException(supervisor.getEmail(), e);
 		}
 	}
-	
+
 	@Override
 	public void writeHostAuthentication(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
-		
+
 		try {
-			if(supervisor == null) {
+			if (supervisor == null) {
 				this.hostAuthenticationDao.writeHostAuthentication(admin, hostID, HOST_AUTHENTICATION_VALIDITY_PERIOD_DAYS);
 				this.hostAuthenticationDao.removePendingSecurityCode(admin, hostID);
 			} else {
 				this.hostAuthenticationDao.writeHostAuthentication(supervisor, hostID, HOST_AUTHENTICATION_VALIDITY_PERIOD_DAYS);
 				this.hostAuthenticationDao.removePendingSecurityCode(supervisor, hostID);
 			}
-		} catch( HostAuthenticationDaoException e) {
-			String msg = supervisor == null ? "Error writing host authentication data for admin " + admin.getAdminID() + " on host " + hostID : "Error writing host authentication data for supervisor " + supervisor.getId() + " on host " + hostID;
-			
-			logger.error( msg, e);
-			
+		} catch (HostAuthenticationDaoException e) {
+			String msg = supervisor == null
+					? "Error writing host authentication data for admin " + admin.getAdminID() + " on host " + hostID
+					: "Error writing host authentication data for supervisor " + supervisor.getId() + " on host " + hostID;
+
+			logger.error(msg, e);
+
 			throw new HostAuthenticationServiceException(msg, e);
 		}
 	}
-	
+
 	@Override
 	public String getPendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
-		
+
 		try {
-			if(supervisor == null) {
+			if (supervisor == null) {
 				return this.hostAuthenticationDao.getSecurityCode(admin, hostID);
 			} else {
 				return this.hostAuthenticationDao.getSecurityCode(supervisor, hostID);
 			}
 		} catch (NoSecurityCodeHostAuthenticationDaoException e) {
-			String msg = supervisor == null ? "No pending security code found for admin " + admin.getAdminID() + " on host " + hostID : "No pending security code found for supervisor " + supervisor.getId() + " on host " + hostID;
-			logger.warn( msg, e);
-			
-			throw new HostAuthenticationServiceException( msg, e);
+			String msg = supervisor == null
+					? "No pending security code found for admin " + admin.getAdminID() + " on host " + hostID
+					: "No pending security code found for supervisor " + supervisor.getId() + " on host " + hostID;
+			logger.warn(msg, e);
+
+			throw new HostAuthenticationServiceException(msg, e);
 		} catch (HostAuthenticationDaoException e) {
-			String msg = supervisor == null ? "Error reading pending security code for admin " + admin.getAdminID() + " on host " + hostID : "Error reading pending security code for supervisor " + supervisor.getId() + " on host " + hostID;
+			String msg = supervisor == null
+					? "Error reading pending security code for admin " + admin.getAdminID() + " on host " + hostID
+					: "Error reading pending security code for supervisor " + supervisor.getId() + " on host " + hostID;
 			logger.error(msg, e);
-			
+
 			throw new HostAuthenticationServiceException(msg, e);
 		}
 	}
-	
+
 	@Override
 	public void removeAllExpiredData() {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Removing expired data for host authentications (pending security codes and host authentications).");
+		if (logger.isInfoEnabled()) {
+			logger.info("Removing expired data for host authentications (pending security codes and host authentications).");
 		}
-		
+
 		this.hostAuthenticationDao.removeExpiredHostAuthentications();
 		this.hostAuthenticationDao.removeExpiredPendingsAuthentications(configService.getMaxPendingHostAuthenticationsAgeMinutes());
 	}
 
-	// ---------------------------------------------------------------------------------------------- Dependency Injection
+	// ----------------------------------------------------------------------------------------------
+	// Dependency Injection
 	/** Service for accessing database-based configuration. */
 	private ConfigService configService;
-	
+
 	/** Generator for security codes. */
 	private HostAuthenticationSecurityCodeGenerator securityCodeGenerator;
-	
+
 	/** DAO for accessing host authentication data. */
 	private ComHostAuthenticationDao hostAuthenticationDao;
-	
+
 	private JavaMailService javaMailService;
-	
+
 	/**
 	 * Set service for accessing database-based configuration.
 	 * 
-	 * @param service service for accessing DB-based configuration.
+	 * @param service
+	 *            service for accessing DB-based configuration.
 	 */
 	@Required
-	public void setConfigService( ConfigService service) {
+	public void setConfigService(ConfigService service) {
 		this.configService = service;
 	}
 
 	/**
 	 * Set DAO for accessing host authentication data.
 	 * 
-	 * @param dao DAO for host authentication data
+	 * @param dao
+	 *            DAO for host authentication data
 	 */
 	@Required
-	public void setHostAuthenticationDao( ComHostAuthenticationDao dao) {
+	public void setHostAuthenticationDao(ComHostAuthenticationDao dao) {
 		this.hostAuthenticationDao = dao;
 	}
-	
+
 	@Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
-	
+
 	/**
 	 * Set generator for security codes.
 	 * 
-	 * @param generator generator for security codes
+	 * @param generator
+	 *            generator for security codes
 	 */
 	@Required
-	public void setSecurityCodeGenerator( HostAuthenticationSecurityCodeGenerator generator) {
+	public void setSecurityCodeGenerator(HostAuthenticationSecurityCodeGenerator generator) {
 		this.securityCodeGenerator = generator;
 	}
 }

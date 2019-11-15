@@ -50,6 +50,7 @@ public interface PreviewImageService {
      * @param async
      * @deprecated {@link #generateThumbnailForDivChild(int, String, int, boolean)}
      */
+    @Deprecated
     default void generateThumbnailForDivChild(HttpServletRequest request, int divChildId, boolean async) {
         //default implementation
     }

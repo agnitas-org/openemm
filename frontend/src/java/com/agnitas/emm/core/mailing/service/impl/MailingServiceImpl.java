@@ -49,6 +49,7 @@ import org.agnitas.emm.core.mailing.service.WorldMailingAlreadySentException;
 import org.agnitas.emm.core.mailing.service.WorldMailingWithoutNormalTypeException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
+import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.annotation.Validate;
@@ -67,6 +68,7 @@ import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
@@ -110,6 +112,9 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	
 	@Resource(name="MaildropService")
 	private MaildropService maildropService;
+
+	@Resource(name="MediatypeFactory")
+	private MediatypeFactory mediatypeFactory;
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -481,7 +486,6 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	@Transactional
 	@Validate("addMailingFromTemplate")
 	public int addMailingFromTemplate(MailingModel model) {
-		int result = 0;
     	Mailing template = mailingDao.getMailing(model.getTemplateId(), model.getCompanyId());
 
     	if (template == null || !template.isIsTemplate()) {
@@ -537,49 +541,33 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
 			// copy mediatypes
 			for (Entry<Integer, Mediatype> entry : template.getMediatypes().entrySet()) {
-				String beanName;
-				switch (entry.getKey()) {
-				case 0:
-					beanName = "MediatypeEmail";
-					break;
-				case 1:
-					beanName = "MediatypeFax";
-					break;
-				case 2:
-					beanName = "MediatypePrint";
-					break;
-				case 3:
-					beanName = "MediatypeMMS";
-					break;
-				case 4:
-					beanName = "MediatypeSMS";
-					break;
-				default:
-					beanName = "Mediatype";
-					break;
+				int mediaTypeCode = entry.getKey();
+
+				if (mediatypeFactory.isTypeSupported(mediaTypeCode)) {
+					Mediatype mediatypeNew = mediatypeFactory.create(mediaTypeCode);
+					aMailing.getMediatypes().put(mediaTypeCode, cloneBean(mediatypeNew, entry.getValue()));
 				}
-				Mediatype mediatypeNew = cloneBean(entry.getValue(), beanName);
-				aMailing.getMediatypes().put(entry.getKey(), mediatypeNew);
 			}
 
 			aMailing.setUseDynamicTemplate(model.isAutoUpdate());
 
 	        mailingDao.saveMailing(aMailing, false);
-	        result=aMailing.getId();
 
+	        return aMailing.getId();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-
-        return result;
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> T cloneBean(T orig, String beanName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-		T dest = (T) applicationContext.getBean(beanName);
+	private <T> T cloneBean(T orig, String beanName) throws IllegalAccessException, InvocationTargetException {
+		return cloneBean((T) applicationContext.getBean(beanName), orig);
+	}
+
+	private <T> T cloneBean(T dest, T orig) throws IllegalAccessException, InvocationTargetException {
 		PropertyDescriptor[] origDescriptors = PropertyUtils.getPropertyDescriptors(orig);
-		for (int i = 0; i < origDescriptors.length; i++) {
-			String name = origDescriptors[i].getName();
+		for (PropertyDescriptor descriptor : origDescriptors) {
+			String name = descriptor.getName();
 			if (PropertyUtils.isReadable(orig, name) && PropertyUtils.isWriteable(dest, name)) {
 				try {
 					Object value = PropertyUtils.getSimpleProperty(orig, name);
@@ -591,8 +579,6 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 				}
 			}
 		}
-		//		PropertyUtils.copyProperties(dest, orig);
-//		BeanUtils.copyProperties(dest, orig);
 		return dest;
 	}
 
@@ -674,7 +660,36 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	}
 
 	@Override
+	public boolean switchStatusmailOnErrorOnly(@VelocityCheck int companyId, int mailingId, boolean statusmailOnErrorOnly) {
+		if (mailingId <= 0 || !mailingDao.exist(mailingId, companyId)) {
+			return false;
+		} else {
+			return BooleanUtils.toBoolean(mailingDao.saveStatusmailOnErrorOnly(companyId, mailingId, statusmailOnErrorOnly));
+		}
+	}
+
+	@Override
 	public boolean isTextVersionRequired(@VelocityCheck int companyId, int mailingId) {
 		return mailingDao.isTextVersionRequired(companyId, mailingId);
 	}
+
+	@Override
+	public List<LightweightMailing> listAllActionBasedMailingsForMailinglist(final int companyID, int mailinglistID) {
+		return this.mailingDao.listAllActionBasedMailingsForMailinglist(companyID, mailinglistID);
+	}
+
+	@Override
+	public final LightweightMailing getLightweightMailing(final int companyId, final int mailingId) throws MailingNotExistException {
+		return this.mailingDao.getLightweightMailing(companyId, mailingId);
+	}
+
+	@Override
+	public final List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException {
+		final ComMailing aMailing = (ComMailing) this.getMailing(companyID, mailingID);
+		
+		final Collection<Integer> targetIdList = aMailing.getAllReferencedTargetGroups();
+
+		return this.targetDao.getTargetLights(companyID, targetIdList, false);
+	}
+
 }

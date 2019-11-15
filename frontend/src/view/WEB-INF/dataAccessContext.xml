@@ -15,7 +15,7 @@
 	<!-- ========================= RESOURCE DEFINITIONS ========================= -->
 
 	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
-		<property name="jndiName" value="java:comp/env/jdbc/${jdbc.emmDB.jndiName}" />
+		<property name="jndiName" value="java:comp/env/jdbc/emm_db" />
 	</bean>
 
 	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.CommonsDbcpNativeJdbcExtractor" />

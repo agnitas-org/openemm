@@ -17,8 +17,6 @@ import java.util.Map;
 import org.agnitas.target.impl.TargetOperatorImpl;
 import org.apache.commons.lang.StringUtils;
 
-import com.agnitas.emm.core.target.eql.EqlFacade;
-
 public abstract class TargetNode {
     public static final int CHAIN_OPERATOR_NONE = 0;
     public static final int CHAIN_OPERATOR_AND = 1;
@@ -216,66 +214,6 @@ public abstract class TargetNode {
      * @param chainOperator New value of property chainOperator.
      */
     public abstract void setChainOperator(int chainOperator);
-    
-    /**
-     * Generates SQL.
-     * This method respects settings for chain operator and parenthesis.
-     * To implement node specific SQL code, use method {@link #generateEmbeddedSQL()}.  
-     * 
-     * Due to introduction of EQL, this method is deprecated. 
-     * 
-     * @return SQL string
-     * 
-     * @see EqlFacade#convertEqlToSql(String, int)
-     * @see EqlFacade#convertTargetRepresentationToEql(com.agnitas.beans.ComTarget)
-     * @see EqlFacade#convertTargetRepresentationToEql(TargetRepresentation, int)
-     */
-    @Deprecated
-    public String generateSQL() {
-        StringBuffer tmpSQL=new StringBuffer();
-
-        switch(getChainOperator()) {
-            case TargetNode.CHAIN_OPERATOR_AND:
-                tmpSQL.append(" AND ");
-                break;
-            case TargetNode.CHAIN_OPERATOR_OR:
-                tmpSQL.append(" OR ");
-                break;
-            default:
-                tmpSQL.append(" ");
-        }
-
-        if(isOpenBracketBefore()) {
-            tmpSQL.append("(");
-        }
-        
-        tmpSQL.append(this.generateEmbeddedSQL());
-        
-        if(isCloseBracketAfter()) {
-            tmpSQL.append(")");
-        }
-        
-        return tmpSQL.toString();
-    }
-    
-    /**
-     * Generates SQL.
-     * This method creates the SQL string without respect of chain operator and parenthesis.
-     * Use this method to implement node specific SQL code.
-     * 
-     * @see #generateSQL()
-     * 
-     * @return
-     */
-    @Deprecated
-    public String generateEmbeddedSQL() {
-    	
-    	/*
-    	 * For compatibility with already some nodes, this method is implemented to return an empty string.
-    	 * Some nodes directly overrides method generateSQL(). 
-    	 */
-    	return "";
-    }
     
     /**
      * Generates bsh

@@ -11,6 +11,7 @@
 package com.agnitas.beans;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -299,4 +300,6 @@ public interface DynamicTag extends Cloneable {
 	boolean isDisableLinkExtension();
 
 	DynamicTag clone();
+
+	public Set<Integer> getAllReferencedTargetGroups();
 }

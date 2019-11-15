@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
     <property name="units">in</property>
+    <method name="initialize"><![CDATA[
+reportContext.setGlobalVariable("showLabels", false);]]></method>
     <method name="beforeRender"><![CDATA[if(reportContext.getOutputFormat()!="pdf") {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("reportParameters").drop();
 }
@@ -64,20 +66,6 @@ else {
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
                 <value type="constant">DE</value>
-            </simple-property-list>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
-        <scalar-parameter name="uid" id="424">
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
             </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
@@ -207,8 +195,18 @@ return false;]]></method>
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.lang);
 
-dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingDeliveryTimeBasedDataSet()
-deliveryData = dataSet.getData(params["mailingID"], params["companyID"], params["language"], params["startDate"], params["stopDate"]);
+dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingDeliveryTimeBasedDataSet();
+
+var startDateParam = params["startDate"];
+var stopDateParam = params["stopDate"];
+
+var monthDiff = BirtDateTime.diffMonth(MailingDeliveryTimeBasedDataSet.getDateWithoutTime(startDateParam), MailingDeliveryTimeBasedDataSet.getDateWithoutTime(stopDateParam));
+
+reportContext.setGlobalVariable("showLabels", monthDiff < 5);
+
+
+deliveryData = dataSet.getData(params["mailingID"], params["companyID"], params["language"], startDateParam, stopDateParam);
+
 currentrow = 0; ]]></method>
             <method name="fetch"><![CDATA[if( currentrow < deliveryData.size() ){
 	row["sendTime"] =  deliveryData.get(currentrow).getSendTime();
@@ -557,7 +555,8 @@ return false;]]></method>
     <Visible>true</Visible>
   </Block>
   <Dimension>Two_Dimensional</Dimension>
-  <Script>
+  <Script>showLabels = false;
+
 /**
  * Called before generation of chart model to GeneratedChartState.
  * 
@@ -570,8 +569,29 @@ return false;]]></method>
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
+	showLabels = reportContext.getGlobalVariable(&quot;showLabels&quot;);
 	
 	chart.getEmptyMessage().getCaption().setValue(Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;birt.noDataAvailable&quot;, reportContext.getLocale()));
+}
+
+
+
+/**
+ * Called before rendering the label for each datapoint.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{	
+	if (showLabels == false) {
+		label.setVisible(false);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -593,7 +613,7 @@ function beforeGeneration( chart, icsc )
     </AncillarySampleData>
   </SampleData>
   <Interactivity>
-    <Enable>false</Enable>
+    <Enable>true</Enable>
   </Interactivity>
   <EmptyMessage>
     <Caption>
@@ -820,7 +840,20 @@ function beforeGeneration( chart, icsc )
           </DataPoint>
           <LabelPosition>Inside</LabelPosition>
           <Stacked>false</Stacked>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>50</Delay>
+              </Value>
+            </Action>
+          </Triggers>
           <Translucent>false</Translucent>
+          <Cursor>
+            <Type>Auto</Type>
+          </Cursor>
           <Riser>Rectangle</Riser>
         </Series>
         <Grouping>

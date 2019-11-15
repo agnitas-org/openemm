@@ -12,25 +12,18 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.springframework.jdbc.core.RowMapper;
 
 public class RecipientsStatisticRowMapper implements RowMapper<RecipientsStatisticRow> {
 
-	private Map<Integer, String> mailinglistNamesById;
-	
-	public RecipientsStatisticRowMapper(Map<Integer, String> mailinglistNamesById) {
-		this.mailinglistNamesById = mailinglistNamesById;
-	}
-
 	@Override
 	public RecipientsStatisticRow mapRow(ResultSet resultSet, int rowNum) throws SQLException {
 		RecipientsStatisticRow row = new RecipientsStatisticRow();
 		row.setMailingListId(resultSet.getInt("mailinglist_id"));
+		row.setMailingListName(resultSet.getString("mailinglist_name"));
 		row.setMailingListGroupId(resultSet.getInt("mailinglist_group_id"));
 		row.setTargetGroupId(resultSet.getInt("targetgroup_id"));
-		row.setMailingListName(mailinglistNamesById.get(resultSet.getInt("mailinglist_id")));
 		row.setTargetGroupName(resultSet.getString("targetgroup_name"));
 		row.setCountTypeText(resultSet.getInt("count_type_text"));
 		row.setCountTypeHtml(resultSet.getInt("count_type_html"));

@@ -14,21 +14,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.target.eql.emm.eql.EqlUtils;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
 import org.agnitas.target.TargetRepresentation;
 import org.agnitas.target.impl.TargetNodeAutoImportFinished;
-import org.agnitas.target.impl.TargetNodeDate;
 import org.agnitas.target.impl.TargetNodeMailingClicked;
 import org.agnitas.target.impl.TargetNodeMailingOpened;
 import org.agnitas.target.impl.TargetNodeMailingReceived;
-import org.agnitas.target.impl.TargetNodeNumeric;
-import org.agnitas.target.impl.TargetNodeString;
 
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
+import com.agnitas.emm.core.target.eql.emm.eql.EqlUtils;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue;
 
@@ -132,12 +129,18 @@ public class TargetRepresentationToEqlConverter {
 	}
 	
 	protected void doConvertNode(boolean ignoreChainOperator, TargetNode node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
-		if(node instanceof TargetNodeNumeric) {
-			convertNode((TargetNodeNumeric) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
-		} else if(node instanceof TargetNodeString) {
-			convertNode((TargetNodeString) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
-		} else if(node instanceof TargetNodeDate) {
-			convertNode((TargetNodeDate) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		if(node instanceof org.agnitas.target.impl.TargetNodeNumeric) {
+			convertNode((org.agnitas.target.impl.TargetNodeNumeric) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		} else if(node instanceof com.agnitas.query.TargetNodeNumeric) {
+			convertNode((com.agnitas.query.TargetNodeNumeric) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		} else if(node instanceof org.agnitas.target.impl.TargetNodeString) {
+			convertNode((org.agnitas.target.impl.TargetNodeString) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		} else if(node instanceof com.agnitas.query.TargetNodeString) {
+			convertNode((com.agnitas.query.TargetNodeString) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		} else if(node instanceof org.agnitas.target.impl.TargetNodeDate) {
+			convertNode((org.agnitas.target.impl.TargetNodeDate) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
+		} else if(node instanceof com.agnitas.query.TargetNodeDate) {
+			convertNode((com.agnitas.query.TargetNodeDate) node, buffer, companyId, resolvedNames, disableThreeValuedLogic);
 		} else if(node instanceof TargetNodeAutoImportFinished) {
 			convertNode((TargetNodeAutoImportFinished) node, buffer);
 		} else if(node instanceof TargetNodeMailingClicked) {
@@ -194,8 +197,39 @@ public class TargetRepresentationToEqlConverter {
 	 *
 	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
 	 */
-	private void convertNode(TargetNodeNumeric node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
-		TargetOperator primaryOperator = TargetNodeNumeric.getValidOperators()[node.getPrimaryOperator() - 1];
+	private void convertNode(org.agnitas.target.impl.TargetNodeNumeric node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeNumeric.getValidOperators()[node.getPrimaryOperator() - 1];
+
+		if (primaryOperator == null) {
+			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
+		}
+
+		String field = convertProfileField(node.getPrimaryField(), companyId, resolvedNames);
+
+		if (primaryOperator == TargetNode.OPERATOR_IS) {
+			buffer.append(field);
+
+			if (node.getPrimaryValue().toLowerCase().startsWith("null")) {
+				buffer.append(" IS EMPTY");
+			} else {
+				buffer.append(" IS NOT EMPTY");
+			}
+		} else if (primaryOperator == TargetNode.OPERATOR_MOD) {
+			TargetOperator secondaryOperator = TargetNode.findSecondaryOperatorForMod(node.getSecondaryOperator());
+
+			if (secondaryOperator == null) {
+				throw new TargetRepresentationToEqlConversionException("No or invalid secondary operator defined");
+			}
+
+			convertNodeEquation(buffer, field, primaryOperator, node.getPrimaryValue(), secondaryOperator, node.getSecondaryValue(), disableThreeValuedLogic);
+		} else {
+			convertNodeEquation(buffer, field, primaryOperator, node.getPrimaryValue(), disableThreeValuedLogic);
+		}
+	}
+	
+	private void convertNode(com.agnitas.query.TargetNodeNumeric node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		// com-version of TargetNodeNumeric does not provide getValidOperators(), but has same operators and the org-version. So we cann access the method from org-version here without headache
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeNumeric.getValidOperators()[node.getPrimaryOperator() - 1];
 
 		if (primaryOperator == null) {
 			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
@@ -235,8 +269,38 @@ public class TargetRepresentationToEqlConverter {
 	 *
 	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
 	 */
-	private void convertNode(TargetNodeString node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
-		TargetOperator primaryOperator = TargetNodeString.getValidOperators()[node.getPrimaryOperator() - 1];
+	private void convertNode(org.agnitas.target.impl.TargetNodeString node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeString.getValidOperators()[node.getPrimaryOperator() - 1];
+
+		if (primaryOperator == null) {
+			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
+		}
+
+		String field = convertProfileField(node.getPrimaryField(), companyId, resolvedNames);
+		if (primaryOperator == TargetNode.OPERATOR_IS) {
+			buffer.append(field);
+
+			if (node.getPrimaryValue().toLowerCase().startsWith("null")) {
+				buffer.append(" IS EMPTY");
+			} else {
+				buffer.append(" IS NOT EMPTY");
+			}
+		} else if (primaryOperator == TargetNode.OPERATOR_MOD) {
+			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
+		} else {
+			Object value;
+			if (primaryOperator == TargetNode.OPERATOR_LIKE || primaryOperator == TargetNode.OPERATOR_NLIKE) {
+				value = StringUtil.makeEqlMatchingPattern(node.getPrimaryValue());
+			} else {
+				value = StringUtil.makeEqlStringConstant(node.getPrimaryValue());
+			}
+			convertNodeEquation(buffer, field, primaryOperator, value, disableThreeValuedLogic);
+		}
+	}
+	
+	private void convertNode(com.agnitas.query.TargetNodeString node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		// com-version of TargetNodeNumeric does not provide getValidOperators(), but has same operators and the org-version. So we cann access the method from org-version here without headache
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeString.getValidOperators()[node.getPrimaryOperator() - 1];
 
 		if (primaryOperator == null) {
 			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
@@ -275,8 +339,56 @@ public class TargetRepresentationToEqlConverter {
 	 *
 	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
 	 */
-	private void convertNode(TargetNodeDate node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
-		TargetOperator primaryOperator = TargetNodeDate.getValidOperators()[node.getPrimaryOperator() - 1];
+	private void convertNode(org.agnitas.target.impl.TargetNodeDate node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeDate.getValidOperators()[node.getPrimaryOperator() - 1];
+
+		if (primaryOperator == null) {
+			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");
+		}
+		
+		if (primaryOperator == TargetNode.OPERATOR_IS) {
+			buffer.append(convertProfileField(node.getPrimaryField(), companyId, resolvedNames));
+			
+			if (node.getPrimaryValue().toLowerCase().startsWith("null")) {
+				buffer.append(" IS EMPTY");
+			} else {
+				buffer.append(" IS NOT EMPTY");
+			}
+		} else {
+			String field = node.getPrimaryField();
+
+			if (DATE_CURRENT_TIMESTAMP.equalsIgnoreCase(field) || DATE_SYSDATE.equalsIgnoreCase(field) || DATE_NOW.equalsIgnoreCase(field)) {
+				buffer.append("TODAY ");
+				buffer.append(primaryOperator.getOperatorSymbol());
+				buffer.append(" ");
+				buffer.append(StringUtil.makeEqlStringConstant(node.getPrimaryValue()));
+				buffer.append(" DATEFORMAT ");
+				buffer.append(StringUtil.makeEqlStringConstant(EqlUtils.toEQLDateFormat(node.getDateFormat())));
+			} else {
+				field = convertProfileField(node.getPrimaryField(), companyId, resolvedNames);
+
+				String value = node.getPrimaryValue();
+
+				if (value.toUpperCase().startsWith(DATE_CURRENT_TIMESTAMP)) {
+					value = "TODAY" + value.substring(DATE_CURRENT_TIMESTAMP.length());
+				} else if (value.toUpperCase().startsWith(DATE_SYSDATE)) {
+					value = "TODAY" + value.substring(DATE_SYSDATE.length());
+				} else if (value.toUpperCase().startsWith(DATE_NOW)) {
+					value = "TODAY" + value.substring(DATE_NOW.length());
+				} else {
+					value = StringUtil.makeEqlStringConstant(value);
+				}
+
+				value += " DATEFORMAT '" + EqlUtils.toEQLDateFormat(node.getDateFormat()) + "'";
+
+				convertNodeEquation(buffer, field, primaryOperator, value, disableThreeValuedLogic);
+			}
+		}
+		
+	}
+	private void convertNode(com.agnitas.query.TargetNodeDate node, StringBuffer buffer, int companyId, Map<String, String> resolvedNames, boolean disableThreeValuedLogic) throws TargetRepresentationToEqlConversionException {
+		// com-version of TargetNodeNumeric does not provide getValidOperators(), but has same operators and the org-version. So we cann access the method from org-version here without headache
+		TargetOperator primaryOperator = org.agnitas.target.impl.TargetNodeDate.getValidOperators()[node.getPrimaryOperator() - 1];
 
 		if (primaryOperator == null) {
 			throw new TargetRepresentationToEqlConversionException("No or invalid primary operator defined");

@@ -120,6 +120,8 @@ public interface BindingEntry extends Serializable {
      * @return Value of property exitMailingID.
      */
 	int getExitMailingID();
+	
+	int getEntryMailingID();
 
     /**
      * Getter for property mediaType.
@@ -133,21 +135,23 @@ public interface BindingEntry extends Serializable {
      * 
      * @param ci New value of property customerID.
      */
-	void setCustomerID(int ci);
+	void setCustomerID(int customerID);
 
     /**
      * Setter for property exitMailingID.
      * 
      * @param mi New value of property exitMailingID.
      */
-	void setExitMailingID(int mi);
+	void setExitMailingID(int mailingID);
+	
+	void setEntryMailingID(int mailingID);
 
     /**
      * Setter for property mailinglistID.
      * 
      * @param ml New value of property mailinglistID.
      */
-	void setMailinglistID(int ml);
+	void setMailinglistID(int mailinglistID);
 
     /**
      * Setter for property mediaType.
@@ -206,7 +210,7 @@ public interface BindingEntry extends Serializable {
      * @param companyID The company ID of the Binding
      * @param allCustLists bindings to check for save/update.
      * @return true on Sucess, false otherwise.
-     * @throws Exception 
+     * @throws Exception
      */
 	boolean saveBindingInDB( @VelocityCheck int companyID, Map<Integer, Map<Integer, BindingEntry>> allCustLists, ComAdmin admin) throws Exception;
     

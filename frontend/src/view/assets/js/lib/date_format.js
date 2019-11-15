@@ -218,10 +218,15 @@
                 }
                 return null;
             }
+        },
+        toArray: function(date, stub) {
+            if (date && date.getMonth) {
+                return [date.getFullYear(), date.getMonth(), date.getDate()];
+            } else {
+                return stub;
+            }
         }
-
-    }
-
+    };
 
     AGN.Lib.DateFormat = DateFormat;
 

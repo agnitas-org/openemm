@@ -18,7 +18,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 
 public interface EqlNodeParser<T> {
 
-    QueryBuilderGroupNode parse(AbstractEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException;
+    QueryBuilderGroupNode parse(AbstractEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException;
 
     T getEqlNode(AbstractEqlNode node) throws EqlToQueryBuilderConversionException;
 }

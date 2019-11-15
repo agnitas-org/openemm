@@ -39,7 +39,7 @@
         <c:set var="agnTitleKey" 		value="import.ImportProfile" 		scope="request" />
         <c:set var="agnSubtitleKey" 	value="import.ImportProfile" 		scope="request" />
         <c:set var="agnHighlightKey" 	value="import.EditImportProfile"	scope="request" />
-        <c:set var="agnHelpKey" 		value="manageProfile" 				scope="request" />
+        <c:set var="agnHelpKey" 		value="newImportProfile" 				scope="request" />
     </c:when>
     <c:otherwise>
 		<c:set var="agnNavigationKey"	value="none" 			scope="request" />

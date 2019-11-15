@@ -1,6 +1,7 @@
-<%@page import="com.agnitas.web.forms.ComMailingBaseForm"%>
-<%@page import="com.agnitas.beans.MediatypeEmail"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
+<%@page import="com.agnitas.beans.MediatypeEmail"%>
+<%@page import="com.agnitas.web.forms.ComMailingBaseForm"%>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,6 +12,7 @@
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <c:set var="sentMail" value="${mailingBaseForm.worldMailingSend}"/>
 <c:set var="TEXTAREA_WIDTH" value="<%= ComMailingBaseForm.TEXTAREA_WIDTH%>" scope="page" />
+<c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
 <emm:ShowByPermission token="mailing.content.change.always">
     <c:set var="sentMail" value="${false}"/>
 </emm:ShowByPermission>
@@ -314,6 +316,17 @@
                 </div>
             </emm:ShowByPermission>
 
+            <div id="mailing-bcc-recipients" class="form-group ${mailingBaseForm.mailingType == TYPE_DATEBASED ? '' : 'hidden'}">
+               <div class="col-sm-4">
+                   <label class="control-label" for="bccRecipientEmails">
+                       <bean:message key="action.address.bcc"/>
+                   </label>
+               </div>
+               <div class="col-sm-8">
+                   <html:text styleId="bccRecipientEmails" property="media[0].bccRecipients" styleClass="form-control" />
+               </div>
+            </div>
+
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailCharset">
@@ -335,13 +348,9 @@
                     <html:select styleId="emailLinefeed" property="emailLinefeed"
                                  styleClass="form-control" disabled="${sentMail or denyEmailEdit}">
                         <html:option value="0"><bean:message key="mailing.No_Linefeed"/></html:option>
-                        <%
-                            int a;
-                            for (a = 60; a <= 80; a++) { %>
-                        <html:option value="<%= Integer.toString(a) %>"><%= a %> <bean:message
-                                key="Characters"/></html:option>
-                        <% }
-                        %>
+                        <c:forEach begin="60" end="80" step="1" var="a">
+                            <html:option value="${a}">${a} <bean:message key="Characters"/></html:option>
+                        </c:forEach>
                     </html:select>
                 </div>
             </div>

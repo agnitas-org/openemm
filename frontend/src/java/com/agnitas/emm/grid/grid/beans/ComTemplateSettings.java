@@ -37,8 +37,6 @@ public interface ComTemplateSettings {
     void setTextTemplate(String textTemplate);
     int getSplitId();
     void setSplitId(int splitId);
-    int getParameterIdToRemove();
-    void setParameterIdToRemove(int parameterIdToRemove);
     boolean isAddParameter();
     void setAddParameter(boolean addParameter);
     Map<Integer, ComMailingParameter> getParameters();
@@ -56,11 +54,4 @@ public interface ComTemplateSettings {
     void setTargetExpression(String targetExpression);
     String getMailingParameters();
     void setMailingParameters(String mailingParameters);
-
-    void setNewNameMailingParam(String index, String name);
-    void setNewValueMailingParam(String index, String value);
-    void setNewDescriptionMailingParam(String index, String description);
-    String getNewNameMailingParam(String index);
-    String getNewValueMailingParam(String index);
-    String getNewDescriptionMailingParam(String index);
 }

@@ -287,7 +287,7 @@ public class Code {
 							if (data.columnByName (column) == null) {
 								throw new Exception ("Voucher \"" + v + "\" not found");
 							}
-							predef.add (column);
+							predef.add (column.toLowerCase ());
 						}
 					}
 				}

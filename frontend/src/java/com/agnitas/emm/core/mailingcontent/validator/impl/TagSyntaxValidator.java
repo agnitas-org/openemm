@@ -53,7 +53,7 @@ public class TagSyntaxValidator implements DynTagValidator {
                 if (!tagSyntaxChecker.check(companyId, contentBlock.getContent(), agnTagSyntaxErrors)) {
                     for (AgnTagError agnTagError : agnTagSyntaxErrors) {
                         String localizedMessage = agnTagError.getLocalizedMessage(request.getLocale());
-                        popups.alert("GWUA.mailing.content.tag.validation.fail", agnTagError.getFullAgnTagText(), localizedMessage);
+                        popups.alert("error.mailing.agntags", agnTagError.getFullAgnTagText(), localizedMessage);
                     }
 
                     hasNoErrors = false;

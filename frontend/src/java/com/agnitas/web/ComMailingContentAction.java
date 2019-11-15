@@ -13,6 +13,7 @@ package com.agnitas.web;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -105,7 +106,7 @@ public class ComMailingContentAction extends StrutsActionBase {
     protected ComMailingBaseService mailingBaseService;
     private MaildropService maildropService;
     private MailinglistApprovalService mailinglistApprovalService;
-    
+
 	protected TAGCheckFactory tagCheckFactory;
 	protected CharacterEncodingValidator characterEncodingValidator;
 
@@ -193,13 +194,14 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 		return destination;
 	}
-	
 	protected ActionForward doExecute(ActionMapping mapping, ComMailingContentForm form, HttpServletRequest req, HttpServletResponse res, final ActionMessages errors, final ActionMessages messages) throws Exception {
 		switch (form.getAction()) {
 		case ACTION_VIEW_CONTENT:
 			prepareListPage(form, req);
 			form.setShowHTMLEditor(true);
 			
+			//remove after successful testing GWUA-3758
+			req.setAttribute("hasTempBetaPermission", AgnUtils.getAdmin(req).permissionAllowed(Permission.CONTENT_TAB_MIGRATION));
 			writeUserActivityLog(AgnUtils.getAdmin(req), "view content", "active tab - content");
 			return mapping.findForward("list");
 
@@ -244,6 +246,8 @@ public class ComMailingContentAction extends StrutsActionBase {
 			}
 			prepareViewPage(form, req, StringUtils.equals(form.getDynName(), AgnUtils.DEFAULT_MAILING_TEXT_DYNNAME));
 			
+			//remove after successful testing GWUA-3758
+            req.setAttribute("hasTempBetaPermission", AgnUtils.getAdmin(req).permissionAllowed(Permission.CONTENT_TAB_MIGRATION));
 			return mapping.findForward("list");
 
 		default:
@@ -305,6 +309,22 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 		form.setMailingContentView(adminPreferences.getMailingContentView());
 		form.setDynTagNames(mailingBaseService.getDynamicTagNames(mailing));
+
+		//TODO: remove loadContentBlock logic block when GWUA-3758 will be successful tested
+		if (loadContentBlock) {
+			final DynamicTag tag = mailing.getDynamicTagById(form.getDynNameID());
+
+			if (tag == null) {
+				form.setContent(new HashMap<>());
+				form.setDynName(StringUtils.EMPTY);
+				form.setShowHTMLEditor(true);
+			} else {
+				form.setContent(tag.getDynContent());
+				form.setDynName(tag.getDynName());
+				form.setShowHTMLEditor(calculateShowingHTMLEditor(tag.getDynName(), mailing, req));
+				form.setDisableLinkExtension(tag.isDisableLinkExtension());
+			}
+		}
 
 		writeUserActivityLog(admin, "view " + (form.isIsTemplate() ? "template" : "mailing"),
 				form.getShortname() + " (" + form.getMailingID() + ")");

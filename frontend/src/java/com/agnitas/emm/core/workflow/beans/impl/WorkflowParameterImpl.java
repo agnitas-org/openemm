@@ -13,6 +13,8 @@ package com.agnitas.emm.core.workflow.beans.impl;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowParameter;
 
+import java.util.Objects;
+
 public class WorkflowParameterImpl extends BaseWorkflowIcon implements WorkflowParameter {
 
     private int value;
@@ -32,4 +34,17 @@ public class WorkflowParameterImpl extends BaseWorkflowIcon implements WorkflowP
         this.value = value;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowParameterImpl that = (WorkflowParameterImpl) o;
+        return value == that.value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), value);
+    }
 }

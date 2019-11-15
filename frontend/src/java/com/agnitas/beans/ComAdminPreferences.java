@@ -14,83 +14,83 @@ import org.agnitas.beans.AdminPreferences;
 
 public interface ComAdminPreferences extends AdminPreferences {
 
-    public static final int DASHBOARD_MAILINGS_LIST = 0;
-    public static final int DASHBOARD_MAILINGS_PREVIEW = 1;
+    int DASHBOARD_MAILINGS_LIST = 0;
+    int DASHBOARD_MAILINGS_PREVIEW = 1;
 
-    public static final int NAVIGATION_LEFT = 0;
-    public static final int NAVIGATION_TOP = 1;
+    int NAVIGATION_LEFT = 0;
+    int NAVIGATION_TOP = 1;
 
-    public static final int MAILING_SETTINGS_EXPANDED = 0;
-    public static final int MAILING_SETTINGS_COLLAPSED = 1;
+    int MAILING_SETTINGS_EXPANDED = 0;
+    int MAILING_SETTINGS_COLLAPSED = 1;
 
-    public static final int LIVE_PREVIEW_RIGHT = 0;
-    public static final int LIVE_PREVIEW_BOTTOM = 1;
-    public static final int LIVE_PREVIEW_DEACTIVATE = 2;
+    int LIVE_PREVIEW_RIGHT = 0;
+    int LIVE_PREVIEW_BOTTOM = 1;
+    int LIVE_PREVIEW_DEACTIVATE = 2;
 
-    public static final int START_PAGE_DASHBOARD = 0;
-    public static final int START_PAGE_CALENDAR = 1;
+    int START_PAGE_DASHBOARD = 0;
+    int START_PAGE_CALENDAR = 1;
 
-    public static final int STATISTIC_LOADTYPE_ON_CLICK = 0;
-    public static final int STATISTIC_LOADTYPE_IMMEDIATELY = 1;
+    int STATISTIC_LOADTYPE_ON_CLICK = 0;
+    int STATISTIC_LOADTYPE_IMMEDIATELY = 1;
 
     /**
      * Getter for the preferred dashboard mailing view type
      */
-    public int getDashboardMailingsView();
+    int getDashboardMailingsView();
 
     /**
      * Setter for the preferred dashboard mailing view type
      */
-    public void setDashboardMailingsView(int dashboardMailingsView);
+    void setDashboardMailingsView(int dashboardMailingsView);
 
     /**
      * Getter for the preferred navigation location (left(0) or top(1))
      */
-    public int getNavigationLocation();
+    int getNavigationLocation();
 
     /**
      * Setter for the preferred navigation location (left(0) or top(1))
      */
-    public void setNavigationLocation(int navigationLocation);
+    void setNavigationLocation(int navigationLocation);
 
     /**
      * Getter for the preferred mailing settings view type (expanded(0) or collapsed(1))
      */
-    public int getMailingSettingsView();
+    int getMailingSettingsView();
 
     /**
      * Setter for the preferred mailing settings view type (expanded(0) or collapsed(1))
      */
-    public void setMailingSettingsView(int mailingSettingsView);
+    void setMailingSettingsView(int mailingSettingsView);
 
     /**
      * Getter for the preferred position of the mailing content live preview (right(0)/bottom(1)/deactivated(2))
      */
-    public int getLivePreviewPosition();
+    int getLivePreviewPosition();
 
     /**
      * Setter for the preferred position of the mailing content live preview (right(0)/bottom(1)/deactivated(2))
      */
-    public void setLivePreviewPosition(int livePreviewPosition);
+    void setLivePreviewPosition(int livePreviewPosition);
 
     /**
      * Getter for the preferred start page (dashboard(0)/calender(1))
      */
-    public int getStartPage();
+    int getStartPage();
 
     /**
      * Setter for the preferred start page (dashboard(0)/calender(1))
      */
-    public void setStartPage(int startPage);
+    void setStartPage(int startPage);
 
     /**
      * Getter for the preferred Statistic-Summary load type (immediately(0)/on click(1))
      */
-    public int getStatisticLoadType();
+    int getStatisticLoadType();
 
     /**
      * Setter for the preferred Statistic-Summary load type (immediately(0)/on click(1))
      */
-    public void setStatisticLoadType(int statisticLoadType);
+    void setStatisticLoadType(int statisticLoadType);
 
 }

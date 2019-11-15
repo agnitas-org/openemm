@@ -33,6 +33,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 public class ComUserActivityLogDaoImpl extends PaginatedBaseDaoImpl implements UserActivityLogDao {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComUserActivityLogDaoImpl.class);
+	
+	private static final int MAX_DESCRIPTION_LENGTH = 4000;
 
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -46,6 +48,11 @@ public class ComUserActivityLogDaoImpl extends PaginatedBaseDaoImpl implements U
 			if (admin.getSupervisor() != null) {
 				supervisorName = admin.getSupervisor().getSupervisorName();
 			}
+		}
+
+		if (StringUtils.length(description) > MAX_DESCRIPTION_LENGTH) {
+			logger.warn("UAL description was abbreviated. Actual value was " + description);
+			description = StringUtils.abbreviate(description, MAX_DESCRIPTION_LENGTH);
 		}
 
 		String insertSql = "INSERT INTO userlog_tbl (logtime, username, supervisor_name, action, description) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?)";

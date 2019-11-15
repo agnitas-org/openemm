@@ -74,18 +74,6 @@
         <div class="tile">
             <div class="tile-header">
                 <h2 class="headline"><bean:message key="Mailings"/></h2>
-
-                <emm:ShowByPermission token="mailing.change">
-                    <ul class="tile-header-actions">
-                        <li>
-                            <%--if there is a problem with mailingbase.do link, perhaps you will need to use this link
-                                <html:link page="/campaign.do?action=${ACTION_NEW_MALING}&mailingID=0&campaignID=${campaignForm.campaignID}"><span><bean:message key="mailing.New_Mailing"/></span></html:link>
-                            --%>
-                            <html:link styleClass="btn btn-regular btn-secondary" page="/mailingbase.do?action=${ACTION_NEW}&mailingID=0&campaignID=${campaignForm.campaignID}&isTemplate=false"><i class="icon icon-plus"></i><span class="text"><bean:message key="mailing.New_Mailing"/></span></html:link>
-
-                        </li>
-                    </ul>
-                </emm:ShowByPermission>
             </div>
             <div class="tile-content">
                 <logic:iterate collection="${campaignForm.columnwidthsList}" indexId="i" id="width">

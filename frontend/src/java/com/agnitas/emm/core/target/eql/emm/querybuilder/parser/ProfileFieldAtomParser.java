@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
+import java.util.Set;
+
 import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
@@ -17,8 +19,14 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class ProfileFieldAtomParser extends GenericValueExtractorEqlNodeParser<ProfileFieldAtomEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(ProfileFieldAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode) {
-        ruleNode.setId(node.getName().toLowerCase());
+    protected QueryBuilderGroupNode parse(ProfileFieldAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode, Set<String> profileFields) {
+        String field = node.getName().toLowerCase();
+
+        if (profileFields != null) {
+            profileFields.add(field);
+        }
+        ruleNode.setId(field);
+
         return groupNode;
     }
 }

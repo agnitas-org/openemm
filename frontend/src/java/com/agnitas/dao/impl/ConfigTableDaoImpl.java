@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.emm.core.commons.util.ConfigKey;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ConfigTableDao;
@@ -28,27 +30,24 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ConfigTableDaoImpl.class);
-	
-	private static final String SELECT_ALL_SIMPLIFIED_ORACLE = "SELECT TRIM(LEADING '.' FROM class || '.' || name) AS key_for_value, value AS value FROM config_tbl";
-	private static final String SELECT_ALL_SIMPLIFIED_MYSQL = "SELECT TRIM(LEADING '.' FROM CONCAT(class, '.', name)) AS key_for_value, value AS value FROM config_tbl";
-	
-	private static final String SELECT_VALUE = "SELECT value FROM config_tbl WHERE class = ? AND name = ?";
-	private static final String UPDATE_VALUE = "UPDATE config_tbl SET value = ? WHERE class = ? AND name = ?";
-	private static final String INSERT_VALUE = "INSERT INTO config_tbl (class, name, value) VALUES (?, ?, ?)";
-	private static final String DELETE_VALUE = "DELETE FROM config_tbl WHERE class = ? AND name = ?";
 
 	@Override
-	public Map<String, String> getAllEntries() throws SQLException {
-		List<Map<String, Object>> results = select(logger, isOracleDB() ? SELECT_ALL_SIMPLIFIED_ORACLE : SELECT_ALL_SIMPLIFIED_MYSQL);
-		Map<String, String> returnMap = new HashMap<>();
+	public Map<ConfigKey, String> getAllEntries() throws SQLException {
+		List<Map<String, Object>> results;
+		if (isOracleDB()) {
+			results = select(logger, "SELECT TRIM(LEADING '.' FROM class || '.' || name) AS key_for_value, hostname, value AS value FROM config_tbl");
+		} else {
+			results = select(logger, "SELECT TRIM(LEADING '.' FROM CONCAT(class, '.', name)) AS key_for_value, hostname, value AS value FROM config_tbl");
+		}
+		Map<ConfigKey, String> returnMap = new HashMap<>();
 		for (Map<String, Object> resultRow : results) {
-			returnMap.put((String) resultRow.get("key_for_value"), (String) resultRow.get("value"));
+			returnMap.put(new ConfigKey((String) resultRow.get("key_for_value"), 0, (String) resultRow.get("hostname")), (String) resultRow.get("value"));
 		}
 		
 		if (isOracleDB()) {
-			returnMap.put(ConfigValue.DB_Vendor.toString(), "Oracle");
+			returnMap.put(new ConfigKey(ConfigValue.DB_Vendor.toString(), 0, null), "Oracle");
 		} else {
-			returnMap.put(ConfigValue.DB_Vendor.toString(), "MySQL");
+			returnMap.put(new ConfigKey(ConfigValue.DB_Vendor.toString(), 0, null), "MySQL");
 		}
 		
 		return returnMap;
@@ -57,16 +56,36 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	@DaoUpdateReturnValueCheck
 	@Override
 	public void storeEntry(String classString, String name, String value)  {
-		List<Map<String, Object>> results = select(logger, SELECT_VALUE, classString, name);
-		if (results != null && results.size() > 0) {
-			update(logger, UPDATE_VALUE, value, classString, name);
+		storeEntry(classString, name, null, value);
+	}
+
+	@DaoUpdateReturnValueCheck
+	@Override
+	public void storeEntry(String classString, String name, String hostName, String value)  {
+		if (StringUtils.isBlank(hostName)) {
+			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", classString, name);
+			if (results != null && results.size() > 0) {
+				update(logger, "UPDATE config_tbl SET value = ? WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", value, classString, name);
+			} else {
+				update(logger, "INSERT INTO config_tbl (class, name, hostname, value) VALUES (?, ?, NULL, ?)", classString, name, value);
+			}
 		} else {
-			update(logger, INSERT_VALUE, classString, name, value);
+			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", classString, name, hostName);
+			if (results != null && results.size() > 0) {
+				update(logger, "UPDATE config_tbl SET value = ? WHERE class = ? AND name = ? AND hostname = ?", value, classString, name, hostName);
+			} else {
+				update(logger, "INSERT INTO config_tbl (class, name, hostname, value) VALUES (?, ?, ?, ?)", classString, name, hostName, value);
+			}
 		}
 	}
 
 	@Override
 	public void deleteEntry(String classString, String name) {
-		update(logger, DELETE_VALUE, classString, name);
+		update(logger, "DELETE FROM config_tbl WHERE class = ? AND name = ?", classString, name);
+	}
+
+	@Override
+	public int getJobqueueHostStatus(String hostName) {
+		return selectIntWithDefaultValue(logger, "SELECT MIN(value) FROM config_tbl WHERE class = ? AND name = ?", 0, "system", hostName + ".IsActive");
 	}
 }

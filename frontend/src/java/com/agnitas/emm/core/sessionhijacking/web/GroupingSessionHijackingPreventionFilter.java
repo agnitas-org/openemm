@@ -12,6 +12,7 @@ package com.agnitas.emm.core.sessionhijacking.web;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Objects;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -22,7 +23,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.log4j.Logger;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.emm.core.sessionhijacking.service.SessionHijackingPreventionService;
@@ -33,6 +36,7 @@ public final class GroupingSessionHijackingPreventionFilter implements Filter {
 	private static final transient Logger logger = Logger.getLogger(GroupingSessionHijackingPreventionFilter.class);
 	
 	private SessionHijackingPreventionService sessionHijackingPreventionService;
+	private ConfigService configService;
 
 	@Override
 	public final void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain filterChain) throws IOException, ServletException {
@@ -56,20 +60,34 @@ public final class GroupingSessionHijackingPreventionFilter implements Filter {
 			} else {
 				// IP address bound to session. Check if IP address of client is allowed for the session
 				if(!this.sessionHijackingPreventionService.isAddressAllowed(sessionIpAddress, clientIpAddress)) {
-					logger.warn(String.format("IP address of client is not allowed for current session - invalidating session %s (session: %s, client: %s, URL: %s, referer: %s)", 
-							httpSession.getId(),
-							sessionIpAddress,
-							clientIpAddress,
-							((HttpServletRequest)request).getRequestURL().toString(),
-							((HttpServletRequest)request).getHeader("referer")
-							));
-
-					// Invalidate old session	
-					httpSession.invalidate();
-
-					// Create new session with current IP address of client
-					final HttpSession newHttpSession = ((HttpServletRequest) request).getSession();
-					IpBinding.bindIpAddress(newHttpSession, clientIpAddress);
+					if(this.configService.isSessionHijackingPreventionEnabled()) {
+						// Hijacking prevention enabled? Kill the session.
+						
+						logger.warn(String.format("IP address of client is not allowed for current session - invalidating session %s (session: %s, client: %s, URL: %s, referer: %s)", 
+								httpSession.getId(),
+								sessionIpAddress,
+								clientIpAddress,
+								((HttpServletRequest)request).getRequestURL().toString(),
+								((HttpServletRequest)request).getHeader("referer")
+								));
+	
+						// Invalidate old session	
+						httpSession.invalidate();
+	
+						// Create new session with current IP address of client
+						final HttpSession newHttpSession = ((HttpServletRequest) request).getSession();
+						IpBinding.bindIpAddress(newHttpSession, clientIpAddress);
+					} else {
+						// Hijacking prevention disabled? Log warning, but keep session alive.
+						
+						logger.warn(String.format("IP address of client is not allowed for current session - session would be invalidated, if session hijacking prevention is enabled. %s (session: %s, client: %s, URL: %s, referer: %s)", 
+								httpSession.getId(),
+								sessionIpAddress,
+								clientIpAddress,
+								((HttpServletRequest)request).getRequestURL().toString(),
+								((HttpServletRequest)request).getHeader("referer")
+								));
+					}
 				} else {
 					if (logger.isInfoEnabled()) {
 						logger.info("IP addresses of client is valid for current session");
@@ -97,12 +115,18 @@ public final class GroupingSessionHijackingPreventionFilter implements Filter {
 		}
 
 		try {
-			this.sessionHijackingPreventionService = (SessionHijackingPreventionService) WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext()).getBean("SessionHijackingPreventionService");
+			final WebApplicationContext context = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
 			
-			if(this.sessionHijackingPreventionService == null) {
-				throw new NullPointerException("SessionHijackingPreventionService is set to null within init() method!");
-			}
-		} catch (Exception e) {
+			this.sessionHijackingPreventionService = Objects.requireNonNull(
+					context.getBean("SessionHijackingPreventionService", SessionHijackingPreventionService.class),
+					"SessionHijackingPreventionService is set to null within init() method!"
+					);
+			
+			this.configService = Objects.requireNonNull(
+					context.getBean("ConfigService", ConfigService.class),
+					"ConfigService is set to null within init() method!"
+					);
+		} catch (final Exception e) {
 			final String msg = String.format("Cannot initialize filter of class '%s'", this.getClass().getCanonicalName());
 			
 			logger.error(msg, e);

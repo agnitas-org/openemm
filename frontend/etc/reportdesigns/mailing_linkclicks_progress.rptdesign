@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -12,8 +12,6 @@ selectedTargets = null;
 if (params["selectedTargets"] != null) {
 	selectedTargets = params["selectedTargets"].value;
 }
-
-params["uid"] = String.valueOf(params["uid"].value).replace("<br>", "\r\n");
 
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
@@ -85,20 +83,6 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
                 <value type="constant">DE</value>
-            </simple-property-list>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
-        <scalar-parameter name="uid" id="424">
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
             </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
@@ -663,7 +647,7 @@ allTargets</expression>
       </Outline>
       <Visible>true</Visible>
       <HorizontalSpacing>5</HorizontalSpacing>
-      <VerticalSpacing>5</VerticalSpacing>
+      <VerticalSpacing>0</VerticalSpacing>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -714,6 +698,9 @@ allTargets</expression>
         <Visible>false</Visible>
       </Outline>
       <Visible>true</Visible>
+      <Cursor>
+        <Type>Auto</Type>
+      </Cursor>
       <ClientArea>
         <Outline>
           <Style>Solid</Style>
@@ -835,9 +822,11 @@ allTargets</expression>
   <Script>importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl );
 importPackage( Packages.org.eclipse.birt.chart.model.attribute );
 importPackage( Packages.org.eclipse.birt.chart.model.data.impl );
+importPackage( Packages.org.eclipse.birt.chart.model.type.impl );
 importPackage( Packages.org.eclipse.birt.report.model.api.util );
+importPackage( Packages.org.apache.commons.lang.math );
 importPackage( Packages.java.lang );
-
+importPackage( Packages.org.eclipse.birt.chart.model.attribute.impl);
 
 function tr(messageKey, reportContext) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(messageKey, reportContext.getLocale());
@@ -865,6 +854,9 @@ function translateColor(colorRgb) {
 ticks = 0;
 max = 0;
 
+total = [];
+maxValue = 0;
+
 function beforeDrawAxisTitle( axis, label, icsc ) {
 	var caption = label.getCaption();
 	if (caption.getValue() == &quot;xAxis&quot;) {
@@ -872,8 +864,6 @@ function beforeDrawAxisTitle( axis, label, icsc ) {
 		caption.setValue(tr(reportContext.getParameterValue(&quot;hourScale&quot;) == true ? &quot;Time&quot; : &quot;Date&quot;, reportContext));
 	}
 }
-
-
 
 /**
  * Called before generation of chart model to GeneratedChartState.
@@ -912,12 +902,12 @@ function beforeGeneration( chart, icsc ) {
  */
 function beforeDrawAxisLabel( axis, label, icsc ) {
 	chart = icsc.getChartInstance();	
-	yaxis = chart.getOrthogonalAxes( axis, true)[0]
+	yaxis = chart.getOrthogonalAxes( axis, true)[0];
 
 	// only xAxis have orthogonal axes,so if null it must be the yaxis!
 	if (yaxis == null) {
 		ticks++;
-		max = Integer.parseInt(label.getCaption().getValue());	
+		max = Integer.parseInt(label.getCaption().getValue());
 	}
 }
 
@@ -992,6 +982,61 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 	var color = getPaletteColor(classId, context);
 	lerh.getFill().set(color.getRed(), color.getGreen(), color.getBlue());
 }
+
+/**
+ * Called after populating the series dataset.
+ *
+ * @param series
+ *            Series
+ * @param dataSet
+ *            DataSet
+ * @param icsc
+ *            IChartScriptContext
+ */
+function afterDataSetFilled( series, dataSet, icsc )
+{
+	if (series.getClass() == BarSeriesImpl) {
+		list = dataSet.getValues();
+		if (total == null) {
+			total = [list.length];
+		}
+		for (var i = 0; i &lt; list.length; i++) {
+			if (!total[i]) {
+				total[i] = 0;
+			}
+			total[i] = total[i] + parseInt(list[i], 10);
+		}
+	}
+}
+
+/**
+ * Called before rendering the label for each datapoint.
+ * 
+ * @param dph
+ *            DataPointHints
+ * @param label
+ *            Label
+ * @param icsc
+ *            IChartScriptContext
+ */
+
+function beforeDrawDataPointLabel( dph, label, icsc )
+{
+	calculateMaxValue();
+
+	var value = NumberUtils.toInt(label.getCaption().getValue());
+	if (maxValue > 0 &amp;&amp; value / maxValue &lt; 0.04) {
+		label.setVisible(false);
+	}
+}
+
+function calculateMaxValue() {
+	if (maxValue == 0 &amp;&amp; total.length > 0) {
+		for (var i = 0; i &lt; total.length; i++) {
+			maxValue = Math.max(maxValue, total[i]);
+		}
+	}
+}
 </Script>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
@@ -1004,7 +1049,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
       <DataSetRepresentation>01/05/2000,02/01/2000,04/12/2000,03/12/2000,02/29/2000</DataSetRepresentation>
     </BaseSampleData>
     <OrthogonalSampleData>
-      <DataSetRepresentation>10.0,8.0,24.0</DataSetRepresentation>
+      <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
       <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
     </OrthogonalSampleData>
   </SampleData>
@@ -1238,8 +1283,11 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
               <Value></Value>
               <Font>
                 <Name>Arial</Name>
-                <Size>10.0</Size>
+                <Size>8.0</Size>
                 <Bold>true</Bold>
+                <Italic>false</Italic>
+                <Strikethrough>false</Strikethrough>
+                <Underline>false</Underline>
                 <Alignment/>
                 <Rotation>0.0</Rotation>
               </Font>
@@ -1287,9 +1335,10 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             <Components>
               <Type>Orthogonal_Value</Type>
             </Components>
-            <Separator>, </Separator>
+            <Prefix></Prefix>
+            <Separator>,</Separator>
           </DataPoint>
-          <LabelPosition>Outside</LabelPosition>
+          <LabelPosition>Inside</LabelPosition>
           <Stacked>true</Stacked>
           <Triggers>
             <Condition>onclick</Condition>
@@ -1320,10 +1369,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>language&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
@@ -1357,6 +1402,10 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <SeriesParameterName></SeriesParameterName>
                 </URLValues>
                 <PropertiesMap>
+                  <Key>MenuItem</Key>
+                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
+                </PropertiesMap>
+                <PropertiesMap>
                   <Key>Menu</Key>
                   <Value>zIndex:99999;backgroundColor:#FAFFF8;width:auto;height:auto;border:1px solid #333333;filter:progid:DXImageTransform.Microsoft.Shadow(Color:#333333,Direction=120,strength=5)</Value>
                 </PropertiesMap>
@@ -1368,10 +1417,16 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                   <Key>OnMouseOver</Key>
                   <Value>backgroundColor:#245DDB;color:#FFFFFF</Value>
                 </PropertiesMap>
-                <PropertiesMap>
-                  <Key>MenuItem</Key>
-                  <Value>color:Black;fontSize:10pt;paddingLeft:10px;paddingRight:10px;paddingTop:2px;paddingBottom:2px</Value>
-                </PropertiesMap>
+              </Value>
+            </Action>
+          </Triggers>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
               </Value>
             </Action>
           </Triggers>
@@ -1509,6 +1564,9 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
       </Origin>
       <PrimaryAxis>true</PrimaryAxis>
       <Percent>false</Percent>
+      <Cursor>
+        <Type>Auto</Type>
+      </Cursor>
     </AssociatedAxes>
     <SeriesDefinitions>
       <Query>
@@ -1879,6 +1937,9 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
     <PrimaryAxis>true</PrimaryAxis>
     <CategoryAxis>true</CategoryAxis>
     <Percent>false</Percent>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
   </Axes>
   <WallFill xsi:type="attribute:ColorDefinition">
     <Transparency>0</Transparency>
@@ -1922,12 +1983,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -2730,10 +2785,6 @@ function afterRendering(gcs, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -3329,12 +3380,6 @@ function afterRendering(gcs, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -4153,10 +4198,6 @@ function afterRendering(gcs, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -4752,12 +4793,6 @@ function afterRendering(gcs, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -5575,10 +5610,6 @@ function afterRendering(gcs, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -6174,12 +6205,6 @@ function afterRendering(gcs, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -6997,10 +7022,6 @@ function afterRendering(gcs, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -7596,12 +7617,6 @@ function afterRendering(gcs, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -8419,10 +8434,6 @@ function afterRendering(gcs, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -9018,12 +9029,6 @@ function afterRendering(gcs, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>

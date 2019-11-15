@@ -17,21 +17,41 @@ import java.util.Date;
  *
  */
 public class ServerCommand{
-    public enum Server{
+    public enum Server {
         EMM,
         RDIR,
-        OTHER
+        WS,
+        STATISTICS,
+        JOBQUEUE,
+        OTHER,
+        ALL
     }
 
-    public enum Command{
-        CLEAR_RDIR_CACHE
+    /**
+     * By now only commands are allowed that are also automatically served when the server is restarted
+     */
+    public enum Command {
+        CLEAR_RDIR_CACHE,
+        RELOAD_LICENSE_DATA
     }
 
-    private Server serverName;
+	private Server serverName;
     private Command command;
     private Date executionDate;
     private int adminID;
     private String description;
+    
+    public ServerCommand() {
+    	// empty constructor
+    }
+
+    public ServerCommand(Server serverName, Command command, Date executionDate, int adminID, String description) {
+		this.serverName = serverName;
+		this.command = command;
+		this.executionDate = executionDate;
+		this.adminID = adminID;
+		this.description = description;
+	}
 
     public Server getServerName() {
         return serverName;

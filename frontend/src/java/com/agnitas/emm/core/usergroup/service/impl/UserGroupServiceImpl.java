@@ -10,9 +10,13 @@
 
 package com.agnitas.emm.core.usergroup.service.impl;
 
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,6 +32,8 @@ import org.springframework.stereotype.Service;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.PermissionFilter;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
@@ -35,73 +41,72 @@ import com.agnitas.service.ExtendedConversionService;
 
 @Service("UserGroupService")
 public class UserGroupServiceImpl implements UserGroupService {
-
+    
     private static final Logger logger = Logger.getLogger(UserGroupServiceImpl.class);
 
-    public static final int ROOT_ADMIN_ID = 1;
-
-    public static final int ROOT_GROUP_ID = 1;
-
     private ComAdminGroupDao userGroupDao;
-
+    
     private ComCompanyService companyService;
-
+    
     private ExtendedConversionService conversionService;
-
-    public UserGroupServiceImpl(ComAdminGroupDao userGroupDao, ComCompanyService companyService, ExtendedConversionService conversionService) {
+    
+    private PermissionFilter permissionFilter;
+    
+    public UserGroupServiceImpl(ComAdminGroupDao userGroupDao, ComCompanyService companyService, ExtendedConversionService conversionService, PermissionFilter permissionFilter) {
         this.userGroupDao = userGroupDao;
         this.companyService = companyService;
         this.conversionService = conversionService;
+        this.permissionFilter = permissionFilter;
     }
-
+    
     @Override
     public PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber) {
         PaginatedListImpl<AdminGroup> userGroups = userGroupDao.getAdminGroupsByCompanyIdInclCreator(admin.getCompanyID(), admin.getAdminID(), sort, sortDirection, page, rownumber);
 		return conversionService.convertPaginatedList(userGroups, AdminGroup.class, UserGroupDto.class);
     }
-
+    
     @Override
     public UserGroupDto getUserGroup(ComAdmin admin, int userGroupId) {
-        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId);
+        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId, admin.getCompanyID());
         if(adminGroup == null) {
             return null;
         }
-
+        
         UserGroupDto userGroupDto = conversionService.convert(adminGroup, UserGroupDto.class);
         List<String> allowedPermissionsCategories = getUserGroupPermissionCategories(userGroupDto.getUserGroupId(), userGroupDto.getCompanyId(), admin);
         if(!allowedPermissionsCategories.isEmpty()) {
             Set<Permission> groupPermissions = adminGroup.getGroupPermissions();
             Set<Permission> companyPermissions = companyService.getCompanyPermissions(admin.getCompanyID());
-
+            
             Set<String> permissionGranted = Permission.getAllPermissionsAndCategories().keySet().stream()
                     .filter(permission -> allowedPermissionsCategories.contains(permission.getCategory()))
                     .filter(permission -> Permission.permissionAllowed(groupPermissions, companyPermissions, permission))
                     .map(Permission::toString)
                     .collect(Collectors.toSet());
-
+            
             userGroupDto.setGrantedPermissions(permissionGranted);
         }
-
-
+        
+        
         return userGroupDto;
     }
-
+    
     @Override
     public int saveUserGroup(ComAdmin admin, UserGroupDto userGroupDto) throws Exception {
         int userGroupId = userGroupDto.getUserGroupId();
-
+    
         Set<String> groupPermissions = userGroupDao.getGroupPermissionsTokens(userGroupId);
         Set<Permission> companyPermissions = companyService.getCompanyPermissions(userGroupDto.getCompanyId());
         List<String> premiumCategories = Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES);
-
+        
         List<String> allPermissionCategories = getUserGroupPermissionCategories(userGroupId, userGroupDto.getCompanyId(), admin);
         Set<String> allChangeablePermissions = getAllChangeablePermissions(allPermissionCategories, companyPermissions, admin);
-
+    
         Set<String> selectedPermissions = userGroupDto.getGrantedPermissions();
-
+        
         List<String> addedPermissions = ListUtils.removeAll(selectedPermissions, groupPermissions);
         List<String> removedPermissions = ListUtils.removeAll(groupPermissions, selectedPermissions);
-
+        
         for (String permissionToken: removedPermissions) {
             Permission permission = Permission.getPermissionByToken(permissionToken);
             if (!allChangeablePermissions.contains(permissionToken) && permission != null) {
@@ -134,21 +139,21 @@ public class UserGroupServiceImpl implements UserGroupService {
                 }
             }
         }
-
+        
         userGroupDto.setGrantedPermissions(selectedPermissions);
         AdminGroup adminGroup = conversionService.convert(userGroupDto, AdminGroup.class);
         return userGroupDao.saveAdminGroup(adminGroup);
     }
-
+    
     @Override
     public boolean isShortnameUnique(String newShortname, int userGroupId, int companyId) {
-        AdminGroup userGroup = userGroupDao.getAdminGroup(userGroupId);
+        AdminGroup userGroup = userGroupDao.getAdminGroup(userGroupId, companyId);
 		String oldShortname = userGroup != null ? userGroup.getShortname() : "";
-
+		
         return StringUtils.equals(oldShortname, newShortname)
                 || userGroupDao.adminGroupExists(companyId, newShortname) == 0;
     }
-
+    
     @Override
     public List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, ComAdmin admin) {
         List<String> permissionCategories = new ArrayList<>();
@@ -157,7 +162,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                     Arrays.stream(Permission.ORDERED_STANDARD_RIGHT_CATEGORIES),
                     Arrays.stream(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES))
                     .collect(Collectors.toList());
-
+    
             if (admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID) {
                 permissionCategories.add(Permission.CATEGORY_KEY_SYSTEM);
                 permissionCategories.add(Permission.CATEGORY_KEY_OTHERS);
@@ -166,7 +171,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
         return permissionCategories;
     }
-
+    
     @Override
     public boolean isUserGroupPermissionChangeable(ComAdmin admin, Permission permission, Set<Permission> companyPermissions) {
         String category = permission.getCategory();
@@ -180,28 +185,45 @@ public class UserGroupServiceImpl implements UserGroupService {
                     admin.getAdminID() == ROOT_ADMIN_ID;
         }
     }
-
+    
     @Override
     public List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId) {
         List<String> adminNames = new ArrayList<>();
         if(userGroupId > -1 && companyId > 0) {
             adminNames = userGroupDao.getAdminsOfGroup(companyId, userGroupId);
         }
-
+        
         return adminNames;
     }
-
+    
     @Override
     public boolean deleteUserGroup(int userGroupId, ComAdmin admin) {
         int companyId = admin.getCompanyID();
-        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId);
-        if(adminGroup == null || (adminGroup.getCompanyID() != companyId && admin.getAdminID() != ROOT_ADMIN_ID)) {
+        AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId, admin.getCompanyID());
+        if (adminGroup == null || (adminGroup.getCompanyID() != companyId && admin.getAdminID() != ROOT_ADMIN_ID)) {
             return false;
         }
-
+        
         return userGroupDao.delete(adminGroup.getCompanyID(), userGroupId) > 0;
     }
-
+    
+    @Override
+    public Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, int groupId, int groupCompanyId) {
+        PermissionsOverviewData.Builder builder = PermissionsOverviewData.builder();
+        
+        builder.setGroupPermissions(true);
+        builder.setAllowedForGroup(groupId == ROOT_GROUP_ID ||
+                groupCompanyId == admin.getCompanyID() ||
+                groupCompanyId == admin.getCompany().getCreatorID() ||
+                admin.getAdminID() == ROOT_ADMIN_ID);
+    
+        builder.setAdmin(admin);
+        builder.setCompanyPermissions(companyService.getCompanyPermissions(groupCompanyId));
+        builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
+    
+        return builder.build().getPermissionsCategories();
+    }
+    
     private Set<String> getAllChangeablePermissions(List<String> permissionCategories, Set<Permission> companyPermissions, ComAdmin admin) {
         return Permission.getAllPermissionsAndCategories().keySet().stream()
                 .filter(permission -> permissionCategories.contains(permission.getCategory()))
@@ -209,5 +231,5 @@ public class UserGroupServiceImpl implements UserGroupService {
                 .map(Permission::toString)
                 .collect(Collectors.toSet());
     }
-
+    
 }

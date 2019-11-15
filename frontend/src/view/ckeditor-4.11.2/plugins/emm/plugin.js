@@ -8,7 +8,8 @@ CKEDITOR.plugins.add('emm',
             var toDataMethod = dataProcessor.toDataFormat;
             dataProcessor.toHtml = function(data) {
                 data = data.replace(
-                    /=\s*('|")(\S*|\s*)\[(agn[^\s\]\/]+)(\s*(?:[^'"\]]|'.*?'|".*?")*)([\/]?)]\s*\1/gi,
+                    //regex for searching agntags in HTML file. Note that agn tags can be within html-tag's attribute
+                    /=\s*('|")(\S{0,1000}|\s{0,1000})\[(agn[^\s\]\/]+)(\s*(?:[^'"\]]|'.*?'|".*?")*)([\/]?)]\s*\1/gi,
                     function(whole, equote, beforeTag, name, attributes, close) {
                         if (attributes) {
                             attributes = attributes.replace(

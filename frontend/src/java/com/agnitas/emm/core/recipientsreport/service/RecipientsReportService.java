@@ -12,16 +12,20 @@ package com.agnitas.emm.core.recipientsreport.service;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface RecipientsReportService {
-    RecipientsReport createAndSaveImportReport(int adminId, int companyId, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError);
+    RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError);
 
-	RecipientsReport createAndSaveExportReport(int adminId, int companyId, String filename, Date reportDate, String content, boolean isError);
+    RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError);
 
     String getImportReportContent(int companyId, int reportId);
 
@@ -31,11 +35,20 @@ public interface RecipientsReportService {
 
     PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
-    RecipientsReport getReport(int companyId, int reportId);
+    PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(ComAdmin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
+    RecipientsReport getReport(@VelocityCheck int companyId, int reportId);
+    
+    RecipientsReport.RecipientReportType getReportType(@VelocityCheck int companyId, int reportId);
+    
+    @Deprecated
 	void writeContentOfExportReportToStream(int companyId, int reportId, OutputStream outputStream) throws Exception;
-	
-	void createSupplementalReportData(int adminId, int companyId, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception;
+    
+    DownloadRecipientReport getExportDownloadFileData(ComAdmin admin, int reportId) throws UnsupportedEncodingException;
+    
+    DownloadRecipientReport getImportDownloadFileData(ComAdmin admin, int reportId) throws Exception;
+    
+    void createSupplementalReportData(ComAdmin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception;
 
 	byte[] getImportReportFileData(int companyId, int reportId) throws Exception;
 }

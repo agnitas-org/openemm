@@ -27,14 +27,12 @@ import org.agnitas.web.StrutsActionBase;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.reporting.birt.service.ComMailingBIRTStatService;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
 import com.agnitas.reporting.birt.util.URLUtils;
 
 public abstract class ComMailingBIRTStatActionBase extends StrutsActionBase {
-	protected String publicKeyFilename;
-	protected final String DATE_PATTERN = "yyyyMMdd"; 
+	protected final String DATE_PATTERN = "yyyyMMdd";
 	protected ComMailingBIRTStatService birtservice;
 	protected ConfigService configService;
 	
@@ -51,8 +49,8 @@ public abstract class ComMailingBIRTStatActionBase extends StrutsActionBase {
 		
 	protected void setCommonRequestAttributes(HttpServletRequest request, @VelocityCheck int companyID, int mailingID,List<SimpleKeyValueBean> allTargets, List<SimpleKeyValueBean> selectedTargets, boolean includeAdminAndTestMails) throws UnsupportedEncodingException, Exception, IOException, MalformedURLException {
 		request.setAttribute("targets",allTargets );
-		request.setAttribute("selected",selectedTargets );	
-		request.setAttribute("emmsession",request.getSession(false).getId()); // ;jsessionid= must be provided in subreports 
+		request.setAttribute("selected",selectedTargets );
+		request.setAttribute("emmsession",request.getSession(false).getId()); // ;jsessionid= must be provided in subreports
 		request.setAttribute("companyID", companyID);
 		request.setAttribute("mailingID",mailingID);
 		
@@ -61,7 +59,7 @@ public abstract class ComMailingBIRTStatActionBase extends StrutsActionBase {
 			request.setAttribute("language", admin.getAdminLang());
 			request.setAttribute("useMailtracking", birtservice.useMailtracking(companyID));
 			request.setAttribute("useDeepTracking", birtservice.deepTracking(admin.getAdminID(), companyID));
-		}	
+		}
 		
 		if( selectedTargets != null && ! selectedTargets.isEmpty()) {
 			StringBuffer buffer = new StringBuffer();
@@ -70,18 +68,13 @@ public abstract class ComMailingBIRTStatActionBase extends StrutsActionBase {
 				buffer.append(",");
 			}
 			
-			String selectedtargetIDs  = buffer.substring(0, buffer.lastIndexOf(",") );			
+			String selectedtargetIDs  = buffer.substring(0, buffer.lastIndexOf(",") );
 			request.setAttribute("selectedtargetIDs", selectedtargetIDs );
 		}
 		
-		request.setAttribute("uid", URLUtils.encodeURL( RSACryptUtil.encrypt(UIDUtils.createUID(AgnUtils.getAdmin(request)),RSACryptUtil.getPublicKey(publicKeyFilename))));
+		request.setAttribute("sec", URLUtils.encodeURL(BirtInterceptingFilter.createSecurityToken(configService, AgnUtils.getAdmin(request).getCompanyID())));
 		request.setAttribute("targetbaseurl", URLUtils.encodeURL(configService.getValue(ConfigValue.BirtDrilldownUrl)));
 		request.setAttribute("includeAdminAndTestMails", includeAdminAndTestMails);
-	}
-	
-	// spring stuff
-	public void setPublicKeyFilename(String publicKeyFilename) {
-		this.publicKeyFilename = publicKeyFilename;
 	}
 
 	public void setBirtservice(ComMailingBIRTStatService birtservice) {

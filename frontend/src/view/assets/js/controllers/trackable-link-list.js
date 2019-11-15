@@ -79,7 +79,7 @@ AGN.Lib.Controller.new('trackable-link-list', function() {
       // already exists -> update values
       if ( existentExtension.length != 0 ) {
 
-        cTemplate = _.template(AGN.Opt.Templates['link-table-row'], {
+        cTemplate = AGN.Lib.Template.text('link-table-row', {
           count: existentExtension.data('link-id'),
           linkName: name,
           linkValue: value
@@ -89,7 +89,7 @@ AGN.Lib.Controller.new('trackable-link-list', function() {
 
       } else {
 
-        cTemplate = _.template(AGN.Opt.Templates['link-table-row'], {
+        cTemplate = AGN.Lib.Template.text('link-table-row', {
           count: count,
           linkName: name,
           linkValue: value
@@ -119,7 +119,7 @@ AGN.Lib.Controller.new('trackable-link-list', function() {
       count = $('#linkPropertyTable').find('tbody tr').length + 1 ;
     }
 
-    cTemplate = _.template(AGN.Opt.Templates['link-table-row'], {
+    cTemplate = AGN.Lib.Template.text('link-table-row', {
       count: count,
       linkName: '',
       linkValue: ''

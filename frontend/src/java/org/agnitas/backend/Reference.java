@@ -37,11 +37,11 @@ public class Reference {
 	private int		idIndex;
 
 	public Reference () {
-		setName (null);
+		name (null);
 		table = null;
 		referenceExpression = null;
 		keyColumn = null;
-		backReference = null;
+		backReference (null);
 		joinCondition = null;
 		orderBy = null;
 		isVoucher = false;
@@ -67,11 +67,11 @@ public class Reference {
 			  String nBackReference, String nJoinCondition,
 			  String nOrderBy, boolean nIsVoucher) {
 		this ();
-		setName (nName);
+		name (nName);
 		table = nTable;
 		referenceExpression = nReferenceExpression;
 		keyColumn = nKeyColumn;
-		backReference = nBackReference;
+		backReference (nBackReference);
 		joinCondition = nJoinCondition;
 		orderBy = nOrderBy;
 		isVoucher = nIsVoucher;
@@ -89,27 +89,30 @@ public class Reference {
 		Matcher	m = parse.matcher (s);
 		
 		if (m.matches ()) {
-			setName (m.group (1));
+			name (m.group (1));
 			table = m.group (2);
 			referenceExpression = m.group (3);
 			keyColumn = m.group (4);
-			backReference = m.group (6);
+			backReference (m.group (6));
 			joinCondition = m.group (8);
 			orderBy = m.group (10);
 		}
 	}
 	
-	public void setName (String nName) {
-		name = nName != null ?  nName.toLowerCase () : null;
-	}
 	public String name () {
 		return name;
+	}
+	public void name (String nName) {
+		name = nName != null ?  nName.toLowerCase () : null;
 	}
 	public String table () {
 		return table;
 	}
 	public String backReference () {
 		return backReference;
+	}
+	public void backReference (String nBackReference) {
+		backReference = nBackReference != null ? nBackReference.toLowerCase () : null;
 	}
 
 	/**

@@ -35,6 +35,7 @@ public class BindingEntryImpl implements BindingEntry {
 	protected int mailinglistID;
 	protected int customerID;
 	protected int exitMailingID;
+	protected int entryMailingID;
 	protected String userType;
 	protected int userStatus;
 	protected String userRemark;
@@ -66,13 +67,13 @@ public class BindingEntryImpl implements BindingEntry {
 	}
 
 	@Override
-	public void setMailinglistID(int ml) {
-		mailinglistID = ml;
+	public void setMailinglistID(int mailinglistID) {
+		this.mailinglistID = mailinglistID;
 	}
 
 	@Override
-	public void setExitMailingID(int mi) {
-		exitMailingID = mi;
+	public void setExitMailingID(int mailingID) {
+		exitMailingID = mailingID;
 	}
 
 	@Override
@@ -81,8 +82,18 @@ public class BindingEntryImpl implements BindingEntry {
 	}
 
 	@Override
-	public void setCustomerID(int ci) {
-		customerID = ci;
+	public void setEntryMailingID(int mailingID) {
+		entryMailingID = mailingID;
+	}
+
+	@Override
+	public int getEntryMailingID() {
+		return entryMailingID;
+	}
+
+	@Override
+	public void setCustomerID(int customerID) {
+		this.customerID = customerID;
 	}
 
 	@Override

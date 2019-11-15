@@ -27,7 +27,7 @@ public class UnsupportedOperatorForDataTypeException extends FaultyCodeException
 	/**
 	 * Instantiates a new unsupported operator for data type exception.
 	 *
-	 * @param code code fragment that contains the error
+	 * @param location location of code where the error occurred
 	 * @param operator applied operator
 	 * @param type used data type
 	 */

@@ -12,7 +12,6 @@ package com.agnitas.beans.impl;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -69,7 +68,7 @@ public class ComAdminImpl implements ComAdmin {
 
     /**
      * User with supervisor access.
-     * This data will not be stored in db, but is used as a session marker for supervisor in action 
+     * This data will not be stored in db, but is used as a session marker for supervisor in action
      */
     protected Supervisor supervisor;
 
@@ -100,7 +99,11 @@ public class ComAdminImpl implements ComAdmin {
 
 	@Override
 	public void setUsername(String username) {
-		this.username = username;
+		if (username != null) {
+			this.username = username.trim();
+		} else {
+			this.username = username;
+		}
 	}
 
 	@Override
@@ -175,7 +178,11 @@ public class ComAdminImpl implements ComAdmin {
 
     @Override
 	public String getUsername() {
-		return username;
+    	if (username != null) {
+    		return username.trim();
+    	} else {
+    		return username;
+    	}
 	}
 
 	@Override
@@ -294,12 +301,20 @@ public class ComAdminImpl implements ComAdmin {
 
     @Override
     public String getEmail() {
-        return email;
+    	if (email != null) {
+    		return email.trim();
+    	} else {
+    		return email;
+    	}
     }
 
     @Override
     public void setEmail(String email) {
-        this.email = email;
+    	if (email != null) {
+    		this.email = email.trim();
+    	} else {
+    		this.email = email;
+    	}
     }
 
 	@Override
@@ -420,6 +435,7 @@ public class ComAdminImpl implements ComAdmin {
 		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, getLocale());
 		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy"));
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
+		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;
 	}
 	
@@ -428,6 +444,7 @@ public class ComAdminImpl implements ComAdmin {
 		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, getLocale());
 		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy"));
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
+		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;
 	}
 
@@ -436,7 +453,7 @@ public class ComAdminImpl implements ComAdmin {
 		String dateFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.MEDIUM, IsoChronology.INSTANCE, getLocale());
 		dateFormatPattern = dateFormatPattern.replaceFirst("y+", "yyyy");
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern, getLocale());
-		dateTimeFormatter.withZone(ZoneId.of(getAdminTimezone()));
+		dateTimeFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
 		return dateTimeFormatter;
 	}
 
@@ -445,7 +462,7 @@ public class ComAdminImpl implements ComAdmin {
 		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, getLocale());
 		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy");
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatPattern, getLocale());
-		dateTimeFormatter.withZone(ZoneId.of(getAdminTimezone()));
+		dateTimeFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
 		return dateTimeFormatter;
 	}
 	
@@ -454,6 +471,7 @@ public class ComAdminImpl implements ComAdmin {
 		SimpleDateFormat dateFormat = (SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale());
 		dateFormat.applyPattern(dateFormat.toPattern().replaceFirst("y+", "yyyy"));
 		dateFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
+		dateFormat.setLenient(false);
 		return dateFormat;
 	}
 
@@ -461,7 +479,7 @@ public class ComAdminImpl implements ComAdmin {
 	public DateTimeFormatter getDateFormatter() {
 		String dateFormatPattern = ((SimpleDateFormat) SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, getLocale())).toPattern().replaceFirst("y+", "yyyy");
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(dateFormatPattern, getLocale());
-		dateFormatter.withZone(ZoneId.of(getAdminTimezone()));
+		dateFormatter.withZone(TimeZone.getTimeZone(getAdminTimezone()).toZoneId());
 		return dateFormatter;
 	}
 	
@@ -469,6 +487,7 @@ public class ComAdminImpl implements ComAdmin {
 	public SimpleDateFormat getTimeFormat() {
 		SimpleDateFormat timeFormat = (SimpleDateFormat) SimpleDateFormat.getTimeInstance(SimpleDateFormat.SHORT, getLocale());
 		timeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
+		timeFormat.setLenient(false);
 		return timeFormat;
 	}
 

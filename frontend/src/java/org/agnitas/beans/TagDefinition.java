@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.agnitas.util.AgnTagUtils;
 import org.apache.commons.lang.StringUtils;
 
 public class TagDefinition {
@@ -127,27 +128,12 @@ public class TagDefinition {
 		if (mandatoryParameters == null) {
 			mandatoryParameters = new ArrayList<>();
 		}
-		
-		if (mandatoryParameters.size() > 0) {
-			return mandatoryParameters;
-		} else {
-			// Add missing mandatory parameter names, since "selectvalue" in db table "tag_tbl" was cleared
-			if ("agnDB".equals(name)) {
-				mandatoryParameters.add("column");	
-			} else if ("agnTITLE".equals(name)) {
-				mandatoryParameters.add("type");	
-			} else if ("agnTITLEFULL".equals(name)) {
-				mandatoryParameters.add("type");
-			} else if ("agnTITLEFIRST".equals(name)) {
-				mandatoryParameters.add("type");
-			} else if ("agnIMGLINK".equals(name)) {
-				mandatoryParameters.add("name");	
-			} else if ("agnIMAGE".equals(name)) {
-				mandatoryParameters.add("name");	
-			}
 
-			return mandatoryParameters;
+		if(mandatoryParameters.isEmpty()) {
+			mandatoryParameters.addAll(AgnTagUtils.getMandatoryParametersForTag(name));
 		}
+
+		return mandatoryParameters;
 	}
 
 	/**

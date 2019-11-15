@@ -26,7 +26,9 @@ import org.agnitas.service.UserActivityLogService;
 import org.apache.log4j.Logger;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
+import com.agnitas.emm.springws.subscriptionrejection.service.SubscriptionRejectionService;
+
+//Removed annotation to get noticed about deprecated base class @SuppressWarnings("deprecation")
 public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	/** The logger. */
@@ -39,6 +41,9 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 	private ObjectFactory objectFactory;
 	@Resource
 	private UserActivityLogService userActivityLogService;
+	
+	@Resource
+	private SubscriptionRejectionService subscriptionRejectionService;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
@@ -46,16 +51,25 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 			logger.info( "Entered AddSubscriberEndpoint.invokeInternal()");
 		}
 			
-		AddSubscriberRequest request = (AddSubscriberRequest) arg0;
-		AddSubscriberResponse response = objectFactory.createAddSubscriberResponse();
+		final AddSubscriberRequest request = (AddSubscriberRequest) arg0;
+		final AddSubscriberResponse response = objectFactory.createAddSubscriberResponse();
+		final RecipientModel model = parseModel(request);
+		final int companyID = Utils.getUserCompany();
 		
-		RecipientModel model = parseModel(request);
+		if(this.subscriptionRejectionService != null) {
+			this.subscriptionRejectionService.checkSubscriptionData(companyID, model);
+		} else {
+			if(logger.isDebugEnabled()) {
+				logger.debug("No subscription rejection service set");
+			}
+		}
+			
 		
 		if( logger.isInfoEnabled()) {
 			logger.info( "Calling recipient service layer");
 		}
+
 		String username = Utils.getUserName();
-		int companyID = Utils.getUserCompany();
 		List<UserAction> userActions = new ArrayList<>();
 		response.setCustomerID(recipientService.addSubscriber(model, username, companyID, userActions));
 		Utils.writeLog(userActivityLogService, userActions);

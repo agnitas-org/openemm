@@ -24,7 +24,14 @@ public class RecipientDetailRow {
 	private int maxOut;
 	private int maxBlacklisted;
 	private int maxDoubleOptIn;
-
+	
+	public RecipientDetailRow() {
+	}
+	
+	public RecipientDetailRow(String mydate) {
+		this.mydate = mydate;
+	}
+	
 	public String getMydate() {
 		return mydate;
 	}

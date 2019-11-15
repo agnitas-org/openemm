@@ -8,11 +8,11 @@ AGN.Lib.Controller.new('messenger-settings', function() {
     var editor = $content.data('emojioneArea');
 
     if (editor) {
-      editor.on('change paste keydown keyup', _.throttle(function() {
+      editor.on('change input', _.throttle(function() {
         updateContentLengthIndicator(this.getText().length);
       }, 100));
     } else {
-      $content.on('change paste keydown keyup', _.throttle(function() {
+      $content.on('change input', _.throttle(function() {
         updateContentLengthIndicator();
       }, 100));
     }

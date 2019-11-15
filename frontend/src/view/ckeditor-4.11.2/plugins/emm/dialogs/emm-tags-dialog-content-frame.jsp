@@ -23,7 +23,8 @@
 <script type="text/javascript">
 
     function getResultValue() {
-        return buildTagParameters(document.getElementById('tagsel').value);
+        var sel = document.getElementById('tagsel');
+        return buildTagParameters(sel.value);
     }
 
     function hideAll() {
@@ -34,27 +35,31 @@
         document.getElementById('paramlabel1').style.visibility = 'hidden';
         document.getElementById('paramlabel2').style.visibility = 'hidden';
         document.getElementById('paramlabel3').style.visibility = 'hidden';
-
-        document.getElementById('columns').style.visibility = 'hidden';
-        document.getElementById('types').style.visibility = 'hidden';
     }
 
-    function updateTagParameters(input) {
+    function updateTagParameters(select) {
         hideAll();
+        var input = select.value;
+        console.log(select.options + '-- options');
+        console.log(select.selectedIndex + '-- index');
+        var text = select.options[select.selectedIndex].text;
         var parameters = getTagParameters(input);
         if (parameters) {
             for (i = 0; i < parameters.length; ++i) {
                 var parname = 'param' + (i + 1);
                 var parlabel = 'paramlabel' + (i + 1);
                 if (parameters[i] == 'column') {
-                    document.getElementById('columns').style.visibility = 'visible';
+                    document.getElementById(parname).innerHTML = document.getElementById('colsel').outerHTML;
+                } else if (parameters[i] == 'type') {
+                    document.getElementById(parname).innerHTML = document.getElementById('typesel').outerHTML;
+                } else if (parameters[i] == 'base' && text == 'agnDATE') {
+                        document.getElementById(parname).innerHTML = document.getElementById('basesel').outerHTML;
                 } else {
-                    if (parameters[i] == 'type') {
-                        document.getElementById('types').style.visibility = 'visible';
-                    } else {
-                        document.getElementById(parname).style.visibility = 'visible';
-                    }
+                    document.getElementById(parname).innerHTML =
+                        ' <input type="text" id="par' + (i+1) + '" name="par' + (i+1) + '" size="23">';
                 }
+
+                document.getElementById(parname).style.visibility = 'visible';
                 document.getElementById(parlabel).firstChild.data = parameters[i] + ":";
                 document.getElementById(parlabel).style.visibility = 'visible';
             }
@@ -74,6 +79,10 @@
                 if (parameters[i] == 'type') {
                     parname = 'typesel';
                 }
+                if (parameters[i] == 'base') {
+                    parname = 'basesel';
+                }
+
                 var parvalue = document.getElementById(parname).value;
                 params = params + " " + parameters[i] + '="' + parvalue + '"';
             }
@@ -118,14 +127,13 @@
 %>
 
 <body>
-
 <table cellSpacing="3" cellPadding="2" width="100%" border="0">
     <tr>
         <td noWrap><label for="tagsel"><bean:message key="htmled.tag"/>:</label>
         </td>
         <td width="100%">
             <select name="tagsel" id="tagsel"
-                    onchange="updateTagParameters(document.getElementById('tagsel').value)" size="1" style="width:180px">
+                    onchange="updateTagParameters(document.getElementById('tagsel'))" size="1" style="width:180px">
                 <c:forEach var="tag" items="${tags}">
                     <c:forEach var="tagM" items="${tag}">
                         <option value='<c:out value="${tagM.value}"/>'>${tagM.key}</option>
@@ -137,42 +145,21 @@
     <tr>
         <td vAlign="top" nowrap>
             <div id="paramlabel1" style="position:relative; top:0; left:0; visibility:hidden">
-                Parameter 1:
             </div>
         </td>
         <td vAlign="top">
-            <div id="cntnr" style="position:relative; top:0; left:0">
-                <div id="param1" style="position:absolute; top:0; left:0; visibility:hidden">
-                    <input type="text" id="par1" name="par1" size="25">
+                <div id="param1" style="position:relative; top:0; left:0; visibility:hidden">
                 </div>
-                <div id="columns" style="position:absolute; top:0; left:0; visibility:hidden">
-                    <select id="colsel" class="tags_dialog_select" name="colsel" size="1" style="width:180px">
-                        <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>">
-                            <option value='<%= pageContext.getAttribute("_colsel_column_name") %>'><%= pageContext.getAttribute("_colsel_shortname") %>
-                            </option>
-                        </emm:ShowColumnInfo>
-                    </select>
-                </div>
-                <div id="types" style="position:absolute; top:0; left:0; visibility:hidden">
-                    <select id="typesel" class="tags_dialog_select" name="typesel" size="1" style="width:180px">
-                        <c:forEach var="title" items="${titles}">
-                            <option value="${title.id}">${title.description}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-            </div>
         </td>
     </tr>
 
     <tr>
         <td vAlign="top" nowrap>
             <div id="paramlabel2" style="position:relative; top:0; left:0; visibility:hidden">
-                Parameter 2:
             </div>
         </td>
         <td vAlign="top">
             <div id="param2" style="position:relative; top:0; left:0; visibility:hidden">
-                <input type="text" id="par2" name="par2" size="25">
             </div>
         </td>
     </tr>
@@ -180,12 +167,10 @@
     <tr>
         <td vAlign="top" nowrap>
             <div id="paramlabel3" style="position:relative; top:0; left:0; visibility:hidden">
-                Parameter 3:
             </div>
         </td>
         <td vAlign="top">
             <div id="param3" style="position:relative; top:0; left:0; visibility:hidden">
-                <input type="text" id="par3" name="par3" size="25">
             </div>
         </td>
     </tr>
@@ -193,12 +178,10 @@
     <tr>
         <td vAlign="top" nowrap>
             <div id="paramlabel4" style="position:relative; top:0; left:0; visibility:hidden">
-                Parameter 4:
             </div>
         </td>
         <td vAlign="top">
             <div id="param4" style="position:relative; top:0; left:0; visibility:hidden">
-                <input type="text" id="par4" name="par4" size="25">
             </div>
         </td>
     </tr>
@@ -206,8 +189,33 @@
 </table>
 
 <script type="text/javascript">
-    updateTagParameters(document.getElementById('tagsel').value);
+    updateTagParameters(document.getElementById('tagsel'));
 </script>
 
+
+
+<div hidden="true">
+    <select id="colsel" class="tags_dialog_select" name="colsel" size="1" style="width:180px">
+        <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>">
+            <option value=<%= pageContext.getAttribute("_colsel_column_name") %>><%= pageContext.getAttribute("_colsel_shortname") %>
+            </option>
+        </emm:ShowColumnInfo>
+    </select>
+</div>
+
+<div hidden="true">
+    <select id="typesel" class="tags_dialog_select" name="typesel" size="1" style="width:180px">
+        <c:forEach var="title" items="${titles}">
+            <option value="${title.id}">${title.description}</option>
+        </c:forEach>
+    </select>
+</div>
+
+<div hidden="true">
+    <select id="basesel" class="tags_dialog_select" name="typesel" size="1" style="width:180px">
+            <option value="now">Current time</option>
+            <option value="senddate">Send date</option>
+    </select>
+</div>
 </body>
 </html>

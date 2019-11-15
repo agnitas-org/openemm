@@ -236,7 +236,7 @@
         </div>
         <div class="tile-content tile-content-forms" id="recipient-export-tile-mailingslists">
             <div class="form-group">
-                <div class="col-sm-4">
+ 	          <div class="col-sm-4">
                     <label class="control-label">
                         <bean:message key="export.mailinglist.status"/>
                     </label>

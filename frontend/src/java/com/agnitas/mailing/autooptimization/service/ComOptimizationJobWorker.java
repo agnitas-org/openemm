@@ -28,7 +28,7 @@ public class ComOptimizationJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationJobWorker.class);
 		
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		// Invoke the secured method to finish optimizations. This method will terminate, if another thread previously started the process and has not terminated yet.
 //		((ComOptimizationService) applicationContext.getBean("optimizationService")).finishOptimizationsSingle();
 
@@ -43,5 +43,7 @@ public class ComOptimizationJobWorker extends JobWorker {
         	excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
         }
 		serviceLookupFactory.getBeanOptimizationService().finishOptimizationsSingle(includedCompanyIds, excludedCompanyIds);
+		
+		return null;
 	}
 }

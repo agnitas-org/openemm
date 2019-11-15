@@ -11,14 +11,10 @@
 package com.agnitas.ecs.web;
 
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.ecs.service.EcsService;
-import com.agnitas.ecs.web.forms.EcsForm;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.service.GridServiceWrapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -29,6 +25,12 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.ecs.service.EcsService;
+import com.agnitas.ecs.web.forms.EcsForm;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.service.GridServiceWrapper;
 
 public class EcsAction extends BaseDispatchAction {
     private EcsService ecsService;
@@ -69,7 +71,7 @@ public class EcsAction extends BaseDispatchAction {
 
         form.setCompanyId(companyId);
         form.setRangeColors(ecsService.getClickStatColors(companyId));
-        form.setStatServerUrl(configService.getValue(ConfigValue.SystemUrl));
+        form.setStatServerUrl(configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
 
         form.setShortname(mailingBaseService.getMailingName(mailingId, companyId));
 

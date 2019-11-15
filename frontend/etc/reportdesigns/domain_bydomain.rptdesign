@@ -1719,7 +1719,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
       <Definition>row[&quot;domain_index&quot;]</Definition>
     </SortKey>
   </SeriesDefinitions>
-  <Coverage>0.5</Coverage>
+  <Coverage>0.7</Coverage>
 </model:ChartWithoutAxes>
 ]]></xml-property>
                                     <property name="outputFormat">SVG</property>

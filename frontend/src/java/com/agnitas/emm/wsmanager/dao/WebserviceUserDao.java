@@ -87,5 +87,7 @@ public interface WebserviceUserDao {
 
 	int getNumberOfWebserviceUsers();
 
+	void saveGrantedPermissionsAndGroups(WebserviceUser user);
+
 
 }

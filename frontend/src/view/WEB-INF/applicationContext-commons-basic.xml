@@ -32,6 +32,13 @@
 <!-- ============================================================================================================================== Auto Optimization -->
 	<bean id="Optimization" class="com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl" scope="prototype" />
 
+<!-- ============================================================================================================================== BeanShell -->
+	<bean id="BeanShellInterpreterFactory" class="org.agnitas.util.beanshell.BeanShellInterpreterFactory">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="BeanShellCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.beanshell.DefaultBeanShellCodeGeneratorCallbackFactory" />
+
 <!-- ============================================================================================================================== Binding Entry -->
 	<bean id="BindingEntry" class="org.agnitas.beans.impl.BindingEntryImpl" scope="prototype">
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
@@ -423,6 +430,15 @@
 		</constructor-arg>
 	</bean>
 	
+	<bean id="cdnCache" class="org.agnitas.util.TimeoutLRUMap">
+		<constructor-arg index="0">
+			<value>${cdn.maxCache}</value>
+		</constructor-arg>
+		<constructor-arg index="1">
+			<value>${cdn.maxCacheTimeMillis}</value>
+		</constructor-arg>
+	</bean>
+	
 	<bean id="formImageCache" class="org.agnitas.util.TimeoutLRUMap">
 		<constructor-arg index="0">
 			<value>${hostedImage.maxCache}</value>
@@ -565,11 +581,6 @@
 		<property name="workerExecutorService" ref="WorkerExecutorService"/>
 	</bean>
 
-	<!-- public key for encryption, especially for birt report uid-parameter -->
-	<bean id="publickeyfile" class="java.lang.String">
-		<constructor-arg value="${birt.publickeyfile}" />
-	</bean>
-
 	<bean id="onlinehelp.languages" class="java.lang.String">
 		<constructor-arg value="${onlinehelp.languages}" />
 	</bean>
@@ -632,7 +643,9 @@ Euer freundlicher EMM
 		<constructor-arg ref="EqlParser" />
 		<constructor-arg ref="EqlCodeGenerator" />
 		<constructor-arg ref="SqlCodeGeneratorCallbackFactory" />
+		<constructor-arg ref="BeanShellCodeGeneratorCallbackFactory" />
 		<constructor-arg ref="EqlToTargetRepresentationConverterFactory" />
+		
 		
 		<property name="targetRepresentationToEqlConverter" ref="EqlTargetRepresentationToEqlConverter" />
 		<property name="mailingIdValidator" ref="EqlMailingIdValidator" />
@@ -659,18 +672,19 @@ Euer freundlicher EMM
 
 	<bean id="EqlToQueryBuilderConverter" class="com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter">
 		<property name="configuration" ref="EqlToQueryBuilderParserConfiguration"/>
+		<property name="emmProfileFieldResolverFactory" ref="ProfileFieldResolverFactory"/>
 	</bean>
 	
 	<bean id="QueryBuilderToEqlConverter" class="com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter">
 		<property name="queryBuilderConfiguration" ref="QueryBuilderConfiguration" />
 	</bean>
-
+	
 	
 	<!--  =================================================================================
 			 Trackable links
 		  ================================================================================= -->
 	<bean id="TrackableLink" class="com.agnitas.beans.impl.ComTrackableLinkImpl" scope="prototype" />
-
+	
 	
 	<!--  =================================================================================
 			 Hashtag-related stuff
@@ -719,7 +733,9 @@ Euer freundlicher EMM
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 	
-	
+	<bean id="Base64urlProfileFieldEncodingHashTag" class="com.agnitas.emm.core.hashtag.tags.Base64urlProfileFieldEncodingHashTag">
+		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
+	</bean>
 
 	<bean id="oracleFulltextSearchReservedLiterals" class="com.agnitas.emm.core.commons.database.fulltext.impl.OracleFulltextSearchReservedLiteralsConfig">
 		<constructor-arg>

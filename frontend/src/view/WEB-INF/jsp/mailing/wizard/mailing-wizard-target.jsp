@@ -80,6 +80,15 @@
                              </div>
                             <c:if test="${workflowId ne null or workflowId gt 0}">
                                 <div class="input-group-btn">
+                                    <%--todo: GWUA-4271: change after test sucessfully--%>
+                                    <%--<c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">--%>
+                                        <%--<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>--%>
+                                    <%--</c:url>--%>
+                                    <%--<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">--%>
+                                        <%--<i class="icon icon-linkage-campaignmanager"></i>--%>
+                                        <%--<strong><bean:message key="campaign.manager.icon"/></strong>--%>
+                                    <%--</a>--%>
+
                                     <agn:agnLink page="/workflow.do?method=view&workflowId=${workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                         <i class="icon icon-linkage-campaignmanager"></i>
                                         <strong><bean:message key="campaign.manager.icon"/></strong>

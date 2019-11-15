@@ -153,6 +153,10 @@ public interface ComTargetService {
 	 * @return a list of valid {@link com.agnitas.beans.ListSplit} entities sorted by parts count (primarily) and part number (secondarily).
      */
 	List<ListSplit> getListSplits(@VelocityCheck int companyId);
+    
+    int getTargetListSplitId(String splitBase, String splitPart, boolean isWmSplit);
+    
+	String getTargetSplitName(int splitId);
 
 	/**
 	 * Lists all target groups of the given company ID that reference the given profile field. 
@@ -186,4 +190,19 @@ public interface ComTargetService {
 	List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, final int companyID);
 
 	String toViewUri(int targetId);
+	
+	/**
+	 * Creates a matcher that checks, if a recipient matches a given target group.
+	 * 
+	 * @param customerID ID of customer
+	 * @param companyID company ID of customer
+	 * 
+	 * @return matcher
+	 * @throws Exception on errors creating the matcher 
+	 */
+ 	public RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
+	
+	List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
+	
+	List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String s);
 }

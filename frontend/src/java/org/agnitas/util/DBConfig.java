@@ -131,8 +131,8 @@ public class DBConfig {
 	private static Pattern	parseLine = Pattern.compile ("([a-z0-9._+-]+):[ \t]*(.*)$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 	private boolean readConfig () {
 		if (content == null) {
-			String		filename = configPath != null ? configPath : defaultConfigPath;
-			File		fdesc = new File (filename);
+			String		filename = configPath != null ? configPath : System.getenv ("DBCFG_PATH");
+			File		fdesc = new File (filename != null ? filename : defaultConfigPath);
 			
 			try (FileInputStream stream = new FileInputStream (fdesc)) {
 				byte[]	buffer = new byte[(int) fdesc.length ()];

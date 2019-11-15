@@ -39,6 +39,7 @@ import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.springws.WebserviceNotAllowedException;
 import com.agnitas.emm.springws.endpoint.BulkSizeLimitExeededExeption;
+import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRejectedException;
 
 public class CommonExceptionResolver extends AbstractSoapFaultDefinitionExceptionResolver {
 	
@@ -114,6 +115,8 @@ public class CommonExceptionResolver extends AbstractSoapFaultDefinitionExceptio
             definition.setFaultStringOrReason("Unknown link ID " + ((TrackableLinkUnknownLinkIdException) ex).getLinkId());
         } else if (ex instanceof FormNotFoundException) {
         	definition.setFaultStringOrReason("Unknown form name");
+        } else if(ex instanceof SubscriptionRejectedException) {
+        	definition.setFaultStringOrReason("Subscription rejection by anti-spam rules.");
         } else {
             definition.setFaultStringOrReason("Unknown error");
         }

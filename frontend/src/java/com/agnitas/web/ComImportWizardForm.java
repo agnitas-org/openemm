@@ -434,7 +434,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 	 * @return Value of property dbAllColumns.
 	 */
 	public Map<String, CsvColInfo> getDbAllColumns() {
-		// we use a TreeMap here because it SORTS the given map. 
+		// we use a TreeMap here because it SORTS the given map.
 		// the getDBAllColumns() Map is a Case-Insensitive-Map which is unsorted.
 		return new TreeMap<>(importWizardHelper.getDbAllColumns());
 	}
@@ -648,7 +648,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 		importWizardHelper.setDateFormat(dateFormat);
 	}
 	
-	public Hashtable<String, CsvColInfo> getColumnMapping() {
+	public Map<String, CsvColInfo> getColumnMapping() {
 		return importWizardHelper.getColumnMapping();
 	}
 
@@ -704,7 +704,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 
 	public int getReadlines() {
 		return importWizardHelper.getReadlines();
-	}	
+	}
 	
 	/**
 	 * returns true, if the import wizard is wir

@@ -12,12 +12,27 @@ package com.agnitas.emm.core.target.web;
 
 import java.util.List;
 import java.util.Objects;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetCopyService;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
+import com.agnitas.emm.core.target.web.util.FormHelper;
+import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.messages.I18nString;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.target.impl.TargetRepresentationImpl;
@@ -34,26 +49,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.target.service.TargetCopyService;
-import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
-import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
-import com.agnitas.emm.core.target.web.util.FormHelper;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
-import com.agnitas.reporting.birt.util.URLUtils;
 
 /**
  * Action handling the target group query builder editor view.
@@ -78,24 +73,22 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	private ComMailingBaseService mailingService;
 
 	private EqlFacade eqlFacade;
-
+	
     private MailinglistApprovalService mailinglistApprovalService;
 
-	private ConfigService configService;
-
-	private String publicKeyFilename;
+    protected BirtStatisticsService birtStatisticsService;
 
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if dispatch URL parameter is missing.
 	 * This method does nothing but calling {@link #show(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}.
-	 * 
+	 *
 	 * @param mapping mapped forwards
 	 * @param form0 form bean
 	 * @param request request data
 	 * @param response response data
-	 * 
+	 *
 	 * @return selected forward
-	 * 
+	 *
 	 * @throws Exception on errors performing request
 	 */
 	@Override
@@ -106,14 +99,14 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if dispatch URL parameter indicates
 	 * showing a target group is requested. This method is also invoked by {@link #unspecified(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}.
-	 * 
+	 *
 	 * @param mapping mapped forwards
 	 * @param form0 form bean
 	 * @param request request data
 	 * @param response response data
-	 * 
+	 *
 	 * @return selected forward
-	 * 
+	 *
 	 * @throws Exception on errors performing request
 	 */
 	public final ActionForward show(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
@@ -139,17 +132,17 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
 			form.setLocked(target.isLocked());
 			form.setSimpleStructure(target.isSimpleStructured());
-			
+
 			try {
 				// Make data for QueryBuilder available from EQL
 				this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
-		
+
 				if (!form.isSimpleStructure()) {
 					form.setFormat(TargetgroupViewFormat.EQL);
 				}
-			} catch(final EditorContentSynchronizationException e) {
+			} catch (final EditorContentSynchronizationException e) {
 				form.setFormat(TargetgroupViewFormat.EQL);
-				
+
 				return viewEQL(mapping, form0, request, response);
 			}
 
@@ -231,14 +224,14 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if the user requested switching the editor view to
 	 * the Querybuilder.
-	 * 
+	 *
 	 * @param mapping mapped forwards
 	 * @param form0 form bean
 	 * @param request request data
 	 * @param response response data
-	 * 
+	 *
 	 * @return selected forward
-	 * 
+	 *
 	 * @throws Exception on errors performing request
 	 */
 	public final ActionForward viewQB(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
@@ -270,14 +263,14 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if the user requested switching the editor view to
 	 * the EQL editor.
-	 * 
+	 *
 	 * @param mapping mapped forwards
 	 * @param form0 form bean
 	 * @param request request data
 	 * @param response response data
-	 * 
+	 *
 	 * @return selected forward
-	 * 
+	 *
 	 * @throws Exception on errors performing request
 	 */
 	public final ActionForward viewEQL(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
@@ -303,8 +296,8 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
 		form.setFormat(targetFormat);
-
-		if(targetFormat == TargetgroupViewFormat.EQL && !admin.permissionAllowed(Permission.TARGETS_EQL_EDIT)) {
+		
+		if(targetFormat != TargetgroupViewFormat.EQL) {
 			return viewQB(mapping, form0, request, response);
 		} else {
 			return mapping.findForward("view");
@@ -327,7 +320,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		}
 		if(!errors.isEmpty()){
 			saveErrors(request, errors);
-			return show(mapping, form0, request, response);
+			return mapping.findForward("messages");
 		}
 
 		try {
@@ -377,23 +370,16 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			}
 
 			if(isTargetGroupValid && form.isShowStatistic()) {
-				String statisticUrl = StringUtils.EMPTY;
-				try {
-					statisticUrl = getReportUrl(admin, request, form);
-				} catch (Exception e) {
-					logger.error("Error during generation statistic url " + e);
-				}
-
-				form.setStatisticUrl(statisticUrl);
+				form.setStatisticUrl(getReportUrl(admin, request, form));
 			}
 
 		} catch(final EqlSyntaxErrorException e) {
 			final List<EqlSyntaxError> syntaxErrors = e.getErrors();
-			
-			syntaxErrors.stream().forEach(syntaxError -> {
+
+			syntaxErrors.forEach(syntaxError -> {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
 				errors.add("eqlErrors", new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
-				});
+			});
 			
 			saveErrors(request, errors);
 
@@ -415,18 +401,19 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	}
 
 	private String getReportUrl(ComAdmin admin, HttpServletRequest request, QueryBuilderTargetGroupForm form) throws Exception {
-		StringBuffer br = new StringBuffer();
-		br.append(configService.getValue(ConfigValue.BirtUrl) + "/run?");
-		br.append("__report=recipient_status.rptdesign");
-		br.append("&companyID=" + AgnUtils.getCompanyID(request));
-		br.append("&mediaType=0");
-		br.append("&targetID=" + form.getTargetID());
-		br.append("&mailinglistID=" + form.getMailinglistId());
-		br.append("&language=" + admin.getAdminLang());
-		br.append("&__format=html");
-		br.append("&uid="+ URLUtils.encodeURL(RSACryptUtil.encrypt(UIDUtils.createUID(admin), RSACryptUtil.getPublicKey(publicKeyFilename))));
-		br.append("&emmsession=" + request.getSession(false).getId());
-		return br.toString();
+		try {
+			RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
+			statisticDto.setMediaType(0);
+			statisticDto.setTargetId(form.getTargetID());
+			statisticDto.setMailinglistId(form.getMailinglistId());
+			statisticDto.setFormat("html");
+			
+			return birtStatisticsService.getRecipientStatusStatisticUrl(admin, request.getSession(false).getId(), statisticDto);
+		} catch (Exception e) {
+			logger.error("Error during generation statistic url " + e);
+		}
+		
+		return StringUtils.EMPTY;
 	}
 
 	public final ActionForward copy(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
@@ -490,17 +477,13 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		this.eqlFacade = eqlFacade;
 	}
 
-	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-	   
     @Required
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
     	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
     }
-
-	public void setPublicKeyFilename(String publicKeyFilename) {
-		this.publicKeyFilename = publicKeyFilename;
+    
+    @Required
+	public void setBirtStatisticsService(BirtStatisticsService birtStatisticsService) {
+		this.birtStatisticsService = birtStatisticsService;
 	}
 }

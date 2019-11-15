@@ -11,6 +11,7 @@
 package com.agnitas.reporting.birt.external.web.filter;
 
 import java.io.IOException;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -19,7 +20,11 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * This filter's purpose is to fix RCE vulnerability that the BIRT servlets have.
@@ -27,18 +32,25 @@ import org.apache.log4j.Logger;
  */
 public class BirtNoDocumentParameterInterceptor implements Filter {
     /** Logger. */
-    private static final transient Logger logger = Logger.getLogger(BirtNoDocumentParameterInterceptor.class);
+    @SuppressWarnings("unused")
+	private static final transient Logger logger = Logger.getLogger(BirtNoDocumentParameterInterceptor.class);
 
-    private String errorPage;
+	private FilterConfig filterConfig;
+	protected ConfigService configService;
 
     @Override
-    public void init(FilterConfig config) throws ServletException {
-        errorPage = config.getInitParameter("errorpage");
-
-        if (errorPage == null) {
-            errorPage = "/error.do";
-        }
+    public void init(FilterConfig filterConfig) throws ServletException {
+    	this.filterConfig = filterConfig;
     }
+
+    @Override
+    public void destroy() {
+        // Do nothing.
+    }
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -49,14 +61,16 @@ public class BirtNoDocumentParameterInterceptor implements Filter {
         }
     }
 
-    @Override
-    public void destroy() {
-        // Do nothing.
-    }
-
     private void error(ServletRequest request, ServletResponse response) throws ServletException, IOException {
         request.setAttribute("error", new Exception("Using __document parameter is denied"));
-        RequestDispatcher dispatcher = request.getRequestDispatcher(errorPage);
+		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtErrorPage));
         dispatcher.forward(request, response);
     }
+
+    private ConfigService getConfigService() {
+		if (configService == null) {
+			configService = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext()).getBean("ConfigService", ConfigService.class);
+		}
+		return configService;
+	}
 }

@@ -9,7 +9,6 @@
 
 <c:set var="DATE_PATTERN" value="yyyy-MM-dd"/>
 <c:set var="NO_RESULTS_FOUND_MSG"><bean:message key="noResultsFound"/></c:set>
-<c:set var="NO_RESULTS_FOUND" value="<tr class=\"empty\"><td colspan=\"{0}\">${NO_RESULTS_FOUND_MSG}</td></tr>"></c:set>
 
 <%--@elvariable id="recipientsReportForm" type="com.agnitas.emm.core.recipientsreport.web.RecipientsReportForm"--%>
 

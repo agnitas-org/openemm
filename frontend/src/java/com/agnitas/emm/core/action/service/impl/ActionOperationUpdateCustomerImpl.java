@@ -48,7 +48,6 @@ public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 			int customerID = (Integer) params.get("customerID");
 			try {
 				if (op.isUseTrack()) {
-					logger.debug("Using tracking point is not implemented. Point ID " + op.getTrackingPointId() + " Column " + columnName);
 					switch ((Integer)params.get("trackingPointType")) {
 						case ComTrackpointDef.TYPE_SIMPLE:
 							updateValue = String.valueOf(params.get("trackingValue"));

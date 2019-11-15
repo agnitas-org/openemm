@@ -29,8 +29,8 @@ public interface CompanyService {
 
 	//get all active companies
 	List<CompanyEntry> getActiveCompanyEntries();
-		
+	
 	//get only own company and companies created by own company + status = active
 	List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId);
-		
+	
 }

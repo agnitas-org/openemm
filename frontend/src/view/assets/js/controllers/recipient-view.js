@@ -28,7 +28,7 @@ AGN.Lib.Controller.new('recipient-view', function() {
       }
     });
 
-    $('#recipient-email').on('change paste keydown keyup', _.debounce(function() {
+    $('#recipient-email').on('change input', _.debounce(function() {
       checker.check($(this).val());
     }, 300));
   });

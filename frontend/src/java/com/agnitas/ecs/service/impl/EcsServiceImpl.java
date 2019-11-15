@@ -128,7 +128,7 @@ public class EcsServiceImpl implements EcsService {
     }
 
     protected String getHeatMapUrl(ComAdmin admin, String sessionId, int mailingId, int recipientId, int viewMode, int previewSize) {
-        return configService.getValue(ConfigValue.SystemUrl) +
+        return configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl) +
             EmbeddedClickStatView.PATH +
             ";jsessionid=" + sessionId + "?" +
             "mailingID=" + mailingId +

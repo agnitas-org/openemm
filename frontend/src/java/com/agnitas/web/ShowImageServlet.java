@@ -21,7 +21,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.RdirTrafficAmountDao;
@@ -39,6 +38,7 @@ import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 
 /**
@@ -56,12 +56,14 @@ public class ShowImageServlet extends HttpServlet {
 
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
     public static final String IMAGE_CACHE = "imageCache";
+    public static final String CDN_CACHE = "cdnCache";
 
 	private static int NOT_FOUND_RELOAD_TIMEOUT_MILLIS = 300000; // AGNEMM-2384: set from 30 sec to 5 min
 
 	protected ComMailingComponentDao componentDao;
 	protected ComDeviceService deviceService;
 	protected TimeoutLRUMap<String, DeliverableImage> imageCache;
+	protected TimeoutLRUMap<String, CdnImage> cdnCache;
     protected RdirTrafficAmountDao rdirTrafficAmountDao;
     protected CompanyDaoCache companyDaoCache;
 	protected ConfigService configService;
@@ -138,6 +140,7 @@ public class ShowImageServlet extends HttpServlet {
 			@SuppressWarnings("unused")
 			String licenseId = request.getParameter("lic");
 
+
 			if (StringUtils.isBlank(companyIdString) && StringUtils.isBlank(mailingIdString) && StringUtils.isBlank(imageName)) {
 				// New parameterformat:
 				// http://<rdir-domain>/image/nc/1000/1/1/Agnitas-Logo.jpg
@@ -163,21 +166,52 @@ public class ShowImageServlet extends HttpServlet {
 	            noCache = uriParts.length >= 4 && "nc".equalsIgnoreCase(uriParts[uriParts.length - 4])
 	            		|| uriParts.length >= 5 && "nc".equalsIgnoreCase(uriParts[uriParts.length - 5]);
 			}
-
-			// Check mandatory servlet parameters
-			// On missing parameter don't show any data
-			DeliverableImage image = null;
-			if ((StringUtils.isNotEmpty(companyIdString) && StringUtils.isNotEmpty(mailingIdString) && StringUtils.isNotEmpty(imageName))) {
-				if (getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE) {
-					image = getImageForMobileRequest(request, Integer.parseInt(companyIdString), Integer.parseInt(mailingIdString), imageName, noCache);
-				} else {
-					image = getImageForStandardRequest(request, Integer.parseInt(companyIdString), Integer.parseInt(mailingIdString), imageName, false, noCache);
+			
+			int companyID = 0;
+			if (StringUtils.isNotBlank(companyIdString)) {
+				try {
+					companyID = Integer.parseInt(companyIdString);
+				} catch (NumberFormatException e) {
+					response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+					return;
+				}
+				if (companyID <= 0) {
+					response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+					return;
 				}
 			}
 
-			if (image != null) {
-				getRdirTrafficAmountDao().save(Integer.parseInt(companyIdString), StringUtils.isNotEmpty(mailingIdString) ? Integer.parseInt(mailingIdString) : 0, image.name, image.imageData == null ? 0 : image.imageData.length);
-				writeImageToResponse(request, response, image);
+			String cdnBaseLink = getConfigService().getValue(ConfigValue.CdnImageRedirectLinkBase, companyID);
+			if (noCache || cdnBaseLink == null) {
+				// Check mandatory servlet parameters
+				// On missing parameter don't show any data
+				DeliverableImage image = null;
+				if ((StringUtils.isNotEmpty(companyIdString) && StringUtils.isNotEmpty(mailingIdString) && StringUtils.isNotEmpty(imageName))) {
+					if (getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE) {
+						image = getImageForMobileRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, noCache);
+					} else {
+						image = getImageForStandardRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, false, noCache);
+					}
+				}
+	
+				if (image != null) {
+					if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
+						getRdirTrafficAmountDao().save(companyID, StringUtils.isNotEmpty(mailingIdString) ? Integer.parseInt(mailingIdString) : 0, image.name, image.imageData == null ? 0 : image.imageData.length);
+					}
+					writeImageToResponse(request, response, image);
+				}
+			} else {
+				String cacheKey = generateCachingKey(companyID, Integer.parseInt(mailingIdString), imageName);
+				boolean isMobileRequest = getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE;
+				CdnImage cdnImage = getCdnCache().get(cacheKey);
+				if (cdnImage == null) {
+					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName, isMobileRequest);
+					getCdnCache().put(cacheKey, cdnImage);
+				}
+				response.sendRedirect(cdnBaseLink + cdnImage.cdnId);
+				if (getConfigService().getBooleanValue(ConfigValue.ImageTrafficMeasuring, companyID)) {
+					getRdirTrafficAmountDao().save(companyID, Integer.parseInt(mailingIdString), cdnImage.name, cdnImage.imageDatalength);
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Exception: " + e.getMessage(), e);
@@ -316,6 +350,26 @@ public class ShowImageServlet extends HttpServlet {
 						}
 					}
 				}
+			} else if (newImage == null) {
+				notFound = true;
+				if (!"active".equals(getCompanyDaoCache().getItem(companyID).getStatus())) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("image image not found for inactive company: " + cacheKey);
+					}
+					newImage = null;
+				} else {
+					newImage = new DeliverableImage();
+					newImage.mtype = "text/html";
+					newImage.imageData = "Image not found".getBytes("UTF-8");
+					newImage.name = "";
+					if (logger.isDebugEnabled()) {
+						logger.debug("image image not found: " + cacheKey);
+					}
+				}
+				
+				if (checkImageCacheSize(newImage)) {
+					getImageCache().put(cacheKey, newImage, NOT_FOUND_RELOAD_TIMEOUT_MILLIS);
+				}
 			}
 
 			if (isMobileRequest && newImage != null) {
@@ -331,6 +385,7 @@ public class ShowImageServlet extends HttpServlet {
 					}
 				}
 			}
+			
 			return newImage;
 		}
 	}
@@ -444,6 +499,19 @@ public class ShowImageServlet extends HttpServlet {
 		}
 
 		return imageCache;
+	}
+
+	/**
+	 * Return existing cache or create new one
+	 */
+	private TimeoutLRUMap<String, CdnImage> getCdnCache() {
+		if (cdnCache == null) {
+			@SuppressWarnings("unchecked")
+			TimeoutLRUMap<String, CdnImage> newMap = (TimeoutLRUMap<String, CdnImage>) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean(CDN_CACHE);
+			cdnCache = newMap;
+		}
+
+		return cdnCache;
 	}
 
 	/**

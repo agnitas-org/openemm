@@ -10,6 +10,9 @@
 
 package org.agnitas.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,11 +20,16 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.service.ImportException;
 import org.agnitas.service.impl.DataType;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
@@ -198,5 +206,59 @@ public class ImportUtils {
 			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
 		}
 		return Collections.unmodifiableList(hiddenColumns);
+	}
+
+	public static boolean checkIfFileHasData(File file, ImportProfile profile) throws Exception {
+		InputStream dataInputStream = null;
+		File unzipPath = null;
+		try {
+	        if (file == null) {
+	            return false;
+	        }
+			if (profile.isZipped()) {
+				try {
+					if (profile.getZipPassword() == null) {
+						dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));
+						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+						if (zipEntry == null) {
+							throw new ImportException(false, "error.unzip.noEntry");
+						} else {
+							if (zipEntry.getSize() == -1) {
+								int dataRead = dataInputStream.read(new byte[5]);
+								return dataRead > -1;
+							} else {
+								return zipEntry.getSize() > 0;
+							}
+						}
+					} else {
+						unzipPath = new File(file.getAbsolutePath() + ".unzipped");
+						unzipPath.mkdir();
+						ZipUtilities.decompressFromEncryptedZipFile(file, unzipPath, profile.getZipPassword());
+						
+						// Check if there was only one file within the zip file and use it for import
+						String[] filesToImport = unzipPath.list();
+						if (filesToImport.length != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							return new File(unzipPath.getAbsolutePath() + "/" + filesToImport[0]).length() > 0;
+						}
+					}
+				} catch (ImportException e) {
+					throw e;
+				} catch (Exception e) {
+					throw new ImportException(false, "error.unzip", e.getMessage());
+				}
+			} else {
+				return file.length() > 0;
+			}
+		} finally {
+			if (dataInputStream != null) {
+				IOUtils.closeQuietly(dataInputStream);
+			}
+			
+			if (unzipPath != null) {
+				FileUtils.removeRecursively(unzipPath);
+			}
+		}
 	}
 }

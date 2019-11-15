@@ -31,6 +31,7 @@ import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.codec.binary.Hex;
@@ -129,7 +130,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * 
 	 * @throws LogonServiceException on errors during login (invalid username/password, ...)
 	 */
-	private ComAdmin doRegularLogin( String username, String password, String hostIpAddress) throws LogonServiceException {	
+	private ComAdmin doRegularLogin( String username, String password, String hostIpAddress) throws LogonServiceException {
 		ComAdmin admin = adminDao.getAdminByLogin( username, password);
 		
 		// Check, if we got an Admin (combination of username and password is valid)
@@ -390,7 +391,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	private String getPasswordResetLink(String linkPattern, String username, String token) {
 		try {
-			String baseUrl = configService.getValue(ConfigValue.SystemUrl);
+			String baseUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
 			String link = linkPattern.replace("{token}", URLEncoder.encode(token, "UTF-8"))
 					.replace("{username}", URLEncoder.encode(username, "UTF-8"));
 

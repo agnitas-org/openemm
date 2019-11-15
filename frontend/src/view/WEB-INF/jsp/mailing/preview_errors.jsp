@@ -48,7 +48,7 @@
                             </c:otherwise>
                         </c:choose>
                     </display:column>
-                    <display:column headerClass="head_name" class="name" sortable="false" titleKey="tag">
+                    <display:column headerClass="head_name" class="name" sortable="false" titleKey="mailing.tag">
                         <c:choose>
                             <c:when test="${not empty reportRow[1]}">
                                 ${reportRow[1]}

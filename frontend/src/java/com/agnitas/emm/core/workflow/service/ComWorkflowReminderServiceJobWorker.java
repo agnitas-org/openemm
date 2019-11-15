@@ -20,8 +20,10 @@ public class ComWorkflowReminderServiceJobWorker extends JobWorker {
     private static final transient Logger logger = Logger.getLogger(ComWorkflowReminderServiceJobWorker.class);
 
     @Override
-    public void runJob() {
+    public String runJob() {
         ComReminderService reminderService = serviceLookupFactory.getBeanWorkflowStartStopReminderService();
         reminderService.send(getCompaniesConstrains());
+		
+		return null;
     }
 }

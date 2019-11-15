@@ -26,13 +26,13 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.MimeTypeService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MediaTypeUtils;
 import org.agnitas.web.DispatchBaseAction;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.io.IOUtils;
@@ -43,6 +43,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.http.MediaType;
 
 public class RecipientsReportAction extends DispatchBaseAction {
     @SuppressWarnings("unused")
@@ -132,24 +133,21 @@ public class RecipientsReportAction extends DispatchBaseAction {
         		|| report.getType() == RecipientsReport.RecipientReportType.EXPORT_REPORT) {
             if (admin.permissionAllowed(Permission.WIZARD_EXPORT)) {
                 String fileType = "export report";
-                String fileName = removeReportFileExtension(report.getFilename());
-                
                 String reportContent = recipientsReportService.getImportReportContent(companyId, ((RecipientsReportForm) form).getReportId());
-                String contentType = MediaTypeUtils.resolveContentType(reportContent);
-
-                if (MediaTypeUtils.isHtmlContentType(contentType)) {
-                	// Replace plain text linefeeds for html view
-                	reportContent = reportContent.replace("\r\n", "\n").replace("\n", "<br />\n");
-                	fileName += ".html";
-                } else {
-                    fileName += ".txt";
-                }
                 
                 if (StringUtils.isBlank(reportContent)) {
-                	reportContent = I18nString.getLocaleString("recipient.reports.notAvailable", admin.getLocale());
+                    reportContent = I18nString.getLocaleString("recipient.reports.notAvailable", admin.getLocale());
                 }
+    
+                String fileName = RecipientReportUtils.resolveFileName(report.getFilename(), reportContent);
+    
+                MediaType mediaType = MediaType.parseMediaType(mimeTypeService.getMimetypeForFile(fileName.toLowerCase()));
+                if (MediaType.TEXT_HTML == mediaType) {
+                    reportContent = reportContent.replace("\r\n", "\n").replace("\n", "<br />\n");
+                }
+                
 
-    	        response.setContentType(contentType);
+                response.setContentType(mediaType.toString());
     	        HttpUtils.setDownloadFilenameHeader(response, fileName);
     	        IOUtils.write(reportContent.getBytes("UTF-8"), response.getOutputStream());
     	        
@@ -169,24 +167,19 @@ public class RecipientsReportAction extends DispatchBaseAction {
 	                writeUserActivityLog(AgnUtils.getAdmin(request), "download " + fileType, "File name: " + report.getFilename() + ", RecipientsReport ID: " + report.getId());
             	} else {
 	                String fileType = "import report";
-	                String fileName = removeReportFileExtension(report.getFilename());
-	
-	                String reportContent = recipientsReportService.getImportReportContent(companyId, ((RecipientsReportForm) form).getReportId());
-	                String contentType = MediaTypeUtils.resolveContentType(reportContent);
-	                
-	                if (MediaTypeUtils.isHtmlContentType(contentType)) {
-	                	// Replace plain text linefeeds for html view
-	                	reportContent = reportContent.replace("\r\n", "\n").replace("\n", "<br />\n");
-                        fileName += ".html";
-                    } else {
-                        fileName += ".txt";
-                    }
-        
+                    String reportContent = recipientsReportService.getImportReportContent(companyId, ((RecipientsReportForm) form).getReportId());
                     if (StringUtils.isBlank(reportContent)) {
                         reportContent = I18nString.getLocaleString("recipient.reports.notAvailable", admin.getLocale());
                     }
         
-	    	        response.setContentType(contentType);
+                    String fileName = RecipientReportUtils.resolveFileName(report.getFilename(), reportContent);
+        
+                    MediaType mediaType = MediaType.parseMediaType(mimeTypeService.getMimetypeForFile(fileName.toLowerCase()));
+                    if (MediaType.TEXT_HTML == mediaType) {
+                        reportContent = reportContent.replace("\r\n", "\n").replace("\n", "<br />\n");
+                    }
+        
+                    response.setContentType(mediaType.toString());
 	    	        HttpUtils.setDownloadFilenameHeader(response, fileName);
 	    	        IOUtils.write(reportContent.getBytes("UTF-8"), response.getOutputStream());
 	    	        
@@ -195,18 +188,7 @@ public class RecipientsReportAction extends DispatchBaseAction {
             }
         }
 
-
         return null;
-    }
-
-    private String removeReportFileExtension(String filename) {
-        if (StringUtils.endsWithIgnoreCase(filename, ".txt")) {
-            return filename.substring(0, filename.length() - 4);
-        } else if (StringUtils.endsWithIgnoreCase(filename, ".html")) {
-            return filename.substring(0, filename.length() - 5);
-        }
-
-        return filename;
     }
 
     private RecipientsReport.RecipientReportType[] getReportTypes(RecipientsReportForm form, ComAdmin admin) {
@@ -233,8 +215,7 @@ public class RecipientsReportAction extends DispatchBaseAction {
 
     private Date getDate(String stringDate, DateFormat format) {
         try {
-            stringDate = stringDate != null ? stringDate : StringUtils.EMPTY;
-            return format.parse(stringDate);
+            return format.parse(StringUtils.defaultString(stringDate));
         } catch (ParseException e) {
             return null;
         }

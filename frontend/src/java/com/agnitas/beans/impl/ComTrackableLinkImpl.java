@@ -26,7 +26,6 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 
 public class ComTrackableLinkImpl implements ComTrackableLink {
 	/** The logger. */
-	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComTrackableLinkImpl.class);
 
 	protected int companyID;
@@ -184,14 +183,14 @@ public class ComTrackableLinkImpl implements ComTrackableLink {
 	}
 
 	/**
-	 * Holds value of property relevance.
+	 * Holds value of property deepTracking.
 	 */
 	protected int deepTracking = 0;
 
 	/**
-	 * Getter for property relevance.
+	 * Getter for property deepTracking.
 	 * 
-	 * @return Value of property relevance.
+	 * @return Value of property deepTracking.
 	 */
 	@Override
 	public int getDeepTracking() {
@@ -220,8 +219,9 @@ public class ComTrackableLinkImpl implements ComTrackableLink {
 	 * @return Value of property relevance.
 	 */
 	@Override
+	@Deprecated
 	public int getRelevance() {
-		return this.relevance;
+		return 0;
 	}
 
 	/**
@@ -231,8 +231,9 @@ public class ComTrackableLinkImpl implements ComTrackableLink {
 	 *            New value of property relevance.
 	 */
 	@Override
+	@Deprecated
 	public void setRelevance(int relevance) {
-		this.relevance = relevance;
+		this.relevance = 0;
 	}
 
 	public String altText;

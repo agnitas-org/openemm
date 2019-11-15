@@ -34,4 +34,6 @@ public interface ComServerStatusDao {
 	List<String> getErrorJobsStatuses();
 	
 	List<String> getDKIMKeys();
+	
+	List<String> killRunningImports();
 }

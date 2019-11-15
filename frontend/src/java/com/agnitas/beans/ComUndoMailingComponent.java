@@ -13,6 +13,6 @@ package com.agnitas.beans;
 import org.agnitas.beans.MailingComponent;
 
 public interface ComUndoMailingComponent extends MailingComponent {
-	public int getUndoId();
-	public void setUndoId(int undoId);
+	int getUndoId();
+	void setUndoId(int undoId);
 }

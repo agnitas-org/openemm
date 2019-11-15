@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
-
 import java.util.Set;
 
 import com.agnitas.emm.core.target.eql.ast.OpenedMailingRelationalEqlNode;
@@ -25,8 +24,8 @@ public class OpenedMailingParser extends GenericEqlNodeParser<OpenedMailingRelat
     private static final String EQUAL = "equal";
 
     @Override
-    protected QueryBuilderGroupNode parse(OpenedMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
-    	if(node.hasDeviceQuery()) {
+    protected QueryBuilderGroupNode parse(OpenedMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
+    	if (node.hasDeviceQuery()) {
     		throw new EqlToQueryBuilderConversionException("Device query not supported by QueryBuilder");
     	}
     	

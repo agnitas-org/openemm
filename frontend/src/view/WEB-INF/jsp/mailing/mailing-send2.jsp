@@ -215,6 +215,15 @@
                                         <button type="button" class="btn btn-regular" tabindex="-1" data-help="help_${helplanguage}/mailing/view_base/WorkflowEditorMsg.xml">
                                             <i class="icon icon-help"></i>
                                         </button>
+                                        <%--todo: GWUA-4271: change after test sucessfully--%>
+                                        <%--<c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">--%>
+                                            <%--<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}"/>--%>
+                                        <%--</c:url>--%>
+                                        <%--<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">--%>
+                                            <%--<i class="icon icon-linkage-campaignmanager"></i>--%>
+                                            <%--<strong><bean:message key="campaign.manager.icon"/></strong>--%>
+                                        <%--</a>--%>
+
                                         <agn:agnLink page="/workflow.do?method=view&workflowId=${mailingSendForm.workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                             <i class="icon icon-linkage-campaignmanager"></i>
                                             <strong><bean:message key="campaign.manager.icon"/></strong>

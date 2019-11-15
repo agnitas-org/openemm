@@ -35,6 +35,8 @@ public class PlainBindingEntryImpl implements PlainBindingEntry, Serializable {
 
     private Integer exitMailingId;
 
+    private Integer entryMailingId;
+
     private int mediaType;
 
     @Override
@@ -115,6 +117,16 @@ public class PlainBindingEntryImpl implements PlainBindingEntry, Serializable {
     @Override
     public void setExitMailingId(Integer exitMailingId) {
         this.exitMailingId = exitMailingId;
+    }
+
+    @Override
+    public Integer getEntryMailingId() {
+        return entryMailingId;
+    }
+
+    @Override
+    public void setEntryMailingId(Integer entryMailingId) {
+        this.entryMailingId = entryMailingId;
     }
 
     @Override

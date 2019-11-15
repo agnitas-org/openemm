@@ -62,6 +62,14 @@ public class ComTrackableUserFormLinkForm extends StrutsFormBase {
 
 	private Collection<ComTrackableUserFormLink> links;
 
+	private Map<Integer, String> linkItemName = new HashMap<>();
+
+	private Map<Integer, Integer> linkItemRelevance = new HashMap<>();
+
+	private Map<Integer, Integer> linkItemUsage = new HashMap<>();
+
+	private Map<Integer, Integer> linkItemId = new HashMap<>();
+
 	private ComTrackableUserFormLink linkToView;
 
 	private Map<Integer, Integer> extendLinkId = new HashMap<>();
@@ -172,12 +180,58 @@ public class ComTrackableUserFormLinkForm extends StrutsFormBase {
 		this.shortname = shortname;
 	}
 
+	public String getLinkItemName(int index) {
+		return this.linkItemName.getOrDefault(index, " ");
+	}
+
+	public void setLinkItemName(int id, String value) {
+		this.linkItemName.put(id, value);
+	}
+
+	public int getLinkItemRelevance(int index) {
+		return this.linkItemRelevance.getOrDefault(index, 0);
+	}
+
+	public void setLinkItemRelevance(int id, int value) {
+		this.linkItemRelevance.put(id, value);
+	}
+
+	public int getLinkItemUsage(int index) {
+		return this.linkItemUsage.getOrDefault(index, 0);
+	}
+
+	public void setLinkItemUsage(int id, int value) {
+		this.linkItemUsage.put(id, value);
+	}
+
+	public int getLinkItemId(int index) {
+		return this.linkItemId.getOrDefault(index, 0);
+	}
+
+	public Map<Integer, Integer> getLinkItemIds() {
+		return this.linkItemId;
+	}
+
+	public void setLinkItemId(int id, int value) {
+		this.linkItemId.put(id, value);
+	}
+
 	public Collection<ComTrackableUserFormLink> getLinks() {
 		return links;
 	}
 
 	public void setLinks(Collection<ComTrackableUserFormLink> links) {
 		this.links = links;
+
+		int index = 0;
+		for (ComTrackableUserFormLink link : links) {
+			setLinkItemName(index, link.getShortname());
+			setLinkItemRelevance(index, link.getRelevance());
+			setLinkItemUsage(index, link.getUsage());
+			setLinkItemId(index, link.getId());
+			index++;
+		}
+
 	}
 
 	public int getDeepTracking() {

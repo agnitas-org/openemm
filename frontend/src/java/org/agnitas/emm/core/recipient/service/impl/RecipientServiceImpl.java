@@ -292,8 +292,16 @@ public final class RecipientServiceImpl implements RecipientService {
 				throw new InvalidDataException("Unknown data field '" + name + "'");
 			} else if (typeName.toUpperCase().startsWith("VARCHAR") || typeName.toUpperCase().startsWith("CHAR")) {
 				// Alphanumeric field
-				if (value != null && value.length() > profileField.getDataTypeLength()) {
-					throw new InvalidDataException("Value size for alphanumeric field '" + name + "' exceeded. Maximum size: " + profileField.getDataTypeLength() + ", Actual size: " + value.length());
+				if (recipientDao.isOracleDB()) {
+					// MySQL VARCHAR size is in bytes
+					if (value != null && value.getBytes("UTF-8").length > profileField.getDataTypeLength()) {
+						throw new InvalidDataException("Value size for alphanumeric field '" + name + "' exceeded. Maximum size: " + profileField.getDataTypeLength() + ", Actual size: " + value.length());
+					}
+				} else {
+					// MySQL VARCHAR size is in characters
+					if (value != null && value.length() > profileField.getDataTypeLength()) {
+						throw new InvalidDataException("Value size for alphanumeric field '" + name + "' exceeded. Maximum size: " + profileField.getDataTypeLength() + ", Actual size: " + value.length());
+					}
 				}
 				newCustomer.setCustParameters(name, value);
 			} else if (typeName.toUpperCase().startsWith("CLOB")) {
@@ -517,7 +525,7 @@ public final class RecipientServiceImpl implements RecipientService {
 		
 		this.recipientDao.writeEmailAddressChangeRequest(companyID, customerID, newEmailAddress, confirmationCode);
 		
-		return confirmationCode;	
+		return confirmationCode;
 	}
 
 	@Override

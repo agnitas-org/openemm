@@ -18,6 +18,8 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     $('#targetModeCheck')
       .closest('.form-group')
       .toggle(targetGroupIds.length > 1);
+
+    updateGeneralMailingTypeView(config.mailingType);
   });
 
   this.addAction({change: 'selectTargetGroups'}, function() {
@@ -120,4 +122,38 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
 
     form.submit();
   });
+
+  this.addAction({change: 'change-general-mailing-type'}, function() {
+    var self = this;
+    var value = self.el.val();
+    updateGeneralMailingTypeView(value);
+
+  });
+
+  function updateGeneralMailingTypeView(value) {
+    if (config.followUpAllowed) {
+      toggle(config.TYPE_FOLLOWUP == value, '#followUpControls');
+    }
+
+    toggle(config.TYPE_INTERVAL == value, '#mailingIntervalContainer');
+
+    toggle(config.TYPE_DATEBASED == value, '#mailing-bcc-recipients');
+
+    var hideTargets = config.TYPE_ACTIONBASED == value || (config.TYPE_DATEBASED == value && config.isWorkflowDriven);
+    toggle(!hideTargets, '#mailingTargets');
+
+  }
+
+  function toggle(show, selector) {
+    var container = $(selector);
+    if (container) {
+      if (show) {
+        container.removeClass('hidden');
+        container.show();
+      } else {
+        container.hide();
+      }
+    }
+  }
+
 });

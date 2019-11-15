@@ -1,8 +1,14 @@
 AGN.Lib.Controller.new('mailing-priorities', function() {
   var Template = AGN.Lib.Template,
-    Helpers = AGN.Lib.Helpers;
+    Helpers = AGN.Lib.Helpers,
+    DateFormat = AGN.Lib.DateFormat;
 
-  var $saveButton, $priorityCount, $orderedArea, $unorderedArea;
+  var DATE_BASED_TYPE = 2;
+  var NORMAL_TYPE = 0;
+
+  var $saveButton, $priorityCount, $orderedArea,
+    $unorderedDateBasedArea, $unorderedNormalArea;
+
   var mailingsMap;
   var originPrioritizedIds;
   var originPriorityCount;
@@ -68,25 +74,35 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
   }
 
   function clear() {
-    $orderedArea.find('.l-mailing-entry')
-      .remove();
-    $unorderedArea.find('.l-mailing-entry')
-      .remove();
+    $('#datebased-container, #normal-container, #ordered-area')
+      .find('.l-mailing-entry').remove();
   }
 
   // "yyyy-mm-dd" -> [yyyy, mm, dd]
   function strDateToArray(date, stub) {
-    var match = date.match(/^(\d{4})\-(\d{2})\-(\d{2})$/);
-    if (match) {
-      return [parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3])];
-    }
-
-    return arguments.length == 1 ? null : stub;
+    return DateFormat.toArray(DateFormat.parse(date), stub);
   }
 
   // [yyyy, mm, dd] -> "yyyy-mm-dd"
   function arrayDateToStr(date) {
     return Helpers.pad(date[0], 4) + '-' + Helpers.pad(parseInt(date[1]) + 1, 2) + '-' + Helpers.pad(date[2], 2);
+  }
+
+  function shiftDateArray(dateArray, years, months, days) {
+    var newDate = _.clone(dateArray);
+    if (!!years) {
+      newDate[0] = dateArray[0] + years;
+    }
+
+    if (!!months) {
+      newDate[1] = dateArray[1] + months;
+    }
+
+    if (!!days) {
+      newDate[2] = dateArray[2] + days;
+    }
+
+    return newDate;
   }
 
   function minDay() {
@@ -95,105 +111,125 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
     });
   }
 
+  var getAllDateBasedMailingsWithoutPriority = function(excludeIds) {
+    var dateBasedMailings = [];
+    var exclude = _.clone(excludeIds);
+    _.keys(mailingsMap).forEach(function(date){
+        mailingsMap[date].forEach(function(e){
+          if (e.mailingType == DATE_BASED_TYPE && !exclude.includes(e.id)) {
+            //reset priority for general list
+            var m = _.clone(e);
+            m.priority = 0;
+            exclude.push(m.id);
+            dateBasedMailings.push(m);
+          }
+        });
+
+    });
+
+    return dateBasedMailings;
+  };
+
+  function collectMailingEntries(day) {
+    var entries = mailingsMap[day] || [];
+    entries = entries.filter(function(e){return e.mailingType != DATE_BASED_TYPE || (e.mailingType == DATE_BASED_TYPE && e.priority > 0);});
+    var excludeIds = entries.map(function (e) { return e.id;});
+    return _.union(entries, getAllDateBasedMailingsWithoutPriority(excludeIds), 'id');
+  }
+
   function select(day) {
-    var entries = mailingsMap[day] ||
-      mailingsMap[minDay()];
-
+    var entries = collectMailingEntries(day);
     clear();
-
-    if (entries && entries.length) {
-      var $orderedStub = $orderedArea.find('.l-stub');
-      var $unorderedStub = $unorderedArea.find('.l-stub');
-
-      entries.forEach(function(e) {
-        var html = createEntry(e);
-
-        if (e.priority) {
-          $orderedStub.before(html);
-        } else {
-          $unorderedStub.before(html);
-        }
-      });
-    }
-
+    moveToProperBox(entries);
     checkOriginChanges(true);
   }
 
-  this.addDomInitializer('mailing-priorities', function() {
-    var $container = $('.l-content-area');
-    var $orderedBackground, $unorderedBackground;
+  function moveToProperBox(entries) {
+    if (entries && entries.length) {
+      entries.forEach(function(e) {
+        updateIconClass(e);
+        var html = createEntry(e);
+        var ordered = e.priority;
+        var type = e.mailingType;
 
-    $saveButton = $('#save-button');
-    $priorityCount = $('#priorityCount');
-    $orderedArea = $('#ordered-area');
-    $unorderedArea = $('#unordered-area');
+        if (ordered) {
+          $orderedArea.find('.l-stub').before(html);
+        } else {
+          if (type == DATE_BASED_TYPE) {
+            $unorderedDateBasedArea.find('.l-stub').before(html);
+          }
+          if (type == NORMAL_TYPE) {
+            $unorderedNormalArea.find('.l-stub').before(html);
+          }
+        }
+      });
+    }
+  }
 
-    $orderedBackground = $orderedArea.parent();
-    $unorderedBackground = $unorderedArea.parent();
+  function updateIconClass(e) {
+    var iconClass = 'normal-mailing-icon';
+    if (e.mailingType == DATE_BASED_TYPE) {
+      iconClass = 'datebase-mailing-icon';
+    }
 
-    mailingsMap = this.config.mailingsMap;
-    createEntry = Template.prepare('draggable-mailing-entry');
+    e.iconClass = iconClass;
+  }
 
-    $orderedArea.sortable({
-      opacity: 0.4,
-      connectWith: '#unordered-area',
-      items: '.l-mailing-entry',
-      helper: 'clone',
-      containment: $container,
-      appendTo: $container,
-      update: function() {
-        updateBadges();
-        checkOriginChanges();
-      },
-      out: function() {
-        $orderedBackground.removeClass('highlight');
-      },
-      over: function() {
-        $unorderedBackground.removeClass('highlight');
-        $orderedBackground.addClass('highlight');
-      },
-      start: function() {
-        $orderedBackground.addClass('highlight');
-      },
-      stop: function() {
-        $orderedBackground.removeClass('highlight');
+  var isAppropriateType = function (targetId, mailingType) {
+    var isDateBasedArea = targetId === $unorderedDateBasedArea.attr('id');
+    var isNormalArea = targetId === $unorderedNormalArea.attr('id');
+    var isOrderedArea = targetId === $orderedArea.attr('id');
+
+    return isOrderedArea || (isDateBasedArea && mailingType == DATE_BASED_TYPE) ||
+      (isNormalArea && mailingType == NORMAL_TYPE);
+  };
+
+  var highlightBackground = function ($target, activate) {
+      if (activate) {
+        $target.parent().addClass('highlight');
+      } else {
+        $target.parent().removeClass('highlight');
       }
-    });
-
-    $unorderedArea.sortable({
-      opacity: 0.4,
-      connectWith: '#ordered-area',
-      items: '.l-mailing-entry',
-      helper: 'clone',
-      containment: $container,
-      appendTo: $container,
-      out: function() {
-        $unorderedBackground.removeClass('highlight');
-      },
-      over: function() {
-        $orderedBackground.removeClass('highlight');
-        $unorderedBackground.addClass('highlight');
-      },
-      start: function() {
-        $unorderedBackground.addClass('highlight');
-      },
-      stop: function() {
-        $unorderedBackground.removeClass('highlight');
+  };
+  var findDateBasedStart = function(dates) {
+    for (var key in dates) {
+      var firstMailing = mailingsMap[dates[key]].find(function(value){
+        return value.mailingType == DATE_BASED_TYPE;
+      });
+      if (!!firstMailing) {
+        return dates[key];
       }
-    });
+    }
 
-    var $picker = $('#date-picker');
-    var dates = _.keys(mailingsMap);
+    return '';
+  };
 
-    if (dates.length) {
-      var constraints = [true];
+  var computeDisableConstraints = function(dates) {
+    var constraints = [true];
 
-      dates.forEach(function(str) {
+    var dateBasedStart = strDateToArray(findDateBasedStart(dates));
+    var filteredDates = !dateBasedStart ? dates : dates.filter(function(d){return d < dateBasedStart});
+
+    filteredDates.forEach(function (str) {
         var date = strDateToArray(str);
         if (date) {
           constraints.push(date);
         }
       });
+
+    if (!!dateBasedStart) {
+      constraints.push({'from': dateBasedStart, 'to': shiftDateArray(dateBasedStart, 50)});
+    }
+
+    return constraints;
+  };
+
+  var activateAvailableDates = function(mailingsMap) {
+    var $picker = $('#date-picker');
+    var dates = _.keys(mailingsMap).sort();
+
+    if (dates.length) {
+      var constraints = computeDisableConstraints(dates, mailingsMap);
 
       $picker.pickadate(_.merge({
         editable: true,
@@ -213,6 +249,62 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
     }
 
     $picker.trigger('change');
+  };
+
+  function init(config) {
+    $saveButton = $('#save-button');
+    $priorityCount = $('#priorityCount');
+    $orderedArea = $('#ordered-area');
+
+    $unorderedDateBasedArea = $("#datebased-container");
+    $unorderedNormalArea = $("#normal-container");
+
+    mailingsMap = config.mailingsMap;
+    createEntry = Template.prepare('draggable-mailing-entry');
+  }
+
+  this.addDomInitializer('mailing-priorities', function() {
+    var self = this;
+    init(self.config);
+
+    var $container = $('.l-content-area');
+    $('.priority-container').sortable({
+      opacity: 0.4,
+      connectWith: '.priority-container',
+      items: '.l-mailing-entry',
+      helper: 'clone',
+      containment: $container,
+      appendTo: $container,
+      update: function() {
+        if (this.id === $orderedArea.attr('id')) {
+          updateBadges();
+          checkOriginChanges();
+        }
+      },
+      out: function() {
+        highlightBackground($(this), false);
+      },
+      over: function(e, ui) {
+        highlightBackground($(e.target), false);
+        highlightBackground($(this), true);
+      },
+      start: function() {
+        highlightBackground($(this), true);
+      },
+      stop: function() {
+        highlightBackground($(this), false);
+      },
+      receive: function(e, ui) {
+        var mailingType = ui.item.data('type');
+        var targetId = e.target.id;
+
+        if (!isAppropriateType(targetId, mailingType)) {
+          ui.sender.sortable("cancel");
+        }
+      }
+    });
+
+    activateAvailableDates(mailingsMap);
   });
 
   this.addAction({

@@ -1,6 +1,6 @@
 <HelpBalloon>
 	<title>Recherche par groupe cible</title>
-	<content><![CDATA[La recherche de groupes cibles vous permet d'effectuer une recherche &agrave; l'aide des champs nom et description. Si vous souhaitez entrer plusieurs termes en même temps, vous pouvez utiliser les options suivantes:<br><br><br>.
+	<content><![CDATA[La recherche de groupes cibles vous permet d'effectuer une recherche &agrave; l'aide des champs nom et description. Si vous souhaitez entrer plusieurs termes en &ecirc;me temps, vous pouvez utiliser les options suivantes:<br><br><br>.
 <b>Recherche sp&eacute;cifique par guillemets </b><br><br><br>.
 Par exemple : R&eacute;cipiendaires quotidiens"<br><br><br>".
 Si deux termes ou plus sont mis entre guillemets, l'EMM recherchera les champs en utilisant cette s&eacute;quence sp&eacute;cifique de mots. Aucun r&eacute;sultat contenant un seul des mots ne sera affich&eacute;. <br><br><br>.

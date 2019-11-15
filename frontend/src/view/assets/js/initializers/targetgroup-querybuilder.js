@@ -20,7 +20,6 @@
     var isIE10 = navigator.userAgent.match('MSIE 10.0;');
     var isTargetGroupLocked = $('[name="locked"]').val();
 
-
     _.each($scope.find(qbSelector), function(el) {
       var $el = $(el);
       var operator_groups = buildOperatorGroups();
@@ -70,11 +69,24 @@
         }
       });
 
-      $el.on('mailing-values-set values-set', function(e) {
+      $el.on('mailing-values-set values-set ', function(e) {
         if (!isIE10) {
           AGN.Initializers.Select($(e.target));
         }
-      })
+      });
+
+      $el.on('change-date-format', function(e) {
+        if (!isIE10) {
+          AGN.Initializers.Select($(e.target));
+        }
+      });
+
+      $el.on("save-target-group.queryBuilder", function(event){
+        var self = this;
+        var queryBuilder = self.queryBuilder;
+          queryBuilder.clearInitialRuleSettings();
+          queryBuilder.validate();
+      });
     });
 
     function setRulesAsJson(builder) {
@@ -433,19 +445,19 @@
         },
         {
           type: "less",
-          apply_to: ["string", "number", "datetime"]
+          apply_to: ["string", "number"]
         },
         {
           type: "less_or_equal",
-          apply_to: ["string", "number", "datetime"]
+          apply_to: ["string", "number"]
         },
         {
           type: "greater",
-          apply_to: ["string", "number", "datetime"]
+          apply_to: ["string", "number"]
         },
         {
           type: "greater_or_equal",
-          apply_to: ["string", "number", "datetime"]
+          apply_to: ["string", "number"]
         },
         {
           type: "like",
@@ -496,7 +508,7 @@
           },
           input: function(rule) {
             var operators = this.operators.filter(function(operator) {
-              return operator.type !== 'mod';
+              return operator.type !== 'mod' && operator.apply_to.includes('number');
             });
             var operatorSelect = this.getRuleOperatorSelect(rule, operators);
             return "" +
@@ -504,7 +516,8 @@
               "<input class='form-control' id='first' type='number'/>" +
               "</div>" +
               "<div class='qb-input-element' id='operator'>" +
-              operatorSelect + "</div>" +
+              operatorSelect +
+              "</div>" +
               "<div class='qb-input-element'>" +
               "<input class='form-control' id='second' type='number'/>" +
               "</div>";
@@ -522,6 +535,16 @@
           type: "is_not_empty",
           nb_inputs: 0,
           apply_to: ["string", "number", "datetime"]
+        },
+        {
+          type: "before",
+          nb_inputs: 1,
+          apply_to: ["datetime"]
+        },
+        {
+          type: "after",
+          nb_inputs: 1,
+          apply_to: ["datetime"]
         }
       ];
     }

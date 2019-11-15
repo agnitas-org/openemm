@@ -61,11 +61,11 @@
                     <li>
 	                    <html:link page="/mailingbase.do?action=${ACTION_MAILING_IMPORT}" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/download.png">
+                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/file-download.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">
-                                <bean:message key="mailing.import"/>
+                                <bean:message key="import.csv_upload"/>
                             </p>
                             <p class="description">
                                 <bean:message key="mailing.import"/>

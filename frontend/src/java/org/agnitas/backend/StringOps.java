@@ -11,6 +11,7 @@
 package org.agnitas.backend;
 
 import java.io.UnsupportedEncodingException;
+import java.net.IDN;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -27,7 +28,6 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.util.PunycodeCodec;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrLookup;
@@ -330,18 +330,19 @@ public class StringOps {
 
 	public static String punycodeDomain (String domain) {
 		try {
-			return PunycodeCodec.encodeDomainName (domain);
+			return IDN.toASCII (domain);
 		} catch (Exception e) {
 			return domain;
 		}
 	}
-	
+
 	public static String punycodeEMail (String email) {
-		try {
-			return PunycodeCodec.encodeEmailAdress (email);
-		} catch (Exception e) {
-			return email;
+		int	at = email.lastIndexOf ('@');
+		
+		if (at != -1) {
+			return email.substring (0, at + 1) + punycodeDomain (email.substring (at + 1));
 		}
+		return email;
 	}
 
 	/**

@@ -317,12 +317,8 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 	public int calculateRecipients(CalculationRecipientsConfig config) throws Exception {
         CalculationRecipients<CalculationRecipientsConfig> result = getDefaultCalculation();
 
-        if (config.getMailingId() > 0) {
-            if (config.isChangeMailing()) {
-                result = getForUnsavedChanges();
-            }
-        } else {
-            throw new Exception("Incorrect params");
+        if (config.getMailingId() <= 0 || config.isChangeMailing()) {
+            result = getForUnsavedChanges();
         }
 
         return result.calculate(config);
@@ -469,7 +465,16 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
             }
         }
     }
-
+    
+    @Override
+    public ComMailing getMailing(@VelocityCheck int companyId, int mailingId) {
+        if (mailingId > 0 && companyId > 0) {
+            return (ComMailing) mailingDao.getMailing(mailingId, companyId);
+        }
+        
+        return null;
+    }
+    
     private boolean isContentBlank(String content, Map<String, DynamicTag> contentMap, Deque<String> visitedDynBlocks) {
         if (StringUtils.isBlank(content)) {
             return true;

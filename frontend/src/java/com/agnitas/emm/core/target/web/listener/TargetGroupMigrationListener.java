@@ -128,7 +128,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	private static final void migrateTargetGroup(final int companyId, final TargetGroupData targetGroup, final DataSource dataSource, final EqlFacade eqlFacade) throws TargetRepresentationToEqlConversionException {
 		final String eql = eqlFacade.convertTargetRepresentationToEql(targetGroup.targetRepresentation, companyId);
 		
-		final String sql = "UPDATE dyn_target_tbl SET eql=? WHERE target_id=?";
+		final String sql = "UPDATE dyn_target_tbl SET eql=?, target_representation=NULL WHERE target_id=?";
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 		template.update(sql,eql, targetGroup.targetID);
 		
@@ -144,7 +144,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	}
 	
 	private static final List<TargetGroupData> listTargetGroups(final int companyId, final DataSource dataSource) {
-		final String sql = "SELECT target_id, target_representation FROM dyn_target_tbl WHERE company_id=? AND (eql IS NULL OR eql='') AND target_representation IS NOT NULL";
+		final String sql = "SELECT target_id, target_representation FROM dyn_target_tbl WHERE company_id=? AND (locked IS NULL OR locked=0) AND (eql IS NULL OR eql='') AND target_representation IS NOT NULL";
 		
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 
@@ -155,6 +155,5 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 		final String sql = "UPDATE company_info_tbl SET cvalue='false', timestamp=current_timestamp, description='Migration done' WHERE cname = ? and company_id=?";
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 		template.update(sql, ConfigValue.MigrateTargetGroupsOnStartup.toString(), companyId);
-		
 	}
 }

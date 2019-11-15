@@ -14,13 +14,12 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 
 public class ComWorkflowDataParser {
     private static final transient Logger logger = Logger.getLogger(ComWorkflowDataParser.class);
@@ -29,9 +28,9 @@ public class ComWorkflowDataParser {
 
     public ComWorkflowDataParser() {
         mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-        mapper.configure(DeserializationConfig.Feature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        mapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public List<WorkflowIcon> deSerializeWorkflowIconsList(String contentJson) {
@@ -39,37 +38,6 @@ public class ComWorkflowDataParser {
 			// nothing to do
         };
 
-        List<WorkflowIcon> icons = Collections.emptyList();
-        return deserialize(contentJson, type, icons, "deSerializeWorkflowIconsList");
-    }
-
-    public String serializeWorkflowIcons(List<WorkflowIcon> icons) {
-        return serialize(icons, "serializeWorkflowIcons");
-    }
-
-    public String serializeRules(List<WorkflowRule> startRules) {
-        return serialize(startRules, "serializeRules");
-    }
-
-    public List<WorkflowRule> deSerializeRules(String contentJson) {
-        TypeReference<List<WorkflowRule>> type = new TypeReference<List<WorkflowRule>>(){
-			// nothing to do
-        };
-
-        List<WorkflowRule> startRules = Collections.emptyList();
-        return deserialize(contentJson, type, startRules, "deSerializeRules");
-    }
-
-    private <T> String serialize(T value, String errorMessage) {
-        try {
-            return mapper.writeValueAsString(value);
-        } catch (IOException e) {
-            logger.error(errorMessage + ": " + e, e);
-            return null;
-        }
-    }
-
-    private <T> T deserialize(String contentJson, TypeReference<T> type, T defaultValue, String errorMessage) {
         if (contentJson == null) {
             return null;
         }
@@ -77,8 +45,17 @@ public class ComWorkflowDataParser {
         try {
             return mapper.readValue(contentJson, type);
         } catch (IOException e) {
-            logger.error(errorMessage + ": " + e, e);
-            return defaultValue;
+            logger.error("deSerializeWorkflowIconsList: " + e, e);
+            return Collections.emptyList();
+        }
+    }
+
+    public String serializeWorkflowIcons(List<WorkflowIcon> icons) {
+        try {
+            return mapper.writeValueAsString(icons);
+        } catch (IOException e) {
+            logger.error("serializeWorkflowIcons: " + e, e);
+            return null;
         }
     }
 }

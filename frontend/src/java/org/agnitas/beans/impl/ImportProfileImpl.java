@@ -44,7 +44,7 @@ public class ImportProfileImpl implements ImportProfile {
     protected int dateFormat;
     protected int importMode = 1;
     protected int checkForDuplicates;
-    protected int nullValuesAction = 1;
+    protected int nullValuesAction = 0;
     protected Map<String, Integer> genderMapping = Collections.synchronizedMap(new HashMap<String, Integer>());
     protected List<ColumnMapping> columnMapping = Collections.synchronizedList(new ArrayList<ColumnMapping>());
     protected String mailForReport;

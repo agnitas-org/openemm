@@ -50,29 +50,29 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 			if (mode == EcsGlobals.MODE_GROSS_CLICKS) {
 				sqlClicksPerMail = "SELECT COUNT(customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE company_id = ? AND mailing_id = ?";
+					+ " WHERE mailing_id = ?";
 				
 				sqlClicksPerLink = "SELECT url_id, COUNT(customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE company_id = ? AND mailing_id = ?"
+					+ " WHERE mailing_id = ?"
 					+ " GROUP BY url_id"
 					+ " ORDER BY clicks DESC";
 			} else if (mode == EcsGlobals.MODE_NET_CLICKS) {
 				sqlClicksPerMail = "SELECT COUNT(DISTINCT customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE company_id = ? AND mailing_id = ?";
+					+ " WHERE mailing_id = ?";
 				
 				sqlClicksPerLink = "SELECT url_id, COUNT(DISTINCT customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE company_id = ? AND mailing_id = ?"
+					+ " WHERE mailing_id = ?"
 					+ " GROUP BY url_id"
 					+ " ORDER BY clicks DESC";
 			} else {
 				throw new Exception("Invalid mode: " + mode);
 			}
 
-			int clicksPerMail = selectInt(logger, sqlClicksPerMail, companyId, mailingId);
-			List<Map<String, Object>> resultClicksPerLink = select(logger, sqlClicksPerLink, companyId, mailingId);
+			int clicksPerMail = selectInt(logger, sqlClicksPerMail, mailingId);
+			List<Map<String, Object>> resultClicksPerLink = select(logger, sqlClicksPerLink, mailingId);
 
 			ClickStatInfo clickStatInfo = new ClickStatInfoImpl();
 			for (Map<String, Object> row : resultClicksPerLink) {

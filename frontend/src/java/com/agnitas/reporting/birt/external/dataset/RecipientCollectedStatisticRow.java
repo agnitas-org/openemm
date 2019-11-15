@@ -18,6 +18,7 @@ public class RecipientCollectedStatisticRow {
 	private int categoryindex;
 	private String targetgroup;
 	private int targetgroupindex;
+	private int targetgroupId;
 	private int count;
 	private double rate;
 
@@ -76,35 +77,42 @@ public class RecipientCollectedStatisticRow {
 	public void setTargetgroupindex(int targetgroupindex) {
 		this.targetgroupindex = targetgroupindex;
 	}
-
+	
+	public int getTargetgroupId() {
+		return targetgroupId;
+	}
+	
+	public void setTargetgroupId(int targetgroupId) {
+		this.targetgroupId = targetgroupId;
+	}
+	
 	public int getCount() {
 		return count;
 	}
-
+	
 	public void setCount(int count) {
 		this.count = count;
 	}
-
+	
 	public double getRate() {
 		return rate;
 	}
-
+	
 	public void setRate(double rate) {
 		this.rate = rate;
 	}
-
+	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder("SendStatRow : \n");
-		builder.append("mailingListGroupId: " + getMailingListGroupId() + "\n");
-		builder.append("MailingList: " + getMailingList() + "\n");
-		builder.append("MailingListId: " + getMailingListId() + "\n");
-		builder.append("Category: " + getCategory() + "\n");
-		builder.append("CategoryIndex: " + getCategoryindex() + "\n");
-		builder.append("Targetgroup: " + getTargetgroup() + "\n");
-		builder.append("TargetgroupIndex: " + getTargetgroupindex() + "\n");
-		builder.append("Value: " + getCount() + "\n");
-		builder.append("Rate: " + getRate() + "\n");
-		return builder.toString();
+		return "SendStatRow : \n" + "mailingListGroupId: " + getMailingListGroupId() + "\n" +
+				"MailingList: " + getMailingList() + "\n" +
+				"MailingListId: " + getMailingListId() + "\n" +
+				"Category: " + getCategory() + "\n" +
+				"CategoryIndex: " + getCategoryindex() + "\n" +
+				"Targetgroup: " + getTargetgroup() + "\n" +
+				"TargetgroupIndex: " + getTargetgroupindex() + "\n" +
+				"TargetgroupId: " + getTargetgroupId() + "\n" +
+				"Value: " + getCount() + "\n" +
+				"Rate: " + getRate() + "\n";
 	}
 }

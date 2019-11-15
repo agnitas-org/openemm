@@ -11,101 +11,110 @@
 
 package org.agnitas.service;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ImportResult {
-    public static Builder builder() {return new Builder();}
-    
-    private int mailingID;
-    private boolean isTemplate;
-    private int gridTemplateID;
-    private boolean isSuccess = false;
-    private Set<String> warningKeys = new HashSet<>();
-    private Set<String> errorKeys = new HashSet<>();
+	public static Builder builder() {return new Builder();}
+	
+	private int mailingID;
+	private boolean isTemplate;
+	private int gridTemplateID;
+	private boolean isSuccess = false;
+	private Map<String, Object[]> warnings = new HashMap<>();
+	private Map<String, Object[]> errors = new HashMap<>();
 
-    protected ImportResult() {}
+	protected ImportResult() {}
 
-    public int getMailingID() {
-        return mailingID;
-    }
+	public int getMailingID() {
+		return mailingID;
+	}
 
-    public boolean isTemplate() {
-        return isTemplate;
-    }
+	public boolean isTemplate() {
+		return isTemplate;
+	}
 
-    public Set<String> getWarningKeys() {
-        return warningKeys;
-    }
-    
-    public Set<String> getErrorKeys() {
-        return errorKeys;
-    }
-    
-    public boolean isSuccess() {
-        return isSuccess;
-    }
-    
-    public int getGridTemplateID() {
-        return gridTemplateID;
-    }
-    
-    public static class Builder {
-        private ImportResult options = new ImportResult();
-        private Set<String> errorKeys = new HashSet<>();
-        private Set<String> warningKeys = new HashSet<>();
+	public Map<String, Object[]> getWarnings() {
+		return warnings;
+	}
+	
+	public Map<String, Object[]> getErrors() {
+		return errors;
+	}
+	
+	public boolean isSuccess() {
+		return isSuccess;
+	}
+	
+	public int getGridTemplateID() {
+		return gridTemplateID;
+	}
+	
+	public static class Builder {
+		private ImportResult options = new ImportResult();
+		private Map<String, Object[]> errors = new HashMap<>();
+		private Map<String, Object[]> warnings = new HashMap<>();
 
-        private Builder() {}
+		private Builder() {}
+		
+		public ImportResult.Builder setSuccess(boolean isSuccess) {
+			options.isSuccess = isSuccess;
+			return this;
+		}
         
-        public ImportResult.Builder setSuccess(boolean isSuccess) {
-            options.isSuccess = isSuccess;
+        public ImportResult.Builder addWarnings(Map<String, Object[]> warnings) {
+        	this.warnings.putAll(warnings);
             return this;
         }
+		
+		public ImportResult.Builder addWarning(String warningKey) {
+			this.warnings.put(warningKey, null);
+			return this;
+		}
+		
+		public ImportResult.Builder addWarning(String warningKey, Object... values) {
+			this.warnings.put(warningKey, values);
+			return this;
+		}
         
-        public ImportResult.Builder addWarningKeys(String... warningKeys) {
-            this.warningKeys.addAll(Arrays.asList(warningKeys));
+        public ImportResult.Builder addErrors(Map<String, Object[]> errors) {
+        	this.errors.putAll(errors);
             return this;
         }
-        
-        public ImportResult.Builder addWarningKeys(Set<String> warningKeys) {
-            this.warningKeys.addAll(warningKeys);
-            return this;
-        }
-        
-        public ImportResult.Builder setErrorKeys(String... errorKeys) {
-            this.errorKeys.addAll(Arrays.asList(errorKeys));
-            return this;
-        }
-        
-        public ImportResult.Builder setErrorKeys(Set<String> errorKeys) {
-            this.errorKeys.addAll(errorKeys);
-            return this;
-        }
+		
+		public ImportResult.Builder addError(String errorKey) {
+			this.errors.put(errorKey, null);
+			return this;
+		}
+		
+		public ImportResult.Builder addError(String errorKey, Object... values) {
+			this.errors.put(errorKey, values);
+			return this;
+		}
 
-        public ImportResult.Builder setMailingID(int mailingID) {
-            options.mailingID = mailingID;
-            return this;
-        }
-        
-        public ImportResult.Builder setGridTemplateID(int gridTemplateID) {
-            options.gridTemplateID = gridTemplateID;
-            return this;
-        }
-        
-        public ImportResult.Builder setIsTemplate(boolean isTemplate) {
-            options.isTemplate = isTemplate;
-            return this;
-        }
+		public ImportResult.Builder setMailingID(int mailingID) {
+			options.mailingID = mailingID;
+			return this;
+		}
+		
+		public ImportResult.Builder setGridTemplateID(int gridTemplateID) {
+			options.gridTemplateID = gridTemplateID;
+			return this;
+		}
+		
+		public ImportResult.Builder setIsTemplate(boolean isTemplate) {
+			options.isTemplate = isTemplate;
+			return this;
+		}
 
-        public ImportResult build() {
-            ImportResult result = options;
-            result.warningKeys = warningKeys;
-            result.errorKeys = errorKeys;
-            warningKeys = null;
-            errorKeys = null;
-            options = null;
-            return result;
-        }
-    }
+		public ImportResult build() {
+			ImportResult result = options;
+			result.warnings = warnings;
+			result.errors = errors;
+			warnings = null;
+			errors = null;
+			options = null;
+			return result;
+		}
+	}
 }

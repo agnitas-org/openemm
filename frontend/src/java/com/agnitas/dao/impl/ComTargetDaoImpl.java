@@ -56,6 +56,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
+
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_SQL_PATTERN;
 
 /**
@@ -182,7 +183,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	@Override
 	public Map<Integer, TargetLight> getAllowedTargetLights(@VelocityCheck int companyID) {
 		Map<Integer, TargetLight> targets = new HashMap<>();
-		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide FROM dyn_target_tbl WHERE company_id = ? ORDER BY target_id";
+		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, invalid FROM dyn_target_tbl WHERE company_id = ? ORDER BY target_id";
 
 		List<TargetLight> list = select(logger, sql, targetLightRowMapper, companyID);
 
@@ -867,6 +868,15 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 
 						readTarget.setTargetStructure(targetRepresentationFactory.newTargetRepresentation());
 						readTarget.setSimpleStructured(false);
+					} catch(final Exception e) {
+						// This exception is handled by this catch-code an will therefore be logged at INFO level
+						if(logger.isInfoEnabled()) {
+							logger.info("Cannot convert EQL to target representation for target group " + readTarget.getId(), e);
+						}
+
+						readTarget.setTargetStructure(targetRepresentationFactory.newTargetRepresentation());
+						readTarget.setSimpleStructured(false);
+						
 					}
 				} else {
 					if(logger.isInfoEnabled()) {
@@ -953,6 +963,10 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				readTarget.setDeleted(resultSet.getInt("deleted"));
 				readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
 				readTarget.setValid(!resultSet.getBoolean("invalid"));
+				
+				if (DbUtilities.resultsetHasColumn(resultSet, "invalid")) {
+					readTarget.setValid(!resultSet.getBoolean("invalid"));
+				}
 				
 				return readTarget;
 			} catch (Exception e) {
@@ -1112,5 +1126,29 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		return select(logger,
 				"SELECT target_id FROM dyn_target_tbl WHERE hidden = 1 AND target_shortname like ? AND company_id = ?",
 				new IntegerRowMapper(), WORKFLOW_TARGET_NAME_SQL_PATTERN, companyId);
+	}
+	
+	@Override
+	public List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
+		List<Object> selectParameter = new ArrayList<>();
+		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide " +
+				" FROM dyn_target_tbl WHERE company_id = ? AND target_shortname = ? AND target_sql = ?" +
+				" AND (hidden IS NULL or hidden = 0)";
+		selectParameter.add(companyId);
+		selectParameter.add(targetName);
+		selectParameter.add(targetSQL);
+		
+		if (!includeDeleted) {
+			selectSql += " AND deleted = 0";
+		}
+		
+		// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
+		if (worldDelivery && !adminTestDelivery) {
+			selectSql += " AND admin_test_delivery = 0";
+		} else if (!worldDelivery && adminTestDelivery) {
+			selectSql += " AND admin_test_delivery = 1";
+		}
+
+		return select(logger, selectSql, targetRowMapperWithEql,  selectParameter.toArray());
 	}
 }

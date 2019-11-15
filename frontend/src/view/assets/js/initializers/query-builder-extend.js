@@ -7,11 +7,6 @@
             return $('#helpLanguage').val();
         };
 
-        var dateFormatInput = function (availableFormats) {
-            return "<select class='form-control' id='date-format'>" + generateDateFormatSelect(availableFormats) +
-                "</select>";
-        };
-
         function addOperator(value, dateValue) {
             if (Math.sign(value) === -1) {
                 dateValue.push("sub");
@@ -54,6 +49,16 @@
                     }
                 });
 
+                this.on('afterUpdateRuleOperator', function(event, rule) {
+                    var options = event.builder.optionsByType[rule.filter.type];
+                    if (options) {
+                        var method = options.postOperatorUpdate;
+                        if (method && typeof method === 'function') {
+                            method.call(event.builder, rule, options);
+                        }
+                    }
+                });
+
                 if (rules && rules.rules && rules.rules.length) {
                     this.initialRule = false;
                 } else {
@@ -65,7 +70,11 @@
 
             optionsByType: {
                 'date': {
-                    availableFormats : ['DD.MM.YYYY', 'YYYYMMDD', 'DDMMYYYY', 'MMDD', 'DDMM', 'DD', 'MM', 'YYYY'],
+                    availableFormats : function (operator) {
+                        if (operator && operator.type && (operator.type == 'before' || operator.type == 'after')) {
+                            return ['YYYYMMDD'];
+                        }
+                        return ['DD.MM.YYYY', 'YYYYMMDD', 'DDMMYYYY', 'MMDD', 'DDMM', 'DD', 'MM', 'YYYY'];},
                     input: function (rule, options) {
                         // Cannot use default data attributes and AGN.runAll, since runAll is performed on document and this part is detached.
                         return $(
@@ -90,7 +99,10 @@
                                     t('date.formats.label') +
                                 '</div>' +
                             '</div>' +
-                            '<div class="qb-input-element">' + dateFormatInput(options.availableFormats) +
+                            '<div class="qb-input-element">' +
+                                '<select class="form-control" id="date-format">' +
+                                    generateDateFormatSelect(options.availableFormats(options.operator)) +
+                                '</select>' +
                             '</div>' +
                             '<div class="qb-input-label">' +
                                 '<div class="qb-input-inner">' +
@@ -141,6 +153,12 @@
                         };
 
                         $todayCheckbox.on('change', onModeChange);
+                    },
+                    postOperatorUpdate: function(rule, options) {
+                        var $dateFormat = rule.$el.find('#date-format');
+                        $dateFormat.html(generateDateFormatSelect(options.availableFormats(rule.operator)));
+                        $dateFormat.change();
+                        $dateFormat.trigger('change-date-format');
                     },
                     valueSetter: function (rule, values) {
                         var valuesCopy = values.slice(0);
@@ -195,7 +213,7 @@
                             var format = values[1];
 
                             if (date) {
-                                if (format) {
+                                if ('today' != date && format) {
                                     return validateDateFormat(date, format.toUpperCase()) ? true : ['invalid_format'];
                                 } else {
                                     return true;
@@ -216,21 +234,32 @@
                 }
             },
 
+            clearInitialRuleSettings: function () {
+                var self = this;
+                self.initialRule = false;
+                $('.initial-rule').removeClass('initial-rule');
+            },
+
             validate: function(options) {
                 var self = this;
                 var root = self.model.root.rules;
-                if (this.initialRule && root.length === 1) {
-                    this.clearErrors();
-                    root[0].$el.addClass('initial-rule');
-                    this.initialRule = false;
-                } else {
-                    $('.initial-rule').removeClass('initial-rule');
-                    originalValidate.call(this, options);
+
+                if (root.length === 1 && root[0].$el.hasClass('initial-rule')) {
+                    self.clearErrors();
+                    return;
                 }
+
+                if (this.initialRule && root.length === 1) {
+                    self.clearErrors();
+                    root[0].$el.addClass('initial-rule');
+                    return;
+                }
+
+                self.clearInitialRuleSettings();
+                originalValidate.call(this, options);
             },
 
             getRuleInput: function (rule, value_id) {
-
                 var filter = rule.filter;
                 var validation = rule.filter.validation || {};
                 var name = rule.id + '_value_' + value_id;

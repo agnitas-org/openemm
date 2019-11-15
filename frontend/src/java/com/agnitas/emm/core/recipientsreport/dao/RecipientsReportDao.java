@@ -13,10 +13,9 @@ package com.agnitas.emm.core.recipientsreport.dao;
 import java.io.File;
 import java.util.Date;
 
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 
 public interface RecipientsReportDao {
 
@@ -26,7 +25,7 @@ public interface RecipientsReportDao {
 
     PaginatedListImpl<RecipientsReport> getReports(@VelocityCheck int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
-    RecipientsReport getReport(int companyId, int id);
+    RecipientsReport getReport(@VelocityCheck int companyId, int reportId);
 
     int deleteOldReports(@VelocityCheck int companyId, Date oldestReportDate);
     
@@ -35,4 +34,6 @@ public interface RecipientsReportDao {
 	void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
 
 	byte[] getReportFileData(int companyId, int reportId) throws Exception;
+    
+    RecipientsReport.RecipientReportType getReportType(@VelocityCheck int companyId, int reportId);
 }

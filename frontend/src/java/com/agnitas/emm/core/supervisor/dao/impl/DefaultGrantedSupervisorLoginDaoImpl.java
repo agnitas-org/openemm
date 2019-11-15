@@ -9,7 +9,7 @@ import com.agnitas.emm.core.supervisor.dao.GrantedSupervisorLoginDao;
 import com.agnitas.emm.core.supervisor.service.UnknownSupervisorLoginPermissionException;
 
 /**
- * Dummy implementation of {@link GrantedSupervisorLoginDao}
+ * Dummy implementation of {@link GrantedSupervisorLoginDao }
  */
 public class DefaultGrantedSupervisorLoginDaoImpl implements GrantedSupervisorLoginDao {
     @Override

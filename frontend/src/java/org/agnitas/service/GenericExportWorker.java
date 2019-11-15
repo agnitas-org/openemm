@@ -117,7 +117,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		((SimpleDateFormat) dateTimeFormat).applyPattern(((SimpleDateFormat) dateTimeFormat).toPattern().replaceFirst("y+", "yyyy"));
 	}
 
-	/** 
+	/**
 	 * CSV columnnames to write to the CSV export file.
 	 * If empty, we use the selected sql column names.
 	 * If set to null, we don't write any csv column names.

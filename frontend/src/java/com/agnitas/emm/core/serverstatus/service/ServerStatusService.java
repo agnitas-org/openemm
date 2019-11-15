@@ -20,6 +20,7 @@ import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.Version;
 
 public interface ServerStatusService {
     
@@ -41,8 +42,6 @@ public interface ServerStatusService {
     
     boolean saveServerConfig(int companyId, String configName, String configValue, String description);
     
-    List<String> getEditableConfigurations();
-    
     ConfigValueDto getServerConfigurations(int companyId, String configName);
 
 	String getVersion();
@@ -54,4 +53,8 @@ public interface ServerStatusService {
 	boolean isImportStalling();
 
 	List<JobDto> getErrorneousJobs();
+
+	List<String> killRunningImports();
+
+	Version getAvailableUpdateVersion() throws Exception;
 }

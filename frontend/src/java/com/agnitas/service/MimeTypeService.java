@@ -21,11 +21,15 @@ public class MimeTypeService {
 	private static MimetypesFileTypeMap MIMETYPEMAP = null;
 	
 	public MimeTypeService() throws IOException {
-		MIMETYPEMAP = parseMimetypeResourceFile(MIMETYPES_RESOURCE_FILE);
+		synchronized(MimeTypeService.class) {
+			if(MIMETYPEMAP == null) {
+				MIMETYPEMAP = parseMimetypeResourceFile(MIMETYPES_RESOURCE_FILE);
+			}
+		}
 	}
 	
-	private MimetypesFileTypeMap parseMimetypeResourceFile(String resource) throws IOException {
-		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resource)) {
+	private static MimetypesFileTypeMap parseMimetypeResourceFile(String resource) throws IOException {
+		try (InputStream inputStream = MimeTypeService.class.getClassLoader().getResourceAsStream(resource)) {
 			return new MimetypesFileTypeMap(inputStream);
 		}
 	}

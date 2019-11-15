@@ -102,13 +102,17 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	public void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
 		// Insert customer data
 		// Check if customer limit is reached
-		int numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
-		if (numberOfCustomersLimit > 0) {
+		int numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
+		// Check global license maximum first
+		if (numberOfCustomersLimit < 0) {
+			numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
+		}
+		if (numberOfCustomersLimit >= 0) {
     		int currentNumberOfCustomers = DbUtilities.getTableEntriesCount(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl");
     		int numberOfInsertableItems = importRecipientsDao.getNumberOfEntriesForInsert(temporaryImportTableName, duplicateIndexColumn);
     		int numberOfCustomersAfterImport = currentNumberOfCustomers + numberOfInsertableItems;
     		if (numberOfCustomersAfterImport > numberOfCustomersLimit) {
-    			throw new Exception("Number of customer entries allowed is going to be exceeded by this import. Number of existing customers is " + currentNumberOfCustomers + ". Number of insertable customers is " + numberOfInsertableItems + ". Limit is " + numberOfCustomersLimit + ".");
+    			throw new ImportException(false, "error.import.maxcustomersexceeded", currentNumberOfCustomers , numberOfInsertableItems, numberOfCustomersLimit);
     		} else if (numberOfCustomersAfterImport > (numberOfCustomersLimit * 0.9)) {
     			// Shows a warning in ProfileImportAction after the import
     			status.setNearLimit(true);

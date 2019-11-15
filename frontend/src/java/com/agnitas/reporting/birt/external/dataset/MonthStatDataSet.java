@@ -40,14 +40,15 @@ public class MonthStatDataSet extends BIRTDataSet {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
-		String query = "SELECT COUNT(DISTINCT mailing_id) mailing_count,"
-			+ " SUM(no_of_mailings) email_count,"
-			+ " SUM(no_of_bytes) / SUM(no_of_mailings) / 1024 kbPerMail"
-			+ " FROM mailing_account_tbl"
-			+ " WHERE company_id = ?"
-			+ " AND timestamp >= ?"
-			+ " AND timestamp < ?"
-			+ " AND status_field NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') ";
+		String query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
+			+ " SUM(a.no_of_mailings) email_count,"
+			+ " SUM(a.no_of_bytes) / SUM(no_of_mailings) / 1024 kbPerMail"
+			+ " FROM mailing_account_tbl a "
+            + " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id AND m.deleted = 0 "
+			+ " WHERE a.company_id = ?"
+			+ " AND a.timestamp >= ?"
+			+ " AND a.timestamp < ?"
+			+ " AND a.status_field NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') ";
 		return select(logger, query, (resultSet, rowNum) -> {
 			MonthCounterStatRow monthCounterRow = new MonthCounterStatRow();
 			monthCounterRow.setMailingCount(resultSet.getInt("mailing_count"));
@@ -79,7 +80,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryParameters.add(endDate);
 
 		queryBuilder.append(" FROM mailing_tbl m, mailing_account_tbl a")
-			.append(" WHERE m.company_id = ?")
+			.append(" WHERE m.company_id = ? AND m.deleted = 0")
 			.append(" AND m.mailing_id = a.mailing_id")
 			.append(" AND a.no_of_mailings <> 0 AND a.status_field NOT IN ('")
 			.append(UserType.Admin.getTypeCode()).append("', '")
@@ -145,7 +146,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}
 
 		queryBuilder.append(" FROM mailing_tbl m, mailing_account_tbl a")
-			.append(" WHERE m.company_id = ?")
+			.append(" WHERE m.company_id = ? AND m.deleted = 0")
 			.append(" AND m.mailing_id = a.mailing_id")
 			.append(" AND a.no_of_mailings <> 0 AND a.status_field NOT IN ('")
 			.append(UserType.Admin.getTypeCode()).append("', '")

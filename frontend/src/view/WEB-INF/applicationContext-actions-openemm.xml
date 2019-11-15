@@ -29,13 +29,12 @@
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
-		<property name="mailinglistService" ref="mailinglistService" />
-		<property name="publicKeyFilename" ref="publickeyfile" />
 		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="birtReportDao" ref="BirtReportDao" />
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="webStorage" ref="WebStorage" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+		<property name="birtStatisticsService" ref="BirtStatisticsService"/>
 	</bean>
 
 	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendAction">
@@ -69,7 +68,6 @@
 		<property name="maildropService" ref="MaildropService" />
 		<property name="deliveryStatService" ref="mailingDeliveryStatService"/>
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="linkService" ref="LinkService" />
 		<property name="blacklistService" ref="BlacklistService" />
 		<property name="gridService" ref="GridServiceWrapper"/>
 	</bean>
@@ -88,7 +86,7 @@
 	<bean name="/exportwizard" class="org.agnitas.web.ExportWizardAction">
 		<property name="targetDao" ref="TargetDao" />
 		<property name="dataSource" ref="dataSource" />
-		<property name="mailinglistService" ref="mailinglistService" />
+		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />
@@ -112,7 +110,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="configService" ref="ConfigService" />
-		<property name="mailinglistService" ref="mailinglistService" />
+		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="deliveryStatService" ref="mailingDeliveryStatService"/>
 		<property name="mailingService" ref="MailingService"/>
 		<property name="webStorage" ref="WebStorage"/>
@@ -120,7 +118,7 @@
 	</bean>
 
 	<bean name="/recipient" class="com.agnitas.web.ComRecipientAction">
-		<property name="mailinglistService" ref="mailinglistService" />
+		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="targetDao" ref="TargetDao" />
 		<property name="configService" ref="ConfigService" />
@@ -138,7 +136,6 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="targetService" ref="targetService" />
 		<property name="targetFactory" ref="TargetFactory" />
-		<property name="profileFieldDao" ref="ProfileFieldDao" />
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="webStorage" ref="WebStorage" />
         <property name="blacklistService" ref="BlacklistService"/>
@@ -156,7 +153,7 @@
 	<bean name="/newimportwizard" class="org.agnitas.web.ProfileImportAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="configService" ref="ConfigService" />
-		<property name="mailinglistService" ref="mailinglistService" />
+		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />

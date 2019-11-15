@@ -12,12 +12,10 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.ServerCommand;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -28,7 +26,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 /**
  * Default implementation of ComServerMessageDao
  */
-public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMessageDao{
+public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMessageDao {
     private static final transient Logger logger = Logger.getLogger(ComServerMessageDaoImpl.class);
 
     @Override
@@ -40,12 +38,16 @@ public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMes
 
     @Override
     public List<ServerCommand> getCommand(Date since, Date till, ServerCommand.Server server, ServerCommand.Command command) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS);
-        String query = "SELECT * FROM server_command_tbl WHERE execution_date BETWEEN ? AND ? AND server_name = ? AND command = ?";
-        return select(logger, query, new ServerCommandRowMapper(), dateFormat.format(since), dateFormat.format(till), server.toString(), command.toString());
+    	if (since == null) {
+	        String query = "SELECT * FROM server_command_tbl WHERE execution_date < ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+	        return select(logger, query, new ServerCommandRowMapper(), till, server.toString(), command.toString());
+    	} else {
+	        String query = "SELECT * FROM server_command_tbl WHERE (? < execution_date AND execution_date < ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+            return select(logger, query, new ServerCommandRowMapper(), since, till, server.toString(), command.toString());
+    	}
     }
 
-    private class ServerCommandRowMapper implements RowMapper<ServerCommand>{
+    private class ServerCommandRowMapper implements RowMapper<ServerCommand> {
         @Override
         public ServerCommand mapRow(ResultSet rs, int rowNum) throws SQLException {
             ServerCommand serverCommand = new ServerCommand();

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
+import java.util.Set;
+
 import com.agnitas.emm.core.target.eql.ast.TodayAtomEqlNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
@@ -17,7 +19,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class TodayAtomParser extends GenericValueExtractorEqlNodeParser<TodayAtomEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(TodayAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode) {
+    protected QueryBuilderGroupNode parse(TodayAtomEqlNode node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode, Set<String> profileFields) {
         ruleNode.setValue(new Object[]{"today"});
         return groupNode;
     }

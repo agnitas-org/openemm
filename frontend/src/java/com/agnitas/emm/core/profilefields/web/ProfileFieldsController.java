@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.profilefields.web;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,10 +18,10 @@ import java.util.Set;
 
 import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.GuiConstants;
@@ -108,7 +107,6 @@ public class ProfileFieldsController {
     public String view(ComAdmin admin, @PathVariable("fieldname") String fieldName, ModelMap model) {
         final int companyId = admin.getCompanyID();
         ComProfileField field = profileFieldService.getProfileField(companyId, fieldName);
-        SimpleDateFormat dateFormat = AgnUtils.getDateTimeFormat(DateFormat.MEDIUM, DateFormat.SHORT, admin);
 
         if (!model.containsAttribute("profileForm")) {
             ProfileFieldForm form;
@@ -129,9 +127,9 @@ public class ProfileFieldsController {
 
         String creationDate = "";
         String changeDate = "";
-        if(field != null) {
-            creationDate = DateUtilities.format(field.getCreationDate(), dateFormat);
-            changeDate = DateUtilities.format(field.getChangeDate(), dateFormat);
+        if (field != null) {
+            creationDate = DateUtilities.format(field.getCreationDate(), admin.getDateTimeFormat());
+            changeDate = DateUtilities.format(field.getChangeDate(), admin.getDateTimeFormat());
         }
 
         model.addAttribute("HISTORY_FEATURE_ENABLED", configService.isRecipientProfileHistoryEnabled(companyId));
@@ -344,13 +342,13 @@ public class ProfileFieldsController {
         }
 
         if (profileField == null) {
-            validateForCreating(companyId, form, popups);
+            validateForCreating(companyId, form, popups, admin.getDateFormat());
         } else {
-            validationForUpdating(companyId, profileField, form, popups);
+            validationForUpdating(companyId, profileField, form, popups, admin.getDateFormat());
         }
     }
 
-    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups) {
+    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat) {
         if (!form.isFieldNull() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
@@ -359,25 +357,25 @@ public class ProfileFieldsController {
             popups.alert("error.profiledb.invalidFieldName", form.getFieldname());
         } else if (validationService.isShortnameInDB(companyId, form.getShortname())) {
             popups.alert("error.profiledb.exists");
-        } else if (!validationService.isAllowedDefaultValue(form.getFieldType(), form.getFieldDefault())) {
-            popups.alert("error.profiledb.invalidDefaultValue");
+        } else if (!validationService.isAllowedDefaultValue(form.getFieldType(), form.getFieldDefault(), dateFormat)) {
+            popups.alert("error.profiledb.invalidDefaultValue", dateFormat.toPattern());
         } else if (!validationService.isDefaultValueAllowedInDb(companyId, form.getFieldname(), form.getFieldDefault())) {
-            popups.alert("error.profiledb.tooManyEntriesToChangeDefaultValue", ProfileFieldValidationService.MAX_NUMBER_OF_ENTRIES_FOR_CHANGE);
-        } else if (containNotAllowedValue(form, form.getFieldType())) {
+            popups.alert("error.profiledb.tooManyEntriesToChangeDefaultValue", configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId));
+        } else if (containNotAllowedValue(form, form.getFieldType(), dateFormat)) {
             popups.alert("error.profiledb.invalidFixedValue");
         } else if (!validationService.mayAddNewColumn(companyId)) {
             popups.alert("error.profiledb.maxCount");
         }
     }
 
-    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups) {
+    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat) {
         if (!field.getNullable() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
 
-        if (!validationService.isAllowedDefaultValue(field.getDataType(), form.getFieldDefault())) {
-            popups.alert("error.profiledb.invalidDefaultValue");
-        } else if (containNotAllowedValue(form, field.getDataType())) {
+        if (!validationService.isAllowedDefaultValue(field.getDataType(), form.getFieldDefault(), dateFormat)) {
+            popups.alert("error.profiledb.invalidDefaultValue", dateFormat.toPattern());
+        } else if (containNotAllowedValue(form, field.getDataType(), dateFormat)) {
             popups.alert("error.profiledb.invalidFixedValue");
         } else if (form.isIncludeInHistory()) {
             final int maximumHistoryFields = configService.getMaximumNumberOfUserDefinedHistoryProfileFields(companyId);
@@ -394,7 +392,7 @@ public class ProfileFieldsController {
         }
     }
 
-    private boolean containNotAllowedValue(ProfileFieldForm form, String dataType) {
+    private boolean containNotAllowedValue(ProfileFieldForm form, String dataType, SimpleDateFormat dateFormat) {
         String[] values = form.getAllowedValues();
         boolean[] validationResult;
         boolean invalid = false;
@@ -406,7 +404,7 @@ public class ProfileFieldsController {
         validationResult = new boolean[values.length];
 
         for (int i = 0; i < values.length; i++) {
-            validationResult[i] = validationService.isAllowedDefaultValue(dataType, values[i]);
+            validationResult[i] = validationService.isAllowedDefaultValue(dataType, values[i], dateFormat);
 
             if (!validationResult[i]) {
                 invalid = true;

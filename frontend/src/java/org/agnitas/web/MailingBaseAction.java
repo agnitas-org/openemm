@@ -69,11 +69,11 @@ import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.web.forms.ComMailingBaseForm;
 
 /**
@@ -99,7 +99,7 @@ public class MailingBaseAction extends StrutsActionBase {
     protected Map<String, Future<PaginatedListImpl<Map<String, Object>>>> futureHolder;
 
     /** DAO accessing target groups. */
-    protected ComTargetDao targetDao;
+    protected ComTargetService targetService;
     protected TAGCheckFactory tagCheckFactory;
     protected ExecutorService workerExecutorService;
     protected ComCampaignDao campaignDao;
@@ -318,8 +318,8 @@ public class MailingBaseAction extends StrutsActionBase {
 
                 prepareMailinglists(aForm, AgnUtils.getAdmin(req));
                 aForm.setCampaigns(campaignDao.getCampaignList(AgnUtils.getCompanyID(req),"lower(shortname)",1));
-                aForm.setTargetGroupsList(targetDao.getTargetLights(AgnUtils.getCompanyID(req), aForm.getTargetGroups(), true));
-                aForm.setTargets(targetDao.getTargetLights(AgnUtils.getCompanyID(req)));
+                aForm.setTargetGroupsList(targetService.getTargetLights(AgnUtils.getCompanyID(req), aForm.getTargetGroups(), true));
+                aForm.setTargets(targetService.getTargetLights(AgnUtils.getCompanyID(req)));
             }
         }
 
@@ -642,13 +642,23 @@ public class MailingBaseAction extends StrutsActionBase {
         return Collections.emptySet();
     }
 
-	protected String getSort(HttpServletRequest request, MailingBaseForm aForm) {
+	protected final String getSort(final HttpServletRequest request, final MailingBaseForm aForm, final boolean sortForTemplates) {
 		String sort = request.getParameter("sort");
-		 if( sort == null ) {
-			 sort = aForm.getSort();
-		 } else {
-			 aForm.setSort(sort);
-		 }
+		
+		if(sortForTemplates) {
+			 if( sort == null ) {
+				 sort = aForm.getTemplateSort();
+			 } else {
+				 aForm.setTemplateSort(sort);
+			 }
+		} else {
+			if( sort == null ) {
+				sort = aForm.getSort();
+			} else {
+				aForm.setSort(sort);
+			}
+		}
+		 
 		return sort;
 	}
 
@@ -716,15 +726,6 @@ public class MailingBaseAction extends StrutsActionBase {
 
     public CharacterEncodingValidator getCharacterEncodingValidator() {
         return characterEncodingValidator;
-    }
-
-    /**
-     * Returns DAO accessing target groups.
-     *
-     * @return DAO accessing target groups
-     */
-    public ComTargetDao getTargetDao() {
-        return targetDao;
     }
 
     public TAGCheckFactory getTagCheckFactory() {
@@ -801,11 +802,6 @@ public class MailingBaseAction extends StrutsActionBase {
         this.characterEncodingValidator = characterEncodingValidator;
     }
 
-    @Required
-    public void setTargetDao(ComTargetDao targetDao) {
-        this.targetDao = targetDao;
-    }
-
     public void setTagCheckFactory(TAGCheckFactory tagCheckFactory) {
         this.tagCheckFactory = tagCheckFactory;
     }
@@ -837,4 +833,9 @@ public class MailingBaseAction extends StrutsActionBase {
     public void setJavaMailService(JavaMailService javaMailService) {
         this.javaMailService = javaMailService;
     }
+    
+    @Required
+	public void setTargetService(ComTargetService targetService) {
+		this.targetService = targetService;
+	}
 }

@@ -10,6 +10,8 @@
 
 package org.agnitas.util;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +22,7 @@ public class AgnTagUtils {
 	private static final Pattern AGN_TAG_PATTERN = Pattern.compile("\\[agn[^]]+]");
 	private static final Pattern ESCAPED_AGN_TAG_PATTERN = Pattern.compile("\\[agn.*?=&quot;.*?&quot;/?]");
 	private static final String DEFAULT_DYN_NAME = "BLANK_DYN_NAME";
-
+	
 	public static String escapeAgnTags(String text) {
 		if (StringUtils.isEmpty(text)) {
 			return text;
@@ -35,6 +37,27 @@ public class AgnTagUtils {
 		matcher.appendTail(sb);
 
 		return sb.toString();
+	}
+
+	public static List<String> getMandatoryParametersForTag(String tagName) {
+		if (tagName != null) {
+			switch (tagName) {
+				case "agnDB":
+					return Collections.singletonList("column");
+
+				case "agnTITLE":
+				case "agnTITLEFULL":
+				case "agnTITLEFIRST":
+					return Collections.singletonList("type");
+
+				case "agnIMGLINK":
+				case "agnFORM":
+				case "agnDYN":
+					return Collections.singletonList("name");
+			}
+		}
+
+		return Collections.emptyList();
 	}
 
 	public static String unescapeAgnTags(String text) {
@@ -56,16 +79,16 @@ public class AgnTagUtils {
 	public static String toSafeDynName(String name) {
 		return toSafeDynName(name, "", DEFAULT_DYN_NAME);
 	}
-
+	
 	public static String toSafeDynName(String name, String squareBracketsPlaceholder) {
 		return toSafeDynName(name, squareBracketsPlaceholder, DEFAULT_DYN_NAME);
 	}
-
+	
 	public static String toSafeDynName(String name, String squareBracketsPlaceholder, String defaultName) {
 		if (StringUtils.isBlank(name)) {
 			return defaultName;
 		}
-
+		
 		String placeHolder = squareBracketsPlaceholder
 				.replace("[", "")
 				.replace("]", "");
@@ -74,7 +97,7 @@ public class AgnTagUtils {
 				.replace("\'", "&apos;")
 				.replace("[", placeHolder)
 				.replace("]", placeHolder);
-
+		
 		return StringUtils.isBlank(name) ? defaultName : name;
 	}
 }

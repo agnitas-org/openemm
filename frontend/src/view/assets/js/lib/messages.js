@@ -45,7 +45,17 @@
     });
   };
 
-  var JsonMessages = function (messages) {
+  var hideMessages = function() {
+    _.each($('.notification'), function(message) {
+        message.remove();
+    });
+  };
+
+  var JsonMessages = function (messages, removeDisplayedMessages) {
+    if (!!removeDisplayedMessages) {
+      hideMessages();
+    }
+
     if (messages) {
       if (messages.success) {
         displayMessages(t("defaults.success"), messages.success, 'success');

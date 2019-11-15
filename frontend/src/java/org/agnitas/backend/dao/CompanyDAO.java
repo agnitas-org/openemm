@@ -56,8 +56,8 @@ public class CompanyDAO {
 				mailTracking = dbase.asInt (row.get ("mailtracking")) > 0;
 				secretKey = dbase.asString (row.get ("secret_key"));
 				uidVersion = dbase.asLong (row.get ("enabled_uid_version"));
-				rdirDomain = dbase.asString (row.get ("rdir_domain"));
-				mailloopDomain = dbase.asString (row.get ("mailloop_domain"));
+				rdirDomain = dbase.asString (row.get ("rdir_domain"), true);
+				mailloopDomain = dbase.asString (row.get ("mailloop_domain"), true);
 				status = dbase.asString (row.get ("status"));
 				mailsPerDay = dbase.asString (row.get ("mails_per_day"));
 				priorityCount = dbase.asInt (row.get ("priority_count"));

@@ -13,14 +13,12 @@ package org.agnitas.util;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * Comparator for sorting text-modules in content tab.
  * Compares dynTag names as usual Strings but number values in Strings
  * are compared like int values
  * 
- * Comparator sorts Strings by tag names so that names are sorted like usual
+ * Comarator sorts Strings by tag names so that names are sorted like usual
  * Strings but number values inside these Strings are compared like numbers
  *
  * Example:
@@ -47,29 +45,26 @@ public class DynTagNameComparator implements Comparator<String> {
      * @return -1 if name1 is lesser; 0 if names are equal; 1 if name1 is greater.
      */
 	@Override
-	public int compare(String name1, String name2) {
-		if (StringUtils.equalsIgnoreCase(name1, name2)) {
+	public int compare(String firstName, String secondName) {
+		if (firstName.equalsIgnoreCase(secondName)) {
 			return 0;
 		}
-
-		List<String> tokens1 = AgnUtils.splitIntoNumbersAndText(name1);
-		List<String> tokens2 = AgnUtils.splitIntoNumbersAndText(name2);
-		int tokensNum = Math.min(tokens1.size(), tokens2.size());
-
+		List<String> firstNameTokens = AgnUtils.splitIntoNumbersAndText(firstName);
+		List<String> secondNameTokens = AgnUtils.splitIntoNumbersAndText(secondName);
+		int tokensNum = Math.min(firstNameTokens.size(), secondNameTokens.size());
 		for (int i = 0; i < tokensNum; i++) {
-			String token1 = tokens1.get(i);
-			String token2 = tokens2.get(i);
-
-			int result = name1.compareToIgnoreCase(name2);
-			if (result != 0) {
-				if (AgnUtils.isDigit(token1) && AgnUtils.isDigit(token2)) {
-					return Integer.parseInt(token1) < Integer.parseInt(token2) ? -1 : 1;
-				} else {
-					return result;
-				}
+			String firstToken = firstNameTokens.get(i);
+			String secondToken = secondNameTokens.get(i);
+			if (firstToken.equalsIgnoreCase(secondToken)) {
+				continue;
+			} else if (AgnUtils.isDigit(firstToken) && AgnUtils.isDigit(secondToken)) {
+				int firstNumber = Integer.parseInt(firstToken);
+				int secondNumber = Integer.parseInt(secondToken);
+				return firstNumber < secondNumber ? -1 : 1;
+			} else {
+				return firstName.compareToIgnoreCase(secondName);
 			}
 		}
-
-		return AgnUtils.compareIgnoreCase(name1, name2);
+		return firstName.compareToIgnoreCase(secondName);
 	}
 }

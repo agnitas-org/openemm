@@ -10,6 +10,8 @@
 
 package org.agnitas.dao;
 
+import org.agnitas.dao.exception.UnknownUserStatusException;
+
 public enum UserStatus {
 	Active(1),
 	Bounce(2),
@@ -29,12 +31,12 @@ public enum UserStatus {
 		return statusCode;
 	}
 	
-	public static UserStatus getUserStatusByID(int id) throws Exception {
+	public static UserStatus getUserStatusByID(int id) throws UnknownUserStatusException {
 		for (UserStatus userStatus : UserStatus.values()) {
 			if (userStatus.statusCode == id) {
 				return userStatus;
 			}
 		}
-		throw new Exception("Invalid user binding status: " + id);
+		throw new UnknownUserStatusException(id);
 	}
 }

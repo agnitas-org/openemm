@@ -751,7 +751,7 @@ if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.OPENERS_
 } else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.OPENERS_PC_INDEX) {
 	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.pc.value", reportContext.getLocale());
 } else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TRACKED_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.TotalClickSubscribers.short", reportContext.getLocale());
+	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale());
 } else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_PC_INDEX) {	
 	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.pc", reportContext.getLocale());
 } else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TABLET_INDEX) {	
@@ -2589,7 +2589,7 @@ return false;]]></method>
                         <row id="3785">
                             <cell id="3786">
                                 <text-data id="3546">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.report.linkClickStatistics", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Clickstats_Linkclicks", reportContext.getLocale())</expression>
                                 </text-data>
                             </cell>
                         </row>
@@ -3072,7 +3072,7 @@ isShowLink = true;	]]></method>
                             <cell id="3732"/>
                             <cell id="3733">
                                 <text-data id="3676">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Entirely", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
                                 </text-data>
                             </cell>
                             <cell id="3734"/>

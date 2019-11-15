@@ -1,3 +1,6 @@
+$m-type-date-base-icon-url: 'core/images/campaignManager/icon_datebased_mailing_l.png';
+$m-type-normal-icon-url: 'core/images/campaignManager/icon_mailing_l.png';
+
 .l-mailing-priority {
   .l-sub-headers {
     border-bottom: 1px solid #cccdcd;
@@ -48,12 +51,41 @@
 
   #ordered-area, #unordered-area {
     height: 100%;
+
+    > .row.row-2, > .row.row-3, > .row.row-4 {
+      border-bottom: 1px solid $c-gray-20;
+
+      &:last-child {
+        border-bottom-width: 0px;
+      }
+    }
+
+    > .row.row-2 {
+      height: 50%;
+    }
+
+    > .row.row-3 {
+      height: calc(100% / 3);
+    }
+
+    > .row.row-4 {
+      height: 25%;
+    }
+  }
+
+  #normal-container, #datebased-container {
+    height: calc(100% - 3em);
+    overflow-y: auto;
   }
 }
 
 .l-mailing-entry {
-  width: 100%;
-  padding: 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  padding: 0.5em;
   overflow: hidden;
   color: $c-gray-55;
   background-color: $c-white;
@@ -76,8 +108,7 @@
   @include shadow-variant(soft);
 
   .l-name {
-    float: left;
-    width: calc(100% - 30px);
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
 
@@ -87,11 +118,65 @@
   }
 
   .l-badge {
+    text-align: right;
     display: none;
-    float: right;
+
+    > .badge {
+      align-self: center;
+    }
+
+    > .badge + .badge {
+      margin-left: 0.5em;
+    }
+
+    > .badge-icon {
+      height: 4em;
+      width: 4em;
+      background: transparent no-repeat bottom/cover;
+
+      &.datebase-mailing-icon {
+        background-image: url($m-type-date-base-icon-url);
+      }
+
+      &.normal-mailing-icon {
+        background-image: url($m-type-normal-icon-url);
+      }
+    }
   }
 }
 
 #ordered-area .l-mailing-entry .l-badge {
-  display: block;
+   display: flex;
+}
+
+.unprioritized-area-head {
+  display: inline-block;
+  position: relative;
+  margin-left: 10px;
+
+  span {
+    font-weight: bold;
+    text-align: right;
+    padding-left: 3em;
+    line-height: 3em;
+
+    &::before {
+      display: block;
+      content: '';
+      position: absolute;
+      left: -0.2em;
+      bottom: 0;
+      width: 3em;
+      height: 3em;
+      background: transparent no-repeat bottom/cover;
+    }
+  }
+
+  &.datebased-mailing-icon span::before{
+    background-image: url($m-type-date-base-icon-url);
+  }
+
+  &.normal-mailing-icon span::before{
+    background-image: url($m-type-normal-icon-url);
+  }
 }

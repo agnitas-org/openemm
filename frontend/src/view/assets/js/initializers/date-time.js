@@ -138,6 +138,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
                 options,
                 baseOptions = {
                     editable: true,
+                    max: new Date(9999, 11, 31),
                     maxFor: undefined,
                     minFor: undefined,
                     klass: {
@@ -185,7 +186,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 
                     try {
                         changeHandlerEnabled = false;
-                        if($this.val()) {
+                        if ($this.val()) {
                             picker.set('select', $this.val());
                         } else {
                             picker.set('clear');
@@ -208,7 +209,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
                     },
                     onincomplete: function () {
                         $input.trigger('timepicker:incomplete')
-                    },
+                    }
                 };
 
             options = _.merge({}, baseOptions, Helpers.objFromString($input.data('timepicker-options')));

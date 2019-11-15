@@ -9,12 +9,7 @@
 <%--@elvariable id="agnTitleKey" type="java.lang.String"--%>
 <%--@elvariable id="agnHighlightKey" type="java.lang.String"--%>
 
-<c:set var="originUri" value="${emm:originUri(pageContext.request)}" scope="page"/>
-<c:if test="${not empty pageContext.request.queryString}">
-    <c:set var="originUri" value="${originUri}?${pageContext.request.queryString}" scope="page"/>
-</c:if>
-
-<head data-origin-uri="${originUri}">
+<head data-origin-uri="${emm:originUri(pageContext.request)}">
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">

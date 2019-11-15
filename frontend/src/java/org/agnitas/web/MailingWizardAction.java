@@ -222,13 +222,14 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		mailing.init(AgnUtils.getCompanyID(request), getApplicationContext(request));
         Map<String, String> map = AgnUtils.getReqParameters(request);
         String templateIDString = map.get("templateID");
-        if (templateIDString != null && !templateIDString.isEmpty()) {
-            mailing.setMailTemplateID(Integer.parseInt(templateIDString));
+        if (StringUtils.isNotEmpty(templateIDString)) {
+            mailing.setMailTemplateID(NumberUtils.toInt(templateIDString));
         }
         mailing.setTargetMode(Mailing.TARGET_MODE_AND);
 
 		setMailingWorkflowParameters(request, mailing);
 		aForm.setMailing(mailing);
+		aForm.setMailingContentType(ComMailing.MailingContentType.advertising);
 	
 		request.setAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(request)));
 		
@@ -240,7 +241,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		Integer workflowId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_ID);
 		if (workflowId != null && workflowId > 0) {
-			Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS), ";", "=");
+			Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
 			int mailingIconId = NumberUtils.toInt(forwardParams.get("nodeId"));
 
 			workflowService.assignWorkflowDrivenSettings(AgnUtils.getAdmin(req), mailing, workflowId, mailingIconId);
@@ -1011,6 +1012,10 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 				} else {
 					comp.setType(MailingComponent.TYPE_PERSONALIZED_ATTACHMENT);
 				}
+				if(aForm.getNewAttachmentName().isEmpty()) {
+					aForm.setNewAttachmentName(aForm.getNewAttachment().getFileName());
+				}
+
 				comp.setComponentName(aForm.getNewAttachmentName());
 				comp.setBinaryBlock(newAttachment.getFileData(), newAttachment.getContentType());
 				comp.setTargetID(aForm.getAttachmentTargetID());
@@ -1106,6 +1111,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		if (!AgnUtils.isUserLoggedIn(req)) {
 			return mapping.findForward("logon");
 		}
+
+		req.setAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(req)));
          
 		return mapping.findForward("previous");
 	}

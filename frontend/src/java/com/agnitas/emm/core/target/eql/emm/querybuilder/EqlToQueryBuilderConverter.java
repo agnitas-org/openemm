@@ -10,24 +10,26 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.emm.core.target.eql.codegen.DataType;
+import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlNodeParser;
+import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolver;
+import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFactory;
+import net.sf.json.JSONSerializer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
-import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlToQueryBuilderParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
-
-import net.sf.json.JSON;
-import net.sf.json.JSONSerializer;
 
 /**
  * Converts EQL code to QueryBuilder rules in JSON format.
@@ -39,9 +41,10 @@ public final class EqlToQueryBuilderConverter {
 	private final EqlParser parser;
 
 	private EqlToQueryBuilderParserConfiguration configuration;
-	
+
 	private final EqlParserConfiguration parserConfiguration;
- 
+
+	private EmmProfileFieldResolverFactory emmProfileFieldResolverFactory;
 
 	/**
 	 * Creates a new converter instance.
@@ -57,30 +60,43 @@ public final class EqlToQueryBuilderConverter {
 	 *
 	 * @param eql EQL code to be converted
 	 *
-	 * @return QueryBuilder rules as JSON string
+	 * @return rules as JSON string
 	 *
 	 * @throws EqlParserException
 	 * @throws EqlToQueryBuilderConversionException
 	 */
-	public final QueryBuilderData convertEqlToQueryBuilderJson(final String eql) throws EqlParserException, EqlToQueryBuilderConversionException {
+	public final String convertEqlToQueryBuilderJson(final String eql, int companyId) throws EqlParserException, EqlToQueryBuilderConversionException {
 		try {
 			// Get default configuration and enable generation of annotation nodes
-			BooleanExpressionTargetRuleEqlNode targetRuleNode = this.parser.parseEql(eql, this.parserConfiguration);
-			if(targetRuleNode.getChild().isPresent()) {
-				AbstractBooleanEqlNode node = targetRuleNode.getChild().get();
-				Set<String> unknownProfileFields = new HashSet<>();
-				QueryBuilderGroupNode groupNode = new QueryBuilderGroupNode();
-				groupNode = configuration.getParserMapping().get(node.getClass()).parse(node, groupNode, unknownProfileFields);
+			Optional<AbstractBooleanEqlNode> child = parser.parseEql(eql, parserConfiguration).getChild();
+
+			if (child.isPresent()) {
+				AbstractBooleanEqlNode node = child.get();
+
+				EqlNodeParser<?> nodeParser = configuration.getParserMapping().get(node.getClass());
+				Set<String> profileFields = new HashSet<>();
+				QueryBuilderGroupNode groupNode = nodeParser.parse(node, new QueryBuilderGroupNode(), profileFields);
+
 				if (StringUtils.isEmpty(groupNode.getCondition())) {
 					groupNode.setCondition("AND");
 				}
-				JSON json = JSONSerializer.toJSON(groupNode);
-				return new QueryBuilderData(json.toString(), unknownProfileFields);
+
+				if (profileFields.size() > 0) {
+					validateProfileFields(groupNode, profileFields, emmProfileFieldResolverFactory.newInstance(companyId));
+				}
+
+				return JSONSerializer.toJSON(groupNode).toString();
 			} else {
-				return new QueryBuilderData("{\"condition\":\"AND\",\"rules\":[]}", Collections.emptySet());
+				return "{\"condition\":\"AND\",\"rules\":[]}";
 			}
-		} catch(final Exception e) {
-			if(logger.isInfoEnabled()) {
+		} catch (final ProfileFieldResolveException e) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Error converting EQL to QueryBuilder", e);
+			}
+
+			throw new EqlToQueryBuilderConversionException(e);
+		} catch (final Exception e) {
+			if (logger.isInfoEnabled()) {
 				logger.info("Error converting EQL to QueryBuilder", e);
 			}
 
@@ -88,8 +104,53 @@ public final class EqlToQueryBuilderConverter {
 		}
 	}
 
+	private void validateProfileFields(QueryBuilderGroupNode group, Set<String> profileFields, EmmProfileFieldResolver resolver) throws ProfileFieldResolveException, EqlToQueryBuilderConversionException {
+		for (QueryBuilderBaseNode node : group.getRules()) {
+			if (node instanceof QueryBuilderGroupNode) {
+				validateProfileFields((QueryBuilderGroupNode) node, profileFields, resolver);
+			} else if (node instanceof QueryBuilderRuleNode) {
+				validateProfileFields((QueryBuilderRuleNode) node, profileFields, resolver);
+			} else {
+				throw new RuntimeException("Unsupported QB node type: " + node.getClass());
+			}
+		}
+	}
+
+	private void validateProfileFields(QueryBuilderRuleNode rule, Set<String> profileFields, EmmProfileFieldResolver resolver) throws ProfileFieldResolveException, EqlToQueryBuilderConversionException {
+		if (profileFields.contains(rule.getId())) {
+			DataType type = resolver.resolveProfileFieldType(rule.getId());
+			QueryBuilderOperator operator = QueryBuilderOperator.findByQueryBuilderName(rule.getOperator());
+
+			if (operator != null && !isOperatorApplicable(type, operator)) {
+				throw new EqlToQueryBuilderConversionException("The `" + operator.queryBuilderName() + "` operator is not applicable to profile field of type `" + type + "`");
+			}
+		}
+	}
+
+	private boolean isOperatorApplicable(DataType type, QueryBuilderOperator operator) {
+		switch (type) {
+			case NUMERIC:
+				return operator.isNumericOperator();
+
+			case TEXT:
+				return operator.isTextOperator();
+
+			case DATE:
+				return operator.isDateOperator();
+
+			default:
+				// Rest of the types are not expected here.
+				return false;
+		}
+	}
+
 	@Required
 	public void setConfiguration(EqlToQueryBuilderParserConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	@Required
+	public void setEmmProfileFieldResolverFactory(EmmProfileFieldResolverFactory emmProfileFieldResolverFactory) {
+		this.emmProfileFieldResolverFactory = emmProfileFieldResolverFactory;
 	}
 }

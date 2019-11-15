@@ -19,11 +19,11 @@ import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
 
 public enum MailingTypes implements DatabaseField<Integer, MailingTypes> {
 
-    NORMAL(Mailing.TYPE_NORMAL, "Normal", "mailing.Normal_Mailing"),
-    ACTION_BASED(Mailing.TYPE_ACTIONBASED, "Action Based", "mailing.action.based.mailing"),
-    DATE_BASED(Mailing.TYPE_DATEBASED, "Date Based", "mailing.Rulebased_Mailing"),
-    FOLLOW_UP(Mailing.TYPE_FOLLOWUP, "Follow Up", "mailing.Followup_Mailing"),
-    INTERVAL(Mailing.TYPE_INTERVAL, "Interval", "mailing.Interval_Mailing");
+    NORMAL(0, "Normal", "mailing.Normal_Mailing"),
+    ACTION_BASED(1, "Action Based", "mailing.action.based.mailing"),
+    DATE_BASED(2, "Date Based", "mailing.Rulebased_Mailing"),
+    FOLLOW_UP(3, "Follow Up", "mailing.Followup_Mailing"),
+    INTERVAL(4, "Interval", "mailing.Interval_Mailing");
 
     /**
      * Necessary 'cause current enumeration dependent on constants which situate in {@link Mailing}

@@ -39,6 +39,7 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     @Autowired(required =  false)
     private ComGridTemplateService gridTemplateService;
     
+    @Override
     public int getGridTemplateIdByMailingId(int mailingId) {
         return checkAndReturn(mailingGridService, () -> mailingGridService.getGridTemplateId(mailingId), 0);
     }

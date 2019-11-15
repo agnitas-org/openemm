@@ -61,7 +61,13 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 					boolean returnValue = false;
 					for (BindingEntry bindingEntry : bindingEntries) {
 						if (bindingEntry.getMediaType() == MediaTypes.EMAIL.getMediaCode()) {
-							returnValue |= changeBindingStatusToConfirmed(bindingEntry, companyID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
+							int mailingID = 0;
+							try {
+								mailingID = (Integer) requestParameters.get("mailingID");
+							} catch (Exception e) {
+								logger.error("Invalid mailingID for DoubleOptInActiovation");
+							}
+							returnValue |= changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 						}
 					}
 					return returnValue;
@@ -76,7 +82,7 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 						} else {
 							BindingEntry bindingEntry = bindingEntryDao.get(customerID, companyID, mailing.getMailinglistID(), activateDoiOperation.getMediaType().getMediaCode());
 							if (bindingEntry != null) {
-								return changeBindingStatusToConfirmed(bindingEntry, companyID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
+								return changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 							} else {
 								return false;
 							}
@@ -87,12 +93,13 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 		}
 	}
 	
-	private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, String remoteAddr, String referrer) throws Exception {
+	private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, int mailingID, String remoteAddr, String referrer) throws Exception {
         switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
             case WaitForConfirm:
                 aEntry.setUserStatus(UserStatus.Active.getStatusCode());
                 aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);
                 aEntry.setReferrer(referrer);
+                aEntry.setEntryMailingID(mailingID);
                 bindingEntryDao.updateStatus(aEntry, companyID);
                 return  true;
                 

@@ -61,7 +61,7 @@
         <c:set var="sidemenu_active" 		value="Mailings" 																			scope="request" />
         <c:set var="sidemenu_sub_active"	value="none" 																				scope="request" />
         <c:set var="agnHighlightKey" 		value="mailing.Attachments" 																scope="request" />
-        <c:set var="agnHelpKey" 			value="File_attachments" 																	scope="request" />
+        <c:set var="agnHelpKey" 			value="mailingAttachments" 																	scope="request" />
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

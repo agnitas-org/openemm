@@ -33,7 +33,7 @@ public class AnonymizeStatisticsJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(AnonymizeStatisticsJobWorker.class);
 
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		List<Integer> includedCompanyIds = null;
 		String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
 		if (StringUtils.isNotBlank(includedCompanyIdsString)) {
@@ -56,5 +56,7 @@ public class AnonymizeStatisticsJobWorker extends JobWorker {
 				anonymizeStatisticsDao.anonymizeStatistics(companyID);
 			}
 		}
+		
+		return null;
 	}
 }

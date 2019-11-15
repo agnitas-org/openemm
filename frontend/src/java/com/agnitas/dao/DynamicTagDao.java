@@ -56,7 +56,7 @@ public interface DynamicTagDao {
 	 * @return Dynamic tag id or {@code 0} in case of there is no such a record.
 	 */
 	int getId(@VelocityCheck int companyId, int mailingId, String dynTagName);
-
+	
 	/**
 	 * Dynamic tag id if exists.
 	 *

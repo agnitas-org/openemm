@@ -13,10 +13,12 @@ package com.agnitas.emm.core.workflow.beans.impl;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowMailing;
 
+import java.util.Objects;
+
 public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements WorkflowMailing {
     private int autoReport;
-    private boolean skipEmptyBlocks;
-    private boolean doubleCheck;
+    private boolean skipEmptyBlocks = true;
+    private boolean doubleCheck = true;
     private int maxRecipients;
     private int blocksize;
 
@@ -73,5 +75,23 @@ public class WorkflowMailingImpl extends WorkflowMailingAwareImpl implements Wor
     @Override
     public void setBlocksize(int blocksize) {
         this.blocksize = blocksize;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowMailingImpl that = (WorkflowMailingImpl) o;
+        return autoReport == that.autoReport &&
+                skipEmptyBlocks == that.skipEmptyBlocks &&
+                doubleCheck == that.doubleCheck &&
+                maxRecipients == that.maxRecipients &&
+                blocksize == that.blocksize;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), autoReport, skipEmptyBlocks, doubleCheck, maxRecipients, blocksize);
     }
 }

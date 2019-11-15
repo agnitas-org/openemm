@@ -30,7 +30,7 @@ public final class HashTagEvaluationServiceImpl implements HashTagEvaluationServ
 
 	@Override
 	public final String evaluateHashTag(final HashTagContext context, final String string) throws NoMatchingHashTagException, HashTagException {
-		final HashTag hashTag = this.registry.findHashTagFor(context, string);
+		final HashTag hashTag = findHashTagOrFallbackFor(context, string);
 		
 		return hashTag.handle(context, string);
 	}
@@ -45,7 +45,9 @@ public final class HashTagEvaluationServiceImpl implements HashTagEvaluationServ
 			
 			return hashTag;
 		} catch(final NoMatchingHashTagException e) {
-			LOGGER.warn(String.format("No hash tag found to handle tag string '%s', returning fallback hash tag", string));
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format("No hash tag found to handle tag string '%s', returning fallback hash tag", string));
+			}
 			
 			return this.fallbackHashTag;
 		}

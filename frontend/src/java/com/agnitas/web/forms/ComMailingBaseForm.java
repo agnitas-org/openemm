@@ -17,13 +17,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingLightVO;
+import com.agnitas.web.ComMailingBaseAction;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
@@ -37,18 +46,6 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.upload.FormFile;
-import org.springframework.context.ApplicationContext;
-
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingLightVO;
-import com.agnitas.web.ComMailingBaseAction;
 
 /**
  * Implementation of <strong>Form</strong> that handles Mailings
@@ -236,6 +233,20 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		setTargetExpression(StringUtils.EMPTY);
 		assignTargetGroups = false;
 	}
+	
+	/**
+     * Clears all data connected with targets for action based mailing form
+     *
+     */
+    public void clearTargetsData () {
+        if (mailingType == MailingModel.MailingType.ACTION_BASED.getValue()) {
+			setTargetGroupsList(Collections.emptyList());
+			setTargetGroups(Collections.emptyList());
+            setSplitId(0);
+            setSplitBase(null);
+            setSplitPart(null);
+        }
+    }
 
 	public String getFilterCreationDateBegin() {
 		return filterCreationDateBegin;
@@ -416,26 +427,26 @@ public class ComMailingBaseForm extends MailingBaseForm {
 			}
 
 			// NEW CODE (to be inserted):
-			if (emailReplytoFullname != null && emailReplytoFullname.length() > 255) {
+			if (StringUtils.length(emailReplytoFullname) > 255) {
 				actionErrors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
 			}
-			if (getSenderFullname() != null && getSenderFullname().length() > 255) {
+			if (StringUtils.length(getSenderFullname()) > 255) {
 				actionErrors.add("senderFullname", new ActionMessage("error.sender_fullname_too_long"));
 			}
-			if (emailReplytoFullname != null && emailReplytoFullname.trim().length() == 0) {
+			if (StringUtils.isBlank(emailReplytoFullname)) {
 				emailReplytoFullname = getSenderFullname();
 			}
 
-			// NEW CODE (to be inserted):
-			if (getUseMediaType(0) && getMediaEmail().getFromEmail().length() < 3) {
-				actionErrors.add("email", new ActionMessage("error.invalid.email"));
-			}
+			// TODO: move all media-specific validation to controller layer.
+			if (getUseMediaType(MediaTypes.EMAIL.getMediaCode())) {
+				if (getMediaEmail().getFromEmail().length() < 3) {
+					actionErrors.add("email", new ActionMessage("error.invalid.email"));
+				}
 
-			if (getUseMediaType(0) && getEmailSubject().length() < 2) {
-				actionErrors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
-			}
+				if (getEmailSubject().length() < 2) {
+					actionErrors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
+				}
 
-			if (getUseMediaType(0)) {
 				try {
 					InternetAddress adr = new InternetAddress(getMediaEmail().getFromEmail());
 					String email = adr.getAddress();
@@ -473,7 +484,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 			AgnTagService agnTagService = getWebApplicationContext().getBean("AgnTagService", AgnTagService.class);
 			try {
 				agnTagService.getDynTags(getEmailSubject());
-				if (getUseMediaType(0)) {
+				if (getUseMediaType(MediaTypes.EMAIL.getMediaCode())) {
 					agnTagService.getDynTags(getSenderFullname());
 				}
 			} catch (Exception e) {
@@ -483,13 +494,12 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 			try {
 				agnTagService.resolveTags(getEmailSubject(), AgnUtils.getCompanyID(request), 0, 0, 0);
-				if (getUseMediaType(0)) {
+				if (getUseMediaType(MediaTypes.EMAIL.getMediaCode())) {
 					agnTagService.resolveTags(getSenderFullname(), AgnUtils.getCompanyID(request), 0, 0, 0);
 				}
 			} catch (Exception e) {
 				actionErrors.add("subject", new ActionMessage("error.personalization_tag"));
 			}
-
 
 			if (addParameter) {
 				ComMailingParameter parameter = parameterMap.get(0);
@@ -517,10 +527,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		numOfMediaTypes = getNumOfMediaTypes(request);
 		defaultMediaType = getDefaultMediaType(request);
 		return actionErrors;
-	}
-
-	public String getNameForMediatype(int id) {
-		return mediaTypeLabels[id];
 	}
 
 	/**
@@ -676,7 +682,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
     }
 
 	public boolean getUseMediaEmail() {
-		return getUseMediaType(0);
+		return getUseMediaType(MediaTypes.EMAIL.getMediaCode());
 	}
 
 	public String[] getMediaTypeLabelsLowerCase() {
@@ -793,33 +799,12 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		return priorities;
 	}
 
-	@Override
-	public Mediatype getMedia(int id) {
-		Mediatype media = super.getMedia(id);
-
-		if (media == null) {
-			String typeName = getNameForMediatype(id);
-			if (typeName != null) {
-				ApplicationContext context = getWebApplicationContext();
-				media = (Mediatype) context.getBean("Mediatype" + typeName);
-				mediatypes.put(id, media);
-			}
-		}
-
-		return media;
-	}
-
 	public boolean getLocked() {
 		return locked;
 	}
 
 	public void setLocked(boolean locked) {
 		this.locked = locked;
-	}
-
-	@Override
-	public MediatypeEmail getMediaEmail() {
-		return (MediatypeEmail) getMedia(MediaTypes.EMAIL.getMediaCode());
 	}
 
 	/**

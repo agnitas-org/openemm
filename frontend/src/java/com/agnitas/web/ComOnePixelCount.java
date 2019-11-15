@@ -155,7 +155,7 @@ public class ComOnePixelCount extends HttpServlet {
 	 * Returns nothing if the company is not in status "active" or if some
 	 * execution error occurs.
 	 * 
-	 * @param req
+	 * @param request
 	 *            HTTP request; should contain "uid" parameter with values of
 	 *            company id, mailing id and customer id
 	 * @param res
@@ -237,8 +237,6 @@ public class ComOnePixelCount extends HttpServlet {
 	 * @param uid
 	 *            ExtensibleUID object, contains parsed data from the "uid"
 	 *            request parameter
-	 * @param context
-	 *            application context
 	 * @param req
 	 *            HTTP request
 	 * @throws Exception 

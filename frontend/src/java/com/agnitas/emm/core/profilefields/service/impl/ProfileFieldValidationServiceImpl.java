@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Locale;
 
 import org.agnitas.beans.ProfileField;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
@@ -47,6 +49,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     private KeywordList databaseKeywordList;
     private ComProfileFieldDao profileFieldDao;
     private ComTargetService targetService;
+    private ConfigService configService;
 
     @Required
     public void setDatabaseKeywordList(KeywordList databaseKeywordList) {
@@ -61,6 +64,11 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     @Required
     public void setTargetService(ComTargetService targetService) {
         this.targetService = targetService;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 
     @Override
@@ -120,8 +128,8 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean isAllowedDefaultValue(String fieldType, String defaultValue) {
-        return DbUtilities.checkAllowedDefaultValue(fieldType, defaultValue);
+    public boolean isAllowedDefaultValue(String fieldType, String defaultValue, SimpleDateFormat dateFormat) {
+        return DbUtilities.checkAllowedDefaultValue(fieldType, defaultValue, dateFormat);
     }
 
     @Override
@@ -157,7 +165,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     public boolean hasNotAllowedNumberOfEntries(@VelocityCheck int companyId) {
         int numberOfEntries = profileFieldDao.countCustomerEntries(companyId);
 
-        return numberOfEntries > MAX_NUMBER_OF_ENTRIES_FOR_CHANGE;
+        return numberOfEntries > configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId);
     }
 
     @Override

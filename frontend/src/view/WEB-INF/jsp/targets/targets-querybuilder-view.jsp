@@ -53,6 +53,8 @@
 	</c:otherwise>
 </c:choose>
 
+<%--@elvariable id="QueryBuilderTargetGroupForm"--%>
+
 <agn:agnForm action="/targetQB" id="targetForm" data-form="resource" >
 	<html:hidden property="targetID" />
 	<html:hidden property="format" />
@@ -89,8 +91,8 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<div class="col-sm-4" for="admin_and_test_delivery">
-					<label class="control-label"><bean:message key="target.adminAndTestDelivery"/></label>
+				<div class="col-sm-4">
+					<label class="control-label" for="admin_and_test_delivery"><bean:message key="target.adminAndTestDelivery"/></label>
 				</div>
 				<div class="col-sm-8">
 					<label class="toggle">
@@ -111,13 +113,11 @@
 				<li class="${QB_EDITOR_TAB_ACTIVE_CLASS}">
 					<a href="#" data-toggle-tab="#tab-targetgroupQueryBuilderEditor" data-form-set="method: 'viewQB'" data-form-submit><bean:message key="default.basic" /></a>
 				</li>
-				<emm:ShowByPermission token="targets.eql.edit">
-					<li class="${EQL_EDITOR_TAB_ACTIVE_CLASS}">
-						<a href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-form-set="method: 'viewEQL'" data-form-submit>
-							<bean:message key="default.advanced" />
-						</a>
-					</li>
-				</emm:ShowByPermission>
+				<li class="${EQL_EDITOR_TAB_ACTIVE_CLASS}">
+					<a href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-form-set="method: 'viewEQL'" data-form-submit>
+						<bean:message key="default.advanced" />
+					</a>
+				</li>
 			</ul>
 		</div>
 		<div class="tile-content tile-content-forms">
@@ -179,7 +179,7 @@
 					</div>
 					<ul class="tile-header-actions">
 						<li>
-							<button type="button" class="btn btn-regular btn-primary" data-form-set="showStatistic: true, method: save" data-form-submit-static>
+							<button type="button" class="btn btn-regular btn-primary" data-form-set="showStatistic: true, method: save" data-form-submit>
 								<i class="icon icon-refresh"></i>
 								<span class="text"><bean:message key="button.save.evaluate" /></span>
 							</button>
@@ -197,3 +197,15 @@
 	</emm:ShowByPermission>
 
 </agn:agnForm>
+
+<script>
+  (function(){
+		AGN.Lib.Action.new({'click': '[data-form-submit]'}, function() {
+		  var btn = this.el;
+		  var dataValue = btn.data('form-set');
+		  if (dataValue && dataValue.includes('method:save')) {
+		  	jQuery('#targetgroup-querybuilder').trigger('save-target-group');
+		  }
+		});
+  })();
+</script>

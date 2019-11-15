@@ -160,8 +160,7 @@ public class CustomTitle implements LogChute {
 			rc = shrink (out.toString ());
 		} catch (Exception e) {
 			if (error != null) {
-				error.append (e.toString ());
-				error.append ("\n");
+				error.append ("CustomTitle: \"" + titleText + "\" leads to " + e.toString () + "\n");
 			}
 		}
 		logTo = null;

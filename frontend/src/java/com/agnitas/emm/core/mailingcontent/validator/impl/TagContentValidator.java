@@ -48,7 +48,7 @@ public class TagContentValidator implements DynTagValidator {
             for (DynContentDto contentBlock : contentBlocks) {
                 if (!tagCheck.checkContent(contentBlock.getContent(), tagErrorReport, new Vector<>())) {
                     String description = StringEscapeUtils.escapeHtml(tagErrorReport.toString());
-                    popups.alert("GWUA.mailing.content.content.validation.fail", description);
+                    popups.alert("error.html.validation", description);
                     hasNoErrors = false;
                 }
             }

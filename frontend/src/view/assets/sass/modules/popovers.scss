@@ -56,6 +56,35 @@
   }
 }
 
+.popover-tile {
+  padding: 0;
+
+  .popover-tile-header {
+    padding: 10px;
+    font-size: 15px;
+    text-align: right;
+
+    border-bottom: 1px solid $c-gray-11;
+  }
+
+  .popover-tile-content {
+    position: relative;
+    padding: 20px;
+
+    & > .form-group:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .popover-tile-footer {
+    padding: 10px;
+    font-size: 15px;
+    text-align: right;
+
+    border-top: 1px solid $c-gray-11;
+  }
+}
+
 .popover-wide .popover-content {
   overflow-x: hidden;
   text-overflow: ellipsis;

@@ -53,6 +53,8 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.admin.service.PermissionFilter;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
@@ -71,6 +73,8 @@ public class AdminServiceImpl implements AdminService {
 	protected ComAdminGroupDao adminGroupDao;
 	protected GrantedSupervisorLoginDao grantedSupervisorLoginDao;
 	protected ConfigService configService;
+	private PermissionFilter permissionFilter;
+
 
 	@Required
 	public void setAdminDao(ComAdminDao adminDao) {
@@ -106,7 +110,12 @@ public class AdminServiceImpl implements AdminService {
 	public final void setGrantedSupervisorLoginDao(final GrantedSupervisorLoginDao dao) {
 		this.grantedSupervisorLoginDao = Objects.requireNonNull(dao, "DAO for granted supervisor logins cannot be null");
 	}
-
+	
+	@Required
+	public void setPermissionFilter(PermissionFilter permissionFilter) {
+		this.permissionFilter = Objects.requireNonNull(permissionFilter, "Permission filter is null");
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 
 	@Override
@@ -258,7 +267,7 @@ public class AdminServiceImpl implements AdminService {
 			savingAdmin.setPasswordForStorage(form.getPassword());
 		}
 
-		AdminGroup group = adminGroupDao.getAdminGroup(savingGroupID);
+		AdminGroup group = adminGroupDao.getAdminGroup(savingGroupID, savingCompanyID);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Username: " + form.getUsername() + " PasswordLength: " + form.getPassword().length());
@@ -407,7 +416,16 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public boolean adminExists(String username){
-		return adminDao.adminExists(username);
+		return adminDao.adminExists(username) && adminDao.checkBlacklistedAdminNames(username);
+	}
+	
+	@Override
+	public boolean adminLimitReached(@VelocityCheck int companyID) {
+		if (adminDao.getNumberOfAdmins(companyID) >= configService.getIntegerValue(ConfigValue.UserAllowed, companyID)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	@Override
@@ -544,4 +562,21 @@ public class AdminServiceImpl implements AdminService {
 
 		return true;
 	}
+
+	@Override
+	public boolean checkBlacklistedAdminNames(String username) {
+		return adminDao.checkBlacklistedAdminNames(username);
+	}
+    
+    @Override
+    public Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit) {
+		PermissionsOverviewData.Builder builder = PermissionsOverviewData.builder();
+	
+		builder.setAdmin(admin);
+		builder.setAdminToEdit(adminToEdit);
+		builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
+		builder.setCompanyPermissions(companyDao.getCompanyPermissions(adminToEdit.getCompanyID()));
+		
+		return builder.build().getPermissionsCategories();
+    }
 }

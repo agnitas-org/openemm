@@ -25,7 +25,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 	
-	/** 
+	/**
 	 * Fragments of a date.
 	 */
 	public enum DateFragment {
@@ -42,7 +42,7 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		PERIOD(".", false, "^\\."),
 		HYPHEN("-", false, "^\\-"),
 		UNDERSCORE("_", false, "^_");
-		
+
 		/** Pattern for fragment used in EQL. */
 		private final String pattern;
 		private final boolean isDigitFragment;
@@ -70,7 +70,7 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		DateFragment(String pattern, boolean isDigitFragment, String regex) {
 			this(pattern, isDigitFragment, regex, null);
 		}
-		
+
 		/**
 		 * Returns the EQL pattern for the date fragment.
 		 * 
@@ -79,7 +79,7 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		public String pattern() {
 			return this.pattern;
 		}
-		
+
 		public boolean isDigitFragment() {
 			return isDigitFragment;
 		}
@@ -144,7 +144,7 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		
 		return new EqlDateFormat(list);
 	}
-	
+
 	public String normalizeValue(String value) throws EqlDateValueFormatException {
 		if (StringUtils.isBlank(value)) {
 			throw new EqlDateValueFormatException(toString(), value);

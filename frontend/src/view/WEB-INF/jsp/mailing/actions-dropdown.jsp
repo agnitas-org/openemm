@@ -74,6 +74,13 @@
             <emm:instantiate var="option" type="java.util.LinkedHashMap">
                 <c:set target="${dropDownItems}" property="0" value="${option}"/>
                 <c:set target="${option}" property="url">
+                    <%--todo: GWUA-4271: change after test sucessfully--%>
+                    <%--<c:url value="/workflow/${workflowId}/view.action">--%>
+                        <%--<c:if test="${not empty workflowForwardParams}">--%>
+                            <%--<c:param name="forwardParams" value="${workflowForwardParams};elementValue=${param.mailingId}"/>--%>
+                        <%--</c:if>--%>
+                    <%--</c:url>--%>
+
                     <c:url value="/workflow.do">
                         <c:param name="method" value="view"/>
                         <c:param name="workflowId" value="${workflowId}"/>

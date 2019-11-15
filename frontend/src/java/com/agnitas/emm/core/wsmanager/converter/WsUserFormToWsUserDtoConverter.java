@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.wsmanager.converter;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +29,23 @@ public class WsUserFormToWsUserDtoConverter implements Converter<WebserviceUserF
         userDto.setEmail(userForm.getEmail());
         userDto.setContactInfo(userForm.getContactInfo());
         userDto.setPassword(userForm.getPassword());
-        userDto.setCompanyId(userForm.getCompanyId());
         userDto.setActive(userForm.isActive());
+        userDto.setCompanyId(userForm.getCompanyId());
+        
+        final Set<String> permissions = userForm.getEndpointPermission().entrySet().stream()
+        		.filter(entry -> "true".equals(entry.getValue()))
+        		.map(entry -> entry.getKey())
+        		.collect(Collectors.toSet());
+        
+        userDto.setGrantedPermissions(permissions);
+        
+        final Set<Integer> permissionGroups = userForm.getPermissionGroup().entrySet().stream()
+        		.filter(entry -> "true".equals(entry.getValue()))
+        		.map(entry -> entry.getKey())
+        		.collect(Collectors.toSet());
+        		
+        userDto.setGrantedPermissionGroupIDs(permissionGroups);
+        
         return userDto;
     }
 }

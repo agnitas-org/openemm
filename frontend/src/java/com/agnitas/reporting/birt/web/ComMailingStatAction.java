@@ -54,6 +54,7 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
+import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.reporting.birt.util.URLUtils;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.forms.ComBirtStatForm;
@@ -61,8 +62,8 @@ import com.agnitas.web.forms.ComBirtStatForm.DateMode;
 
 public class ComMailingStatAction extends ComReportBaseAction {
 	
-	private static final SimpleDateFormat BIRT_PARAMS_DATE_FORMAT = new SimpleDateFormat(BIRTDataSet.DATE_PARAMETER_FORMAT);
-	private static final SimpleDateFormat BIRT_PARAMS_DATE_TIME_FORMAT = new SimpleDateFormat(BIRTDataSet.DATE_PARAMETER_FORMAT_WITH_HOUR2);
+	private static final String BIRT_PARAMS_DATE_FORMAT = BIRTDataSet.DATE_PARAMETER_FORMAT;
+	private static final String BIRT_PARAMS_DATE_TIME_FORMAT = BIRTDataSet.DATE_PARAMETER_FORMAT_WITH_HOUR2;
 	
 	private static final List<String> ALLOWED_STATISTIC = Arrays.asList(
 			"mailing_summary.rptdesign",
@@ -80,7 +81,7 @@ public class ComMailingStatAction extends ComReportBaseAction {
     protected ComCompanyDao companyDao;
     private AdminPreferencesDao adminPreferencesDao;
 	protected ComBirtReportService birtReportService;
-    
+ 
 	protected ConfigService configService;
 	private ComMailingBaseService mailingBaseService;
 	
@@ -316,7 +317,7 @@ public class ComMailingStatAction extends ComReportBaseAction {
 		params.put("description", StringUtils.trimToEmpty(aForm.getDescription()));
 		params.put("selectedTargets", getSelectedTargetList(aForm));
 		params.put("language", language);
-		params.put("uid", birtStatisticsService.generateUid(admin));
+		params.put("sec", BirtInterceptingFilter.createSecurityToken(configService, admin.getCompanyID()));
 		params.put("emmsession", request.getSession(false).getId());
 		params.put("targetbaseurl", URLUtils.encodeURL(configService.getValue(ConfigValue.BirtDrilldownUrl)));
 		params.put("recipientType", CommonKeys.TYPE_ALL_SUBSCRIBERS);
@@ -369,21 +370,21 @@ public class ComMailingStatAction extends ComReportBaseAction {
 		
         switch (form.getDateMode()) {
             case LAST_TENHOURS:
-			birtParams.reportStartDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportStartDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
 			cal.add(Calendar.HOUR_OF_DAY, 10);
-			birtParams.reportEndDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportEndDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
 			birtParams.hourScale = true;
                 break;
             case LAST_DAY:
-			birtParams.reportStartDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportStartDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
 			cal.add(Calendar.DAY_OF_MONTH, 1);
-			birtParams.reportEndDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportEndDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
 			birtParams.hourScale = true;
                 break;
             case LAST_MONTH:
-			birtParams.reportStartDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportStartDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
 			cal.add(Calendar.MONTH, 1);
-			birtParams.reportEndDate = BIRT_PARAMS_DATE_TIME_FORMAT.format(cal.getTime());
+			birtParams.reportEndDate = new SimpleDateFormat(BIRT_PARAMS_DATE_TIME_FORMAT).format(cal.getTime());
                 break;
             case SELECT_DAY: // from dusk till dawn :), no from yyyy-mm-dd 00:00:00 to yyyy-mm-dd 23:59:59
                 if (StringUtils.isBlank(form.getSelectDay())) {
@@ -391,7 +392,7 @@ public class ComMailingStatAction extends ComReportBaseAction {
                 }
 			String localizedStartDate =  form.getSelectDay(); // take the localized version of the requested date
 			Date parsedDate = localeFormat.parse(localizedStartDate); // create a date , so that we can format it in iso
-			String startDate = BIRT_PARAMS_DATE_FORMAT.format(parsedDate);
+			String startDate = new SimpleDateFormat(BIRT_PARAMS_DATE_FORMAT).format(parsedDate);
 			String endDate = startDate + ":23";
 			startDate += ":00";
 			birtParams.reportStartDate = startDate;
@@ -400,9 +401,9 @@ public class ComMailingStatAction extends ComReportBaseAction {
                 break;
             case SELECT_MONTH: // 1st of a month , last day of a month
                 cal.set(form.getYear(), form.getMonth(), 1);
-                birtParams.reportStartDate = BIRT_PARAMS_DATE_FORMAT.format(cal.getTime());
+                birtParams.reportStartDate = new SimpleDateFormat(BIRT_PARAMS_DATE_FORMAT).format(cal.getTime());
                 cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
-                birtParams.reportEndDate = BIRT_PARAMS_DATE_FORMAT.format(cal.getTime());
+                birtParams.reportEndDate = new SimpleDateFormat(BIRT_PARAMS_DATE_FORMAT).format(cal.getTime());
 //                int month = form.getMonth();
 //                month += 1; // month is 0 based
 //                int year = form.getYear();
@@ -419,8 +420,8 @@ public class ComMailingStatAction extends ComReportBaseAction {
             	if (StringUtils.isBlank(form.getStartDate_localized())) {
             		return null;
             	}
-                birtParams.reportStartDate = BIRT_PARAMS_DATE_FORMAT.format(localeFormat.parse(form.getStartDate_localized()));
-                birtParams.reportEndDate = BIRT_PARAMS_DATE_FORMAT.format(localeFormat.parse(form.getStopDate_localized()));
+                birtParams.reportStartDate = new SimpleDateFormat(BIRT_PARAMS_DATE_FORMAT).format(localeFormat.parse(form.getStartDate_localized()));
+                birtParams.reportEndDate = new SimpleDateFormat(BIRT_PARAMS_DATE_FORMAT).format(localeFormat.parse(form.getStopDate_localized()));
                 break;
 		case LAST_FORTNIGHT:
 			// $FALL-THROUGH$
@@ -493,7 +494,7 @@ public class ComMailingStatAction extends ComReportBaseAction {
 		sb.append("&companyID=").append( form.getCompanyID());
 		sb.append("&targets=").append( getSelectedTargetList( form));
 		sb.append("&language=").append( language);
-		sb.append("&uid=").append(birtStatisticsService.generateUid(admin));
+		sb.append("&sec=").append(BirtInterceptingFilter.createSecurityToken(configService, admin.getCompanyID()));
 		sb.append("&emmsession=").append( request.getSession(false).getId());
 		sb.append("&__format=").append( form.getReportFormat());
 		sb.append("&__svg=true");

@@ -30,13 +30,22 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.upload.bean.UploadData;
+import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import com.agnitas.messages.I18nString;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
@@ -81,17 +90,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.upload.bean.UploadData;
-import com.agnitas.emm.core.upload.dao.ComUploadDao;
-import com.agnitas.messages.I18nString;
 
 /**
  * Classic Import
@@ -330,8 +328,19 @@ public final class ComImportWizardAction extends StrutsActionBase {
 	                if (aForm.isUseCsvUpload()) {
 	                    aForm.setCsvFile(aForm.getFormFileByUploadId(aForm.getAttachmentCsvFileID(), "text/csv"));
 	                }
-	                aForm.setAction(ACTION_CSV);
-					destination=mapping.findForward("mode");
+	                
+					if (aForm.getCsvFile().getFileName().toLowerCase().endsWith(".zip") || aForm.getCsvFile().getFileName().toLowerCase().endsWith(".gz")) {
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("import.error.zipFile_not_allowed"));
+						aForm.setAction(ACTION_MODE);
+						destination = mapping.findForward("start");
+					} else if (aForm.getCsvFile().getFileData().length <= 0) {
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("autoimport.error.emptyFile", aForm.getCsvFile().getFileName()));
+						aForm.setAction(ACTION_MODE);
+						destination = mapping.findForward("start");
+					} else {
+						aForm.setAction(ACTION_CSV);
+						destination = mapping.findForward("mode");
+					}
 					break;
 	
 				case ACTION_CSV:
@@ -629,42 +638,49 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		TimeZone zone = TimeZone.getTimeZone(admin.getAdminTimezone());
 		my_calendar.changeTimeWithZone(zone);
 		Date my_time = my_calendar.getTime();
+		
 		String filename = Long.toString(my_time.getTime()) + ".csv";
+		String csvfile = generateLocalizedImportCSVReport(admin.getLocale(), my_time, profileImportWorker.getStatus(), comImportWizardForm.getMode());
+
+		reportService.createAndSaveImportReport(admin, filename, comImportWizardForm.getDatasourceID(), new Date(), csvfile, -1, isError);
+	}
+	
+	private String generateLocalizedImportCSVReport(Locale locale, Date my_time, CustomerImportStatus status, int mode) {
 		String csvfile = "";
-		csvfile += SafeString.getLocaleString("import.SubscriberImport", admin.getLocale());
-		csvfile += "\n" + SafeString.getLocaleString("settings.fieldType.DATE", admin.getLocale()) + ": ; \"" + my_time + "\"\n";
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_email", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("email");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_blacklist", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("blacklist");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_double", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("keyDouble");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_numeric", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("numeric");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_mailtype", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("mailtype");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_gender", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("gender");
-		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_date", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("date");
-		csvfile += "\n" + SafeString.getLocaleString("csv_errors_linestructure", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getError("structure");
-		csvfile += "\n" + SafeString.getLocaleString("import.result.csvlines", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getCsvLines();
-		csvfile += "\n" + SafeString.getLocaleString("import.RecipientsAllreadyinDB", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getAlreadyInDb();
-		if (comImportWizardForm.getMode() == ImportMode.ADD.getIntValue() || comImportWizardForm.getMode() == ImportMode.ADD_AND_UPDATE.getIntValue()) {
-			csvfile += "\n" + SafeString.getLocaleString("import.result.imported", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getInserted();
+		csvfile += SafeString.getLocaleString("import.SubscriberImport", locale);
+		csvfile += "\n" + SafeString.getLocaleString("settings.fieldType.DATE", locale) + ": ; \"" + my_time + "\"\n";
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_email", locale) + ":;" + status.getError("email");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_blacklist", locale) + ":;" + status.getError("blacklist");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_double", locale) + ":;" + status.getError("keyDouble");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_numeric", locale) + ":;" + status.getError("numeric");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_mailtype", locale) + ":;" + status.getError("mailtype");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_gender", locale) + ":;" + status.getError("gender");
+		csvfile += "\n" + SafeString.getLocaleString("import.csv_errors_date", locale) + ":;" + status.getError("date");
+		csvfile += "\n" + SafeString.getLocaleString("csv_errors_linestructure", locale) + ":;" + status.getError("structure");
+		csvfile += "\n" + SafeString.getLocaleString("import.result.csvlines", locale) + ":;" + status.getCsvLines();
+		csvfile += "\n" + SafeString.getLocaleString("import.RecipientsAllreadyinDB", locale) + ":;" + status.getAlreadyInDb();
+		if (mode == ImportMode.ADD.getIntValue() || mode == ImportMode.ADD_AND_UPDATE.getIntValue()) {
+			csvfile += "\n" + SafeString.getLocaleString("import.result.imported", locale) + ":;" + status.getInserted();
 		}
-		if (comImportWizardForm.getMode() == ImportMode.UPDATE.getIntValue() || comImportWizardForm.getMode() == ImportMode.ADD_AND_UPDATE.getIntValue()) {
-			csvfile += "\n" + SafeString.getLocaleString("import.result.updated", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getUpdated();
+		if (mode == ImportMode.UPDATE.getIntValue() || mode == ImportMode.ADD_AND_UPDATE.getIntValue()) {
+			csvfile += "\n" + SafeString.getLocaleString("import.result.updated", locale) + ":;" + status.getUpdated();
 		}
-		if (comImportWizardForm.getMode() == ImportMode.TO_BLACKLIST.getIntValue()) {
-			csvfile += "\n" + SafeString.getLocaleString("import.result.blacklisted", admin.getLocale()) + ":;" + profileImportWorker.getStatus().getBlacklisted();
+		if (mode == ImportMode.TO_BLACKLIST.getIntValue()) {
+			csvfile += "\n" + SafeString.getLocaleString("import.result.blacklisted", locale) + ":;" + status.getBlacklisted();
 		}
 		
 		String modeString = "";
 		try {
-			modeString = SafeString.getLocaleString(ImportMode.getFromInt(comImportWizardForm.getMode()).getMessageKey(), admin.getLocale());
+			modeString = SafeString.getLocaleString(ImportMode.getFromInt(mode).getMessageKey(), locale);
 		} catch (Exception e) {
-			logger.error("Invalid import mode in " + ComImportWizardAction.class.getSimpleName() + ", mode : " + comImportWizardForm.getMode(), e);
+			logger.error("Invalid import mode in " + ComImportWizardAction.class.getSimpleName() + ", mode : " + mode, e);
 		}
 		csvfile += "\n" + "mode:;" + modeString;
 
-		reportService.createAndSaveImportReport(admin.getAdminID(), admin.getCompanyID(), filename, comImportWizardForm.getDatasourceID(), new Date(), csvfile, -1, isError);
+		return csvfile;
 	}
-
-    private Future<? extends Object> getWriteContentFuture(final HttpServletRequest request, final ComImportWizardForm aForm) throws Exception {
+	
+	private Future<? extends Object> getWriteContentFuture(final HttpServletRequest request, final ComImportWizardForm aForm) throws Exception {
         final int companyID = AgnUtils.getCompanyID(request);
         final ComAdmin admin = AgnUtils.getAdmin(request);
         final int adminID = admin.getAdminID();

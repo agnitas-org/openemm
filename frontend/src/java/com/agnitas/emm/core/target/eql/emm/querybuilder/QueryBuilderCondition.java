@@ -10,17 +10,17 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder;
 
-import com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode.Operator;
+import com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode.InfixOperator;
 
 public enum QueryBuilderCondition {
 
-	AND("AND", Operator.AND),
-	OR("OR", Operator.OR);
+	AND("AND", InfixOperator.AND),
+	OR("OR", InfixOperator.OR);
 	
 	private final String queryBuilderName;
-	private final Operator eqlOperator;
+	private final InfixOperator eqlOperator;
 	
-	QueryBuilderCondition(final String name, final Operator eqlOperator) {
+	QueryBuilderCondition(final String name, final InfixOperator eqlOperator) {
 		this.queryBuilderName = name;
 		this.eqlOperator = eqlOperator;
 	}
@@ -29,7 +29,7 @@ public enum QueryBuilderCondition {
 		return this.name();
 	}
 	
-	public final Operator eqlOperator() {
+	public final InfixOperator eqlOperator() {
 		return this.eqlOperator;
 	}
 	
@@ -43,7 +43,7 @@ public enum QueryBuilderCondition {
 		return null;
 	}
 	
-	public static final QueryBuilderCondition findByEqlOperator(final Operator eqlOperator) {
+	public static final QueryBuilderCondition findByEqlOperator(final InfixOperator eqlOperator) {
 		for(QueryBuilderCondition c : values()) {
 			if(c.eqlOperator == eqlOperator) {
 				return c;

@@ -12,10 +12,12 @@ package com.agnitas.web;
 
 import java.util.Collection;
 import java.util.HashSet;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.web.forms.ComTargetForm;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -25,11 +27,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.web.forms.ComTargetForm;
 
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
@@ -143,21 +140,4 @@ public final class ComMailingWizardAction extends MailingWizardAction {
 
         return super.mailtype(mapping, form, req, res);
     }
-	private MailingContentType mailingContentType;
-    
-	public MailingContentType getMailingContentType() throws Exception {
-		return mailingContentType;
-	}
-
-	public void setMailingContentType(MailingContentType mailingContentType) {
-		this.mailingContentType = mailingContentType;
-	}
-
-	public boolean isMailingContentTypeAdvertising() {
-		return mailingContentType == null || mailingContentType == MailingContentType.advertising;
-	}
-
-	public void setMailingContentTypeAdvertising(boolean mailingContentTypeAdvertising) {
-		mailingContentType = mailingContentTypeAdvertising ? MailingContentType.advertising : MailingContentType.transaction;
-	}
 }

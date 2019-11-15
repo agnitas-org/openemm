@@ -48,7 +48,7 @@
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Mailings" 				scope="request" />
 <c:set var="agnBreadcrumbsRootUrl"	value="${mailingsOverviewLink}"	scope="request" />
-<c:set var="agnHelpKey" 			value="Links" 					scope="request" />
+<c:set var="agnHelpKey" 			value="mailingLinks" 			scope="request" />
 
 <c:choose>
     <c:when test="${trackableLinkForm.isTemplate}">

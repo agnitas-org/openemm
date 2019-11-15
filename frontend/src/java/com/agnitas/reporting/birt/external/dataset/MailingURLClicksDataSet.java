@@ -17,6 +17,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
@@ -25,11 +29,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 
 /**
  * BIRT-DataSet for mailing url clicks statistics
@@ -306,12 +305,12 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	 * the report in one table
 	 * 
 	 * @return id of the create temporary table
-	 * @throws Exception
-	 * @throws DataAccessException
+	 * @throws Exception 
+	 * @throws DataAccessException 
 	 */
 	private int createTempTable() throws DataAccessException, Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger,
+		executeEmbedded(logger, 
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
 				+ "url VARCHAR(2000),"
 				+ " url_id INTEGER,"

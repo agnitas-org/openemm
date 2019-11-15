@@ -207,7 +207,7 @@
 
                 $container = getContainer(options, true);
 
-                var template = _.template(getTemplate(), options),
+                var template = _.template(getTemplate())(options),
                     $template = $(template);
 
 

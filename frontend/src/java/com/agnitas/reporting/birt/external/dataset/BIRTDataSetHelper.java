@@ -3,25 +3,27 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import javax.sql.DataSource;
 
+import org.agnitas.emm.core.commons.util.CompanyInfoDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.log4j.Logger;
+
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ConfigTableDao;
+import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.impl.ComAdminDaoImpl;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
+import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.JavaMailServiceImpl;
-import org.agnitas.emm.core.commons.util.CompanyInfoDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
-import org.apache.log4j.Logger;
 
 /**
- * Open Emm implemntation of BIRTDataSetHelper for {@link BIRTDataSet}
+ * Open Emm implemntation of BIRTDataSetHelper for {@link BIRTDataSet }
  */
 public class BIRTDataSetHelper {
-    
-    private static final transient Logger logger = Logger.getLogger(BIRTDataSetHelper.class);
+    @SuppressWarnings("unused")
+	private static final transient Logger logger = Logger.getLogger(BIRTDataSetHelper.class);
 
     private static BIRTDataSetHelper instance;
     
@@ -51,6 +53,11 @@ public class BIRTDataSetHelper {
         ((ComCompanyDaoImpl) companyDao).setDataSource(dataSource);
         ((ComCompanyDaoImpl) companyDao).setJavaMailService(javaMailservice);
         configService.setCompanyDao(companyDao);
+        
+        LicenseDao licenseDao = new LicenseDaoImpl();
+        ((LicenseDaoImpl) licenseDao).setDataSource(dataSource);
+        ((LicenseDaoImpl) licenseDao).setJavaMailService(javaMailservice);
+        configService.setLicenseDao(licenseDao);
         
         ComAdminDao adminDao = new ComAdminDaoImpl();
         ((ComAdminDaoImpl) adminDao).setDataSource(dataSource);

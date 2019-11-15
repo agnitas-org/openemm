@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.workflow.beans.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -55,5 +56,20 @@ public class WorkflowArchiveImpl extends BaseWorkflowIcon implements WorkflowArc
         }
 
         return dependencies;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowArchiveImpl that = (WorkflowArchiveImpl) o;
+        return campaignId == that.campaignId &&
+                archived == that.archived;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), campaignId, archived);
     }
 }

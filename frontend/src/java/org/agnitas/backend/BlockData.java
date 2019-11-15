@@ -30,10 +30,6 @@ public class BlockData implements Comparable <BlockData> {
 	public final static int	SMS = 10;
 	public final static int WHATSAPP = 11;
 
-	public final static int	SIG_NONE = 0;
-	public final static int	SIG_EXTERN = 1;
-	public final static int	SIG_INTERN = 2;
-
 	/** The index in the array in BlockCollection */
 	public int	id;
 	/** The content from the database */
@@ -70,10 +66,6 @@ public class BlockData implements Comparable <BlockData> {
 	public boolean	isPDF;
 	/** if this is a font for the personalized PDF */
 	public boolean	isFont;
-	/** if this is a signature for the personalized PDF */
-	public boolean	isSignature;
-	/** if this is a signrature, the type if this signature */
-	public int	signatureType;
 	/** if the content is already base64 precoded */
 	public boolean	isPrecoded;
 	/** The condition from dyn target table */
@@ -141,8 +133,6 @@ public class BlockData implements Comparable <BlockData> {
 		isAttachment = false;
 		isPDF = false;
 		isFont = false;
-		isSignature = false;
-		signatureType = SIG_NONE;
 		isPrecoded = false;
 		condition = null;
 		current_pos = 0;
@@ -169,13 +159,10 @@ public class BlockData implements Comparable <BlockData> {
 	public BlockData(String content, byte[] binary, String cid, 
 			 int type, int comptype, long urlID, String mime,
 			 boolean isParseable, boolean isText, boolean isImage,
-			 boolean isPDF, boolean isFont, boolean isSignature, int signatureType,
-			 boolean isPrecoded) {
+			 boolean isPDF, boolean isFont, boolean isPrecoded) {
 		this (content, binary, cid, type, comptype, urlID, mime, isParseable, isText, isImage);
 		this.isPDF = isPDF;
 		this.isFont = isFont;
-		this.isSignature = isSignature;
-		this.signatureType = signatureType;
 		this.isPrecoded = isPrecoded;
 	}
 	
@@ -184,8 +171,7 @@ public class BlockData implements Comparable <BlockData> {
 		return "org.agnitas.backend.BlockData (id=" + id + ",contentID=" + cid + ",comptype=" + comptype +
 			",urlID=" + urlID + ",targetID=" + targetID + ",mime=" + mime +
 			",parsable?" + isParseable + ",text?" + isText + ",image?" + isImage + ",attachment?" + isAttachment +
-			",pdf?" + isPDF + ",font?" + isFont + ",signature?" + isSignature + ",precoded?" + isPrecoded +
-			",condition=" + condition + ")";
+			",pdf?" + isPDF + ",font?" + isFont + ",precoded?" + isPrecoded + ",condition=" + condition + ")";
 	}
 
 	/**
@@ -289,12 +275,7 @@ public class BlockData implements Comparable <BlockData> {
 	 * @return the string used for filenames
 	 */
 	public String getContentFilename () {
-		String	c = cidEmit != null ? cidEmit : cid;
-		
-		if (isSignature) {
-			return c + ".signature";
-		}
-		return c;
+		return cidEmit != null ? cidEmit : cid;
 	}
 
 	/** returns MIME type
@@ -351,7 +332,6 @@ public class BlockData implements Comparable <BlockData> {
 		bd.isImage = isImage;
 		bd.isPDF = isPDF;
 		bd.isFont = isFont;
-		bd.isSignature = isSignature;
 		bd.isPrecoded = isPrecoded;
 		return bd;
 	}

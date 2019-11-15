@@ -23,17 +23,17 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public abstract class GenericValueExtractorEqlNodeParser<T> extends GenericEqlNodeParser<T> {
 
     @Override
-    protected QueryBuilderGroupNode parse(T node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(T node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         List<QueryBuilderBaseNode> rules = groupNode.getRules();
         if (!CollectionUtils.isEmpty(rules)) {
             QueryBuilderBaseNode baseNode = rules.get(rules.size() - 1);
             if (baseNode instanceof QueryBuilderRuleNode) {
                 QueryBuilderRuleNode ruleNode = (QueryBuilderRuleNode) baseNode;
-                return parse(node, ruleNode, groupNode);
+                return parse(node, ruleNode, groupNode, profileFields);
             }
         }
         throw new EqlToQueryBuilderConversionException("Unable to obtain rule id for node " + node);
     }
 
-    protected abstract QueryBuilderGroupNode parse(T node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode);
+    protected abstract QueryBuilderGroupNode parse(T node, QueryBuilderRuleNode ruleNode, QueryBuilderGroupNode groupNode, Set<String> profileFields);
 }

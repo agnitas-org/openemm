@@ -13,9 +13,8 @@ package com.agnitas.emm.core.workflow.beans;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonSubTypes;
-import org.codehaus.jackson.annotate.JsonTypeInfo;
+import com.agnitas.emm.core.workflow.service.WorkflowIconTypeSerializer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowActionBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowArchiveImpl;
@@ -32,11 +31,11 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReportImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = WorkflowStartImpl.class, name = WorkflowIconType.Constants.START_VALUE),
         @JsonSubTypes.Type(value = WorkflowStopImpl.class, name = WorkflowIconType.Constants.STOP_VALUE),
@@ -59,6 +58,7 @@ public interface WorkflowIcon {
 
     void setId(int id);
 
+    @JsonSerialize(using = WorkflowIconTypeSerializer.class)
     int getType();
 
     void setType(int type);

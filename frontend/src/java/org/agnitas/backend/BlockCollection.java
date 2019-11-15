@@ -169,7 +169,7 @@ public class BlockCollection {
 		} else {
 			ext = "gif";
 		}
-		bd = new BlockData (null, content, name, BlockData.RELATED_BINARY, 5, 0, "image/" + ext, false, false, true, false, false, false, 0, false);
+		bd = new BlockData (null, content, name, BlockData.RELATED_BINARY, 5, 0, "image/" + ext, false, false, true, false, false, false);
 		bd.cidEmit = data.defaultImageLink (bd.cid, Imagepool.MAILING, true);
 		componentDao.add (data.dbase, bd);
 		addImage (bd);
@@ -574,7 +574,7 @@ public class BlockCollection {
 		env = envelopeFrom ();
 		extra.put ("envelope-from", env);
 		if ((method = data.company.infoSubstituted ("list-unsubscribe", data.mailing.id (), extra)) == null) {
-			method = "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
+			method = (data.rdirDomain != null ? "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>, " : "") + "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
 		} else {
 			method = method.trim ();
 			if (method.equals ("-")) {
@@ -585,6 +585,11 @@ public class BlockCollection {
 			rc = "";
 		} else {
 			rc = "HList-Unsubscribe: " + method + data.eol;
+			String	listUnsubscribePost = data.company.infoSubstituted ("list-unsubscribe-post", data.mailing.id ());
+			
+			if (! "-".equals (listUnsubscribePost)) {
+				rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + data.eol;
+			}
 		}
 		
 		String[]	more = data.company.infoList ("header-add", data.mailing.id (), extra);
@@ -649,19 +654,6 @@ public class BlockCollection {
 		return b;
 	}
 
-	private BlockData createBlockPDFSignature (BlockData pdf) {
-		BlockData	b = new BlockData ();
-
-		b.cid = pdf.cid;
-		b.type = BlockData.ATTACHMENT_BINARY;
-		b.media = Media.TYPE_EMAIL;
-		b.comptype = 3;
-		b.mime = "application/adsignature";
-		b.isAttachment = true;
-		b.isSignature = true;
-		return b;
-	}
-	
 	private void cleanupBlockCollection(List <BlockData> c) {
 		BlockData	header;
 		
@@ -757,7 +749,6 @@ public class BlockCollection {
 	 * Parses a block, collecting all tags in a hashtable
 	 *
 	 * @param cb       the block to parse
-	 * @param name     the name of this block
 	 * @param tagTable the hashtable to collect tag
 	 */
 	private void parseBlock (BlockData cb, Map <String, EMMTag> tagTable) throws Exception {

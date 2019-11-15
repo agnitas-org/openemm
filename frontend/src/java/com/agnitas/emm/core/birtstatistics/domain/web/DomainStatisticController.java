@@ -62,7 +62,7 @@ public class DomainStatisticController {
 		model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
 		model.addAttribute(BIRT_STATISTIC_URL_WITHOUT_FORMAT,
 				birtStatisticsService.getDomainStatisticsUrlWithoutFormat(
-						admin, sessionId, conversionService.convert(form, DomainStatisticDto.class)));
+						admin, sessionId, conversionService.convert(form, DomainStatisticDto.class), false));
 		userActivityLogService.writeUserActivityLog(admin, "domain statistics", "active submenu - domain overview", logger);
 		return "stats_birt_domain_stat";
 	}

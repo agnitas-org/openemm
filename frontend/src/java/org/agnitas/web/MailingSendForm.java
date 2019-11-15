@@ -20,7 +20,6 @@ import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.Mailing;
-import org.agnitas.beans.MailingBase;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.log4j.Logger;
@@ -140,11 +139,9 @@ public class MailingSendForm extends StrutsFormBase {
 	 */
 	protected int frameHeight;
 
-	
 	/**
 	 * Are there any mailing transmissions running ? ( Test- , Admin-, or Worldmailings which are currently sent ?)
 	 */
-	
 	private boolean isTransmissionRunning;
 
     /**
@@ -178,6 +175,37 @@ public class MailingSendForm extends StrutsFormBase {
     private int sizeErrorThreshold;
 
     private boolean isPrioritizationDisallowed;
+    
+    private Map<Integer, Integer> sendStat = null;
+    
+    /**
+     * Holds value of property mailing.
+     */
+    private Mailing mailing;
+    
+    /**
+     * Holds value of property mailingtype.
+     */
+    private int mailingtype;
+    
+    /**
+     * Holds value of property sendHour.
+     */
+    private int sendHour;
+    
+    /**
+     * Holds value of property sendMinute.
+     */
+    private int sendMinute;
+    
+	/**
+     * Holds value of property targetGroups.
+     */
+    private Collection<Integer> targetGroups;
+    
+    private int stepping = 0;
+    
+    private int blocksize = 0;
 
     /**
      * Reset all properties to their default values.
@@ -222,9 +250,9 @@ public class MailingSendForm extends StrutsFormBase {
         if (action == MailingSendAction.ACTION_CONFIRM_SEND_WORLD) {
             TimeZone aZone = AgnUtils.getTimeZone(req);
             GregorianCalendar currentDate = new GregorianCalendar(aZone);
-            GregorianCalendar sendDate = new GregorianCalendar(aZone);
-            sendDate.set(Integer.parseInt(this.sendDate.substring(0, 4)), Integer.parseInt(this.sendDate.substring(4, 6)) - 1, Integer.parseInt(this.sendDate.substring(6, 8)), sendHour, sendMinute);
-            if (currentDate.getTime().getTime() > sendDate.getTime().getTime()) {
+            GregorianCalendar newsendDate = new GregorianCalendar(aZone);
+            newsendDate.set(Integer.parseInt(sendDate.substring(0, 4)), Integer.parseInt(sendDate.substring(4, 6)) - 1, Integer.parseInt(sendDate.substring(6, 8)), sendHour, sendMinute);
+            if (currentDate.getTime().getTime() > newsendDate.getTime().getTime()) {
                 errors.add("global", new ActionMessage("error.you_choose_a_time_before_the_current_time"));
             }
         }
@@ -232,14 +260,18 @@ public class MailingSendForm extends StrutsFormBase {
             ComMailingContentForm aForm = null;
             if (req != null){
                 aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-                if(aForm != null) aForm.setNoImages(this.isNoImages());
+                if(aForm != null) {
+					aForm.setNoImages(isNoImages());
+				}
             }
         }
         if (action == MailingSendAction.ACTION_PREVIEW){
             ComMailingContentForm aForm = null;
             if (req != null){
                 aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-                if (aForm != null) this.setNoImages(aForm.isNoImages());
+                if (aForm != null) {
+					setNoImages(aForm.isNoImages());
+				}
             }
         }
 
@@ -252,7 +284,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property mailingID.
      */
     public int getMailingID() {
-        return this.mailingID;
+        return mailingID;
     }
 
     /**
@@ -270,7 +302,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property shortname.
      */
     public String getShortname() {
-        return this.shortname;
+        return shortname;
     }
 
     /**
@@ -288,7 +320,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property action.
      */
     public int getAction() {
-        return this.action;
+        return action;
     }
 
     /**
@@ -306,7 +338,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property previewCustomerID.
      */
     public int getPreviewCustomerID() {
-        return this.previewCustomerID;
+        return previewCustomerID;
     }
 
     /**
@@ -342,7 +374,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property previewFormat.
      */
     public int getPreviewFormat() {
-        return this.previewFormat;
+        return previewFormat;
     }
 
     /**
@@ -352,7 +384,9 @@ public class MailingSendForm extends StrutsFormBase {
      */
     public void setPreviewFormat(int previewFormat) {
         this.previewFormat = previewFormat;
-        if (logger.isDebugEnabled()) logger.debug("Setting format to: " + this.previewFormat);
+        if (logger.isDebugEnabled()) {
+			logger.debug("Setting format to: " + this.previewFormat);
+		}
     }
 
     /**
@@ -361,7 +395,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property previewSize.
      */
     public int getPreviewSize() {
-        return this.previewSize;
+        return previewSize;
     }
 
     /**
@@ -379,7 +413,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property subjectPreview.
      */
     public String getSubjectPreview() {
-        return this.subjectPreview;
+        return subjectPreview;
     }
 
     /**
@@ -397,7 +431,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property senderPreview.
      */
     public String getSenderPreview() {
-        return this.senderPreview;
+        return senderPreview;
     }
 
     /**
@@ -408,9 +442,6 @@ public class MailingSendForm extends StrutsFormBase {
     public void setSenderPreview(String senderPreview) {
         this.senderPreview = senderPreview;
     }
-
-
-    private Map<Integer, Integer> sendStat = null;
 
     public Map<Integer, Integer> getSendStats() {
         return sendStat;
@@ -445,7 +476,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property sendStatText.
      */
     public int getSendStatText() {
-        return this.sendStatText;
+        return sendStatText;
     }
 
     /**
@@ -463,7 +494,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property sendStatHtml.
      */
     public int getSendStatHtml() {
-        return this.sendStatHtml;
+        return sendStatHtml;
     }
 
     /**
@@ -481,7 +512,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property sendStatOffline.
      */
     public int getSendStatOffline() {
-        return this.sendStatOffline;
+        return sendStatOffline;
     }
 
     /**
@@ -521,7 +552,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property isTemplate.
      */
     public boolean isIsTemplate() {
-        return this.isTemplate;
+        return isTemplate;
     }
 
     /**
@@ -539,8 +570,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property deliveryStat.
      */
     public DeliveryStat getDeliveryStat() {
-
-        return this.deliveryStat;
+        return deliveryStat;
     }
 
     /**
@@ -549,22 +579,16 @@ public class MailingSendForm extends StrutsFormBase {
      * @param deliveryStat New value of property deliveryStat.
      */
     public void setDeliveryStat(DeliveryStat deliveryStat) {
-
         this.deliveryStat = deliveryStat;
     }
-
-    /**
-     * Holds value of property mailing.
-     */
-    private Mailing mailing;
 
     /**
      * Getter for property mailing.
      *
      * @return Value of property mailing.
      */
-    public MailingBase getMailing() {
-        return this.mailing;
+    public Mailing getMailing() {
+        return mailing;
     }
 
     /**
@@ -587,7 +611,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property worldMailingSend.
      */
     public boolean isWorldMailingSend() {
-        return this.worldMailingSend;
+        return worldMailingSend;
     }
 
     /**
@@ -600,17 +624,12 @@ public class MailingSendForm extends StrutsFormBase {
     }
 
     /**
-     * Holds value of property mailingtype.
-     */
-    private int mailingtype;
-
-    /**
      * Getter for property mailingtype.
      *
      * @return Value of property mailingtype.
      */
     public int getMailingtype() {
-        return this.mailingtype;
+        return mailingtype;
     }
 
     /**
@@ -633,7 +652,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property sendDate.
      */
     public String getSendDate() {
-        return this.sendDate;
+        return sendDate;
     }
 
     /**
@@ -646,17 +665,12 @@ public class MailingSendForm extends StrutsFormBase {
     }
 
     /**
-     * Holds value of property sendHour.
-     */
-    private int sendHour;
-
-    /**
      * Getter for property sendHour.
      *
      * @return Value of property sendHour.
      */
     public int getSendHour() {
-        return this.sendHour;
+        return sendHour;
     }
 
     /**
@@ -669,17 +683,12 @@ public class MailingSendForm extends StrutsFormBase {
     }
 
     /**
-     * Holds value of property sendMinute.
-     */
-    private int sendMinute;
-
-    /**
      * Getter for property sendMinute.
      *
      * @return Value of property sendMinute.
      */
     public int getSendMinute() {
-        return this.sendMinute;
+        return sendMinute;
     }
 
     /**
@@ -727,18 +736,13 @@ public class MailingSendForm extends StrutsFormBase {
 		this.targetGroupsNames = targetGroupsNames;
 	}
 
-	/**
-     * Holds value of property targetGroups.
-     */
-    private Collection<Integer> targetGroups;
-
     /**
      * Getter for property targetGroups.
      *
      * @return Value of property targetGroups.
      */
     public Collection<Integer> getTargetGroups() {
-        return this.targetGroups;
+        return targetGroups;
     }
 
     /**
@@ -756,7 +760,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property emailFormat.
      */
     public int getEmailFormat() {
-        return this.emailFormat;
+        return emailFormat;
     }
 
     /**
@@ -779,7 +783,7 @@ public class MailingSendForm extends StrutsFormBase {
      * @return Value of property mailinglistID.
      */
     public int getMailinglistID() {
-        return this.mailinglistID;
+        return mailinglistID;
     }
 
     /**
@@ -791,16 +795,15 @@ public class MailingSendForm extends StrutsFormBase {
         this.mailinglistID = mailinglistID;
     }
 
-    private int stepping = 0;
-
     /**
      * Getter for property stepping.
      *
      * @return Value of property stepping.
      */
     public int getStepping() {
-        return this.stepping;
+        return stepping;
     }
+    
     public int getStep() {
     	// Backward compatibility
     	return getStepping();
@@ -814,20 +817,20 @@ public class MailingSendForm extends StrutsFormBase {
     public void setStepping(int stepping) {
         this.stepping = stepping;
     }
+    
     public void setStep(int stepping) {
     	// Backward compatibility
     	setStepping(stepping);
     }
+    
     /**
      * Getter for property blocksize.
      *
      * @return Value of property blocksize.
      */
     public int getBlocksize() {
-        return this.blocksize;
+        return blocksize;
     }
-
-    private int blocksize = 0;
 
     /**
      * Setter for property blocksize.
@@ -875,7 +878,6 @@ public class MailingSendForm extends StrutsFormBase {
     public void setDescription(String description) {
         this.description = description;
     }
-
 
 	public boolean isTransmissionRunning() {
 		return isTransmissionRunning;

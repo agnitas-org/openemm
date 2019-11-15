@@ -80,13 +80,13 @@
 					<div class="col-sm-8">
 						<c:if test="${isNewField}">
 							<mvc:select path="fieldType" size="1" id="fieldType" cssClass="form-control js-select" data-field-vis="">
-								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv">
+								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv">
 									<bean:message key="settings.fieldType.INTEGER"/>
 								</mvc:option>
-								<mvc:option value="VARCHAR" data-field-vis-show="#fieldLengthDiv">
+								<mvc:option value="VARCHAR" data-field-vis-show="#fieldLengthDiv" data-field-vis-hide="#interestDiv">
 									<bean:message key="settings.fieldType.VARCHAR"/>
 								</mvc:option>
-								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv">
+								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv, #interestDiv">
 									<bean:message key="settings.fieldType.DATE"/>
 								</mvc:option>
 							</mvc:select>
@@ -112,7 +112,6 @@
 						</div>
 					</div>
 				</c:if>
-			</div>
 
 				<c:if test="${not isNewField}">
 					<c:if test="${profileForm.fieldType == 'VARCHAR'}">
@@ -193,17 +192,19 @@
 						</label>
 					</div>
 				</div>
-
-			<div class="form-group">
-				<div class="col-sm-4">
-					<label class="control-label" for="interest"><bean:message key="FieldIsInterest"/></label>
-				</div>
-				<div class="col-sm-8">
-					<label class="toggle">
-						<mvc:checkbox path="interest" id="interest"/>
-						<div class="toggle-control"></div>
-					</label>
-				</div>
+				<c:if test="${profileForm.fieldType == 'INTEGER' || profileForm.fieldType == 'DOUBLE'}">
+					<div id="interestDiv" class="form-group">
+						<div class="col-sm-4">
+							<label class="control-label" for="interest"><bean:message key="FieldIsInterest"/></label>
+						</div>
+						<div class="col-sm-8">
+							<label class="toggle">
+								<mvc:checkbox path="interest" id="interest"/>
+								<div class="toggle-control"></div>
+							</label>
+						</div>
+					</div>
+				</c:if>
 			</div>
 
 			<c:if test="${HISTORY_FEATURE_ENABLED}">

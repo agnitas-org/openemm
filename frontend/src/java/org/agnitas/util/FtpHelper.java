@@ -20,8 +20,6 @@ import java.util.List;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.log4j.Logger;
 
-import com.jcraft.jsch.SftpException;
-
 /**
  * The Class FtpHelper.
  * It uses FTP passive mode by default
@@ -145,7 +143,6 @@ public class FtpHelper implements Closeable {
 	 * Cd.
 	 *
 	 * @param path the path
-	 * @throws SftpException the sftp exception
 	 */
 	public void cd(String path) throws Exception {
 		checkForConnection();
@@ -182,7 +179,7 @@ public class FtpHelper implements Closeable {
 	 * 
 	 * @param directoryPath
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public boolean directoryExists(String directoryPath) throws Exception {
 		checkForConnection();

@@ -40,16 +40,14 @@
             </div>
         </emm:ShowByPermission>
 
-        <emm:ShowByPermission token="action.op.GetArchiveList">
-            <div class="form-group">
-                <div class="col-sm-8 col-sm-push-4">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" id="settings_general_in_archiv" name="archived" value="true"/>
-                        <bean:message key="mailing.archived"/>
-                    </label>
-                </div>
+        <div class="form-group">
+            <div class="col-sm-8 col-sm-push-4">
+                <label class="checkbox-inline">
+                    <input type="checkbox" id="settings_general_in_archiv" name="archived" value="true"/>
+                    <bean:message key="mailing.archived"/>
+                </label>
             </div>
-        </emm:ShowByPermission>
+        </div>
 
         <hr>
         <div class="form-group">

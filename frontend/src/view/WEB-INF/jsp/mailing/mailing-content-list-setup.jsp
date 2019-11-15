@@ -104,7 +104,7 @@
                 </c:choose>
                 <c:set var="agnNavHrefAppend"	value="&mailingID=${mailingContentForm.mailingID}&init=true"	scope="request" />
                 <c:set var="agnHighlightKey" 	value="default.Content" 												scope="request" />
-                <c:set var="agnHelpKey" 		value="default.Content" 												scope="request" />
+                <c:set var="agnHelpKey" 		value="contentView" 												scope="request" />
             </c:otherwise>
         </c:choose>
 

@@ -1,0 +1,8 @@
+<HelpBalloon>
+    <title><![CDATA[Filteradresse]]></title>
+    <content><![CDATA[Die Bef&uuml;llung der Filteradresse kann &uuml;ber zwei Wege erfolgen: 
+    1. Sie lassen das Feld Filteradresse frei. 
+    	In diesem Fall generiert der EMM beim Anlegen des Bounce-Filters automatisch eine Filteradresse. 
+    2. Sie geben eine Filteradresse durch manuelle Eingabe vor. 
+    	Das manuelle Bef&uuml;llen der Filteradresse ist nur dann relevant, wenn Sie den Filterserver vom EMM (filter.agnitas.de) als Mailempfangsserver in Ihrem DNS (Domain Name System) eingetragen haben. Bei weiteren Details k&ouml;nnen Sie sich an den AGNITAS-Support wenden.]]></content>
+</HelpBalloon>

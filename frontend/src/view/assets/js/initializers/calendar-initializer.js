@@ -103,6 +103,8 @@ AGN.Lib.DomInitializer.new("calendar-table", function () {
     } else {
       $('.calendar-table').find('.calendar-comment').hide();
     }
+
+    AGN.Lib.CalendarService.adjustSidebarHeight();
   });
 
   Action.new({'change': '#scheduleReminder'}, function() {

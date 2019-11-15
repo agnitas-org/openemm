@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.profilefields.service;
 
+import java.text.SimpleDateFormat;
+
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
@@ -17,8 +19,6 @@ import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.service.ServiceResult;
 
 public interface ProfileFieldValidationService {
-    int MAX_NUMBER_OF_ENTRIES_FOR_CHANGE = 750000;
-
     boolean isValidDbFieldName(String fieldName);
 
     boolean isInvalidLengthForDbFieldName(String fieldName);
@@ -29,7 +29,7 @@ public interface ProfileFieldValidationService {
 
     boolean isInvalidIntegerField(String fieldType, String fieldDefault);
 
-    boolean isAllowedDefaultValue(String fieldType, String defaultValue);
+    boolean isAllowedDefaultValue(String fieldType, String defaultValue, SimpleDateFormat dateFormat);
 
     boolean isDefaultValueAllowedInDb(@VelocityCheck int companyId, String fieldName, String defaultValue);
 

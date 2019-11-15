@@ -44,7 +44,7 @@ public interface Mediatype {
     /**
      * Setter for property priority.
      *
-     * @param param New value of property priority.
+     * @param priority New value of property priority.
      */
     void setPriority(int priority);
 
@@ -58,7 +58,7 @@ public interface Mediatype {
     /**
      * Setter for property status.
      *
-     * @param param New value of property status.
+     * @param status New value of property status.
      */
     void setStatus(int status);
 

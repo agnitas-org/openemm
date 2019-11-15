@@ -77,51 +77,6 @@ public class TargetNodeNumeric extends TargetNode implements Serializable {
             	OPERATOR_GT_EQ
             	};
 	}
-
-    @Override
-	public String generateSQL() {
-        StringBuffer tmpSQL=new StringBuffer("");
-        
-        switch(this.chainOperator) {
-            case TargetNode.CHAIN_OPERATOR_AND:
-                tmpSQL.append(" AND ");
-                break;
-            case TargetNode.CHAIN_OPERATOR_OR:
-                tmpSQL.append(" OR ");
-                break;
-            default:
-                tmpSQL.append(" ");
-        }
-        
-        if(this.openBracketBefore) {
-            tmpSQL.append("(");
-        }
-        
-        if(this.primaryOperator!=TargetNode.OPERATOR_MOD.getOperatorCode()) {
-            tmpSQL.append("cust.");
-            tmpSQL.append(this.primaryField);
-            tmpSQL.append(" ");
-            tmpSQL.append(this.typeOperators[this.primaryOperator-1].getOperatorSymbol());
-            tmpSQL.append(" ");
-            tmpSQL.append(getSQLSafeString(this.primaryValue));
-        } else {
-            tmpSQL.append("mod(cust.");
-            tmpSQL.append(this.primaryField);
-            tmpSQL.append(", ");
-            tmpSQL.append(getSQLSafeString(this.primaryValue));
-            tmpSQL.append(") ");
-            tmpSQL.append(this.typeOperators[this.secondaryOperator-1].getOperatorSymbol());
-            tmpSQL.append(" ");
-            tmpSQL.append(this.secondaryValue);
-        }
-        
-        
-        if(this.closeBracketAfter) {
-            tmpSQL.append(")");
-        }
-        
-        return tmpSQL.toString();
-    }
     
     @Override
 	public String generateBsh() {

@@ -83,7 +83,7 @@ public class DbUtilities {
 	}
 
 	public static int readoutInOutputStream(DataSource dataSource, String statementString, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return readoutInOutputStream(connection, statementString, outputStream, encoding, separator, stringQuote);
 		}
 	}
@@ -95,7 +95,7 @@ public class DbUtilities {
 	}
 
 	public static int readoutInOutputStreamWithDateIntervals(DataSource dataSource, String statementString, OutputStream outputStream, String encoding, char separator, Character stringQuote, Date...dates) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			if(dates == null || dates.length == 0){
 				return readoutInOutputStream(connection, statementString, outputStream, encoding, separator, stringQuote);
 			}
@@ -178,13 +178,13 @@ public class DbUtilities {
 	}
 
 	public static String readout(DataSource dataSource, String statementString, char separator, Character stringQuote) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return readout(connection, statementString, separator, stringQuote);
 		}
 	}
 
     public static String readout(Connection connection, String statementString, char separator, Character stringQuote) throws Exception {
-		try(ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			readoutInOutputStream(connection, statementString, outputStream, "UTF-8", separator, stringQuote);
 			return new String(outputStream.toByteArray(), "UTF-8");
 		}
@@ -660,7 +660,7 @@ public class DbUtilities {
 			throw new RuntimeException("Cannot detect db vendor: dataSource is null");
 		}
 
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return checkDbVendorIsOracle(connection);
 		} catch (Exception e) {
 			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
@@ -673,7 +673,7 @@ public class DbUtilities {
 			throw new RuntimeException("Cannot detect db vendor: dataSource is null");
 		}
 
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return checkDbVendorIsMariaDB(connection);
 		} catch (Exception e) {
 			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
@@ -730,7 +730,7 @@ public class DbUtilities {
 	}
 
 	public static String getDbUrl(DataSource dataSource) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return getDbUrl(connection);
 		}
 	}
@@ -749,7 +749,7 @@ public class DbUtilities {
 	}
 
 	public static boolean checkTableAndColumnsExist(DataSource dataSource, String tableName, String... columns) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			return checkTableAndColumnsExist(connection, tableName, columns, false);
 		}
 	}
@@ -759,7 +759,7 @@ public class DbUtilities {
 	}
 
 	public static boolean checkTableAndColumnsExist(DataSource dataSource, String tableName, String[] columns, boolean throwExceptionOnError) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
     		return checkTableAndColumnsExist(connection, tableName, columns, throwExceptionOnError);
     	}
 	}
@@ -812,7 +812,7 @@ public class DbUtilities {
 	}
 
 	public static void checkTableExists(DataSource dataSource, String tableName) throws Exception {
-		try(final Connection connection = dataSource.getConnection()) {
+		try (final Connection connection = dataSource.getConnection()) {
 			checkTableExists(connection, tableName);
 		}
 	}
@@ -1021,7 +1021,7 @@ public class DbUtilities {
 		} else if (StringUtils.isBlank(tableName)) {
 			throw new Exception("Invalid empty tableName for getColumnNames");
 		} else {
-			try(final Connection connection = dataSource.getConnection()) {
+			try (final Connection connection = dataSource.getConnection()) {
 				try (Statement stmt = connection.createStatement()) {
 			    	String sql = "SELECT * FROM " + SafeString.getSafeDbTableName(tableName) + " WHERE 1 = 0";
 			        try (ResultSet rset = stmt.executeQuery(sql)) {
@@ -1044,7 +1044,7 @@ public class DbUtilities {
 		} else if (StringUtils.isBlank(columnName)) {
 			throw new Exception("Invalid empty columnName for getColumnDataType");
 		} else {
-			try(final Connection connection = dataSource.getConnection()) {
+			try (final Connection connection = dataSource.getConnection()) {
 				int characterLength;
 				int numericPrecision;
 				int numericScale;
@@ -1070,11 +1070,11 @@ public class DbUtilities {
 
 					// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
 					String sql = "SELECT NVL(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? AND column_name = ?";
-					try(final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+					try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 						preparedStatement.setString(1, tableName.toUpperCase());
 						preparedStatement.setString(2, columnName.toUpperCase());
 
-						try(final ResultSet resultSet = preparedStatement.executeQuery()) {
+						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 
 							if (resultSet.next()) {
 								String dataType = resultSet.getString("data_type");
@@ -1109,11 +1109,11 @@ public class DbUtilities {
 	        	} else {
 	        		String sql = "SELECT data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)";
 
-	        		try(final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 						preparedStatement.setString(1, tableName);
 						preparedStatement.setString(2, columnName);
 
-						try(final ResultSet resultSet = preparedStatement.executeQuery()) {
+						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 
 							if (resultSet.next()) {
 								String dataType = resultSet.getString("data_type");
@@ -1155,7 +1155,7 @@ public class DbUtilities {
 		} else {
 			try {
 				CaseInsensitiveMap<String, DbColumnType> returnMap = new CaseInsensitiveMap<>();
-				try(final Connection connection = dataSource.getConnection()) {
+				try (final Connection connection = dataSource.getConnection()) {
 					if (checkDbVendorIsOracle(connection)) {
 						// Read special constraints for not-nullable fields by user_tab_columns
 						String nullableSql = "SELECT search_condition FROM all_constraints WHERE table_name = UPPER(?)";
@@ -1175,10 +1175,10 @@ public class DbUtilities {
 
 						// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
 						String sql = "SELECT column_name, NVL(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ?";
-						try(final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName.toUpperCase());
 
-							try(final ResultSet resultSet = preparedStatement.executeQuery()) {
+							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 								while (resultSet.next()) {
 									String columnName = resultSet.getString("column_name");
 
@@ -1218,10 +1218,10 @@ public class DbUtilities {
 		        	} else {
 		        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?)";
 
-		        		try(final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+		        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName);
 
-							try(final ResultSet resultSet = preparedStatement.executeQuery()) {
+							try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 								while (resultSet.next()) {
 									String dataType = resultSet.getString("data_type");
 
@@ -1276,7 +1276,7 @@ public class DbUtilities {
 		} else if (StringUtils.isBlank(tableName)) {
 			throw new Exception("Invalid empty tableName for getColumnCount");
 		} else {
-			try(final Connection connection = dataSource.getConnection()) {
+			try (final Connection connection = dataSource.getConnection()) {
 		        return getColumnCount(connection, tableName);
 			}
 		}
@@ -1302,7 +1302,7 @@ public class DbUtilities {
 		} else if (StringUtils.isBlank(tableName)) {
 			throw new Exception("Invalid empty tableName for getTableEntriesCount");
 		} else {
-			try(final Connection connection = dataSource.getConnection()) {
+			try (final Connection connection = dataSource.getConnection()) {
 		        return getTableEntriesCount(connection, tableName);
 			}
 		}
@@ -1393,7 +1393,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static String getDateDefaultValue(String fieldDefault, boolean isOracle) throws Exception {
+	public static String getDateDefaultValue(String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean isOracle) throws Exception {
 		if (isNowKeyword(fieldDefault)) {
 			return "CURRENT_TIMESTAMP";
 		} else {
@@ -1407,14 +1407,14 @@ public class DbUtilities {
 				 * occurs, when two users with language settings with different
 				 * date formats edit the profile field.
 				 */
-				return "to_date('" + fieldDefault + "', 'DD.MM.YYYY')";
+				return "to_date('" + new SimpleDateFormat(DateUtilities.DD_MM_YYYY).format(fieldDefaultDateFormat.parse(fieldDefault)) + "', 'DD.MM.YYYY')";
 			} else {
-				return "'" + new SimpleDateFormat(DateUtilities.YYYY_MM_DD).format(new SimpleDateFormat(DateUtilities.DD_MM_YYYY).parse(fieldDefault)) + "'";
+				return "'" + new SimpleDateFormat(DateUtilities.YYYY_MM_DD).format(fieldDefaultDateFormat.parse(fieldDefault)) + "'";
 			}
 		}
 	}
 
-	public static boolean addColumnToDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, int length, String fieldDefault, boolean notNull) throws Exception {
+	public static boolean addColumnToDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		boolean isOracle = checkDbVendorIsOracle(dataSource);
 
 		if (StringUtils.isBlank(fieldname)) {
@@ -1474,7 +1474,7 @@ public class DbUtilities {
 				if (fieldType.equalsIgnoreCase("VARCHAR")) {
 					addColumnStatement += " DEFAULT '" + fieldDefault + "'";
 				} else if (fieldType.equalsIgnoreCase("DATE")) {
-					addColumnStatement += " DEFAULT " + getDateDefaultValue(fieldDefault, isOracle);
+					addColumnStatement += " DEFAULT " + getDateDefaultValue(fieldDefault, fieldDefaultDateFormat, isOracle);
 				} else {
 					addColumnStatement += " DEFAULT " + fieldDefault;
 				}
@@ -1523,11 +1523,11 @@ public class DbUtilities {
 		}
 	}
 
-	public static boolean alterColumnDefaultValueInDbTable(DataSource dataSource, String tablename, String fieldname, String fieldDefault, boolean notNull) throws Exception {
-		return alterColumnTypeInDbTable(dataSource, tablename, fieldname, null, -1, -1, fieldDefault, notNull);
+	public static boolean alterColumnDefaultValueInDbTable(DataSource dataSource, String tablename, String fieldname, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
+		return alterColumnTypeInDbTable(dataSource, tablename, fieldname, null, -1, -1, fieldDefault, fieldDefaultDateFormat, notNull);
 	}
 
-	public static boolean alterColumnTypeInDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, int length, int precision, String fieldDefault, boolean notNull) throws Exception {
+	public static boolean alterColumnTypeInDbTable(DataSource dataSource, String tablename, String fieldname, String fieldType, int length, int precision, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		boolean isOracle = checkDbVendorIsOracle(dataSource);
 
 		if (StringUtils.isBlank(fieldname)) {
@@ -1615,7 +1615,7 @@ public class DbUtilities {
 					changeColumnStatementPart += " DEFAULT '" + fieldDefault.replace("'", "''") + "'";
 				} else if (dbType.getTypeName().toUpperCase().contains("DATE") || dbType.getTypeName().toUpperCase().contains("TIME")) {
 					// date or time type
-					changeColumnStatementPart += " DEFAULT " + getDateDefaultValue(fieldDefault.replace("'", "''"), isOracle);
+					changeColumnStatementPart += " DEFAULT " + getDateDefaultValue(fieldDefault.replace("'", "''"), fieldDefaultDateFormat, isOracle);
 				} else {
 					// Numeric datatype
 					changeColumnStatementPart += " DEFAULT " + fieldDefault.replace("'", "''");
@@ -1655,7 +1655,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static boolean checkAllowedDefaultValue(String dataType, String defaultValue) {
+	public static boolean checkAllowedDefaultValue(String dataType, String defaultValue, SimpleDateFormat dateFormat) {
 		if (defaultValue == null) {
 			return false;
 		} else if ("".equals(defaultValue)) {
@@ -1666,7 +1666,7 @@ public class DbUtilities {
 				return true;
 			} else {
 				try {
-					new SimpleDateFormat(DateUtilities.DD_MM_YYYY).parse(defaultValue);
+					dateFormat.parse(defaultValue);
 					return true;
 				} catch (ParseException e) {
 					return false;
@@ -2301,15 +2301,15 @@ public class DbUtilities {
 	}
 
 	public static final boolean isSelectStatement(String sqlStatement) {
-		return AgnUtils.startsWithIgnoreCase(sqlStatement, "select ")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "select\t")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "select\n")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "select\r")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "with ")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "with(")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "with\t")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "with\n")
-				|| AgnUtils.startsWithIgnoreCase(sqlStatement, "with\r");
+		return StringUtils.startsWithIgnoreCase(sqlStatement, "select ")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "select\t")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "select\n")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "select\r")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with ")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with(")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with\t")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with\n")
+				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with\r");
 	}
 
 	public static final boolean resultsetHasColumn(ResultSet resultSet, String columnNameToSearch) throws SQLException {
@@ -2418,7 +2418,7 @@ public class DbUtilities {
 	 * Checks if a where-clause only contains rules like "1=1"
 	 */
 	public static boolean isTautologicWhereClause(String whereClause) {
-		if (whereClause == null) {
+		if (StringUtils.isBlank(whereClause)) {
 			return true;
 		} else {
 			whereClause = AgnUtils.removeObsoleteEnclosingBrackets(whereClause);
@@ -2444,5 +2444,34 @@ public class DbUtilities {
 		buffer.append(remaining);
 		
 		return buffer.toString();
+	}
+
+	public static boolean checkForeignKeyExists(DataSource dataSource, String tableName, String referencedTableName) throws Exception {
+		try (final Connection connection = dataSource.getConnection()) {
+			return checkForeignKeyExists(connection, tableName, referencedTableName);
+		}
+	}
+
+	public static boolean checkForeignKeyExists(Connection connection, String tableName, String referencedTableName) throws Exception {
+		if (connection == null) {
+			throw new Exception("Connection for checkForeignKeyExists is null");
+		} else if (StringUtils.isBlank(tableName)) {
+			throw new Exception("TableName for checkForeignKeyExists is empty");
+		} else if (StringUtils.isBlank(referencedTableName)) {
+			throw new Exception("Referenced tableName for checkForeignKeyExists is empty");
+		} else if (checkDbVendorIsOracle(connection)) {
+			throw new Exception("checkForeignKeyExists for Oracle databases is not supported yet");
+		} else {
+			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE table_schema = SCHEMA() AND table_name = ? AND referenced_table_name = ?")) {
+				preparedStatement.setString(1, tableName.toLowerCase());
+				preparedStatement.setString(2, referencedTableName.toLowerCase());
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					resultSet.next();
+					return resultSet.getInt(1) > 0;
+				} catch (Exception e) {
+					throw new Exception("Cannot check foreign keys: " + e.getMessage(), e);
+				}
+			}
+		}
 	}
 }

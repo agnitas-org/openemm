@@ -32,7 +32,7 @@ import com.agnitas.service.impl.ServiceLookupFactory;
  * This worker takes the relevant parameters from the job item and executes the implementation class of it.
  * It also takes control of the job state and manages,together with JobQueueService, the execution of jobs.
  * 
- * Derviving classes must implement the method 'runJob' for executing actions. 
+ * Derviving classes must implement the method 'runJob' for executing actions.
  * 
  * JobQueue documentation: http://wiki.agnitas.local/doku.php?id=abteilung:technik:entwicklung:cron
  */
@@ -148,8 +148,13 @@ public abstract class JobWorker implements Runnable {
 
 		logger.info("Starting JobWorker: " + job.getDescription() + " (" + job.getId() + ")");
 		
+		String resultText;
 		try {
-			runJob();
+			resultText = runJob();
+			
+			if (StringUtils.isBlank(resultText)) {
+				resultText = "OK";
+			}
 			
 			job.setLastResult("OK");
 			job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
@@ -166,6 +171,7 @@ public abstract class JobWorker implements Runnable {
 					logger.error("Cannot send email with jobqueue error:\n" + subject + "\n" + errorText, e);
 				}
 			}
+			resultText = job.getLastResult();
 		}
 		
 		logger.info("JobWorker done: " + job.getDescription() + " (" + job.getId() + ")");
@@ -174,7 +180,7 @@ public abstract class JobWorker implements Runnable {
 		jobQueueDao.updateJobStatus(job);
 		
 		// Write JobResult after job has ended
-		jobQueueDao.writeJobResult(job.getId(), new Date(), job.getLastResult(), job.getLastDuration(), AgnUtils.getHostName());
+		jobQueueDao.writeJobResult(job.getId(), new Date(), resultText, job.getLastDuration(), AgnUtils.getHostName());
 
 		// show report ended
 		service.showJobEnd(this);
@@ -187,7 +193,7 @@ public abstract class JobWorker implements Runnable {
 	 * 
 	 * @throws Exception
 	 */
-	public abstract void runJob() throws Exception;
+	public abstract String runJob() throws Exception;
 
 	/**
 	 * Method for optional execution state check.

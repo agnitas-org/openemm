@@ -27,14 +27,14 @@ public class FieldValuesEquivalenceValidator implements ConstraintValidator<Fiel
    private String message;
 
    @Override
-public void initialize(FieldsValueMatch constraint) {
+    public void initialize(FieldsValueMatch constraint) {
       this.field = constraint.field();
       this.fieldMatch = constraint.fieldMatch();
       this.message = constraint.message();
    }
 
    @Override
-public boolean isValid(Object candidate, ConstraintValidatorContext context) {
+    public boolean isValid(Object candidate, ConstraintValidatorContext context) {
       Object fieldValue = new BeanWrapperImpl(candidate).getPropertyValue(field);
       Object fieldMatchValue = new BeanWrapperImpl(candidate).getPropertyValue(fieldMatch);
 

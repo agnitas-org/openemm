@@ -8,6 +8,7 @@
 
 <c:set var="ACTION_LIST" value="<%= ComUserFormEditAction.ACTION_LIST %>"/>
 <c:set var="ACTION_VIEW" value="<%= ComUserFormEditAction.ACTION_VIEW %>"/>
+<c:set var="ACTION_SAVE_ALL" value="<%= ComUserFormEditAction.ACTION_SAVE%>"/>
 
 <emm:CheckLogon/>
 <emm:Permission token="forms.show"/>
@@ -56,4 +57,19 @@
         <c:set target="${agnBreadcrumbs}" property="2" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="mailing.Trackable_Links"/>
     </emm:instantiate>
+</emm:instantiate>
+
+<emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
+
+        <%-- Save button for grid mailing is located at tile footer --%>
+        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+            <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
+
+            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+            <c:set target="${element}" property="extraAttributes" value="data-form-target='#trackableUserFormLinkForm' data-form-set='method: saveLinks' data-form-action='${ACTION_SAVE_ALL}'"/>
+            <c:set target="${element}" property="iconBefore" value="icon-save"/>
+            <c:set target="${element}" property="name">
+                <bean:message key="button.Save"/>
+            </c:set>
+        </emm:instantiate>
 </emm:instantiate>

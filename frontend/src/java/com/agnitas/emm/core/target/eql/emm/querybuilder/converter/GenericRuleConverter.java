@@ -62,7 +62,11 @@ public abstract class GenericRuleConverter implements RuleConverter {
                      throw new QueryBuilderToEqlConversionException(message);
                 }
 		case TEXT:
-                return SINGLE_QUOTES + node.getValue() + SINGLE_QUOTES;
+		        String value = "";
+		        if (node.getValue() != null) {
+		            value = node.getValue().toString();
+                }
+                return SINGLE_QUOTES + value + SINGLE_QUOTES;
             default:
                 String message = String.format("Data type '%s' not handled'", dataType);
                 logger.error(message);

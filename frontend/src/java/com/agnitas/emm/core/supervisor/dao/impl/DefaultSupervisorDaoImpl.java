@@ -30,7 +30,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void setSupervisorPassword(int id, String password) throws SupervisorException {
-    	// default implementation
+    
     }
     
     @Override
@@ -60,7 +60,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void setAllowedCompanyIds(int id, List<Integer> allowedCompanyIds) throws SupervisorException {
-    	// default implementation
+    
     }
     
     @Override
@@ -75,7 +75,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void cleanupUnusedSupervisorBindings(int daysBeforeInactive) {
-    	// default implementation
+    
     }
     
     @Override

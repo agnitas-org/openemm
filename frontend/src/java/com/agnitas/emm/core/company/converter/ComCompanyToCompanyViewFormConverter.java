@@ -76,6 +76,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         settingsDto.setHasForceSending(configService.getBooleanValue(ConfigValue.ForceSending, comCompany.getId()));
 
         settingsDto.setHasRecipientsCleanup(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, comCompany.getId()));
+        settingsDto.setHasRecipientsAnonymisation(configService.getBooleanValue(ConfigValue.CleanRecipientsData, comCompany.getId()));
         settingsDto.setHasTrackingVeto(configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, comCompany.getId()));
         settingsDto.setSector(comCompany.getSector());
         settingsDto.setBusiness(comCompany.getBusiness());

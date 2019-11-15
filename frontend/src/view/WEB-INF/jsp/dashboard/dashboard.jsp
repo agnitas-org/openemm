@@ -281,7 +281,7 @@
                                     </div>
                                     <div class="pie-chart">
                                         <div class="pie-chart-header">
-                                            <mvc:message code="statistic.TotalClickSubscribers.short"/>
+                                            <mvc:message code="statistic.clicker"/>
                                         </div>
                                         <div class="pie-chart-content">
                                             <div class="js-click-chart"></div>

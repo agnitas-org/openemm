@@ -117,7 +117,11 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
 	public boolean deleteByCompanyID(@VelocityCheck int companyId) {
 		if (companyId > 0) {
 			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE company_id = ?", companyId);
-			return rowAffected > 0;
+			if (rowAffected > 0) {
+				return true;
+			} else {
+				return selectInt(logger, "SELECT COUNT(*) FROM datasource_description_tbl WHERE company_id = ?", companyId) == 0;
+			}
 		}
 		
 		return false;

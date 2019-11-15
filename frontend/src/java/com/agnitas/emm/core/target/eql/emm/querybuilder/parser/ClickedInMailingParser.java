@@ -20,8 +20,8 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class ClickedInMailingParser extends GenericEqlNodeParser<ClickedInMailingRelationalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(ClickedInMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
-    	if(node.hasDeviceQuery()) {
+    protected QueryBuilderGroupNode parse(ClickedInMailingRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
+    	if (node.hasDeviceQuery()) {
     		throw new EqlToQueryBuilderConversionException("Device query not supported by QueryBuilder");
     	}
     	

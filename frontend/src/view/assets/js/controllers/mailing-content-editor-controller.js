@@ -4,6 +4,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   var Modal = AGN.Lib.Modal;
   var Confirm = AGN.Lib.Confirm;
   var Template = AGN.Lib.Template;
+  var AutoSave = AGN.Lib.AutoSave;
 
   // configuration
   var currentDynTag;
@@ -52,6 +53,53 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     }
     initTargetGroupListeners();
     initInterestListeners();
+
+    var saveToStorage = function() {
+      var contentStorage = Array();
+      var contentBlocks = currentDynTag.contentBlocks;
+
+      Array.prototype.forEach.call(contentBlocks, function(block) {
+        contentStorage.push({
+          targetGroupId: block.targetId,
+          content: block.content,
+          uniqueId: block.uniqueId
+        })
+      });
+      return contentStorage;
+    };
+
+    var readFromStorage = function (contentStorage) {
+      var lastContentBlock;
+
+      if(contentStorage.length > 0) {
+        currentDynTag.remove(getSelectedContentBlockId());
+        getSelectedContentBlock().remove();
+      }
+
+      Array.prototype.forEach.call(contentStorage,function(contentBlockStorage) {
+        var $orderedStub = $orderedArea.find('.l-stub');
+        var contentBlock = currentDynTag.createNewContentBlock();
+
+        contentBlock.uniqueId = contentBlockStorage.uniqueId;
+        contentBlock.content = contentBlockStorage.content;
+        contentBlock.targetId = contentBlockStorage.targetGroupId;
+
+        var targetGroup = getTargetGroupById(contentBlock.targetId);
+        var html = preparedEntryTemplate({name: targetGroup.targetName, id: ID_PREFIX + contentBlock.uniqueId});
+        $orderedStub.before(html);
+        unlockEditableArea();
+
+        lastContentBlock = contentBlock;
+      });
+
+      if(lastContentBlock) {
+        selectContentBlock(lastContentBlock);
+        synchronizeEditorTab(getActiveEditor());
+      }
+
+    };
+
+    AutoSave.initialize('mailing-components/' + currentDynTag.mailingId + '/' + currentDynTag.id, saveToStorage, null, readFromStorage, 0);
   });
 
   this.addAction({
@@ -132,12 +180,10 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         data: JSON.stringify(currentDynTag),
         success: function (response) {
           var deferred = Confirm.get($currentElement);
-          AGN.Lib.JsonMessages(response.popups);
+          AGN.Lib.JsonMessages(response.popups, true);
           if (response.success) {
             deferred.positive(new DynTagObject(response.data));
             closeModal();
-          } else {
-            deferred.negative()
           }
         }
       });

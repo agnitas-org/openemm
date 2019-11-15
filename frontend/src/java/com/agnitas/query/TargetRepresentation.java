@@ -22,6 +22,7 @@ import org.agnitas.target.TargetNode;
  * 
  * @deprecated use org.agnitas.target.impl.TargetRepresentationImpl instead
  */
+// TODO Remove without replacement
 @Deprecated
 public class TargetRepresentation extends org.agnitas.target.impl.TargetRepresentationImpl {
 	private static final long serialVersionUID = -5118626285211811379L;

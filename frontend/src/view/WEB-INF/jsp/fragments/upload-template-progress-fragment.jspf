@@ -1,0 +1,16 @@
+<script id="upload-template-progress" type="text/x-mustache-template">
+    {{ if (isNaN(currentProgress) || currentProgress === true) { }}
+    <div class="progress loop" style="width: 100%"></div>
+    {{ } else { }}
+    <div class="progress">
+        <div class="progress-bar"
+             role="progressbar"
+             aria-valuenow="{{= currentProgress }}"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             style="width: {{= currentProgress }}%">
+            {{= currentProgress }}%
+        </div>
+    </div>
+    {{ } }}
+</script>

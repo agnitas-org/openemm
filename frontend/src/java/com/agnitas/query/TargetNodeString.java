@@ -18,8 +18,6 @@ import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
 import org.apache.log4j.Logger;
 
-import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
-
 /**
  * @deprecated
  */
@@ -78,89 +76,7 @@ public class TargetNodeString extends TargetNode implements Serializable {
                 OPERATOR_NOT_STARTS_WITH
             	};
 	}
-    
-    @Override
-	public String generateSQL() {
-        final char SQL_ESCAPE_CHAR = '!';
-
-        StringBuilder tmpSQL = new StringBuilder();
-
-        int operator = primaryOperator;
-        String value = getSQLSafeString(primaryValue);
-
-        if (primaryOperator == TargetNode.OPERATOR_CONTAINS.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_LIKE.getOperatorCode();
-            value = "%" + StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_NLIKE.getOperatorCode();
-            value = "%" + StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_STARTS_WITH.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_LIKE.getOperatorCode();
-            value = StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_NLIKE.getOperatorCode();
-            value = StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        }
-
-        switch (chainOperator) {
-            case TargetNode.CHAIN_OPERATOR_AND:
-                tmpSQL.append(" AND ");
-                break;
-            case TargetNode.CHAIN_OPERATOR_OR:
-                tmpSQL.append(" OR ");
-                break;
-            default:
-                tmpSQL.append(" ");
-        }
-        
-        if (openBracketBefore) {
-            tmpSQL.append("(");
-        }
-        
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            tmpSQL.append("cust.");
-        } else {
-            tmpSQL.append("LOWER(cust.");
-        }
-
-        tmpSQL.append(primaryField);
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            tmpSQL.append(" ");
-        } else {
-            tmpSQL.append(") ");
-        }
-
-        tmpSQL.append(typeOperators[operator - 1].getOperatorSymbol());
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            tmpSQL.append(" ");
-        } else {
-            tmpSQL.append(" LOWER('");
-        }
-
-        tmpSQL.append(value);
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            tmpSQL.append(" ");
-        } else {
-            tmpSQL.append("')");
-
-            if (operator == TargetNode.OPERATOR_CONTAINS.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_STARTS_WITH.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode()) {
-                tmpSQL.append(" ESCAPE '").append(SQL_ESCAPE_CHAR).append("' ");
-            }
-        }
-
-        if (closeBracketAfter) {
-            tmpSQL.append(")");
-        }
-
-        return tmpSQL.toString();
-    }
-    
+      
     @Override
 	public String generateBsh() {
         StringBuffer tmpBsh=new StringBuffer("");

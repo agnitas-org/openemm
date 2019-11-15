@@ -93,6 +93,14 @@ public class MailinglistServiceImpl implements MailinglistService {
 	@Transactional
 	@Validate("company")
 	public List<Mailinglist> getMailinglists(MailinglistModel model) {
-		return mailinglistDao.getMailinglists(model.getCompanyId());
+		return listMailinglists(model.getCompanyId());
+	}
+	
+
+	@Override
+	@Transactional
+	@Validate("company")
+	public List<Mailinglist> listMailinglists(final int companyID) {
+		return mailinglistDao.getMailinglists(companyID);
 	}
 }

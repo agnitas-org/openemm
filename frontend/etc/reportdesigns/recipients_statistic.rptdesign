@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -181,6 +181,9 @@ reportContext.setPersistentGlobalVariable("message_report.recipient.period", I18
 reportContext.setPersistentGlobalVariable("message_Target-Groups", I18nString.getLocaleString("Target-Groups", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_Opt_Outs", I18nString.getLocaleString("statistic.Opt_Outs", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_Active", I18nString.getLocaleString("default.status.active", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_html", I18nString.getLocaleString("HTML", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_text", I18nString.getLocaleString("recipient.mailingtype.text", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_html_offline", I18nString.getLocaleString("recipient.mailingtype.htmloffline", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_recipient.Bounced", I18nString.getLocaleString("recipient.MailingState2", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_birt.recipient.notConfirmed", I18nString.getLocaleString("birt.recipient.notConfirmed", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_birt.recipient.hardbounces", I18nString.getLocaleString("statistic.bounces.hardbounce", reportContext.getLocale()));
@@ -191,7 +194,7 @@ reportContext.setPersistentGlobalVariable("message_Subscribers", I18nString.getL
 reportContext.setPersistentGlobalVariable("message_birt.recipient.unsubscribers", I18nString.getLocaleString("statistic.Opt_Outs", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_Bounces", I18nString.getLocaleString("statistic.Bounces", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_recipientsStatistic.active", I18nString.getLocaleString("recipient.MailingState1", reportContext.getLocale()));
-reportContext.setPersistentGlobalVariable("message_statistic.TotalClickSubscribers.short", I18nString.getLocaleString("statistic.TotalClickSubscribers.short", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_statistic.TotalClickSubscribers.short", I18nString.getLocaleString("statistic.clicker", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_birt.report.opens", I18nString.getLocaleString("birt.report.opens", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_statistic.pc", I18nString.getLocaleString("statistic.pc", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.total", I18nString.getLocaleString("report.openers.total", reportContext.getLocale()));
@@ -691,7 +694,7 @@ currentrow = 0;]]></method>
 
 if (currentrow < statList.size()) {
 	row["MAILINGLIST"] = statList.get(currentrow).getMailingListName();
-	if (statList.get(currentrow).getTargetGroupId() == 0) {
+	if (statList.get(currentrow).getTargetGroupId() == 1) {
 		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	} else {
 		row["TARGETGROUP"] = statList.get(currentrow).getTargetGroupName();
@@ -911,7 +914,7 @@ statList = recipientsDetailedStatisticDataSet.getStatistic();]]></method>
 if (currentrow < statList.size()) {
 	row["MAILINGLIST"] = statList.get(currentrow).getMailingListName();
 	// do some i18n stuff
-	if (statList.get(currentrow).getTargetGroupId() == 0) {
+	if (statList.get(currentrow).getTargetGroupId() == 1) {
 		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	} else {
 		row["TARGETGROUP"] = statList.get(currentrow).getTargetGroupName();
@@ -1206,7 +1209,7 @@ listCharts = new Packages.java.util.ArrayList();
 var params = [];
 
 for (var i = 0; i < statList.size(); i++) {
-	if (statList.get(i).getTargetGroupId() == 0) {
+	if (statList.get(i).getTargetGroupId() == 1) {
 		var params = [];
 		params['mailingListId'] = statList.get(i).getMailingListId();
 		params['mailingList'] = statList.get(i).getMailingListName();
@@ -1389,21 +1392,21 @@ listCharts = new Packages.java.util.ArrayList();
 var params = [];
 
 for (var i = 0; i < statList.size(); i++) {
-		var params = [];
-		params['mailingListId'] = statList.get(i).getMailingListId();
-		params['mailingList'] = statList.get(i).getMailingListName();
-		params['targetGroupId'] = statList.get(i).getTargetGroupId();
-		params['value'] = statList.get(i).getCountRecipientAsOf();
-		if (params['targetGroupId'] == 0) {
-			params['name'] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
-			reportContext.setPersistentGlobalVariable("allCountRecipient-" + params['mailingListId'], new Integer(params['value']));
-		} else {		
-			params['name'] = statList.get(i).getTargetGroupName();
-		}
-		
-		params["mailingListGroupId"] = statList.get(i).getMailingListGroupId();
-		params["numberOfTargetGroup"] = statList.get(i).getCountTargetGroup();
-		listCharts.add(params);
+	var params = [];
+	params['mailingListId'] = statList.get(i).getMailingListId();
+	params['mailingList'] = statList.get(i).getMailingListName();
+	params['targetGroupId'] = statList.get(i).getTargetGroupId();
+	params['value'] = statList.get(i).getCountRecipientAsOf();
+	if (params['targetGroupId'] == 0) {
+		params['name'] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+		reportContext.setPersistentGlobalVariable("allCountRecipient-" + params['mailingListId'], new Integer(params['value']));
+	} else {		
+		params['name'] = statList.get(i).getTargetGroupName();
+	}
+	
+	params["mailingListGroupId"] = statList.get(i).getMailingListGroupId();
+	params["numberOfTargetGroup"] = statList.get(i).getCountTargetGroup();
+	listCharts.add(params);
 }]]></method>
             <method name="fetch"><![CDATA[if (currentRow >= listCharts.size()) {
 	return false;
@@ -1579,7 +1582,7 @@ if (recipientsStatisticData.get(currentrow).getCategoryindex() == RecipientsStat
 }
 
 // do some i18n stuff
-if (recipientsStatisticData.get(currentrow).getTargetgroupindex() == 1) {
+if (recipientsStatisticData.get(currentrow).getTargetgroupId() == 1) {
 	row["targetGroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	row["target_order"] = 0;
 } else {
@@ -1587,7 +1590,7 @@ if (recipientsStatisticData.get(currentrow).getTargetgroupindex() == 1) {
 	row["target_order"] = 1;
 }
 
-row["targetGroupId"] = recipientsStatisticData.get(currentrow).getTargetgroupindex();
+row["targetGroupId"] = recipientsStatisticData.get(currentrow).getTargetgroupId();
 row["value"] = recipientsStatisticData.get(currentrow).getCount();
 row["percent"] = recipientsStatisticData.get(currentrow).getRate();
 
@@ -1689,7 +1692,7 @@ listCharts = new Packages.java.util.ArrayList();
 var params = [];
 
 for (var i = 0; i < statList.size(); i++) {
-	if (statList.get(i).getTargetGroupId() == 0) {
+	if (statList.get(i).getTargetGroupId() == 1) {
     	var params = [];
 		params['mailingListId'] = statList.get(i).getMailingListId();
 		params['mailingList'] = statList.get(i).getMailingListName();
@@ -1861,7 +1864,7 @@ for (var i = 0; i < statList.size(); i++) {
 	    	var params = [];
 			params['mailingListId'] = statList.get(i).getMailingListId();
 			params['mailingList'] = statList.get(i).getMailingList();
-			params['name'] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.TotalClickSubscribers.short", reportContext.getLocale());
+			params['name'] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale());
 			params['value'] = statList.get(i).getRate();
 			params['isOpeners'] = false;
 			params["sortOrder"] = 1;
@@ -2574,7 +2577,7 @@ return true;]]></method>
                             </cell>
                         </row>
                     </grid>
-                    <table name="Recipients" id="463">
+                    <table name="Recipients1" id="463">
                         <property name="backgroundColor">#FFFFFF</property>
                         <property name="fontStyle">normal</property>
                         <property name="color">black</property>
@@ -2767,6 +2770,7 @@ return true;]]></method>
                                         <expression name="value" type="javascript">row[0]+1</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">countGroupNumber</property>
@@ -2819,7 +2823,7 @@ return true;]]></method>
                             </structure>
                             <structure>
                                 <property name="name">target_order</property>
-                                <expression name="expression" type="javascript">if (dataSetRow["targetGroupId"] == 0) {0} else {1}</expression>
+                                <expression name="expression" type="javascript">if (dataSetRow["targetGroupId"] == 1) {0} else {1}</expression>
                                 <property name="dataType">integer</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -3097,7 +3101,7 @@ itemGroupNumber = 0;	]]></method>
                                         <list-property name="visibility">
                                             <structure>
                                                 <property name="format">all</property>
-                                                <expression name="valueExpr" type="javascript">row["targetGroupId"] != 0;</expression>
+                                                <expression name="valueExpr" type="javascript">row["targetGroupId"] > 1;</expression>
                                             </structure>
                                         </list-property>
                                         <expression name="valueExpr">wrap(row["MAILINGLIST"],24)</expression>
@@ -3120,7 +3124,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -3144,7 +3148,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -3171,7 +3175,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -3198,7 +3202,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -3225,7 +3229,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -3252,7 +3256,7 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="fontWeight">bold</property>
                                             <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                             <simple-property-list name="value1">
-                                                <value type="javascript">0</value>
+                                                <value type="javascript">1</value>
                                             </simple-property-list>
                                         </structure>
                                     </list-property>
@@ -5078,7 +5082,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
         </Grouping>
         <Sorting>Ascending</Sorting>
         <SortKey>
-          <Definition>if (row[&quot;targetGroupId&quot;] == 0) {&quot;&quot;} else {row[&quot;caption&quot;]}</Definition>
+          <Definition>if (row[&quot;targetGroupId&quot;] == 1) {&quot;&quot;} else {row[&quot;caption&quot;]}</Definition>
         </SortKey>
       </SeriesDefinitions>
       <Orientation>Vertical</Orientation>
@@ -5588,7 +5592,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                             </cell>
                         </row>
                     </grid>
-                    <table id="2036">
+                    <table name="Recipient development" id="2036">
                         <property name="marginBottom">5mm</property>
                         <property name="width">197mm</property>
                         <property name="dataSet">RecipientsDetailedDynamic</property>
@@ -5597,6 +5601,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                                 <property name="name">MAILINGLIST</property>
                                 <expression name="expression" type="javascript">wrap(dataSetRow["MAILINGLIST"],24)</expression>
                                 <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">TARGETGROUP</property>
@@ -5757,7 +5762,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                             </structure>
                             <structure>
                                 <property name="name">target_order</property>
-                                <expression name="expression" type="javascript">if (dataSetRow["targetGroupId"] == 0) {0} else {1}</expression>
+                                <expression name="expression" type="javascript">if (dataSetRow["targetGroupId"] == 1) {0} else {1}</expression>
                                 <property name="dataType">integer</property>
                                 <property name="allowExport">true</property>
                             </structure>
@@ -5969,7 +5974,7 @@ itemGroupNumber = 0;]]></method>
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 0</expression>
+                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] > 1</expression>
                                                 </structure>
                                             </list-property>
                                             <property name="resultSetColumn">MAILINGLIST</property>
@@ -5982,18 +5987,18 @@ itemGroupNumber = 0;]]></method>
                                         <property name="borderRightColor">#7E7E7E</property>
                                         <property name="borderRightStyle">solid</property>
                                         <property name="borderRightWidth">thin</property>
-                                        <list-property name="highlightRules">
-                                            <structure>
-                                                <property name="operator">eq</property>
-                                                <property name="fontWeight">bold</property>
-                                                <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
-                                                <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
-                                                </simple-property-list>
-                                            </structure>
-                                        </list-property>
                                         <data id="2075">
                                             <property name="textAlign">left</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <property name="resultSetColumn">TARGETGROUP</property>
                                         </data>
                                     </cell>
@@ -6010,12 +6015,22 @@ itemGroupNumber = 0;]]></method>
                                                 <property name="fontWeight">bold</property>
                                                 <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                                 <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
+                                                    <value type="javascript">1</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
                                         <text-data id="2108">
                                             <property name="textAlign">right</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <expression name="valueExpr" type="javascript">symbols = DecimalFormatSymbols.getInstance();
 symbols.setGroupingSeparator('.');
 formatter = new DecimalFormat("###,###.###", symbols);
@@ -6037,12 +6052,22 @@ formatter.format(row["totalActive"]);</expression>
                                                 <property name="fontWeight">bold</property>
                                                 <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                                 <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
+                                                    <value type="javascript">1</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
                                         <text-data id="2110">
                                             <property name="textAlign">right</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <expression name="valueExpr">symbols = DecimalFormatSymbols.getInstance();
 symbols.setGroupingSeparator('.');
 formatter = new DecimalFormat("###,###.###", symbols);
@@ -6063,12 +6088,22 @@ formatter.format(row["totalOptOut"]);</expression>
                                                 <property name="fontWeight">bold</property>
                                                 <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                                 <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
+                                                    <value type="javascript">1</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
                                         <text-data id="2111">
                                             <property name="textAlign">right</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <expression name="valueExpr">symbols = DecimalFormatSymbols.getInstance();
 symbols.setGroupingSeparator('.');
 formatter = new DecimalFormat("###,###.###", symbols);
@@ -6089,12 +6124,22 @@ formatter.format(row["totalBounced"]);</expression>
                                                 <property name="fontWeight">bold</property>
                                                 <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                                 <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
+                                                    <value type="javascript">1</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
                                         <text-data id="5010">
                                             <property name="textAlign">right</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <expression name="valueExpr">symbols = DecimalFormatSymbols.getInstance();
 symbols.setGroupingSeparator('.');
 formatter = new DecimalFormat("###,###.###", symbols);
@@ -6112,12 +6157,22 @@ formatter.format(row["totalWaitingForConfirm"]);</expression>
                                                 <property name="fontWeight">bold</property>
                                                 <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
                                                 <simple-property-list name="value1">
-                                                    <value type="javascript">0</value>
+                                                    <value type="javascript">1</value>
                                                 </simple-property-list>
                                             </structure>
                                         </list-property>
                                         <text-data id="4990">
                                             <property name="textAlign">right</property>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
                                             <expression name="valueExpr">symbols = DecimalFormatSymbols.getInstance();
 symbols.setGroupingSeparator('.');
 formatter = new DecimalFormat("###,###.###", symbols);
@@ -6247,9 +6302,10 @@ formatter.format(row["totalBlacklisted"]);</expression>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {dataSetRow["ACTIVE"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {dataSetRow["ACTIVE"]} else {0}</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">sumOptoutByDay</property>
@@ -6261,9 +6317,10 @@ formatter.format(row["totalBlacklisted"]);</expression>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {dataSetRow["OPTOUT"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {dataSetRow["OPTOUT"]} else {0}</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">sumBouncedByDay</property>
@@ -6275,9 +6332,10 @@ formatter.format(row["totalBlacklisted"]);</expression>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {dataSetRow["BOUNCED"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {dataSetRow["BOUNCED"]} else {0}</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">BLACKLISTED</property>
@@ -6295,7 +6353,7 @@ formatter.format(row["totalBlacklisted"]);</expression>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {dataSetRow["BLACKLISTED"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {dataSetRow["BLACKLISTED"]} else {0}</expression>
                                     </structure>
                                 </list-property>
                                 <property name="allowExport">true</property>
@@ -6316,7 +6374,7 @@ formatter.format(row["totalBlacklisted"]);</expression>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {dataSetRow["WAITING_FOR_CONFIRM"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {dataSetRow["WAITING_FOR_CONFIRM"]} else {0}</expression>
                                     </structure>
                                 </list-property>
                                 <property name="allowExport">true</property>
@@ -8579,7 +8637,8 @@ function beforeGeneration(chart, icsc) {
                             </cell>
                         </row>
                     </grid>
-                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="4100">
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="Recipients total"
+ id="4100">
                         <property name="cube">RecipientsStatistics</property>
                         <property name="measures">
                             <extended-item extensionName="MeasureView" id="4101">
@@ -8716,6 +8775,7 @@ function beforeGeneration(chart, icsc) {
                                                                 <property name="resultSetColumn">targetGroup</property>
                                                             </data>
                                                         </property>
+                                                        <property name="fontWeight">normal</property>
                                                         <property name="borderRightStyle">solid</property>
                                                         <property name="borderRightWidth">thin</property>
                                                         <property name="borderRightColor">#7E7E7E</property>
@@ -8743,6 +8803,7 @@ function beforeGeneration(chart, icsc) {
                                                                 <property name="fontWeight">bold</property>
                                                                 <property name="color">#FFFFFF</property>
                                                                 <property name="textAlign">left</property>
+                                                                <structure name="toc"/>
                                                                 <property name="resultSetColumn">category_1</property>
                                                             </data>
                                                         </property>
@@ -8910,23 +8971,33 @@ function beforeGeneration(chart, icsc) {
                             </structure>
                             <structure>
                                 <property name="name">value1_targetGroup/targetGroup_category/category</property>
-                                <expression name="expression">measure["value1"]</expression>
                                 <property name="dataType">integer</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>targetGroup/targetGroup</value>
                                     <value>category/category</value>
                                 </simple-property-list>
                                 <property name="aggregateFunction">SUM</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">measure["value1"]</expression>
+                                    </structure>
+                                </list-property>
                             </structure>
                             <structure>
                                 <property name="name">percent1_targetGroup/targetGroup_category/category</property>
-                                <expression name="expression">measure["percent1"]</expression>
                                 <property name="dataType">float</property>
                                 <simple-property-list name="aggregateOn">
                                     <value>targetGroup/targetGroup</value>
                                     <value>category/category</value>
                                 </simple-property-list>
                                 <property name="aggregateFunction">SUM</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">measure["percent1"]</expression>
+                                    </structure>
+                                </list-property>
                             </structure>
                             <structure>
                                 <property name="name">mailinglist_title_</property>
@@ -9019,9 +9090,10 @@ function beforeGeneration(chart, icsc) {
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 0) {row["ACTIVE"]} else {0}</expression>
+                                        <expression name="value" type="javascript">if (dataSetRow["targetGroupId"] == 1) {row["ACTIVE"]} else {0}</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">targetGroupGroupId</property>
@@ -11186,7 +11258,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (row["all_recipient_active_value_"] > 0) {1} else {0}</expression>
+                                        <expression name="value" type="javascript">if (row["all_recipient_active_value_"] > 1) {1} else {0}</expression>
                                     </structure>
                                 </list-property>
                             </structure>
@@ -11574,7 +11646,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
+                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] > 1</expression>
                                                 </structure>
                                             </list-property>
                                             <property name="resultSetColumn">all_recipient_active_rate_</property>
@@ -11624,7 +11696,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
+                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] > 1</expression>
                                                 </structure>
                                             </list-property>
                                             <property name="resultSetColumn">all_recipient_openers_rate_</property>
@@ -11674,7 +11746,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                             <list-property name="visibility">
                                                 <structure>
                                                     <property name="format">all</property>
-                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
+                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] > 1</expression>
                                                 </structure>
                                             </list-property>
                                             <property name="resultSetColumn">all_recipient_clickers_rate_</property>
@@ -13193,7 +13265,8 @@ function beforeGeneration( chart, icsc )
                             </cell>
                         </row>
                     </grid>
-                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="3169">
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="activity values by devices"
+ id="3169">
                         <property name="cube">RecipientsStatistics</property>
                         <property name="measures">
                             <extended-item extensionName="MeasureView" id="3797">
@@ -13243,7 +13316,7 @@ function beforeGeneration( chart, icsc )
                                                 <list-property name="visibility">
                                                     <structure>
                                                         <property name="format">all</property>
-                                                        <expression name="valueExpr" type="javascript">data["targetGroupId"] != 1</expression>
+                                                        <expression name="valueExpr" type="javascript">data["targetGroupId"] > 1</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">percent1_targetGroup/targetGroup_category/category</property>
@@ -13351,6 +13424,7 @@ function beforeGeneration( chart, icsc )
                                                                 <property name="resultSetColumn">targetGroup</property>
                                                             </data>
                                                         </property>
+                                                        <property name="fontWeight">normal</property>
                                                         <property name="borderRightStyle">solid</property>
                                                         <property name="borderRightWidth">thin</property>
                                                         <property name="borderRightColor">#7E7E7E</property>
@@ -14799,6 +14873,16 @@ currentMailingListNumber++;]]></method>
                                                     <property name="pattern">###,###.###</property>
                                                 </structure>
                                                 <property name="textAlign">right</property>
+                                                <list-property name="highlightRules">
+                                                    <structure>
+                                                        <property name="operator">eq</property>
+                                                        <property name="fontWeight">bold</property>
+                                                        <expression name="testExpr" type="javascript">data["targetGroupId"]</expression>
+                                                        <simple-property-list name="value1">
+                                                            <value type="javascript">1</value>
+                                                        </simple-property-list>
+                                                    </structure>
+                                                </list-property>
                                                 <property name="resultSetColumn">value1_targetGroup/targetGroup_category/category</property>
                                             </data>
                                             <data id="3794">
@@ -14807,10 +14891,20 @@ currentMailingListNumber++;]]></method>
                                                     <property name="pattern">(0.00%)</property>
                                                 </structure>
                                                 <property name="textAlign">right</property>
+                                                <list-property name="highlightRules">
+                                                    <structure>
+                                                        <property name="operator">eq</property>
+                                                        <property name="fontWeight">bold</property>
+                                                        <expression name="testExpr" type="javascript">data["targetGroupId"]</expression>
+                                                        <simple-property-list name="value1">
+                                                            <value type="javascript">1</value>
+                                                        </simple-property-list>
+                                                    </structure>
+                                                </list-property>
                                                 <list-property name="visibility">
                                                     <structure>
                                                         <property name="format">all</property>
-                                                        <expression name="valueExpr" type="javascript">data["targetGroupId"] != 1</expression>
+                                                        <expression name="valueExpr" type="javascript">data["targetGroupId"] > 1</expression>
                                                     </structure>
                                                 </list-property>
                                                 <property name="resultSetColumn">percent1_targetGroup/targetGroup_category/category</property>
@@ -14908,6 +15002,7 @@ currentMailingListNumber++;]]></method>
                                                                 <property name="resultSetColumn">targetGroup</property>
                                                             </data>
                                                         </property>
+                                                        <property name="fontWeight">normal</property>
                                                         <property name="borderRightStyle">solid</property>
                                                         <property name="borderRightWidth">thin</property>
                                                         <property name="borderRightColor">#7E7E7E</property>
@@ -16456,15 +16551,6 @@ currentMailingListNumber++;]]></method>
                                 <property name="strength">-1</property>
                             </structure>
                         </list-property>
-                        <list-property name="filter">
-                            <structure>
-                                <property name="operator">eq</property>
-                                <expression name="expr" type="javascript">row["targetGroupId"]</expression>
-                                <simple-property-list name="value1">
-                                    <value>0</value>
-                                </simple-property-list>
-                            </structure>
-                        </list-property>
                         <column id="3255">
                             <property name="width">40mm</property>
                         </column>
@@ -16617,6 +16703,16 @@ currentMailingListNumber++;]]></method>
                                     <property name="borderRightStyle">solid</property>
                                     <property name="borderRightWidth">thin</property>
                                     <property name="textAlign">right</property>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="fontWeight">bold</property>
+                                            <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">1</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
                                     <data id="4442">
                                         <property name="textAlign">left</property>
                                         <property name="resultSetColumn">targetgroup</property>

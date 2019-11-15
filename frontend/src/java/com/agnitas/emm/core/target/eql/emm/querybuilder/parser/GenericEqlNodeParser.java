@@ -21,9 +21,9 @@ public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
     protected EqlToQueryBuilderParserConfiguration configuration;
 
     @Override
-    public QueryBuilderGroupNode parse(AbstractEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    public QueryBuilderGroupNode parse(AbstractEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         T eqlNode = getEqlNode(node);
-        return parse(eqlNode, groupNode, unknownProfileFields);
+        return parse(eqlNode, groupNode, profileFields);
     }
 
     @Override
@@ -36,7 +36,7 @@ public abstract class GenericEqlNodeParser<T> implements EqlNodeParser<T> {
         }
     }
 
-    protected abstract QueryBuilderGroupNode parse(T node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException;
+    protected abstract QueryBuilderGroupNode parse(T node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException;
 
     public void setConfiguration(EqlToQueryBuilderParserConfiguration configuration) {
         this.configuration = configuration;

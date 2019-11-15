@@ -22,15 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
-import com.agnitas.emm.core.workflow.beans.WorkflowStart;
-import com.agnitas.emm.core.workflow.beans.WorkflowStop;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import com.agnitas.beans.ComMailing;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -43,6 +35,16 @@ import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.beans.WorkflowStart;
+import com.agnitas.emm.core.workflow.beans.WorkflowStop;
+import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	private static final transient Logger logger = Logger.getLogger(ComWorkflowDaoImpl.class);
@@ -499,15 +501,40 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     @Override
     public int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId) {
         if(targetIds.size() > 0) {
+        	/*
             String sql = "DELETE FROM dyn_target_tbl WHERE " +
                     makeBulkInClauseForInteger("target_id", targetIds) +
                     " AND company_id = ?";
+            */
+            
+        	// TODO deleted=5 is a special marker for EMM-6545!
+        	final String sql = "UPDATE dyn_target_tbl SET deleted=5 WHERE " + makeBulkInClauseForInteger("target_id", targetIds) + " AND company_id=?";
+            
             return update(logger, sql, companyId);
         }
         
         return 0;
     }
     
+    @Override
+    public void removeMailingsTargetExpressions(int companyId, Set<Integer> mailingIds) {
+        if (CollectionUtils.isNotEmpty(mailingIds)) {
+            String sql = "UPDATE mailing_tbl SET target_expression = '', split_id = ? WHERE company_id = ? AND " +
+                     makeBulkInClauseForInteger("mailing_id", mailingIds);
+            update(logger, sql, ComMailing.NONE_SPLIT_ID, companyId);
+        }
+    }
+    
+    @Override
+    public void deactivateWorkflowScheduledReports(int workflowId, int companyId) {
+        update(logger, "DELETE FROM workflow_report_schedule_tbl WHERE sent = 0 AND company_id = ? AND workflow_id = ?", companyId, workflowId);
+    }
+    
+    @Override
+    public void deleteWorkflowScheduledReports(int workflowId, int companyId) {
+        update(logger, "DELETE FROM workflow_report_schedule_tbl WHERE company_id = ? AND workflow_id = ?", companyId, workflowId);
+    }
+
     private class WorkflowRowMapper implements RowMapper<Workflow> {
 		@Override
 		public Workflow mapRow(ResultSet resultSet, int row) throws SQLException {

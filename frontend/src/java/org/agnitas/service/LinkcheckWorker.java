@@ -27,6 +27,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 
+import com.agnitas.util.OneOf;
+
 /**
  * Working for cheking availability of link URL.
  */
@@ -126,7 +128,7 @@ public class LinkcheckWorker implements Runnable {
 			httpClient.executeMethod(get);
 			
 			// check response code
-			if (get.getStatusCode() == HttpURLConnection.HTTP_NOT_FOUND)  {
+			if (OneOf.oneIntOf(get.getStatusCode(), HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_GONE))  {
 				return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
 			}			
 			

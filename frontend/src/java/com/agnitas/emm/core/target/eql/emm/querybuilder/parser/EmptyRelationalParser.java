@@ -21,17 +21,14 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 public class EmptyRelationalParser extends GenericEqlNodeParser<EmptyRelationalEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(EmptyRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(EmptyRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         QueryBuilderRuleNode ruleNode = new QueryBuilderRuleNode();
-        ruleNode.setOperator("is_empty");
-        if (node.getNotFlag()) {
-            ruleNode.setOperator("is_not_empty");
-        }
+        ruleNode.setOperator(node.getNotFlag() ? "is_not_empty" : "is_empty");
         groupNode.addRule(ruleNode);
         AbstractEqlNode child = node.getChild();
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         if (parser != null) {
-            parser.parse(child, groupNode, unknownProfileFields);
+            parser.parse(child, groupNode, profileFields);
             return groupNode;
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable parser.");

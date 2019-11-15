@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -36,7 +37,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
@@ -415,7 +416,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     @DaoUpdateReturnValueCheck
 	public void insertClickersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, boolean readForAllDeviceClasses, DateFormats dateFormats) throws Exception {
     	List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
-        int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
+        int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 
         List<TempRow> results = new ArrayList<>();
 
@@ -1041,7 +1042,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             return;
         }
 
-        if (mailingID > 0 && (new LightMailingDaoImpl(getDataSource()).getMailing(mailingID, companyID).getMailingType()) == LightMailing.TYPE_NORMAL) {
+        LightMailing mailing = new LightMailingDaoImpl(getDataSource()).getMailing(mailingID, companyID);
+        if (mailing != null && mailing.getMailingType() == LightMailing.TYPE_NORMAL) {
             int deliveredMails = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, null, null, null);
             insertSoftbouncesIntoTempTable(tempTableID, deliveredMails, null, CommonKeys.ALL_SUBSCRIBERS_INDEX);
             if (targets != null && targets.size() > 0){
@@ -1055,20 +1057,15 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         }
     }
 
-    private void insertSoftbouncesIntoTempTable(int tempTableID, int deliveredMails, LightTarget target, int targetGroupIndex) throws Exception{
-        String targetGroupName = CommonKeys.ALL_SUBSCRIBERS;
-        int targetGroupId = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
-        if (target != null){
-            targetGroupName = target.getName();
-            targetGroupId = target.getId();
-        }
+    private void insertSoftbouncesIntoTempTable(int tempTableID, int deliveredMails, LightTarget target, int targetGroupIndex) throws Exception {
+	    target = getDefaultTarget(target);
 
-        int sentMails = getTempTableValuesByCategoryAndTargetGroupId(tempTableID, CommonKeys.DELIVERED_EMAILS, targetGroupId);
-        int hardBounces = getTempTableValuesByCategoryAndTargetGroupId(tempTableID, CommonKeys.HARD_BOUNCES, targetGroupId);
+        int sentMails = getTempTableValuesByCategoryAndTargetGroupId(tempTableID, CommonKeys.DELIVERED_EMAILS, target.getId());
+        int hardBounces = getTempTableValuesByCategoryAndTargetGroupId(tempTableID, CommonKeys.HARD_BOUNCES, target.getId());
 
         int value = sentMails - deliveredMails - hardBounces;
-        value = value < 0 ? 0 : value;
-        insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE_INDEX, targetGroupName, targetGroupId, targetGroupIndex, value);
+        value = Math.max(0, value);
+        insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE_INDEX, target.getName(), target.getId(), targetGroupIndex, value);
     }
 
 	@DaoUpdateReturnValueCheck

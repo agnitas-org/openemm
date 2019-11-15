@@ -5,12 +5,31 @@
 # <mimetype> <space separated file extensions>
 #
 
-image/jpeg jpg jpeg JPG JPEG
-image/png png PNG
-image/gif gif GIF
-image/tiff tif tiff TIF TIFF
-image/bmp bmp BMP
-image/svg+xml svg SVG
-application/zip zip ZIP
-text/comma-separated-values csv CSV
-text/plain txt TXT
+image/jpeg                      jpg jpeg JPG JPEG Jpg
+image/png                       png PNG Png
+image/gif                       gif GIF Gif
+image/tiff                      tif tiff TIF TIFF Tif Tiff
+image/bmp                       bmp BMP Bmp
+image/svg+xml                   svg SVG Svg
+
+application/zip                 zip ZIP Zip
+application/pdf                 pdf PDF Pdf
+
+text/comma-separated-values     csv CSV Csv
+text/plain                      txt TXT Txt
+
+font/ttf                        ttf TTF Ttf
+font/otf                        otf OTF Otf
+application/vnd.ms-fontobject   eot EOT Eot
+font/woff                       woff WOFF Woff
+font/woff2                      woff2 WOFF2 Woff2
+
+video/mp4                       mp4 Mp4 MP4
+video/x-ms-wmv                  wmv Wmv WMV
+video/quicktime                 mov Mov MOV
+video/webm                      webm Webm WEBM
+video/avi                       avi Avi AVI
+video/mpeg                      mpg Mpg MPG
+video/x-flv                     flv Flv FLV
+video/3gpp2                     3g2 3G2
+video/3gpp                      3gp 3GP

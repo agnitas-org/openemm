@@ -70,16 +70,16 @@
             </c:if>
         </c:set>
 
-        <c:if test="${showTabsItem}">
-            <c:set var="navigationLink" value="${_navigation_href.concat(agnNavHrefAppend)}"/>
-            <c:if test="${empty agnNavHrefAppend or not empty agnNavHrefParams}">
-                <c:set var="navigationLink" value="${_navigation_href}"/>
-                <c:forEach var="hrefParam" items="${agnNavHrefParams}">
-                    <c:set var="key" value="{${hrefParam.key}}"/>
-                    <c:set var="navigationLink" value="${fn:replace(navigationLink, key, hrefParam.value)}"/>
-                </c:forEach>
-            </c:if>
+        <c:set var="navigationLink" value="${_navigation_href.concat(agnNavHrefAppend)}"/>
+        <c:if test="${empty agnNavHrefAppend or not empty agnNavHrefParams}">
+            <c:set var="navigationLink" value="${_navigation_href}"/>
+            <c:forEach var="hrefParam" items="${agnNavHrefParams}">
+                <c:set var="key" value="{${hrefParam.key}}"/>
+                <c:set var="navigationLink" value="${fn:replace(navigationLink, key, hrefParam.value)}"/>
+            </c:forEach>
+        </c:if>
 
+        <c:if test="${showTabsItem}">
             <li class="${_navigation_isHighlightKey ? 'active' : ''}">
 
                 <c:if test="${_navigation_isHighlightKey}">
@@ -92,12 +92,15 @@
         </c:if>
 
         <c:if test="${not showTabsItem and showUpsellingPage}">
-             <c:url var="upsellingLink"  value="/upselling.action" >
+            <c:set var="forwardedParams" value="${fn:substringAfter(navigationLink, '?')}"/>
+            <c:url var="upsellingLink"  value="/upselling.action" >
                 <c:param name="page" value="${_navigation_upsellingRef}"/>
                 <c:param name="featureNameKey" value="${_navigation_navMsg}"/>
+                <c:param name="navigationKey" value="${agnNavigationKey}"/>
+                <c:param name="extraParams" value="${forwardedParams}"/>
             </c:url>
 
-            <li>
+            <li class="${_navigation_isHighlightKey ? 'active' : ''}">
                 <html:link  styleClass="" href="${upsellingLink}" titleKey="default.forbidden.tab.premium.feature">
                     ${linkMsg}
                 </html:link>

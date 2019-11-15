@@ -157,7 +157,7 @@ mailingSummaryDataDefinition[CommonKeys.OPENERS_PC_AND_MOBILE] = {"order": 9, "t
 mailingSummaryDataDefinition[CommonKeys.OPENINGS_ANONYMOUS] = {"order": 10, "color": "color-light-grey"};
 
 mailingSummaryDataDefinition[CommonKeys.CLICKER] = {"order": 11, "color": "color-petrol"};
-mailingSummaryDataDefinition[CommonKeys.CLICKER_TRACKED] = {"order": 12, "color": "color-petrol", "translationKey": "statistic.TotalClickSubscribers.short"};
+mailingSummaryDataDefinition[CommonKeys.CLICKER_TRACKED] = {"order": 12, "color": "color-petrol", "translationKey": "statistic.clicker"};
 mailingSummaryDataDefinition[CommonKeys.CLICKER_PC] = {"order": 13, "translationKey": "statistic.clicker.pc"};
 mailingSummaryDataDefinition[CommonKeys.CLICKER_PC_AND_MOBILE] = {"order": 14, "translationKey": "report.clickers.miltipledevices.2lines"};
 mailingSummaryDataDefinition[CommonKeys.CLICKER_TABLET] = {"order": 15, "translationKey": "statistic.clicker.tablet"};
@@ -10302,7 +10302,7 @@ itemLinkNumber = this.getRowData().getColumnValue('linkItemNumber');]]></method>
                                                     <property name="borderRightStyle">solid</property>
                                                     <property name="borderRightWidth">thin</property>
                                                     <text-data id="2973">
-                                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Entirely", reportContext.getLocale())</expression>
+                                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
                                                     </text-data>
                                                 </cell>
                                                 <cell id="2917">

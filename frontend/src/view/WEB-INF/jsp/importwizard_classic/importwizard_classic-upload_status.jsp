@@ -10,7 +10,7 @@
     <div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
         <div class="tile">
             <div class="tile-header">
-                <h2 class="headline"><i class="icon icon-file-o"></i> <bean:message key="ImportClassic"/></h2>
+                <h2 class="headline"><i class="icon icon-file-o"></i> <bean:message key="import.Wizard"/></h2>
             </div>
             <div class="tile-content tile-content-forms">
                 <div data-load="<html:rewrite page='<%= "/importwizard.do?action=" + ComImportWizardAction.ACTION_VIEW_STATUS_WINDOW %>'/>" data-load-target="body" data-load-interval="5000"></div>

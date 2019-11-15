@@ -37,8 +37,7 @@
 <c:set var="sidemenu_sub_active"	value="Actions"								scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 								scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="SiteActions" 						scope="request" />
-<c:set var="agnHelpKey" 			value="formView" 							scope="request" />
-<c:set var="agnHelpKey" 			value="newAction" 							scope="request" />
+<c:set var="agnHelpKey" 			value="actionList" 							scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

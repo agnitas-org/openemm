@@ -10,6 +10,8 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,24 +20,38 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import java.util.Objects;
 
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
 import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
+import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowCallbackHandler;
 
-public class RecipientStatDataSet extends BIRTDataSet {
+public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(RecipientStatDataSet.class);
+	
+	private static String getHstCustomerBindingTblName(int companyID) {
+		return "hst_customer_" + companyID + "_binding_tbl";
+	}
+	
+	private static String getCustomerBindingTblName(int companyID) {
+		return "customer_" + companyID + "_binding_tbl";
+	}
+	
+	private static String getCustomerTblName(int companyID) {
+    	return "customer_" + companyID + "_tbl";
+	}
 
 	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetID, Integer mailinglistID, int mediaType, String language) {
 		if (StringUtils.isBlank(language)) {
@@ -44,17 +60,15 @@ public class RecipientStatDataSet extends BIRTDataSet {
 
 		StringBuilder query = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
-		query.append("SELECT bind.user_status AS userstatus, COUNT(DISTINCT cust.customer_id) AS amount");
-		query.append(" FROM customer_" + companyID + "_tbl cust");
-		query.append(" LEFT JOIN customer_" + companyID + "_binding_tbl bind ON (cust.customer_id = bind.customer_id)");
-		query.append(" WHERE (bind.user_status IN (1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust.bounceload = 0");
+		query.append("SELECT bind.user_status AS userstatus, COUNT(DISTINCT cust.customer_id) AS amount")
+				.append(" FROM ").append(getCustomerTblName(companyID)).append(" cust")
+				.append(" LEFT JOIN ").append(getCustomerBindingTblName(companyID)).append(" bind ON (cust.customer_id = bind.customer_id)")
+				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust.bounceload = 0");
 
 		// bounceload check is NEEDED here, because we also select customers without binding table entries
-		if (targetID != null) {
-			LightTarget target = getTarget(Integer.parseInt(targetID), companyID);
-			if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
-				query.append(" AND (" + target.getTargetSQL() + ")");
-			}
+		LightTarget target = getDefaultTarget(getTarget(NumberUtils.toInt(targetID), companyID));
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+			query.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 
 		if (mailinglistID != null){
@@ -70,38 +84,33 @@ public class RecipientStatDataSet extends BIRTDataSet {
 		}
 
 		query.append(" GROUP BY bind.user_status");
-
-		Map<Integer, Integer> resultMap = new HashMap<>();
-		for (Map<String, Object> row : select(logger, query.toString(), parameters.toArray(new Object[0]))) {
-			Integer statusCode = null;
-			if (row.get("userstatus") != null) {
-				statusCode = ((Number) row.get("userstatus")).intValue();
-			}
-			resultMap.put(statusCode, ((Number) row.get("amount")).intValue());
-		}
+		
+		Map<UserStatus, Integer> resultMap = new HashMap<>();
+		RecipientStatusesMapCallback mapCallback = new RecipientStatusesMapCallback(resultMap);
+		query(logger, query.toString(), mapCallback, parameters.toArray(new Object[0]));
 
 		List<RecipientStatusRow> returnList = new ArrayList<>();
 
 		// active
-		int activeCount = resultMap.getOrDefault(UserStatus.Active.getStatusCode(), 0);
+		int activeCount = resultMap.getOrDefault(UserStatus.Active, 0);
 		addToResultList(returnList, activeCount, "recipient.Opt_Ins", language);
 
 		// allout
-		int outCount = resultMap.getOrDefault(UserStatus.AdminOut.getStatusCode(), 0);
-		outCount += resultMap.getOrDefault(UserStatus.UserOut.getStatusCode(), 0);
-		outCount += resultMap.getOrDefault(UserStatus.Suspend.getStatusCode(), 0);
+		int outCount = resultMap.getOrDefault(UserStatus.AdminOut, 0);
+		outCount += resultMap.getOrDefault(UserStatus.UserOut, 0);
+		outCount += resultMap.getOrDefault(UserStatus.Suspend, 0);
 		addToResultList(returnList, outCount, "statistic.Opt_Outs", language);
 
 		// bounced
-		int bouncedCount = resultMap.getOrDefault(UserStatus.Bounce.getStatusCode(), 0);
+		int bouncedCount = resultMap.getOrDefault(UserStatus.Bounce, 0);
 		addToResultList(returnList, bouncedCount, "recipient.MailingState2", language);
 
 		// without confirmation
-		int waitForConfirmCount = resultMap.getOrDefault(UserStatus.WaitForConfirm.getStatusCode(), 0);
+		int waitForConfirmCount = resultMap.getOrDefault(UserStatus.WaitForConfirm, 0);
 		addToResultList(returnList, waitForConfirmCount, "Opt_In_NotConfirmed", language);
 
 		// blacklisted
-		int blacklisedCount = resultMap.getOrDefault(UserStatus.Blacklisted.getStatusCode(), 0);
+		int blacklisedCount = resultMap.getOrDefault(UserStatus.Blacklisted, 0);
 		addToResultList(returnList, blacklisedCount, "recipient.MailingState6", language);
 
 		// no mailing
@@ -122,16 +131,18 @@ public class RecipientStatDataSet extends BIRTDataSet {
 		StringBuilder query = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
 
-		query.append("SELECT cust.mailtype AS mailtype, COUNT(DISTINCT cust.customer_id) AS amount");
-		query.append(" FROM customer_" + companyID + "_tbl cust, customer_" + companyID + "_binding_tbl bind");
-		query.append(" WHERE cust.customer_id = bind.customer_id AND bind.user_status = 1 AND cust.mailtype in (0, 1, 2)");
+		query.append("SELECT cust.mailtype AS mailtype, COUNT(DISTINCT cust.customer_id) AS amount ")
+				.append(" FROM ")
+				.append(getCustomerTblName(companyID)).append(" cust, ")
+				.append(getCustomerBindingTblName(companyID)).append(" bind")
+				.append(" WHERE cust.customer_id = bind.customer_id AND bind.user_status = 1 AND cust.mailtype in (0, 1, 2)");
 
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
 
 		if (targetID != null) {
-			LightTarget target = getTarget(Integer.parseInt(targetID), companyID);
-			if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
-				query.append(" AND (" + target.getTargetSQL() + ")");
+			LightTarget target = getDefaultTarget(getTarget(Integer.parseInt(targetID), companyID));
+			if (StringUtils.isNotBlank(target.getTargetSQL())) {
+				query.append(" AND (").append(target.getTargetSQL()).append(")");
 			}
 		}
 
@@ -159,12 +170,12 @@ public class RecipientStatDataSet extends BIRTDataSet {
 
 		return returnList;
 	}
-
+	
 	/**
-	 * Get recipient statistic entries on the user binding status
-	 * 
-	 * The day of stopDateString is included in statistics output
-	 * 
+	 *  Get recipient statistic entries on the user binding status
+	 *
+	 *  The day of stopDateString is included in statistics output
+	 *
 	 * @param companyID
 	 * @param targetID
 	 * @param mailinglistID
@@ -178,6 +189,7 @@ public class RecipientStatDataSet extends BIRTDataSet {
     public List<RecipientDetailRow> getRecipientDetails(@VelocityCheck int companyID, String targetID, Integer mailinglistID, Integer mediaType, String startDateString, String stopDateString, Boolean hourScale) throws Exception {
     	List<Object> parameters = new ArrayList<>();
     	String dateSelectPart;
+		LightTarget target = getDefaultTarget(getTarget(NumberUtils.toInt(targetID), companyID));
 
 		Date startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateString);
 		Date endDate;
@@ -204,21 +216,22 @@ public class RecipientStatDataSet extends BIRTDataSet {
 	    	}
     	}
 
-		RecipientMaxValues recipientMaxValues = new RecipientMaxValues();
-		Map<String, RecipientDetailRow> recipientRows = new HashMap<>();
 
-    	StringBuilder sql = new StringBuilder();
-		sql.append("SELECT ").append(dateSelectPart).append(" AS time, bind.user_status AS userstatus, COUNT(DISTINCT bind.customer_id) AS amount");
-		sql.append(" FROM customer_").append(companyID).append("_binding_tbl bind");
-		if (targetID != null ){
-			sql.append(" JOIN customer_").append(companyID).append("_tbl cust ON bind.customer_id = cust.customer_id");
+    	StringBuilder sql = new StringBuilder("SELECT ");
+		sql.append(dateSelectPart).append(" AS time, ")
+				.append("bind.user_status AS userstatus, ")
+				.append("COUNT(DISTINCT bind.customer_id) AS amount")
+				.append(" FROM ").append(getCustomerBindingTblName(companyID)).append(" bind");
+		
+		if (StringUtils.isNotBlank(target.getTargetSQL())){
+			sql.append(" JOIN ").append(getCustomerTblName(companyID)).append(" cust ON bind.customer_id = cust.customer_id");
 		}
-		sql.append(" WHERE bind.timestamp >= ? AND bind.timestamp < ?");
+		
+		sql.append(" WHERE bind.timestamp >= ? AND bind.timestamp < ? ");
 
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
 
-		if (targetID != null ) {
-			LightTarget target = getTarget(Integer.parseInt(targetID), companyID);
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
 			sql.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 
@@ -238,20 +251,27 @@ public class RecipientStatDataSet extends BIRTDataSet {
 
 		sql.append(" GROUP BY ").append(dateSelectPart).append(", bind.user_status");
 		sql.append(" ORDER BY ").append(dateSelectPart).append(", bind.user_status");
-
-		List<Map<String, Object>> result = select(logger, sql.toString(), parameters.toArray(new Object[0]));
-		fillRecipientsRows(recipientRows, recipientMaxValues, result);
+		
+		String query = sql.toString();
+	
+		
+		RecipientMaxValues recipientMaxValues = new RecipientMaxValues();
+		Map<String, RecipientDetailRow> recipientRows = new HashMap<>();
+		RecipientDetailsMapCallback callback = new RecipientDetailsMapCallback(recipientRows, recipientMaxValues);
+		query(logger, query, callback, parameters.toArray(new Object[0]));
 		
 		if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyID)) {
 			// Select additional data from history tables
-			List<Map<String, Object>> hstresult = select(logger, sql.toString().replace("customer_" + companyID + "_binding_tbl", "hst_customer_" + companyID + "_binding_tbl").replace("bind.timestamp,", "bind.timestamp_change,"), parameters.toArray(new Object[0]));
-			fillRecipientsRows(recipientRows, recipientMaxValues, hstresult);
+			String hstQuery = query.replace(getCustomerBindingTblName(companyID), getHstCustomerBindingTblName(companyID))
+					.replace("bind.timestamp,", "bind.timestamp_change,");
+			
+			query(logger, hstQuery, callback, parameters.toArray(new Object[0]));
 		}
 
 		List<RecipientDetailRow> returnList = new ArrayList<>();
 		
 		// Add missing items and sort all items
-		GregorianCalendar selectedDate = new GregorianCalendar();
+		Calendar selectedDate = new GregorianCalendar();
 		selectedDate.setTime(startDate);
 		SimpleDateFormat timeFormat;
 		if (hourScale) {
@@ -279,43 +299,74 @@ public class RecipientStatDataSet extends BIRTDataSet {
 		return returnList;
     }
     
-	private void fillRecipientsRows(Map<String, RecipientDetailRow> recipientRows, RecipientMaxValues recipientMaxValues, List<Map<String, Object>> result) throws Exception {
-    	for (Map<String, Object> row : result) {
-			String timeString = (String) row.get("time");
-			int statusCode = ((Number) row.get("userstatus")).intValue();
-			int amount = ((Number) row.get("amount")).intValue();
-			RecipientDetailRow currentItem = recipientRows.get(timeString);
-			if (currentItem == null) {
-				currentItem = new RecipientDetailRow();
-				currentItem.setMydate(timeString);
-				recipientRows.put(timeString, currentItem);
-			}
-
-			switch (UserStatus.getUserStatusByID(statusCode)) {
-				case Active:
-					currentItem.setActive(currentItem.getActive() + amount);
-					recipientMaxValues.setMaxActive(currentItem.getActive());
-					break;
-
-				case Bounce:
-					currentItem.setBounced(currentItem.getBounced() + amount);
-					recipientMaxValues.setMaxBounced(currentItem.getBounced());
-					break;
-
-				case WaitForConfirm:
-					currentItem.setDoubleOptIn(currentItem.getDoubleOptIn() + amount);
-					recipientMaxValues.setMaxDoubleOptIn(currentItem.getDoubleOptIn());
-					break;
-
-				case Blacklisted:
-					currentItem.setBlacklisted(currentItem.getBlacklisted() + amount);
-					recipientMaxValues.setMaxBlacklisted(currentItem.getBlacklisted());
-					break;
-
-				default:
-					currentItem.setAllout(currentItem.getAllout() + amount);
-					recipientMaxValues.setMaxAllOut(currentItem.getAllout());
+    private static class RecipientStatusesMapCallback implements RowCallbackHandler {
+	
+		private Map<UserStatus, Integer> map;
+	
+		public RecipientStatusesMapCallback(Map<UserStatus, Integer> map) {
+			this.map = Objects.requireNonNull(map);
+		}
+	
+		@Override
+		public void processRow(ResultSet rs) throws SQLException {
+			int amount = rs.getInt("amount");
+			UserStatus status = getUserStatus(rs.getInt("userstatus"));
+			if (status == null) {
+				map.put(null, map.getOrDefault(null, 0) + amount);
+			} else {
+				map.put(status, amount);
 			}
 		}
 	}
+	
+	
+	private static class RecipientDetailsMapCallback implements RowCallbackHandler {
+        private Map<String, RecipientDetailRow> dateMap;
+        private RecipientMaxValues recipientMaxValues;
+
+        public RecipientDetailsMapCallback(Map<String, RecipientDetailRow> dateMap, RecipientMaxValues recipientMaxValues) {
+            this.dateMap = Objects.requireNonNull(dateMap);
+            this.recipientMaxValues = Objects.requireNonNull(recipientMaxValues);
+        }
+
+        @Override
+        public void processRow(ResultSet rs) throws SQLException {
+            String timeString = rs.getString("time");
+            RecipientDetailRow currentItem = dateMap.computeIfAbsent(timeString, RecipientDetailRow::new);
+	
+			UserStatus status = getUserStatus(rs.getInt("userstatus"));
+			int amount = rs.getInt("amount");
+			if (status == null) {
+				currentItem.setAllout(currentItem.getAllout() + amount);
+				recipientMaxValues.setMaxAllOut(currentItem.getAllout());
+				return;
+			}
+            
+            switch (status) {
+                case Active:
+                    currentItem.setActive(currentItem.getActive() + amount);
+                    recipientMaxValues.setMaxActive(currentItem.getActive());
+                    break;
+                
+                case Bounce:
+                    currentItem.setBounced(currentItem.getBounced() + amount);
+                    recipientMaxValues.setMaxBounced(currentItem.getBounced());
+                    break;
+                
+                case WaitForConfirm:
+                    currentItem.setDoubleOptIn(currentItem.getDoubleOptIn() + amount);
+                    recipientMaxValues.setMaxDoubleOptIn(currentItem.getDoubleOptIn());
+                    break;
+                
+                case Blacklisted:
+                    currentItem.setBlacklisted(currentItem.getBlacklisted() + amount);
+                    recipientMaxValues.setMaxBlacklisted(currentItem.getBlacklisted());
+                    break;
+                
+                default:
+                    currentItem.setAllout(currentItem.getAllout() + amount);
+                    recipientMaxValues.setMaxAllOut(currentItem.getAllout());
+            }
+        }
+    }
 }

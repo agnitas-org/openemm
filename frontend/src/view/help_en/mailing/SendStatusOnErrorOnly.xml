@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Send status mail only for 0 e-mails</title>
+	<content>Send status mail only if there was unexpectedly no e-mail sent for this mailing.</content>
+</HelpBalloon>

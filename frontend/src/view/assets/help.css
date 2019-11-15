@@ -4731,6 +4731,9 @@ button {
 .relative {
   position: relative !important; }
 
+.nowrap {
+  white-space: nowrap; }
+
 form {
   margin: 0; }
 

@@ -22,8 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.agnitas.emm.core.JavaMailService.MailAttachment;
-
 /**
  * Example Insert in DB:
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
@@ -33,7 +31,7 @@ public class DBErrorCheckJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(DBErrorCheckJobWorker.class);
 	
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		DataSource datasource = daoLookupFactory.getBeanDataSource();
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(datasource);
 		List<Map<String, Object>> result;
@@ -75,8 +73,10 @@ public class DBErrorCheckJobWorker extends JobWorker {
 			}
 			
 			if (StringUtils.isNotBlank(infoMailAddress)) {
-				serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString(),new MailAttachment[0]);
+				serviceLookupFactory.getBeanJavaMailService().sendEmail(infoMailAddress, infoMailSubject, infoMailContent.toString(), infoMailContent.toString());
 			}
 		}
+		
+		return null;
 	}
 }

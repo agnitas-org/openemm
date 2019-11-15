@@ -215,4 +215,35 @@ AGN.Lib.Controller.new('mailing-send', function() {
       $toggle.prop('disabled', false);
     });
   });
+
+  this.addAction({change: 'sendStatusOnErrorOnly-toggle'}, function() {
+    var $toggle = this.el;
+    var isChecked = $toggle.prop('checked');
+
+    // Disable toggle button until changes are saved.
+    $toggle.prop('disabled', true);
+
+    function failed() {
+      // Failed to save changes, revert initial toggle button state.
+      $toggle.prop('checked', !isChecked);
+      AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: $toggle.data('url'),
+      data: {
+    	  statusmailOnErrorOnly: $toggle.is(':checked')
+      }
+    }).done(function(resp) {
+      if (resp && resp.success) {
+        AGN.Lib.Messages(t('defaults.success'), t('defaults.saved'), 'success');
+      } else {
+        failed();
+      }
+    }).fail(failed).always(function() {
+      // Enable toggle button back.
+      $toggle.prop('disabled', false);
+    });
+  });
 });

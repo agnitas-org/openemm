@@ -9,6 +9,7 @@
 <%--@elvariable id="mailingLists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="allowedActionBasedResponder" type="java.lang.Boolean"--%>
 <%--@elvariable id="actionBasedMailings" type="java.util.List<org.agnitas.emm.core.mailing.beans.LightweightMailing>"--%>
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
 
@@ -47,7 +48,10 @@
         <div class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="filterEmail"><bean:message key="mailloop.filter_adr"/></label>
+                    <label class="control-label" for="filterEmail">
+                    	<bean:message key="mailloop.filter_adr"/>
+                    	<button class="icon icon-help" data-help="help_${helplanguage}/settings/BounceFilterAddress.xml" tabindex="-1" type="button"></button>
+                    </label>
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="filterEmail" id="filterEmail" maxlength="99" size="42" cssClass="form-control"/>

@@ -10,12 +10,9 @@
 
 package com.agnitas.userform.trackablelinks.web;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +28,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -48,8 +46,10 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 	private static final transient Logger logger = Logger.getLogger(ComTrackableUserFormLinkAction.class);
 
 	private UserFormDao userFormDao = null;
-	
+
 	protected ConfigService configService;
+
+    public static final int KEEP_UNCHANGED = -1;
 
 	@Required
 	public void setConfigService(ConfigService configService) {
@@ -58,7 +58,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 	/**
 	 * For obtaining trackable user form list
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -79,6 +79,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 		ActionForward destination = mapping.findForward("list");
 
 		ComAdmin admin = AgnUtils.getAdmin(request);
+
 		if (admin == null) {
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method list - not logged in");
@@ -87,40 +88,47 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 		} else {
 			ActionMessages errors = new ActionMessages();
 			ActionMessages messages = new ActionMessages();
-			
+
 			aForm = (ComTrackableUserFormLinkForm) form;
-	
+
+
 			if (logger.isInfoEnabled())
 				logger.info("Action: " + aForm.getAction());
-	
+
 			try {
 				loadUserFormData(admin, aForm, request);
 			} catch (Exception e) {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-				
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-	
+
 			// Report any message (non-errors) we have discovered
 			if (!messages.isEmpty()) {
 				saveMessages(request, messages);
 			}
-			
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method list");
-			
+
+			UserForm userForm = userFormDao.getUserForm(aForm.getFormID(), admin.getCompanyID());
+			Map<String, String> defaultExtensions = getDefaultExtension(admin, userForm);
+			ObjectMapper mapper = new ObjectMapper();
+			String JSON = mapper.writeValueAsString(defaultExtensions);
+			request.setAttribute("defaultExtensions", JSON);
+
 			return destination;
 		}
 	}
 
 	/**
 	 * For obtaining trackable user link view
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -142,7 +150,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 		} else {
 			ComTrackableUserFormLinkForm aForm = (ComTrackableUserFormLinkForm) form;
 			ComTrackableUserFormLink aLink = userFormDao.getUserFormTrackableLink(aForm.getLinkID());
-	
+
 			if (aLink != null) {
 				aForm.setLinkToView(aLink);
 				aForm.setLinkName(aLink.getShortname());
@@ -153,7 +161,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 				aForm.setDeepTracking(aLink.getDeepTracking());
 				aForm.setRelevance(aLink.getRelevance());
 				// only if parameter is provided in form
-				if (request.getParameter("deepTracking") != null) { 
+				if (request.getParameter("deepTracking") != null) {
 					aForm.setDeepTracking(aLink.getDeepTracking());
 				}
 			} else {
@@ -166,17 +174,17 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
             }
 
 			ActionForward destination = mapping.findForward("view");
-	
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method view");
-	
+
 			return destination;
 		}
 	}
 
 	/**
 	 * For saving a trackable user link
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -197,10 +205,10 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 			return mapping.findForward("logon");
 		} else {
 			ActionMessages errors = new ActionMessages();
-	
+
 			ComTrackableUserFormLinkForm comTrackableUserFormLinkForm = (ComTrackableUserFormLinkForm) form;
 			ActionForward destination = mapping.findForward("list");
-	
+
 			try {
 				saveLink(comTrackableUserFormLinkForm, request);
 				loadUserFormData(admin, comTrackableUserFormLinkForm, request);
@@ -208,23 +216,52 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-			
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-	
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method save");
-	
+
 			return destination;
 		}
 	}
 
+	public ActionForward saveLinks(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		ComTrackableUserFormLinkForm comTrackableUserFormLinkForm = (ComTrackableUserFormLinkForm) form;
+		ComAdmin admin = AgnUtils.getAdmin(request);
+		if (admin == null) {
+			return mapping.findForward("logon");
+		}
+
+		for (int i = 0; i < comTrackableUserFormLinkForm.getLinkItemIds().size(); i++) {
+				ComTrackableUserFormLink link = userFormDao.getUserFormTrackableLink(comTrackableUserFormLinkForm.getLinkItemId(i));
+				link.setShortname(comTrackableUserFormLinkForm.getLinkItemName(i));
+				link.setRelevance(comTrackableUserFormLinkForm.getLinkItemRelevance(i));
+
+                //set default link tracking option
+                int usage = comTrackableUserFormLinkForm.getLinkItemUsage(i);
+                int commonUsage = comTrackableUserFormLinkForm.getTrackable();
+                if(commonUsage >= 0) {
+                    usage = commonUsage;
+                }
+				link.setUsage(usage);
+
+				userFormDao.storeUserFormTrackableLink(link);
+		}
+
+		saveLinkExtensionToFormular(comTrackableUserFormLinkForm, request);
+		replaceCommonLinkProperties(comTrackableUserFormLinkForm, request);
+
+		return mapping.findForward("messages");
+	}
+
 	/**
 	 * For setting the standard usage
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param actionForm
@@ -267,23 +304,23 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-			
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-			
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method setStandardMeasurement");
-	
+
 			return destination;
 		}
 	}
 
 	/**
 	 * NOT CURRENTLY USED IN FRONT END For setting the standard action
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -309,28 +346,28 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 			try {
 				setStandardAction(comTrackableUserFormLinkForm, request);
 				loadUserFormData(admin, comTrackableUserFormLinkForm, request);
-	
+
 			} catch (Exception e) {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-			
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-	
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method setStandardAction");
-	
+
 			return destination;
 		}
 	}
 
 	/**
 	 * NOT CURRENTLY USED IN FRONT END For setting the standard deeptracking
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -356,28 +393,28 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 			try {
 				setStandardDeeptracking(comTrackableUserFormLinkForm, request);
 				loadUserFormData(admin, comTrackableUserFormLinkForm, request);
-	
+
 			} catch (Exception e) {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-			
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-	
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method setStandardDeeptracking");
-	
+
 			return destination;
 		}
 	}
 
 	/**
 	 * For setting the standard extended link values
-	 * 
+	 *
 	 * @param mapping
 	 *            - action mapping
 	 * @param form
@@ -404,25 +441,25 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 				saveExtendLinks(comTrackableUserFormLinkForm, request);
 				saveLinkExtensionToFormular(comTrackableUserFormLinkForm, request);
 				loadUserFormData(admin, comTrackableUserFormLinkForm, request);
-	
+
 			} catch (Exception e) {
 				logger.error("execute: " + e, e);
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
 			}
-			
+
 			// Report any errors we have discovered back to the original form
 			if (!errors.isEmpty()) {
 				saveErrors(request, errors);
 				logger.error("saving errors: " + destination);
 			}
-	
+
 			if (logger.isDebugEnabled())
 				logger.debug("Finished action method extendLinks");
-	
+
 			return destination;
 		}
 	}
-	
+
 	public ActionForward addExtensions(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (logger.isDebugEnabled())
 			logger.debug("Starting action method addDefaultExtensions");
@@ -447,7 +484,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 						if (extensionPropertyData.length > 1) {
 							extensionPropertyValue = URLDecoder.decode(extensionPropertyData[1], "UTF-8");
 						}
-					
+
 						for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 							// Change link properties
 							List<LinkProperty> properties = link.getProperties();
@@ -464,7 +501,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 							}
 						}
 					}
-					
+
 					// Store properties of all links in db
 					for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 						userFormDao.storeUserFormTrackableLinkProperties(link);
@@ -478,7 +515,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 		return list(mapping, form, request, response);
 	}
-	
+
 	public ActionForward addDefaultExtensions(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (logger.isDebugEnabled())
 			logger.debug("Starting action method addDefaultExtensions");
@@ -499,13 +536,13 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 					for (String extensionProperty : extensionProperties) {
 						final int eqIndex = extensionProperty.indexOf('=');
 						final String[] extensionPropertyData = (eqIndex == -1) ? new String[] { extensionProperty, "" } : new String[] { extensionProperty.substring(0, eqIndex), extensionProperty.substring(eqIndex + 1) };
-						
+
 						String extensionPropertyName = URLDecoder.decode(extensionPropertyData[0], "UTF-8");
 						String extensionPropertyValue = "";
 						if (extensionPropertyData.length > 1) {
 							extensionPropertyValue = URLDecoder.decode(extensionPropertyData[1], "UTF-8");
 						}
-					
+
 						for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 							// Change link properties
 							List<LinkProperty> properties = link.getProperties();
@@ -522,7 +559,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 							}
 						}
 					}
-					
+
 					// Store properties of all links in db
 					for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
 						userFormDao.storeUserFormTrackableLinkProperties(link);
@@ -537,7 +574,50 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 		return list(mapping, form, request, response);
 	}
-	
+
+	private Map<String, String> getDefaultExtension(ComAdmin admin, UserForm userForm) throws UnsupportedEncodingException {
+		String defaultExtensionString = configService.getValue(ConfigValue.DefaultLinkExtension, admin.getCompanyID());
+		Map<String, String> defaultExtensions = new HashMap<>();
+		if (StringUtils.isNotBlank(defaultExtensionString)) {
+			if (defaultExtensionString.startsWith("?")) {
+				defaultExtensionString = defaultExtensionString.substring(1);
+			}
+
+			String[] extensionProperties = defaultExtensionString.split("&");
+			for (String extensionProperty : extensionProperties) {
+
+				final int eqIndex = extensionProperty.indexOf('=');
+				final String[] extensionPropertyData = (eqIndex == -1) ? new String[]{extensionProperty, ""} : new String[]{extensionProperty.substring(0, eqIndex), extensionProperty.substring(eqIndex + 1)};
+
+				String extensionPropertyName = URLDecoder.decode(extensionPropertyData[0], "UTF-8");
+				String extensionPropertyValue = "";
+
+				if (extensionPropertyData.length > 1) {
+					extensionPropertyValue = URLDecoder.decode(extensionPropertyData[1], "UTF-8");
+				}
+				defaultExtensions.put(extensionPropertyName, extensionPropertyValue);
+
+				for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
+					// Change link properties
+					List<LinkProperty> properties = link.getProperties();
+					boolean changedProperty = false;
+					for (LinkProperty property : properties) {
+						if (property.getPropertyType() == PropertyType.LinkExtension && property.getPropertyName().equals(extensionPropertyName)) {
+							property.setPropertyValue(extensionPropertyValue);
+							changedProperty = true;
+						}
+					}
+					if (!changedProperty) {
+						LinkProperty newProperty = new LinkProperty(PropertyType.LinkExtension, extensionPropertyName, extensionPropertyValue);
+						properties.add(newProperty);
+					}
+				}
+			}
+		}
+
+		return defaultExtensions;
+	}
+
 	public ActionForward removeAllExtensions(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Starting action method removeAllExtensions");
@@ -568,74 +648,54 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 		return list(mapping, form, request, response);
 	}
-	
-	public ActionForward replaceCommonLinkLinkProperties(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		if (logger.isDebugEnabled())
-			logger.debug("Starting action method removeAllExtensions");
 
+	private void replaceCommonLinkProperties(ComTrackableUserFormLinkForm form, HttpServletRequest request) throws Exception {
 		ComAdmin admin = AgnUtils.getAdmin(request);
-		if (admin == null) {
-			return mapping.findForward("logon");
-		} else if (admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
+		if (admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
 			// Only clear properties of all links in db if adminuser is allowed to
-			UserForm userForm = userFormDao.getUserForm(((ComTrackableUserFormLinkForm) form).getFormID(), admin.getCompanyID());
+			UserForm userForm = userFormDao.getUserForm(form.getFormID(), admin.getCompanyID());
 			if (userForm != null) {
-				List<LinkProperty> commonLinkProperties = userForm.getCommonLinkExtensions(); 
 				for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
-					List<LinkProperty> linkProperties = new ArrayList<>(link.getProperties());
-					
+                    List<LinkProperty> linkProperties = new ArrayList<>(link.getProperties());
+
 					// Remove all old commonLinkProperties
-					Set<LinkProperty> linkPropertiesToRemove = new HashSet<>();
-					for (LinkProperty commonLinkProperty : commonLinkProperties) {
-						for (LinkProperty linkProperty : linkProperties) {
-							if (linkProperty.equals(commonLinkProperty)) {
-								linkPropertiesToRemove.add(linkProperty);
-							}
-						}
-					}
-					for (LinkProperty linkProperty : linkPropertiesToRemove) {
-							linkProperties.remove(linkProperty);
-					}
-					
-					// search for new commonLinkProperties and insert them
-					Enumeration<String> parameterNamesEnum = request.getParameterNames();
-					while (parameterNamesEnum.hasMoreElements()) {
-						String parameterName = parameterNamesEnum.nextElement();
-						if (parameterName.startsWith(ComTrackableUserFormLinkForm.PROPERTY_NAME_PREFIX)) {
-							int propertyID = Integer.parseInt(parameterName.substring(ComTrackableUserFormLinkForm.PROPERTY_NAME_PREFIX.length()));
-							String[] extensionNames = request.getParameterValues(parameterName);
-							String[] extensionValues = request.getParameterValues(ComTrackableUserFormLinkForm.PROPERTY_VALUE_PREFIX + propertyID);
-							if (extensionNames != null && extensionNames.length > 0 && StringUtils.isNotBlank(extensionNames[0])) {
-								LinkProperty newProperty;
-								if (extensionValues != null && extensionValues.length > 0 && StringUtils.isNotBlank(extensionValues[0])) {
-									newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], extensionValues[0]);
-								} else {
-									newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], "");
-								}
-								linkProperties.add(newProperty);
-							}
-						}
-					}
+                    List<LinkProperty> common = new ArrayList<>(userForm.getCommonLinkExtensions());
+                    common.retainAll(linkProperties);
+                    linkProperties.removeAll(common);
+
+
+                    for (Map.Entry<String, String[]> parameter : request.getParameterMap().entrySet()) {
+                        String parameterName = parameter.getKey();
+                        if (parameterName.startsWith(ComTrackableUserFormLinkForm.PROPERTY_NAME_PREFIX)) {
+                            int propertyID = Integer.parseInt(parameterName.substring(ComTrackableUserFormLinkForm.PROPERTY_NAME_PREFIX.length()));
+                            String[] extensionNames = request.getParameterValues(parameterName);
+                            String[] extensionValues = request.getParameterValues(ComTrackableUserFormLinkForm.PROPERTY_VALUE_PREFIX + propertyID);
+                            if (extensionNames != null && extensionNames.length > 0 && StringUtils.isNotBlank(extensionNames[0])) {
+                                LinkProperty newProperty;
+                                if (extensionValues != null && extensionValues.length > 0 && StringUtils.isNotBlank(extensionValues[0])) {
+                                    newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], extensionValues[0]);
+                                } else {
+                                    newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], "");
+                                }
+                                linkProperties.add(newProperty);
+                            }
+                        }
+                    }
 					link.setProperties(linkProperties);
 					userFormDao.storeUserFormTrackableLinkProperties(link);
 				}
 			}
 		}
-
-		if (logger.isDebugEnabled())
-			logger.debug("Finished action method removeAllExtensions");
-
-		return list(mapping, form, request, response);
 	}
 
 	/**
 	 * helper function for setting extended links
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
 	 *            - HTTP request object
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void saveExtendLinks(ComTrackableUserFormLinkForm aForm, HttpServletRequest req) throws Exception {
 		if (logger.isDebugEnabled())
@@ -658,12 +718,12 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 	/**
 	 * helper function for setting the link extension to the formula
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
 	 *            - HTTP request object
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void saveLinkExtensionToFormular(ComTrackableUserFormLinkForm aForm, HttpServletRequest req) throws Exception {
 		if (logger.isDebugEnabled())
@@ -681,7 +741,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 	/**
 	 * Helper function for loading all links into the action form for a
 	 * particular formula
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
@@ -695,11 +755,11 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 		UserForm userForm = userFormDao.getUserForm(aForm.getFormID(), AgnUtils.getCompanyID(req));
 		if (userForm != null) {
 			aForm.setLinks(userForm.getTrackableLinks().values());
-			
+
 			aForm.setShortname(userForm.getFormName());
 			// aForm.setIsTemplate(userForm.i);
 			aForm.setCompanyHasDefaultLinkExtension(StringUtils.isNotBlank(configService.getValue(ConfigValue.DefaultLinkExtension, admin.getCompanyID())));
-			
+
 			aForm.setCommonLinkExtensions(userForm.getCommonLinkExtensions());
 
 			// Fill textfield for simple changes
@@ -721,12 +781,12 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 	/**
 	 * Saves link based on a link id found in the action form
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
 	 *            - HTTP Request
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void saveLink(ComTrackableUserFormLinkForm aForm, HttpServletRequest req) throws Exception {
 		ComTrackableUserFormLink aLink = null;
@@ -746,7 +806,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 			if (req.getParameter("deepTracking") != null) {
 				aLink.setDeepTracking(aForm.getDeepTracking());
 			}
-			
+
 			ComAdmin admin = AgnUtils.getAdmin(req);
 			// Only change link properties if adminuser is allowed to
 			if (admin != null && admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
@@ -772,7 +832,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 				}
 				aLink.setProperties(linkProperties);
 			}
-			
+
 			userFormDao.storeUserFormTrackableLink(aLink);
 		}
 
@@ -782,12 +842,12 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 	/**
 	 * Helper function for setting the standard action
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
 	 *            - action request
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void setStandardAction(ComTrackableUserFormLinkForm aForm, HttpServletRequest req) throws Exception {
 		if (logger.isDebugEnabled())
@@ -812,12 +872,12 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 
 	/**
 	 * Helper function for setting the standard deeptracking
-	 * 
+	 *
 	 * @param aForm
 	 *            - action form
 	 * @param req
 	 *            - action request
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void setStandardDeeptracking(ComTrackableUserFormLinkForm aForm, HttpServletRequest req) throws Exception {
 		if (logger.isDebugEnabled())
@@ -839,7 +899,7 @@ public class ComTrackableUserFormLinkAction extends DispatchAction {
 		if (logger.isDebugEnabled())
 			logger.debug("Finished helper method setStandardDeeptracking");
 	}
-	
+
 	public void setUserFormDao(UserFormDao userFormDao) {
 		this.userFormDao = userFormDao;
 	}

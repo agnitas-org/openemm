@@ -147,7 +147,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 		}
 	}
 	
-	@Override
+	@Override 
 	public int doEndTag() throws JspException {
 		// Reset optional attribute value
 		declaringPlugin = null;

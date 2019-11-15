@@ -22,7 +22,6 @@ import com.agnitas.beans.ComProfileField;
 
 public interface ComProfileFieldDao extends ProfileFieldDao {
 	int MAX_SORT_INDEX = 1000;
-	int MAX_NUMBER_OF_ENTRIES_FOR_DEFAULT_CHANGE = 750000;
 	
 	boolean mayAdd(@VelocityCheck int companyID);
 

@@ -22,24 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.ComRecipientMailing;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComProfileFieldDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ComColumnInfoService;
-import net.sf.json.JSONObject;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.RecipientImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.WebStorage;
@@ -61,7 +53,17 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.ComRecipientMailing;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ComColumnInfoService;
+
+import net.sf.json.JSONObject;
 
 /**
  * Handles all actions on profile fields.
@@ -88,7 +90,6 @@ public class ComRecipientAction extends RecipientAction {
 	private static final transient Logger logger = Logger.getLogger(ComRecipientAction.class);
 	/** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
-	protected ComProfileFieldDao profileFieldDao;
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
@@ -107,11 +108,6 @@ public class ComRecipientAction extends RecipientAction {
      */
     public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
-	}
-
-    @Required
-    public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
-		this.profileFieldDao = profileFieldDao;
 	}
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -454,28 +450,7 @@ public class ComRecipientAction extends RecipientAction {
 
 	@Override
     protected void loadDefaults(RecipientForm aForm, HttpServletRequest req) {
-        ComRecipientForm comForm = (ComRecipientForm) aForm;
-//        List<String> availableSM = new ArrayList<>();
-//        List<ProfileField> columns = null;
-//        try {
-//			columns = columnInfoService.getColumnInfos(AgnUtils.getCompanyID(req));
-//            for (ProfileField column : columns) {
-//                String columnName = column.getColumn().toLowerCase();
-//                for (String socialMedia : comForm.getAllSocialMedia()) {
-//                    String socialMediaStatus = socialMedia + "_status";
-//                    if (columnName.equals(socialMediaStatus)) {
-//                        availableSM.add(socialMedia);
-//                        break;
-//                    }
-//                }
-//            }
-//        } catch (Exception e) {
-//            logger.error("execute: " + e, e);
-//        }
-//        comForm.setOldSocialValues(new HashMap<>());
-//        comForm.setActiveSocialMedia(new String[0]);
-//        comForm.setAvailableSocialMedia(availableSM.toArray(new String[availableSM.size()]));
-        comForm.setAdminId(AgnUtils.getAdminId(req));
+        aForm.setAdminId(AgnUtils.getAdminId(req));
         super.loadDefaults(aForm, req);
     }
 
@@ -553,33 +528,8 @@ public class ComRecipientAction extends RecipientAction {
 		}
 	}
 
-//    @Override
-//    protected void storeSpecificFields(RecipientForm aForm, Map<String, Object> customerFields, Admin admin) {
-        // save the social media statuses
-//        String availableMediaStatus, oldStatus, mediaStatus;
-//        Integer recipientID = aForm.getRecipientID();
-//        ComRecipientForm comForm = (ComRecipientForm) aForm;
-//        List<String> active = Arrays.asList(comForm.getActiveSocialMedia());
-
-//        for (String availableMedia : comForm.getAvailableSocialMedia()) {
-//            availableMediaStatus = availableMedia + "_status";
-//            oldStatus = (String) customerFields.get(availableMediaStatus);
-//            if (active.contains(availableMedia)) {
-//                mediaStatus = String.valueOf(ComRecipientForm.SOCIAL_MEDIA_STATUS_ACTIVE);
-//            } else {
-//                mediaStatus = String.valueOf(ComRecipientForm.SOCIAL_MEDIA_STATUS_INACTIVE);
-//            }
-//            customerFields.put(availableMediaStatus, mediaStatus);
-//
-//            if (recipientID != 0 && !oldStatus.equals(mediaStatus)) {
-//                writeRecipientChangeLog(admin, customerFields, "Recipient network " + getNetworkName(availableMediaStatus) +
-//                        ("1".equals(mediaStatus) ? " checked" : " unchecked"));
-//            }
-//        }
-//    }
-
     @Override
-    protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest req) throws Exception {
+    protected boolean saveRecipient(RecipientForm aForm, HttpServletRequest req, ActionMessages errors) throws Exception {
         final int companyId = AgnUtils.getCompanyID(req);
         final ComAdmin admin = AgnUtils.getAdmin(req);
         final boolean isNewRecipient = aForm.getRecipientID() == 0;
@@ -617,6 +567,11 @@ public class ComRecipientAction extends RecipientAction {
 			recipientDao.updateInDB(cust);
 		} else {
 			if (!recipientDao.mayAdd(companyId, 1)) {
+				int allowedRecipientNumber = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
+				if (allowedRecipientNumber < 0) {
+					allowedRecipientNumber = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
+				}
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.maxcustomersexceeded", recipientDao.getAllRecipientsCount(companyId), allowedRecipientNumber));
 				return false;
 			}
 

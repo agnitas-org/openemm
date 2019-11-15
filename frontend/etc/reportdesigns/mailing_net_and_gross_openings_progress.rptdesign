@@ -14,8 +14,6 @@ if (params["selectedTargets"] != null) {
 	selectedTargets = params["selectedTargets"].value;
 }
 
-params["uid"] = String.valueOf(params["uid"].value).replace("<br>", "\r\n");
-
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
@@ -77,20 +75,6 @@ if(reportContext.getOutputFormat()=="csv") {
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
                 <value type="constant">DE</value>
-            </simple-property-list>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
-        <scalar-parameter name="uid" id="424">
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">1</value>
             </simple-property-list>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
@@ -1164,10 +1148,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -1763,12 +1743,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -2532,10 +2506,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -3131,12 +3101,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -3910,10 +3874,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -4509,12 +4469,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -5288,10 +5242,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -5887,12 +5837,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -6666,10 +6610,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -7265,12 +7205,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -8044,10 +7978,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -8643,12 +8573,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -9464,10 +9388,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -10063,12 +9983,6 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -10837,10 +10751,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -11436,12 +11346,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -12220,10 +12124,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -12819,12 +12719,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -13603,10 +13497,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -14202,12 +14092,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -14986,10 +14870,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -15585,12 +15465,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>
@@ -16369,10 +16243,6 @@ function beforeGeneration( chart, icsc )
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;language&quot;].value&lt;/expression>
         &lt;/structure>
         &lt;structure>
-            &lt;property name=&quot;paramName&quot;>uid&lt;/property>
-            &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>params[&quot;uid&quot;].value&lt;/expression>
-        &lt;/structure>
-        &lt;structure>
             &lt;property name=&quot;paramName&quot;>startDate&lt;/property>
             &lt;expression name=&quot;expression&quot; type=&quot;javascript&quot;>row[&quot;DATETIME&quot;]&lt;/expression>
         &lt;/structure>
@@ -16968,12 +16838,6 @@ function beforeGeneration( chart, icsc )
                                                     <property name="paramName">language</property>
                                                     <simple-property-list name="expression">
                                                         <value type="javascript">params["language"].value</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                                <structure>
-                                                    <property name="paramName">uid</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">params["uid"].value</value>
                                                     </simple-property-list>
                                                 </structure>
                                                 <structure>

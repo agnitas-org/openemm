@@ -18,19 +18,6 @@ beta.version=${isBetaServer}
 # Show legacy-text in application logo
 legacy.version=${isServiceServer}
 
-<xsl:if test="properties/server/ignoreDeletedMessages" >
-# Ignore deleted messages (Only Agnitas Beta server should do so)
-ignoreDeletedMessages=<xsl:value-of select="properties/server/ignoreDeletedMessages"/>
-</xsl:if>
-
-#######################################################
-# Database settings                                   #
-#######################################################
-# Name of the configured jndi database used by the application
-jdbc.emmDB.jndiName=emm_db
-# Name of the configured internal jndi derby database for statistic purposes
-jdbc.tmpDB.jndiName=embedded
-
 <xsl:if test="properties/server/url" >
 # URL for PDF reports
 system.url=<xsl:value-of select="properties/server/url"/>
@@ -72,10 +59,6 @@ mailaddress.upload.support=<xsl:value-of select="properties/mailaddresses/upload
 # Email address to archivate report mails
 mailaddress.report_archive=<xsl:value-of select="properties/mailaddresses/report_archive"/>
 
-# Directory for external components (images)
-component.directory=<xsl:value-of select="properties/directory/component"/>
-system.cdn=<xsl:value-of select="properties/cdn"/>
-
 #######################################################
 # Caching                                             #
 #######################################################
@@ -83,6 +66,11 @@ system.cdn=<xsl:value-of select="properties/cdn"/>
 hostedImage.maxCache=<xsl:value-of select="properties/rdir/hostedImage/maxCache"/>
 # Maximum cachetime of images delivered by rdir application
 hostedImage.maxCacheTimeMillis=<xsl:value-of select="properties/rdir/hostedImage/maxCacheTimeMillis"/>
+
+# Maximum cachesize of cdn-uuids of images delivered by rdir application
+cdn.maxCache=10000
+# Maximum cachetime of cdn-uuids of images delivered by rdir application
+cdn.maxCacheTimeMillis=300000
 
 # Maximum cachesize of eventmails delivered by mailgun
 mailgun.maxCache=100
@@ -219,7 +207,7 @@ birt.plugin.directory=<xsl:value-of select="properties/birt-plugins"/>
 # Installpath of online help files
 manual_install_path=<xsl:value-of select="properties/manual_install_path"/>
 # Available languages of online help
-onlinehelp.languages=de,en
+onlinehelp.languages=de,en,fr
 
 #######################################################
 # Host authentication (Two-Way-Authentication)        #

@@ -22,9 +22,6 @@ import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
 public interface ProfileFieldService {
-
-    int MAX_NUMBER_OF_ENTRIES_FOR_COLUMN_DROP = 750000;
-
     boolean checkDatabaseNameExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws ProfileFieldException;
 
     String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String visibleName) throws ProfileFieldException;

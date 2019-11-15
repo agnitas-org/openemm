@@ -225,7 +225,7 @@ public class HtmlReporterHelper {
 		return new StringBuilder()
 			.append("	<tr>\n")
 			.append("		<td bgcolor=\"#ffffff\" style=\"padding: 20px; text-align:left;\">\n")
-			.append("			<h2 style=\"margin: 0; font-family: sans-serif; font-size: 16px; line-height: 18px; color: #333333;\">").append(StringEscapeUtils.escapeHtml(headerText)).append(":</h2>\n") 
+			.append("			<h2 style=\"margin: 0; font-family: sans-serif; font-size: 16px; line-height: 18px; color: #333333;\">").append(StringEscapeUtils.escapeHtml(headerText)).append(":</h2>\n")
 			.append("		</td>\n")
 			.append("	</tr>\n")
 			.toString();
@@ -273,6 +273,9 @@ public class HtmlReporterHelper {
 	
 	public static String getOutputTableWarningContentLine(String warningText) {
 		return new StringBuilder()
+			.append("	<tr>\n")
+			.append("		<td aria-hidden=\"true\" height=\"20\" style=\"font-size: 0; line-height: 0;\">&nbsp;</td>\n")
+			.append("	</tr>\n")
 			.append("	<tr>\n")
 			.append("		<td align=\"right\" bgcolor=\"#").append(YELLOW_COLORCODE).append("\">").append(StringEscapeUtils.escapeHtml(warningText)).append("</td>\n")
 			.append("	</tr>\n")
@@ -323,7 +326,7 @@ public class HtmlReporterHelper {
 	public static String getOutputTableContentEnd() {
 		return new StringBuilder()
 			.append("			</table>\n")
-			.append("		</td>\n") 
+			.append("		</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}

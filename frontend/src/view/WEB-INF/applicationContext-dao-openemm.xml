@@ -121,4 +121,9 @@
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
 
+<!-- ============================================================================================================================== Login -->
+	<bean id="LoginTrackDao" class="org.agnitas.dao.impl.LoginTrackDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
 </beans>

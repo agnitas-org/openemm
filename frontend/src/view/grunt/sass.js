@@ -5,6 +5,7 @@ module.exports = {
       '<%= config.assets %>/help.css': '<%= config.assets %>/sass/help.scss'
     },
     options: {
+      implementation: require('node-sass'),
       style: 'nested',
       sourceMap: true
     }

@@ -112,7 +112,7 @@ public interface ComCompanyDao {
 
 	//get all active companies
 	List<CompanyEntry> getActiveCompaniesLight();
-		
+	
 	//get only own company and companies created by own company + status = active
 	List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId);
 
@@ -148,5 +148,13 @@ public interface ComCompanyDao {
 
 	void deactivateExtendedCompanies();
 	
+	int selectForTestCompany();
+	
+	int selectNumberOfExistingTestCompanies();
+	
 	boolean isCompanyNameUnique(String shortname);
+	
+	List<Integer> getOpenEMMCompanyForClosing();
+
+	void addMissingForeignKeysForPreventTableDrop();
 }

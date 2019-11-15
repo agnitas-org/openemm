@@ -345,7 +345,6 @@ public class ComCampaignDaoImpl extends BaseDaoImpl implements ComCampaignDao {
 			if (optouts > stats.getMaxOptouts()) {
 				stats.setMaxOptouts(optouts);
 			}
-
 		}
 		
 		return stats;
@@ -354,11 +353,13 @@ public class ComCampaignDaoImpl extends BaseDaoImpl implements ComCampaignDao {
 	private ComCampaignStats loadBounces(ComCampaignStats stats, ComCampaign campaign, ComTarget aTarget, boolean useMailtracking, int aktMailingID, int aktBounces) {
 		CampaignStatEntry aktEntry = null;
 		String bounceQuery = "SELECT bind.mailinglist_id AS mailinglist_id, COUNT(bind.customer_id) AS amount FROM customer_" + campaign.getCompanyID() + "_binding_tbl bind";
-		if (useMailtracking && aTarget != null && aTarget.getId() != 0)
+		if (useMailtracking && aTarget != null && aTarget.getId() != 0) {
 			bounceQuery += ", customer_" + campaign.getCompanyID() + "_tbl cust";
+		}
 		bounceQuery += " WHERE bind.exit_mailing_id = " + aktMailingID;
-		if (useMailtracking && aTarget != null && aTarget.getId() != 0)
+		if (useMailtracking && aTarget != null && aTarget.getId() != 0) {
 			bounceQuery += " AND ((" + aTarget.getTargetSQL() + ") AND cust.customer_id = bind.customer_id)";
+		}
 		bounceQuery += " AND bind.user_status = " + UserStatus.Bounce.getStatusCode() + " GROUP BY bind.mailinglist_id";
 
 		// get entry...
@@ -488,10 +489,11 @@ public class ComCampaignDaoImpl extends BaseDaoImpl implements ComCampaignDao {
 		double tmpRev = 0.0;
 
 		// loop over all Revenues and get the biggest one.
-		for(Map.Entry<Integer, Double> entry : in_Revenues.entrySet()) {	
+		for(Map.Entry<Integer, Double> entry : in_Revenues.entrySet()) {
 			tmpRev = entry.getValue().doubleValue();
-			if (tmpRev > biggestRev)
+			if (tmpRev > biggestRev) {
 				biggestRev = tmpRev;
+			}
 		}
 		return biggestRev;
 	}
@@ -500,7 +502,7 @@ public class ComCampaignDaoImpl extends BaseDaoImpl implements ComCampaignDao {
 	private double getSumRev(Map<Integer, Double> in_Revenues) {
 		double returnValue = 0.0;
 		// loop over all Revenues and sum it up.
-		for(Map.Entry<Integer, Double> entry : in_Revenues.entrySet()) {	
+		for(Map.Entry<Integer, Double> entry : in_Revenues.entrySet()) {
 			returnValue += entry.getValue().doubleValue();
 		}
 		return returnValue;

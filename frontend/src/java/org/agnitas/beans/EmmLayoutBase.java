@@ -11,82 +11,82 @@
 package org.agnitas.beans;
 
 public interface EmmLayoutBase {
-    public static final int MENU_POSITION_LEFT = 0;
-    public static final int MENU_POSITION_TOP = 1;
-    public static final int MENU_POSITION_DEFAULT = MENU_POSITION_LEFT;
+    int MENU_POSITION_LEFT = 0;
+    int MENU_POSITION_TOP = 1;
+    int MENU_POSITION_DEFAULT = MENU_POSITION_LEFT;
 
-    public static final int LIVEPREVIEW_POSITION_RIGHT = 0;
-    public static final int LIVEPREVIEW_POSITION_BOTTOM = 1;
-    public static final int LIVEPREVIEW_POSITION_DEACTIVATE = 2;
+    int LIVEPREVIEW_POSITION_RIGHT = 0;
+    int LIVEPREVIEW_POSITION_BOTTOM = 1;
+    int LIVEPREVIEW_POSITION_DEACTIVATE = 2;
 
 	/**
 	 * @return the id
 	 */
-	public int getId();
+	int getId();
 
 	/**
 	 * @param id the id to set
 	 */
-	public void setId(int id);
+	void setId(int id);
 
 	/**
 	 * @return the baseURL
 	 */
-	public String getBaseURL();
+	String getBaseURL();
 
 	/**
 	 * @param baseURL the baseURL to set
 	 */
-	public void setBaseURL(String baseURL);
+	void setBaseURL(String baseURL);
 
 	/**
 	 * @return the imagesURL
 	 */
-	public String getImagesURL();
+	String getImagesURL();
 
 	/**
 	 * @param imagesURL the imagesURL to set
 	 */
-	public void setImagesURL(String imagesURL);
+	void setImagesURL(String imagesURL);
 
 	/**
 	 * @return the cssURL
 	 */
-	public String getCssURL();
+	String getCssURL();
 
 	/**
 	 * @param cssURL the cssURL to set
 	 */
-	public void setCssURL(String cssURL);
+	void setCssURL(String cssURL);
 
 	/**
 	 * @return the jsURL
 	 */
-	public String getJsURL();
+	String getJsURL();
 
 	/**
 	 * @param jsURL the jsURL to set
 	 */
-	public void setJsURL(String jsURL);
+	void setJsURL(String jsURL);
 
 	/**
 	 * @return the menuPosition
 	 */
-	public int getMenuPosition();
+	int getMenuPosition();
 
 	/**
 	 * @param menuPosition the menuPosition to set
 	 */
-	public void setMenuPosition(int menuPosition);
+	void setMenuPosition(int menuPosition);
 
     /**
 	 * @return the livepreviewPosition
 	 */
-    public int getLivepreviewPosition();
+	int getLivepreviewPosition();
 
     /**
 	 * @param livepreviewPosition the livepreviewPosition to set
 	 */
-    public void setLivepreviewPosition(int livepreviewPosition);
+	void setLivepreviewPosition(int livepreviewPosition);
 
 }

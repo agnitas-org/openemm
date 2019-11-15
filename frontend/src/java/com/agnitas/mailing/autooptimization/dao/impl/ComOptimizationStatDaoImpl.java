@@ -165,10 +165,9 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
             queryBuilder
                     .append("SELECT ").append(isOracleDB() ? "NVL" : "IFNULL").append("(SUM(num_parameter), 0) ")
                     .append("  FROM rdirlog_").append(companyID).append("_val_num_tbl ")
-                    .append(" WHERE company_id  = ? ")
-                    .append("   AND mailing_id = ? ")
+                    .append(" WHERE mailing_id = ? ")
                     .append("   AND page_tag = ?");
-            return select(logger, queryBuilder.toString(), Double.class, companyID, mailingID, "revenue");
+            return select(logger, queryBuilder.toString(), Double.class, mailingID, "revenue");
         }
         catch (Exception e) {
             logger.warn("Error while getting the revenue", e);

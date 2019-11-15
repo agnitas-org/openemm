@@ -1,8 +1,13 @@
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--css--%>
-<link rel="stylesheet" href="${emmLayoutBase.cssURL}/common/jquery-ui.css" />
-<link rel="stylesheet" href="${emmLayoutBase.cssURL}/common/jquery.contextMenu.css" />
-<link rel="stylesheet" href="${emmLayoutBase.cssURL}/campaignManager/campaignManager.css">
+<c:url var="jqueryUiUrl" value="/assets/core/styles/common/jquery-ui.css"/>
+<c:url var="contextMenuUrl" value="/assets/core/styles/common/jquery.contextMenu.css"/>
+<c:url var="campaignManagerUrl" value="/assets/core/styles/campaignManager/campaignManager.css"/>
+<link rel="stylesheet" href="${jqueryUiUrl}" />
+<link rel="stylesheet" href="${contextMenuUrl}" />
+<link rel="stylesheet" href="${campaignManagerUrl}">
 
 <%--libs--%>
 <%--<script type="text/javascript" src="<%=request.getContextPath()%>/js/lib/common/jquery.jsPlumb-1.3.16-all.js"></script>--%>

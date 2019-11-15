@@ -39,6 +39,7 @@
         self.el.val(self.editor.getSession().getValue());
         self.el.trigger('editor:change');
     });
+    this.langTools = ace.require("ace/ext/language_tools");
 
     this.decorate();
 
@@ -151,7 +152,7 @@
 
   // inherit from Editor
   EditorEql = function($textArea) {
-	  Editor.apply(this, $textArea);
+    Editor.apply(this, $textArea);
   }
   EditorEql.prototype = Object.create(Editor.prototype);
   EditorEql.prototype.constructor = EditorEql;
@@ -164,12 +165,17 @@
     this.editor.setShowPrintMargin(false);
     this.editor.session.setUseSoftTabs(true);
     this.editor.getSession().setUseWorker(false);
+    this.langTools.setCompleters([this.langTools.keyWordCompleter, this.langTools.snippetCompleter]);
     this.editor.setOptions({
-        enableBasicAutocompletion: false,
+        enableBasicAutocompletion: true,
         enableSnippets: false,
-        enableLiveAutocompletion: false,
+        enableLiveAutocompletion: true,
         minLines: 20
     });
+
+    ace.config.loadModule("ace/ext/eql_constructions_tokens");
+    ace.config.loadModule("ace/ext/eql_constructions_basic");
+    ace.config.loadModule("ace/ext/eql_constructions_extended");
 
     this.editor.getSession().setMode("ace/mode/eql");
   }

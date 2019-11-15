@@ -38,6 +38,7 @@ public interface TargetRepresentation extends Serializable {
 	/**
 	 * Generates bsh.
 	 */
+	// TODO Move method to EqlFacade
 	public String generateBsh();
 
 	/**

@@ -20,6 +20,7 @@ public interface MediatypeEmail extends Mediatype {
     
 	String INTELLIAD_ENABLE_PARAM = "intelliad_enabled";
 	String INTELLIAD_STRING_PARAM = "intelliad_string";
+	String BCC_STRING_PARAM = "bcc";
     
     /**
      * Getter for property charset.
@@ -115,28 +116,28 @@ public interface MediatypeEmail extends Mediatype {
     /**
      * Setter for property fromAdr.
      * 
-     * @param fromAdr New value of property fromAdr.
+     * @param fromEmail New value of property fromAdr.
      */
     void setFromEmail(String fromEmail);
 
     /**
      * Setter for property fromAdr.
      * 
-     * @param fromAdr New value of property fromAdr.
+     * @param fromFullname New value of property fromAdr.
      */
     void setFromFullname(String fromFullname);
 
     /**
      * Setter for property fromAdr.
      * 
-     * @param fromAdr New value of property fromAdr.
+     * @param replyEmail New value of property fromAdr.
      */
     void setReplyEmail(String replyEmail);
 
     /**
      * Setter for property fromAdr.
      * 
-     * @param fromAdr New value of property fromAdr.
+     * @param replyFullname New value of property fromAdr.
      */
     void setReplyFullname(String replyFullname);
 
@@ -171,7 +172,7 @@ public interface MediatypeEmail extends Mediatype {
     /**
      * Setter for property subject.
      * 
-     * @param subject New value of property subject.
+     * @param htmlTemplate New value of property subject.
      */
     void setHtmlTemplate(String htmlTemplate);
 
@@ -199,7 +200,7 @@ public interface MediatypeEmail extends Mediatype {
     /**
      * Setter for property envelopeAdr.
      * 
-     * @param envelopeAdr New value of property envelopeAdr.
+     * @param envelopeEmail New value of property envelopeAdr.
      */
     void setEnvelopeEmail(String envelopeEmail);
 
@@ -261,7 +262,13 @@ public interface MediatypeEmail extends Mediatype {
      * @param intelliAdString IntelliAd ID string or null
      */
     void setIntelliAdString( String intelliAdString);
+    
+    String getBccRecipients() throws Exception;
+    
+    void setBccRecipients(String bccRecipients);
 
 	void setMailFormat(MailType mailType);
+    
+    void deleteDateBasedParameters();
 }
 

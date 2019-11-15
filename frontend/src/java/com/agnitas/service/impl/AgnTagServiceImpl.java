@@ -31,7 +31,6 @@ import org.agnitas.beans.factory.DynamicTagFactory;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.MissingEndTagException;
-import org.agnitas.util.MissingValueTagException;
 import org.agnitas.util.UnclosedTagException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -211,13 +210,15 @@ public class AgnTagServiceImpl implements AgnTagService {
             do {
                 valueTag = nextTag(content, position, closingTag.getStartPos() - 1, "agnDVALUE");
                 if (valueTag == null) {
-                    throw new MissingValueTagException(positionToLine(content, openingTag.getEndPos()), openingTag.getName());
+                    break;
                 }
                 position = valueTag.getEndPos();
             } while (!StringUtils.equals(openingTag.getName(), valueTag.getName()));
 
-            tag.setValueTagStart(valueTag.getStartPos());
-            tag.setValueTagEnd(valueTag.getEndPos());
+            if(valueTag != null) {
+                tag.setValueTagStart(valueTag.getStartPos());
+                tag.setValueTagEnd(valueTag.getEndPos());
+            }
             tag.setEndTagStart(closingTag.getStartPos());
             tag.setEndTagEnd(closingTag.getEndPos());
         }

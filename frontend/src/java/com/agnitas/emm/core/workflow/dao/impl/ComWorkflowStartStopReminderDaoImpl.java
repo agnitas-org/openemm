@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.CompaniesConstraints;
@@ -305,7 +306,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
                 String workflowName = rs.getString("title");
 
                 // Recipient timezone (if available) or sender timezone (otherwise).
-                ZoneId zoneId = ZoneId.of(rs.getString("timezone"));
+                ZoneId zoneId = TimeZone.getTimeZone(rs.getString("timezone")).toZoneId();
                 LocalDateTime startDate = DateUtilities.toLocalDateTime(rs.getTimestamp("workflow_start_date"), zoneId);
                 LocalDateTime stopDate = DateUtilities.toLocalDateTime(rs.getTimestamp("workflow_stop_date"), zoneId);
 

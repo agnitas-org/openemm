@@ -47,6 +47,7 @@ public class PasswordCheckImpl implements PasswordCheck {
 		}
 	}
 
+	@Override
 	public SimpleServiceResult checkAdminPassword(String password, ComAdmin admin) {
 		try {
 			PasswordUtil.checkPasswordConstraints(password);

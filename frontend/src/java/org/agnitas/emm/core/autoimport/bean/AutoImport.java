@@ -100,6 +100,8 @@ public class AutoImport extends AutoImportLight {
 	
 	private boolean campaignDriven;
 	
+	private boolean emptyFileAllowed;
+	
 	public int getAdminId() {
 		return adminId;
 	}
@@ -393,12 +395,20 @@ public class AutoImport extends AutoImportLight {
 		this.timeZone = timeZone;
 	}
 	
-	public void setCampaignDriven(boolean isCampaignDriven) {
-		campaignDriven = isCampaignDriven;
+	public void setCampaignDriven(boolean campaignDriven) {
+		this.campaignDriven = campaignDriven;
 	}
 	
 	public boolean isCampaignDriven() {
 		return campaignDriven;
+	}
+	
+	public void setEmptyFileAllowed(boolean emptyFileAllowed) {
+		this.emptyFileAllowed = emptyFileAllowed;
+	}
+
+	public boolean isEmptyFileAllowed() {
+		return emptyFileAllowed;
 	}
 
 	public static class UsedFile {

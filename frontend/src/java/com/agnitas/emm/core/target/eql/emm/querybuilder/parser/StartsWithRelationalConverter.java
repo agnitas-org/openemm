@@ -21,7 +21,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 
 public class StartsWithRelationalConverter extends GenericEqlNodeParser<StartsWithRelationalEqlNode> {
     @Override
-    protected QueryBuilderGroupNode parse(StartsWithRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(StartsWithRelationalEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractEqlNode left = node.getLeft();
         EqlNodeParser<?> leftParser = configuration.getParserMapping().get(left.getClass());
 
@@ -39,8 +39,8 @@ public class StartsWithRelationalConverter extends GenericEqlNodeParser<StartsWi
         }
         groupNode.addRule(ruleNode);
 
-        leftParser.parse(left, groupNode, unknownProfileFields);
-        rightParser.parse(right, groupNode, unknownProfileFields);
+        leftParser.parse(left, groupNode, profileFields);
+        rightParser.parse(right, groupNode, profileFields);
 
         return groupNode;
     }

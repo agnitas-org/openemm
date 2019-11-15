@@ -21,7 +21,7 @@ public interface MailingComponent {
 	int TYPE_IMAGE = 1;
 	int TYPE_TEMPLATE = 0;
 	int TYPE_PREC_ATTACHMENT = 7;
-	int TYPE_THUMBNAIL_IMAGE = 8;
+	//int TYPE_THUMBNAIL_IMAGE = 8;
 
 	boolean loadContentFromURL();
 
@@ -41,6 +41,8 @@ public interface MailingComponent {
 
 	int getType();
 
+	int getPresent();
+
 	void setBinaryBlock(byte[] binaryBlock, String mimeType);
 
 	void setCompanyID(@VelocityCheck int companyID);
@@ -56,6 +58,8 @@ public interface MailingComponent {
 	void setTargetID(int targetID);
 
 	void setType(int type);
+
+	void setPresent(int present);
 
 	int getMailingID();
 

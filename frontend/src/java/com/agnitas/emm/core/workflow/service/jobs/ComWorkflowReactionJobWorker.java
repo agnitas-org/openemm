@@ -64,7 +64,7 @@ public class ComWorkflowReactionJobWorker extends JobWorker {
     private SendActionbasedMailingService sendActionbasedMailingService;
 
     @Override
-    public void runJob() throws Exception {
+    public String runJob() throws Exception {
         initBeans();
 
         final CompaniesConstraints constraints = getCompaniesConstrains();
@@ -82,6 +82,8 @@ public class ComWorkflowReactionJobWorker extends JobWorker {
         processDeferrals(constraints);
 
         workflowService.processPendingReactionSteps(constraints);
+		
+		return null;
     }
 
     private void processReaction(final ComWorkflowReaction reaction, final List<Integer> reactedRecipients) {

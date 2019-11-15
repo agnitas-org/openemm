@@ -48,7 +48,10 @@ public final class EmmActionOperationErrors {
 		MOBILEPHONE_NUMBER_NOT_ALLOWED,
 		
 		/** A hugh number of requests are detected, request got blocked. */
-		FLOODING
+		FLOODING,
+		
+		MISSING_CUSTOMER_ID,
+		MISSING_MAILING_ID
 	}
 	
 	/** Set of codes representing errors occurred during processing. */

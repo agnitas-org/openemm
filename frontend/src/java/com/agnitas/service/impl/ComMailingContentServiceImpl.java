@@ -224,20 +224,19 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
     private String getTextLink(Element element) {
         String address = element.attr("href");
         String text = StringUtils.abbreviate(element.text(), LINK_TEXT_MAX_LENGTH);
+        String textLink = "";
 
         if (StringUtils.isNotBlank(address)) {
             if (StringUtils.isNotBlank(text)) {
-                return String.format(" %s (%s) ", address, text);
+                textLink = String.format("%s (%s)", address, text);
             } else {
-                return address;
+                textLink = address;
             }
-        } else {
-            if (StringUtils.isNotBlank(text)) {
-                return text;
-            } else {
-                return "";
-            }
+        } else if (StringUtils.isNotBlank(text)) {
+            textLink = text;
         }
+        
+        return StringUtils.isNotEmpty(textLink) ? " " + textLink + " " : textLink;
     }
 
     private String generateDynName(String sourceName, Set<String> namesInUse) {

@@ -34,7 +34,7 @@
                     <mvc:select path="top10MetricsId" cssClass="form-control select2-offscreen">
                         <mvc:option value="0"><bean:message key="report.numberRecipients"/></mvc:option>
                         <mvc:option value="1"><bean:message key="statistic.opener"/></mvc:option>
-                        <mvc:option value="2"><bean:message key="statistic.MonthlyStat.Top10Metrics.RecipientsClicks"/></mvc:option>
+                        <mvc:option value="2"><bean:message key="statistic.clicker"/></mvc:option>
                     </mvc:select>
                 </div>
             </div>

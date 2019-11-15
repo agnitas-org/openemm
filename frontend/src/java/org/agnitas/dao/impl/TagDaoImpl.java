@@ -22,6 +22,7 @@ import org.agnitas.beans.TagDefinition;
 import org.agnitas.dao.TagDao;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnTagUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -69,14 +70,25 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 	 */
 	@Override
 	public List<Map<String, String>> getTags(@VelocityCheck int companyID) {
-		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND tagname NOT IN ('agnITAS', 'agnAUTOURL', 'agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
+		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND deprecated = 0 AND tagname NOT IN ('agnITAS', 'agnAUTOURL', 'agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
 
 		try {
 			List<Map<String, Object>> list = select(logger, sql, companyID);
 			List<Map<String, String>> result = new ArrayList<>();
 			for (Map<String, Object> map : list) {
 				Map<String, String> mapstr = new HashMap<>();
-				mapstr.put((String) map.get("tagname"), (String) map.get("selectvalue"));
+
+				String tagname = (String) map.get("tagname");
+				String selectvalue = (String) map.get("selectvalue");
+				StringBuilder selectValueBuilder = new StringBuilder(selectvalue == null ? "" : selectvalue);
+
+				for (String param : AgnTagUtils.getMandatoryParametersForTag(tagname)) {
+					selectValueBuilder.append("{")
+							.append(param)
+							.append("}");
+				}
+
+				mapstr.put(tagname, selectValueBuilder.toString());
 				result.add(mapstr);
 			}
 			return result;
@@ -103,6 +115,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 		}
 	}
     
+	@Deprecated /*no usage found */
     @Override
     public int insertTag(String tagName, String tagSelectValue, String tagType, int companyId, String tagDescription) {
         List<Object> values = new ArrayList<>();

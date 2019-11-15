@@ -55,4 +55,9 @@ public interface PlainBindingEntry {
     Integer getExitMailingId();
 
     void setExitMailingId(Integer exitMailingId);
+    
+    @Nullable
+    Integer getEntryMailingId();
+
+    void setEntryMailingId(Integer entryMailingId);
 }

@@ -27,6 +27,8 @@ public class WebserviceUserToWsUserDtoConverter implements Converter<WebserviceU
         userDto.setPassword("");
         userDto.setCompanyId(user.getCompanyID());
         userDto.setActive(user.isActive());
+        userDto.setGrantedPermissions(user.getGrantedPermissions());
+        userDto.setGrantedPermissionGroupIDs(user.getGrantedPermissionGroupIDs());
         return userDto;
     }
 }

@@ -11,53 +11,55 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <div class="row">
-
-    <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="upload" id="componentsUploadForm">
-        <html:hidden property="formID"/>
-
-        <div class="tile">
-            <div class="tile-header">
-                <a href="#" class="headline" data-toggle-tile="#tile-imageUpload">
-                    <i class="tile-toggle icon icon-angle-up"></i>
-                    <bean:message key="mailing.Graphics_Component.imageUpload" />
-                </a>
-                <ul class="tile-header-nav">
-                    <emm:ShowByPermission token="mailing.components.change">
-                        <li class="active">
-                            <a href="#" data-toggle-tab="#tab-dragAndDropImageUpload">
-                                <bean:message key="mailing.Graphics_Components"/>
-                            </a>
-                        </li>
-                    	<li>
-                        	<a href="#" data-toggle-tab="#tab-imageUploadZipFolder">
-                            	<bean:message key="mailing.Graphics_Component.zipFolder" />
-                        	</a>
-                    	</li>
-                    </emm:ShowByPermission>
-                </ul>
-            </div>
-
-            <div id="tile-imageUpload" class="tile-content tile-content-forms">
+    <div class="tile">
+        <div class="tile-header">
+            <a href="#" class="headline" data-toggle-tile="#tile-imageUpload">
+                <i class="tile-toggle icon icon-angle-up"></i>
+                <bean:message key="mailing.Graphics_Component.imageUpload"/>
+            </a>
+            <ul class="tile-header-nav">
                 <emm:ShowByPermission token="mailing.components.change">
+                    <li class="active">
+                        <a href="#" data-toggle-tab="#tab-dragAndDropImageUpload">
+                            <bean:message key="mailing.Graphics_Components"/>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-toggle-tab="#tab-imageUploadZipFolder">
+                            <bean:message key="mailing.Graphics_Component.zipFolder"/>
+                        </a>
+                    </li>
+                </emm:ShowByPermission>
+            </ul>
+        </div>
 
-                    <%-- Drag and drop image upload --%>
+        <div id="tile-imageUpload" class="tile-content">
+            <emm:ShowByPermission token="mailing.components.change">
+                <div data-initializer="upload">
+                    <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="resource" data-custom-loader="">
+                        <agn:agnHidden property="formID"/>
+                        <agn:agnHidden property="method" value="upload"/>
+
                         <div id="tab-dragAndDropImageUpload">
                             <div class="tile-content-forms">
-                                <div class="dropzone">
+                                <div class="dropzone" data-upload-dropzone="">
                                     <div class="dropzone-text">
-                                        <strong><i class="icon icon-reply"></i>&nbsp;<bean:message key="upload_dropzone.title"/></strong>
-                                    <span class="btn btn-regular btn-primary btn-upload">
-                                        <i class="icon icon-cloud-upload"></i>
-                                        <span class="text"><bean:message key="button.multiupload.select"/></span>
-                                        <input type="file" name="newFiles[]" multiple="multiple" data-upload>
-                                    </span>
+                                        <strong>
+                                            <i class="icon icon-reply"></i>&nbsp;<bean:message key="upload_dropzone.title"/>
+                                        </strong>
+                                        <span class="btn btn-regular btn-primary btn-upload">
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <span class="text"><bean:message key="button.multiupload.select"/></span>
+                                            <input type="file" name="newFiles[]" multiple="multiple" data-upload="">
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="hidden" data-upload-add>
+
+                            <div class="hidden" data-upload-add="">
                                 <div class="actions actions-top">
                                     <div class="action-left">
-                                        <button type="button" class="btn btn-regular" data-form-reset="">
+                                        <button type="button" class="btn btn-regular" data-upload-reset="">
                                             <i class="icon icon-times"></i>
                                         <span class="text">
                                             <bean:message key="button.Cancel"/>
@@ -65,28 +67,26 @@
                                         </button>
                                     </div>
                                     <div class="action-right">
-                                        <button type="button" class="btn btn-regular btn-primary" data-form-set="method: upload" data-form-action>
+                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
                                             <i class="icon icon-cloud-upload"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Upload"/>
-                                        </span>
+                                            <span class="text">
+                                                <bean:message key="button.Upload"/>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                     <tr>
-                                        <th><bean:message key="mailing.Graphics_Components"/></th>
+                                        <th class="squeeze-column"><bean:message key="mailing.Preview"/></th>
                                         <th><bean:message key="Description"/></th>
                                     </tr>
                                     </thead>
-                                    <tbody data-upload-add-template="upload-template-add">
-
-                                    </tbody>
+                                    <tbody data-upload-add-template="upload-template-add"></tbody>
                                 </table>
                                 <div class="actions">
                                     <div class="action-left">
-                                        <button type="button" class="btn btn-regular" data-form-reset="">
+                                        <button type="button" class="btn btn-regular" data-upload-reset="">
                                             <i class="icon icon-times"></i>
                                         <span class="text">
                                             <bean:message key="button.Cancel"/>
@@ -94,81 +94,82 @@
                                         </button>
                                     </div>
                                     <div class="action-right">
-                                        <button type="button" class="btn btn-regular btn-primary" data-form-set="method: upload" data-form-action>
+                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
                                             <i class="icon icon-cloud-upload"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Upload"/>
-                                        </span>
+                                            <span class="text">
+                                                <bean:message key="button.Upload"/>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="hidden" data-upload-progress>
+                            <div class="hidden" data-upload-progress="">
                                 <div class="actions actions-top actions-bottom">
                                     <div class="action-right">
                                         <button type="button" class="btn btn-regular" data-form-abort="">
                                             <i class="icon icon-times"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Cancel"/>
-                                        </span>
+                                            <span class="text">
+                                                <bean:message key="button.Cancel"/>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="progress-wrapper" data-upload-progress-template="upload-template-progress">
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" >
-                                            0%
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="progress-wrapper" data-upload-progress-template="upload-template-progress"></div>
                                 <div class="actions actions-top">
                                     <div class="action-right">
                                         <button type="button" class="btn btn-regular" data-form-abort="">
                                             <i class="icon icon-times"></i>
-                                        <span class="text">
-                                            <bean:message key="button.Cancel"/>
-                                        </span>
+                                            <span class="text">
+                                                <bean:message key="button.Cancel"/>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                <div id="tab-imageUploadZipFolder" class="hidden">
-                    <div id="componentsHolder" class="row">
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="new_component_upload" class="control-label"><bean:message key="mailing.Graphics_Component.archive.upload"/>:</label>
-                                <html:file property="archiveFile" styleClass="form-control" />
-                            </div>
-                        </div>
-
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                <label for="overwriteExisting"><bean:message key="OverwriteExistingData" /></label>
-                                <html:checkbox property="overwriteExisting" value="true" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <button type="button" class="btn btn-regular btn-primary" data-form-set="method: uploadArchive" data-form-action>
-                            <i class="icon icon-cloud-upload"></i>
-                            <span class="text">
-                                <bean:message key="button.Upload"/>
-                            </span>
-                        </button>
-                    </div>
+                    </agn:agnForm>
                 </div>
-                </emm:ShowByPermission>
-            </div>
+
+                <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="resource">
+                    <agn:agnHidden property="formID"/>
+                    <agn:agnHidden property="method" value="uploadArchive"/>
+
+                    <div id="tab-imageUploadZipFolder" class="hidden tile-content-forms">
+                        <div id="componentsHolder" class="row">
+                            <div class="col-sm-12">
+                                <div class="form-group">
+                                    <label for="new_component_upload" class="control-label"><bean:message key="mailing.Graphics_Component.archive.upload"/>:</label>
+                                    <html:file property="archiveFile" styleClass="form-control"/>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12">
+                                <div class="form-group">
+                                    <label for="overwriteExisting"><bean:message key="OverwriteExistingData"/></label>
+                                    <html:checkbox property="overwriteExisting" value="true"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                                <i class="icon icon-cloud-upload"></i>
+                                <span class="text">
+                                    <bean:message key="button.Upload"/>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </agn:agnForm>
+            </emm:ShowByPermission>
         </div>
-    </agn:agnForm>
+    </div>
 
     <agn:agnForm action="/formcomponents" enctype="multipart/form-data" class="form-vertical" data-form="search">
         <html:hidden property="formID"/>
-        <html:hidden property="method" />
-        <html:hidden property="filename" />
+        <html:hidden property="method" value="downloadArchive"/>
+        <html:hidden property="filename"/>
 
         <!-- Tile BEGIN -->
         <div class="tile">
@@ -190,7 +191,7 @@
 
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="#" data-prevent-load data-form-set="method: downloadArchive" data-form-submit-static>
+                                <a href="#" data-prevent-load="" data-form-submit-static="">
                                     <bean:message key="mailing.Graphics_Component.bulk.download"/>
                                 </a>
                             </li>
@@ -217,8 +218,8 @@
 
                         <display:column titleKey="mailing.Graphics_Component" sortable="false">
                             <a href="<html:rewrite page="${imageData[component.id].nocacheUrl}"/>" data-modal="modal-preview-image"
-                               data-modal-set="src: <html:rewrite page="${imageData[component.id].nocacheUrl}" />, title: ${component.description}">
-                                <img src="<html:rewrite page="${imageData[component.id].thumbnailUrl}" />" alt="${component.description}" border="1" style="width: auto; height: auto; max-height: 135px; max-width: 360px;" data-display-dimensions="scope: tr" />
+                               data-modal-set="src: <html:rewrite page="${imageData[component.id].nocacheUrl}"/>, title: ${component.description}">
+                                <img src="<html:rewrite page="${imageData[component.id].thumbnailUrl}"/>" alt="${component.description}" border="1" style="width: auto; height: auto; max-height: 135px; max-width: 360px;" data-display-dimensions="scope: tr"/>
                             </a>
                         </display:column>
 
@@ -232,7 +233,7 @@
 
                         <display:column titleKey="mailing.Graphics_Component.AddDate" sortable="true" sortProperty="creationDate" headerClass="js-table-sort">
                             <i class="icon icon-calendar"></i>
-                            <fmt:formatDate value="${component.creationDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" />
+                            <fmt:formatDate value="${component.creationDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
                             &nbsp;
                             <i class="icon icon-clock-o"></i>
                             <fmt:formatDate value="${component.creationDate}" pattern="${adminTimeFormat}" timeZone="${adminTimeZone}"/>
@@ -298,31 +299,15 @@
     </div>
 </script>
 
-<script id="upload-file" type="text/x-mustache-template">
-    <div class="col-sm-12">
-        <div class="form-group">
-            <label class="control-label" for="newFile{{= count }}">
-                <bean:message key="New_Component"/>
-            </label>
-            <input type="file" id="newFile{{= count }}" class="form-control" name="newFiles[{{= count }}]">
-        </div>
-    </div>
-
-    <div class="col-sm-12">
-        <div class="form-group">
-            <label class="control-label" for="descriptions{{= count }}">
-                <bean:message key="Description"/>
-            </label>
-            <input type="text" id="descriptions{{= count }}" name="descriptions[{{= count }}]" value="" class="form-control">
-        </div>
-    </div>
-</script>
-
 <script id="upload-template-add" type="text/x-mustache-template">
     <tr>
         <td>
             {{ if (preview) { }}
-            <img data-display-dimensions="scope: tr" src="{{= preview }}" style="max-width: 100px; max-height: 150px; width: auto; height: auto; display: block;" />
+            <img src="{{= preview }}" style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;" border="0"/>
+            {{ } else { }}
+            <img src="<c:url value='/assets/core/images/facelift/no_preview.svg'/>"
+                 style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;"
+                 border="0"/>
             {{ } }}
         </td>
         <td>
@@ -331,10 +316,4 @@
     </tr>
 </script>
 
-<script id="upload-template-progress" type="text/x-mustache-template">
-    <div class="progress">
-        <div class="progress-bar" role="progressbar" aria-valuenow="{{= currentProgress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{= currentProgress }}%">
-            {{= currentProgress }}%
-        </div>
-    </div>
-</script>
+<%@include file="../fragments/upload-template-progress-fragment.jspf" %>

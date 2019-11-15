@@ -1,6 +1,7 @@
 (function() {
 
-  var CampaignManagerNodes = function CampaignManagerNodes(data) {
+  var DateTimeUtils = AGN.Lib.WM.DateTimeUtils,
+    CampaignManagerNodes = function CampaignManagerNodes(data) {
 
     /*******************************************************************************************************************
      * "Constants"
@@ -64,7 +65,7 @@
     this.getIconExtraInfoPosition = function(node, cmScale) {
       var top, left = 0;
 
-      if ((node.type == "start" || node.type == "stop")
+      if ((node.type == nodeFactory.NODE_TYPE_START || node.type == nodeFactory.NODE_TYPE_STOP)
         && (node.data.startType == constants.startTypeEvent && node.data.event == constants.startEventReaction)
       ) {
         if (node.usedAnchors.indexOf(self.BOTTOM) == -1 && node.usedAnchors.indexOf(self.TOP) == -1) {
@@ -377,29 +378,22 @@
       });
 
       // start/stop icon
-      if (node.type == "start" || node.type == "stop") {
-        var date;
-        if (node.data.date != undefined) {
-          var dateTime = new Date(node.data.date);
-          dateTime.setHours(node.data.hour, node.data.minute);
-          date = AGN.Lib.DateFormat.format(dateTime, this.localeDateNTimePattern);
-        } else {
-          date = "";
-        }
+      if (node.type == nodeFactory.NODE_TYPE_START || node.type == nodeFactory.NODE_TYPE_STOP) {
+        var startStopDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateNTimePattern);
 
         // add start date
-        if (node.type == "start" && node.data.startType == constants.startTypeDate) {
+        if (node.type == nodeFactory.NODE_TYPE_START && node.data.startType == constants.startTypeDate) {
           var dateMessage = t('workflow.start.start_date');
-          node.elementJQ.append("<div class='icon-extra-info'>" + dateMessage + ":<br>" + date + "</div>");
-        } else if (node.type == "stop" && node.data.endType == constants.endTypeDate) {
+          node.elementJQ.append("<div class='icon-extra-info'>" + dateMessage + ":<br>" + startStopDateStr + "</div>");
+        } else if (node.type == nodeFactory.NODE_TYPE_STOP && node.data.endType == constants.endTypeDate) {
           dateMessage = t('workflow.stop.end_date');
-          node.elementJQ.append("<div class='icon-extra-info'>" + dateMessage + ":<br>" + date + "</div>");
+          node.elementJQ.append("<div class='icon-extra-info'>" + dateMessage + ":<br>" + startStopDateStr + "</div>");
         }
         // add start event and start-reaction icon
         else if (node.data.startType == constants.startTypeEvent && node.data.event == constants.startEventReaction) {
-          var eventMessage = (node.type == "start") ? t('workflow.start.start_event') : t('workflow.stop.end_event');
+          var eventMessage = (node.type == nodeFactory.NODE_TYPE_START) ? t('workflow.start.start_event') : t('workflow.stop.end_event');
           var reactionName = nodeFactory.getReactionName(node.data.reaction);
-          node.elementJQ.append("<div class='icon-extra-info'>" + eventMessage + ":<br>" + reactionName + "<br>(" + date + ")</div>");
+          node.elementJQ.append("<div class='icon-extra-info'>" + eventMessage + ":<br>" + reactionName + "<br>(" + startStopDateStr + ")</div>");
 
           var reactionImage = nodeFactory.getReactionImage(node.data.reaction);
           node.elementJQ.append("<img class='icon-extra-info' title='" + reactionName + "'/>");
@@ -418,7 +412,7 @@
           var dateEvent = node.data.dateProfileField + " " + constants.operators[node.data.dateFieldOperator] +
             " " + (node.data.dateFieldValue == null ? "" : node.data.dateFieldValue);
           var dateEventMessage = t('workflow.start.start_event');
-          node.elementJQ.append("<div class='icon-extra-info'>" + dateEventMessage + ":<br>" + dateEvent + "<br>(" + date + ")</div>");
+          node.elementJQ.append("<div class='icon-extra-info'>" + dateEventMessage + ":<br>" + dateEvent + "<br>(" + startStopDateStr + ")</div>");
         }
         // open end
         else if (node.data.endType == constants.endTypeAutomatic) {
@@ -428,14 +422,11 @@
       }
 
       // deadline
-      else if (node.type === "deadline") {
+      else if (node.type === nodeFactory.NODE_TYPE_DEADLINE) {
         // add deadline date
         if (node.data.deadlineType === constants.deadlineTypeFixedDeadline) {
-          var dateTime = new Date(node.data.date);
-          dateTime.setHours(node.data.hour, node.data.minute);
-          var date = AGN.Lib.DateFormat.format(dateTime, this.localeDateNTimePattern);
-          dateMessage = t('workflow.deadline.title');
-          node.elementJQ.append("<div class='icon-extra-info'>" + dateMessage + ":<br>" + date + "</div>");
+          var decisionDateStr = DateTimeUtils.getDateTimeStr(node.data.date, node.data.hour, node.data.minute, this.localeDateNTimePattern);;
+          node.elementJQ.append("<div class='icon-extra-info'>" + t('workflow.deadline.title') + ":<br>" + decisionDateStr + "</div>");
         }
         // add delay
         else if (node.data.deadlineType === constants.deadlineTypeDelay) {
@@ -482,7 +473,7 @@
       }
 
       // parameter
-      else if (node.type == "parameter") {
+      else if (node.type == nodeFactory.NODE_TYPE_PARAMETER) {
         node.elementJQ.append("<div class='icon-extra-info icon-extra-info-center'>" + node.data.value + "</div>");
         textTop = cmScale.getScaledNodeSize() * 0.36;
         node.elementJQ.find("div.icon-extra-info-center").css("top", textTop + "px");
@@ -496,26 +487,27 @@
       }
 
       // decision
-      else if (node.type == "decision") {
+      else if (node.type == nodeFactory.NODE_TYPE_DECISION) {
         var textValue = "";
         if (node.data.decisionType == constants.decisionTypeAutoOptimization) {
           textValue = t('workflow.mailing.autooptimization') + ", ";
-          if (node.data.aoDecisionCriteria == constants.decisionAOCriteriaClickRate) {
-            textValue += t('workflow.defaults.ckickrate');
-          }
-          else if (node.data.aoDecisionCriteria == constants.decisionAOCriteriaOpenrate) {
-            textValue += t('workflow.opening_rate');
-          }
-          else {
-            textValue += t('workflow.statistic.revenue');
+          switch (node.data.aoDecisionCriteria) {
+              case constants.decisionAOCriteriaClickRate:
+                textValue += t('workflow.defaults.ckickrate');
+                break;
+              case constants.decisionAOCriteriaOpenrate:
+                textValue += t('workflow.opening_rate');
+                break;
+              default:
+                textValue += t('workflow.statistic.revenue');
           }
           if (node.data.threshold && node.data.threshold != "") {
             textValue += ": " + node.data.threshold;
           }
 
-          if (node.data.decisionDate != undefined) {
-            var date = AGN.Lib.DateFormat.format(node.data.decisionDate, this.localeDateNTimePattern);
-            textValue += ", " + t('workflow.defaults.date') + ": " + date;
+          if (!!node.data.decisionDate) {
+            var dateStr = DateTimeUtils.getDateTimeStr(node.data.decisionDate, null, null, this.localeDateNTimePattern);;
+            textValue += ", " + t('workflow.defaults.date') + ": " + dateStr;
           }
         }
         else {
@@ -550,7 +542,7 @@
       }
 
       // recipient
-      else if (node.type == "recipient") {
+      else if (node.type == nodeFactory.NODE_TYPE_RECIPIENT) {
         var textToShow = t('workflow.mailinglist.short') + ": " + allUsedEntity.allMailinglists[node.data.mailinglistId];
         if (node.data.targets && node.data.targets.length > 0) {
           textToShow += "<br>" + t('workflow.target.short') + ": ";
@@ -589,7 +581,7 @@
       }
 
       // report
-      else if (node.type == "report") {
+      else if (node.type == nodeFactory.NODE_TYPE_REPORT) {
         var reportsStr = "";
         for(var i = 0; i < node.data.reports.length; i++) {
           reportsStr += allUsedEntity.allReports[node.data.reports[i]];
@@ -603,16 +595,18 @@
         node.elementJQ.append("<div class='icon-extra-info'>" + t('workflow.defaults.report') + ":<br>" + reportsStr + "</div>");
       }
 
-      else if (node.type == "archive") {
+      else if (node.type == nodeFactory.NODE_TYPE_ARCHIVE) {
         node.elementJQ.append("<div class='icon-extra-info'>" + allUsedEntity.allCampaigns[node.data.campaignId] + "</div>");
       }
 
       //forms
-      else if (node.type == "form") {
+      else if (node.type == nodeFactory.NODE_TYPE_FORM) {
         node.elementJQ.append("<div class='icon-extra-info'>" + allUsedEntity.allUserForms[node.data.userFormId] + "</div>");
       }
 
-      else if (node.type == "mailing" || node.type == "actionbased_mailing" || node.type == "datebased_mailing") {
+      else if (node.type == nodeFactory.NODE_TYPE_MAILING ||
+        node.type == nodeFactory.NODE_TYPE_ACTION_BASED_MAILING ||
+        node.type == nodeFactory.NODE_TYPE_DATE_BASED_MAILING) {
         var textToShow = "";
         if (node.iconTitle) {
           textToShow = node.iconTitle;
@@ -622,7 +616,7 @@
         node.elementJQ.append("<div class='icon-extra-info'>" + textToShow + "</div>");
       }
 
-      else if (node.type == "followup_mailing") {
+      else if (node.type == nodeFactory.NODE_TYPE_FOLLOWUP_MAILING) {
         var textToShow = "";
         var textToShowDetailed = "";
         var baseTitle, followupTitle;
@@ -689,7 +683,7 @@
 
       var extraInfo = node.elementJQ.find("div.icon-extra-info");
       extraInfo.css("font-size", fontSize + "%");
-      if (node.type != "parameter") {
+      if (node.type != nodeFactory.NODE_TYPE_PARAMETER) {
         extraInfo.css("left", textLeft + "px");
         if (textTop < 0 && textLeft == 0) {
           extraInfo.css("top", -extraInfo.height() + "px");
@@ -700,7 +694,7 @@
       }
 
       // shorten the width of label in necessary
-      if (node.type != "parameter") {
+      if (node.type != nodeFactory.NODE_TYPE_PARAMETER) {
         var labelDiv = node.elementJQ.find("div.icon-extra-info");
         var originalContent = labelDiv.html();
         var shortened = shortenLabelWidth(labelDiv, cmScale.getScaledNodeSize());
@@ -722,7 +716,7 @@
         });
       }
 
-      if (node.statisticsList != undefined && node.type != "parameter" && node.type != "decision") {
+      if (!!node.statisticsList && node.type != nodeFactory.NODE_TYPE_PARAMETER && node.type != nodeFactory.NODE_TYPE_DECISION) {
         for(i = 0; i < node.statisticsList.length; i++) {
           var extraInfo = node.elementJQ.find("div.icon-extra-info");
           extraInfo.append("<br><span class='node-stats'>" + node.statisticsList[i] + "</span>");
@@ -869,18 +863,18 @@
           var openNodeId = campaignManager.getCMNodes().getNodeIdPrefix() + self.openNodeId;
           var openNode = campaignManager.getCampaignManagerNodes().getNodeById(openNodeId);
           if (openNode != null && self.openNodeValue != null) {
-            if ((openNode.type == 'mailing') || (openNode.type == 'actionbased_mailing')
-              || (openNode.type == 'datebased_mailing') || (openNode.type == 'followup_mailing')) {
+            if ((openNode.type == nodeFactory.NODE_TYPE_MAILING) || (openNode.type == nodeFactory.NODE_TYPE_ACTION_BASED_MAILING)
+              || (openNode.type == nodeFactory.NODE_TYPE_DATE_BASED_MAILING) || (openNode.type == nodeFactory.NODE_TYPE_FOLLOWUP_MAILING)) {
               openNode.data.mailingId = self.openNodeValue;
-            } else if ((openNode.type == 'recipient') && (self.openNodeValue != "0") && (jQuery.inArray(self.openNodeValue, openNode.data.targets) == -1)) {
+            } else if ((openNode.type == nodeFactory.NODE_TYPE_RECIPIENT) && (self.openNodeValue != "0") && (jQuery.inArray(self.openNodeValue, openNode.data.targets) == -1)) {
               openNode.data.targets.push(self.openNodeValue);
-            } else if (openNode.type == 'archive') {
+            } else if (openNode.type == nodeFactory.NODE_TYPE_ARCHIVE) {
               openNode.data.campaignId = self.openNodeValue;
-            } else if (openNode.type == 'form') {
+            } else if (openNode.type == nodeFactory.NODE_TYPE_FORM) {
               openNode.data.userFormId = self.openNodeValue;
-            } else if (openNode.type == 'report' && self.openNodeValue != "0" && jQuery.inArray(self.openNodeValue, openNode.data.reports) == -1) {
+            } else if (openNode.type == nodeFactory.NODE_TYPE_REPORT && self.openNodeValue != "0" && jQuery.inArray(self.openNodeValue, openNode.data.reports) == -1) {
               openNode.data.reports.push(self.openNodeValue);
-            } else if (openNode.type == 'import' || openNode.type == 'export') {
+            } else if (openNode.type == nodeFactory.NODE_TYPE_IMPORT || openNode.type == nodeFactory.NODE_TYPE_EXPORT) {
               openNode.data.importexportId = self.openNodeValue;
             }
           }

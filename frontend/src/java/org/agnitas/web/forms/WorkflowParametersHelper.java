@@ -38,7 +38,7 @@ public class WorkflowParametersHelper {
             form = fromParams(request);
         }
         
-        if (form!= null && form.isEmpty()) {
+        if (form != null && form.isEmpty()) {
             return null;
         }
         return form;
@@ -130,10 +130,12 @@ public class WorkflowParametersHelper {
     }
     
     public static void put(HttpSession session, WorkflowParameters params, boolean override) {
+        if (!override) {
+            return;
+        }
+        
         if (params == null || params.isEmpty()) {
-            if (override) {
-                session.removeAttribute(WORKFLOW_ID);
-            }
+            session.removeAttribute(WORKFLOW_ID);
             session.removeAttribute(WORKFLOW_FORWARD_TARGET_ITEM_ID);
             session.removeAttribute(WORKFLOW_FORWARD_PARAMS);
             session.removeAttribute(WORKFLOW_KEEP_FORWARD);

@@ -10,6 +10,9 @@
 
 package org.agnitas.backend.dao;
 
+import	java.sql.Connection;
+import	java.sql.PreparedStatement;
+import	java.sql.ResultSet;
 import	java.sql.SQLException;
 import	java.sql.Timestamp;
 import	java.util.Date;
@@ -41,7 +44,7 @@ public class MaildropStatusDAO {
 	private long		realSendDateStatusID;
 	private Date		realSendDate;
 		
-	public MaildropStatusDAO (DBase dbase, long forStatusID) throws SQLException {
+	public MaildropStatusDAO (DBase dbase, long forStatusID, long forMailingID) throws SQLException {
 		Map <String, Object>	row;
 	
 		try (DBase.With with = dbase.with ()) {
@@ -68,11 +71,20 @@ public class MaildropStatusDAO {
 				adminTestTargetID = dbase.asLong (row.get ("admin_test_target_id"));
 				optimizeMailGeneration = dbase.asString (row.get ("optimize_mail_generation"));
 				selectedTestRecipients = dbase.asInt (row.get ("selected_test_recipients")) == 1;
-				determinateRealSendDate (dbase);
 			} else {
 				statusID = 0;
+				if (forMailingID > 0) {
+					MailingDAO	mailing = new MailingDAO (dbase, forMailingID);
+					
+					companyID = mailing.companyID ();
+					mailingID = mailing.mailingID ();
+				}
 			}
+			determinateRealSendDate (dbase);
 		}
+	}
+	public MaildropStatusDAO (DBase dbase, long forStatusID) throws SQLException {
+		this (dbase, forStatusID, 0);
 	}
 
 	public long statusID () {
@@ -177,7 +189,7 @@ public class MaildropStatusDAO {
 				String	checkStatusField = dbase.asString (row.get ("status_field"));
 			
 				if ((checkStatusField != null) && (checkStatusField.length () > 0)) {
-					char	status = statusField.charAt (0);
+					char	status = checkStatusField.charAt (0);
 					boolean	hit = false;
 					
 					switch (status) {
@@ -202,6 +214,10 @@ public class MaildropStatusDAO {
 						realSendDate = dbase.asDate (row.get ("senddate"));
 					}
 				}
+			}
+			if (realSendDate == null) {
+				realSendDateStatusID = 0;
+				realSendDate = new Date ();
 			}
 		}
 		if (realSendDate == null) {
@@ -248,26 +264,57 @@ public class MaildropStatusDAO {
 			"UPDATE maildrop_status_tbl " + 
 			"SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
 			"WHERE status_id = :statusID" + (fromStatus > 0 ? " AND genstatus = :fromStatus" : "");
+		String	vquery =
+			"SELECT genstatus FROM  maildrop_status_tbl WHERE status_id = ?";
 		
-		try (DBase.With with = dbase.with ()) {
-			int	count;
-			
-			if (fromStatus > 0) {
-				count = dbase.update (with.jdbc (),
-						      query,
-						      "toStatus", toStatus,
-						      "fromStatus", fromStatus,
-						      "statusID", statusID);
-			} else {
-				count = dbase.update (with.jdbc (),
-						      query,
-						      "toStatus", toStatus,
-						      "statusID", statusID);
+		for (int retry = 0; (! rc) && (retry < 3); ++retry) {
+			if ((! rc) && (retry > 0)) {
+				try {
+					Thread.sleep (1);
+				} catch (InterruptedException e) {
+					// do nothing
+				}
 			}
-			if (count == 1) {
-				rc = true;
-			} else {
-				dbase.logging (Log.ERROR, "genstatus", "Update genstatus from " + fromStatus + " to " + toStatus + " for " + statusID + " affected " + count + " rows");
+			try (DBase.With with = dbase.with ()) {
+				int	count;
+			
+				if (fromStatus > 0) {
+					count = dbase.update (with.jdbc (),
+							      query,
+							      "toStatus", toStatus,
+							      "fromStatus", fromStatus,
+							      "statusID", statusID);
+				} else {
+					count = dbase.update (with.jdbc (),
+							      query,
+							      "toStatus", toStatus,
+							      "statusID", statusID);
+				}
+				if (count != 1) {
+					dbase.logging (Log.ERROR, "genstatus", "Update genstatus from " + fromStatus + " to " + toStatus + " for " + statusID + " affected " + count + " rows");
+					break;
+				}
+			}
+			try (Connection conn = dbase.getConnection (vquery, statusID)) {
+				PreparedStatement	prep = conn.prepareStatement (vquery);
+				
+				prep.setLong (1, statusID);
+				try (ResultSet rset = prep.executeQuery ()) {
+					for (int pos = 1; rset.next (); ++pos) {
+						if (pos == 1) {
+							long	currentStatus = rset.getLong (1);
+							
+							if (currentStatus == toStatus) {
+								rc = true;
+							} else {
+								dbase.logging (Log.ERROR, "genstatus", "Even after ``successful'' update of genstatus to " + toStatus + " the current genstatus is " + currentStatus);
+							}
+						} else {
+							dbase.logging (Log.ERROR, "genstatus", "Got " + rset.getLong (1) + " for unexpected " + pos + " row to validate current status");
+							rc = false;
+						}
+					}
+				}
 			}
 		}
 		dbase.logging (rc ? Log.INFO : Log.ERROR, "genstatus", (rc ? "" : "NOT ") + "Changed generation state" + (fromStatus > 0 ? " from " + fromStatus : "") + " to " + toStatus);

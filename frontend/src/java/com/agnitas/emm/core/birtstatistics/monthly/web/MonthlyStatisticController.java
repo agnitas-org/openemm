@@ -72,7 +72,7 @@ public class MonthlyStatisticController {
 		
 		MonthlyStatisticDto monthlyStatisticDto = conversionService.convert(form, MonthlyStatisticDto.class);
 
-		String urlWithoutFormat = birtStatisticsService.getMonthlyStatisticsUrlWithoutFormat(admin, sessionId, monthlyStatisticDto);
+		String urlWithoutFormat = birtStatisticsService.getMonthlyStatisticsUrlWithoutFormat(admin, sessionId, monthlyStatisticDto, false);
 
 		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(getStartYear(admin)));
 		model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());

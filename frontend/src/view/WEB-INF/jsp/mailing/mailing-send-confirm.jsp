@@ -65,7 +65,7 @@
                             </c:choose>
 
                             <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
-                            <agn:agnMessage key="mailing.send.confirm4" escapeMode="none"
+                            <agn:agnMessage key="mailing.send.confirm" escapeMode="none"
                                             arg0="${mailingSendForm.shortname}"
                                             arg1="${mailingSendForm.mailingSubject}"
                                             arg2="${num_recipients}"

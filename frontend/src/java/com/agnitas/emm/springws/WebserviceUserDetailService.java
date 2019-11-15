@@ -14,13 +14,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
+import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
+import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,32 +39,72 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     private static final transient Logger logger = Logger.getLogger(WebserviceUserDetailService.class);
 
     private WebservicePasswordEncryptor webservicePasswordEncryptor;
+    private ConfigService configService;
 
     @Required
-    public void setWebservicePasswordEncryptor(WebservicePasswordEncryptor webservicePasswordEncryptor) {
-        this.webservicePasswordEncryptor = webservicePasswordEncryptor;
+    public final void setWebservicePasswordEncryptor(final WebservicePasswordEncryptor webservicePasswordEncryptor) {
+        this.webservicePasswordEncryptor = Objects.requireNonNull(webservicePasswordEncryptor, "Webservice password encryptor is null");
+    }
+    
+    @Required
+    public final void setConfigService(final ConfigService service) {
+    	this.configService = Objects.requireNonNull(service, "Config service is null");
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
-        String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id=c.company_id and c.status='active'";
-        List<Map<String, Object>> result = select(logger, usersByUsernameQuery, username);
+        final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id=c.company_id and c.status='active'";
+        
+        final List<Map<String, Object>> result = select(logger, usersByUsernameQuery, username);
         if (result.size() == 0) {
             throw new UsernameNotFoundException("Username " + username + " not found");
         } else {
-            Map<String, Object> userRow = result.get(0);
-            String password;
-            int companyID = ((Number) userRow.get("company_id")).intValue();
-            String encryptedPasswordBase64 = (String) userRow.get("password_encrypted");
+            final Map<String, Object> userRow = result.get(0);
+            final int companyID = ((Number) userRow.get("company_id")).intValue();
+            final String encryptedPasswordBase64 = (String) userRow.get("password_encrypted");
+
             // Decrypt the encrypted password
-            try {
-                password = webservicePasswordEncryptor.decrypt(username, encryptedPasswordBase64);
-            } catch (Exception e) {
-                throw new UsernameNotFoundException("Userpassword of user " + username + " cannot be decrypted");
-            }
-            Collection<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-            grantedAuthorities.add(new SimpleGrantedAuthority("USER_" + companyID));
+            final String password = decryptPassword(encryptedPasswordBase64, username);
+           
+            final Collection<GrantedAuthority> grantedAuthorities = loadGrantedAuthorities(companyID, username);
+            
             return new User(username, password, true, true, true, true, grantedAuthorities);
         }
+    }
+    
+    private final String decryptPassword(final String encryptedPasswordBase64, final String username) throws UsernameNotFoundException {
+        try {
+            return webservicePasswordEncryptor.decrypt(username, encryptedPasswordBase64);
+        } catch (Exception e) {
+            throw new UsernameNotFoundException("Userpassword of user " + username + " cannot be decrypted");
+        }
+    }
+    
+    private final boolean areWebservicePermissionsEnabled(final int companyID) {
+    	return this.configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, companyID);
+    }
+    
+    private final List<GrantedAuthority> loadGrantedAuthorities(final int companyID, final String username) {
+        final List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        
+        if(areWebservicePermissionsEnabled(companyID)) {
+        	final String sql = 
+        			"SELECT DISTINCT endpoint " + 
+        			"FROM (" + 
+        			"SELECT endpoint FROM webservice_permission_tbl WHERE username=? " + 
+        			"UNION " + 
+        			"SELECT endpoint FROM webservice_perm_group_perm_tbl perms, webservice_user_group_tbl groups " + 
+        			"WHERE groups.username=? AND perms.group_ref=groups.group_ref  " + 
+        			") endpoints";
+        	
+        	final List<String> permissions = select(logger, sql, new StringRowMapper(), username, username);
+        	permissions.forEach(permission -> grantedAuthorities.add(new EndpointAuthority(permission)));
+        } else {
+        	grantedAuthorities.add(AllEndpointsAuthority.INSTANCE);
+        }
+        
+        grantedAuthorities.add(new CompanyAuthority(companyID));
+        
+        return grantedAuthorities;
     }
 }

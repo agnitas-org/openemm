@@ -11,6 +11,7 @@
 package org.agnitas.service;
 
 import java.text.DateFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -135,6 +136,7 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
         private DataSource dataSource;
         private DateFormat dateFormat;
         private DateFormat dateTimeFormat;
+    	private ZoneId exportTimezone;
 
         public Builder(DataSource dataSource) {
         	this.dataSource = Objects.requireNonNull(dataSource);
@@ -185,6 +187,11 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
             return this;
         }
 
+		public Builder setExportTimezone(ZoneId exportTimezone) {
+            this.exportTimezone = exportTimezone;
+            return this;
+		}
+
         public UserActivityLogExportWorker build() {
             UserActivityLogExportWorker userActivityLogExportWorker = new UserActivityLogExportWorker(fromDate,
                     toDate,
@@ -197,6 +204,7 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
             userActivityLogExportWorker.setDataSource(dataSource);
             userActivityLogExportWorker.setDateFormat(dateFormat);
             userActivityLogExportWorker.setDateTimeFormat(dateTimeFormat);
+            userActivityLogExportWorker.setExportTimezone(exportTimezone);
 
             return userActivityLogExportWorker;
         }

@@ -122,6 +122,7 @@
                 <c:set target="${agnBreadcrumb}" property="textKey" value="template.testing"/>
             </emm:instantiate>
         </emm:instantiate>
+        <c:set var="agnHelpKey" value="mailingsCheck" scope="request" />
     </c:when>
     <c:otherwise>
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

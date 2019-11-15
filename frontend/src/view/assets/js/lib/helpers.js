@@ -53,7 +53,7 @@ parent: js-helpers
 /*doc
 ---
 title: formatBytes
-name: js-helpers-03
+name: js-helpers-04
 parent: js-helpers
 ---
 `AGN.Lib.Helpers.formatBytes(bytes, unit ) format a bytes to number with prefix by chosen metrics system

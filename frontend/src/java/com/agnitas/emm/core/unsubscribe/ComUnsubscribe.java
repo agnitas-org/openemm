@@ -13,73 +13,125 @@ package com.agnitas.emm.core.unsubscribe;
 import java.io.IOException;
 import java.util.Locale;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.util.SafeString;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
+import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 
-//import org.agnitas.util.TimeoutLRUMap;
-
-public class ComUnsubscribe extends HttpServlet {
+/**
+ * Servlet handling unsubscription requests.
+ */
+@MultipartConfig // <-- required to get Tomcat parsing message with mimetype "multipart/form-data"
+public final class ComUnsubscribe extends HttpServlet {
+	
+	/** Serial version UID. */
 	private static final long serialVersionUID = -1335116656304676065L;
 	
+	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComUnsubscribe.class);
 	
-    /**
-     * Service-Method, gets called everytime a User calls the servlet
-     */
+	
+	/** Service handling UIDs. */
+	private ExtensibleUIDService uidService;
+
+	private ApplicationContext applicationContext;
+	private Unsubscription unsubscription;
+	private OneClickUnsubscription oneClickUnsubscription;
+	
+	private UserFormExecutionService userFormExecuteService;
+	
     @Override
-    public void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException { 
-        ApplicationContext con = WebApplicationContextUtils.getWebApplicationContext(this.getServletContext());
-        ExtensibleUIDService uidService = (ExtensibleUIDService) con.getBean( ExtensibleUIDConstants.SERVICE_BEAN_NAME);
-        
-        // log informations about the calling client.
-        //accessLogging(req);        
+	public void init(ServletConfig config) throws ServletException {
+		super.init(config);
+		
+    	this.applicationContext = WebApplicationContextUtils.getWebApplicationContext(config.getServletContext());
+    	this.uidService = applicationContext.getBean( ExtensibleUIDConstants.SERVICE_BEAN_NAME, ExtensibleUIDService.class);
+    	this.userFormExecuteService = applicationContext.getBean("UserFormExecutionService", UserFormExecutionService.class);
+    	
+       	final ComMailingDao mailingDao = applicationContext.getBean("MailingDao", ComMailingDao.class);
+    	final ComBindingEntryDao bindingEntryDao = applicationContext.getBean("BindingEntryDao", ComBindingEntryDao.class);
+    	
+    	this.unsubscription = new Unsubscription(mailingDao, bindingEntryDao);
+    	this.oneClickUnsubscription = new OneClickUnsubscription(this.unsubscription);
+	}
 
-        String param = req.getParameter("uid");
-        try {
-            
-        	
-        	if (param == null) {
-        		logger.error("got no UID parameter");
-    			return;
-        	} 
+	@Override
+	protected final void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+		try {
+			final ComExtensibleUID uid = extractAndParseUID(req);
+			showUnsubscriptionLandingPage(uid, req, resp);
+		} catch(final Exception e) {
+            logger.error("Exception during one-click unsubscription", e);
+		}
+	}
 
-        	final ComExtensibleUID uid = uidService.parse( param);
-            
-        	if(uid == null) {
-    			logger.error("got no UID for " + param);
-    			return;
-    		}
-        	ComMailingDao mailingDao = (ComMailingDao) con.getBean("MailingDao");
-        	ComBindingEntryDao bindingEntryDao = (ComBindingEntryDao) con.getBean("BindingEntryDao");
-        	
-        	ComMailing mailing = (ComMailing) mailingDao.getMailing(uid.getMailingID(), uid.getCompanyID());
-        	int mailinglist = mailing.getMailinglistID();
-        	BindingEntry entry = bindingEntryDao.get(uid.getCustomerID(), uid.getCompanyID(), mailinglist, 0);
-        	entry.setUserStatus(UserStatus.UserOut.getStatusCode());
-        	entry.setExitMailingID(mailing.getId());
-        	
-        	Locale loc = req.getLocale();
-        	entry.setUserRemark(SafeString.getLocaleString("recipient.csa.optout.remark", loc));
-        	bindingEntryDao.updateBinding(entry, uid.getCompanyID());
+	@Override
+	protected final void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+		try {
+			final ComExtensibleUID uid = extractAndParseUID(req);
+			
+			if(this.oneClickUnsubscription.isOneClickUnsubscritionRequest(req)) {
+				doOneClickUnsubscription(uid, req);
+			} else {
+				showUnsubscriptionLandingPage(uid, req, resp);
+			}
+		} catch(final Exception e) {
+            logger.error("Exception during one-click unsubscription", e);
+		}
+	}
+	
+	private final void doOneClickUnsubscription(final ComExtensibleUID uid, final HttpServletRequest request) {
+		final Locale loc = request.getLocale();
+		final String remark = SafeString.getLocaleString("recipient.csa.optout.remark", loc);
+		
+		this.oneClickUnsubscription.performOneClickUnsubscription(uid, remark);
+	}
+	
+	private final void doUnsubscription(final ComExtensibleUID uid, final HttpServletRequest request) {
+		final Locale loc = request.getLocale();
+		final String remark = SafeString.getLocaleString("recipient.csa.optout.remark", loc);
+		
+		this.unsubscription.performUnsubscription(uid, remark);
+	}
+	
+    private final ComExtensibleUID extractAndParseUID(final HttpServletRequest request) throws Exception {
+        final String uidString = request.getParameter("uid");
 
-        } catch (Exception e) {
-            logger.error("Exception in RDIR", e);
+        if(uidString != null) {
+        	return uidService.parse(uidString);
+        } else {
+        	throw new Exception("No UID parameter");
         }
     }
+    
+    private final void showUnsubscriptionLandingPage(final ComExtensibleUID uid, final HttpServletRequest request, final HttpServletResponse response) {
+    	try {
+    		CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
+    		final UserFormExecutionResult result = userFormExecuteService.executeForm(uid.getCompanyID(), "unsubscribe", request, params, false);
+    		
+    		response.setContentType(result.responseMimeType);
+    		
+    		response.getWriter().println(result.responseContent);
+    		response.getWriter().flush();
+    	} catch(final Exception e) {
+    		logger.error("Error showing landing page for unsubscription", e);
+    	}
+    }
+
 }

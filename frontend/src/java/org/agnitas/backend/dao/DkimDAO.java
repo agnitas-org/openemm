@@ -91,7 +91,7 @@ public class DkimDAO {
 		companyID = forCompanyID;
 		secretKey = useSecretKey;
 		dkims = new ArrayList <> ();
-                if (dbase.tableExists ("dkim_key_tbl")) try (DBase.With with = dbase.with ()) {
+		if (dbase.tableExists ("dkim_key_tbl")) try (DBase.With with = dbase.with ()) {
 			rq = dbase.query (with.jdbc (),
 					  "SELECT * FROM dkim_key_tbl " +
 					  "WHERE company_id IN (0, :companyID) AND " +

@@ -176,7 +176,7 @@
 
                 <div class="form-group" data-field="validator">
                     <div class="col-sm-4">
-                        <label class="control-label" for="fieldLength"><bean:message key="Length"/></label>
+                        <label class="control-label" for="fieldLength"><bean:message key="settings.Length"/></label>
                     </div>
                     <div class="col-sm-8">
                         <mvc:text path="fieldLength" id="fieldLength" cssClass="form-control"

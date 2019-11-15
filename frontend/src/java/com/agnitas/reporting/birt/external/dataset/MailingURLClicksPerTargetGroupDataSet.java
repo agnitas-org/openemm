@@ -82,7 +82,7 @@ public class MailingURLClicksPerTargetGroupDataSet extends BIRTDataSet {
 	public String getSubSelectGrosNettoClicksperTarget(int targetID, int mailingID, @VelocityCheck int companyID) {
 		String template = null;
 		LightTarget target = getTarget(targetID, companyID);
-		if (target != null && target.getTargetSQL() != null && !"".equals(target.getTargetSQL().trim())) {
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
 			template = getSubSelectTemplateBruttoNettoClicksperTarget();
 			template = template.replace("<TARGETGROUP>", target.getName());
 			template = template.replace("<COMPANYID>", Integer.toString(companyID));
@@ -175,7 +175,7 @@ public class MailingURLClicksPerTargetGroupDataSet extends BIRTDataSet {
 		return "select to_char(rdir.timestamp, '<PATTERN>') as mydate "
 				+ ",count(rdir.customer_id ) as brutto, count(distinct rdir.customer_id ) as netto from rdirlog_<COMPANYID>_tbl rdir "
 				+ "join customer_<COMPANYID>_tbl cust on (rdir.customer_id = cust.customer_id and <TARGETSQL> ) "
-				+ "where rdir.company_id=<COMPANYID> and rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> "
+				+ "where rdir.mailing_id=<MAILINGID> and rdir.url_id=<URLID> "
 				+ "and (rdir.timestamp >= TO_DATE('<STARTDATE>', '<PATTERN>') and rdir.timestamp <= TO_DATE('<ENDDATE>', '<PATTERN>') ) "
 				+ "group by to_char(rdir.timestamp, '<PATTERN>')) clicksperday";
 	}
@@ -223,7 +223,7 @@ public class MailingURLClicksPerTargetGroupDataSet extends BIRTDataSet {
 		return "select to_char(rdir.timestamp, 'HH24') as time "
 				+ " , count(rdir.customer_id) as brutto, count(distinct rdir.customer_id) as netto, '<TARGETGROUP>' as targetgroup "
 				+ " from rdirlog_<COMPANYID>_tbl rdir join customer_<COMPANYID>_tbl cust ON (<TARGETSQL> and cust.customer_id = rdir.customer_id) "
-				+ " where rdir.company_id= <COMPANYID> and rdir.mailing_id= <MAILINGID> "
+				+ " where rdir.mailing_id= <MAILINGID> "
 				+ " and rdir.url_id=<URLID> "
 				+ " and to_char( rdir.timestamp, '<PATTERN>') = '<STARTDATE>' group by to_char(rdir.timestamp, 'HH24')) clicks ";
 	}

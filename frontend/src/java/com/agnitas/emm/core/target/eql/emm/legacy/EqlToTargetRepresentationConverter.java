@@ -30,7 +30,7 @@ import com.agnitas.emm.core.target.eql.ast.AbstractRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.AtomExpressionalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode;
-import com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode.Operator;
+import com.agnitas.emm.core.target.eql.ast.BinaryOperatorExpressionalEqlNode.InfixOperator;
 import com.agnitas.emm.core.target.eql.ast.BinaryOperatorRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ClickedInMailingRelationalEqlNode;
@@ -729,7 +729,7 @@ public class EqlToTargetRepresentationConverter {
 		if(node instanceof BinaryOperatorExpressionalEqlNode) {
 			BinaryOperatorExpressionalEqlNode expNode = (BinaryOperatorExpressionalEqlNode) node;
 			
-			return expNode.getOperator() == BinaryOperatorExpressionalEqlNode.Operator.MOD;
+			return expNode.getOperator() == BinaryOperatorExpressionalEqlNode.InfixOperator.MOD;
 		} else {
 			return false;
 		}
@@ -913,14 +913,14 @@ public class EqlToTargetRepresentationConverter {
 	 * @throws EqlToTargetRepresentationConversionException on errors converting date arithmetics
 	 */
 	protected String todayArithmetic(BinaryOperatorExpressionalEqlNode node) throws EqlToTargetRepresentationConversionException {
-		if(node.getOperator() != BinaryOperatorExpressionalEqlNode.Operator.ADD && node.getOperator() != BinaryOperatorExpressionalEqlNode.Operator.SUB) {
+		if(node.getOperator() != BinaryOperatorExpressionalEqlNode.InfixOperator.ADD && node.getOperator() != BinaryOperatorExpressionalEqlNode.InfixOperator.SUB) {
 			throw new EqlToTargetRepresentationConversionException("Operator " + node.getOperator() + " not allowed for date types");
 		}
 		
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(todayValue(node.getLeft()));
 		
-		if(node.getOperator() == Operator.ADD) {
+		if(node.getOperator() == InfixOperator.ADD) {
 			buffer.append("+");
 		} else {
 			buffer.append("-");
@@ -974,7 +974,7 @@ public class EqlToTargetRepresentationConverter {
 	 * 
 	 * @throws EqlToTargetRepresentationConversionException on errors determining operator precedence
 	 */
-	protected static int precedence(BinaryOperatorBooleanEqlNode.Operator op) throws EqlToTargetRepresentationConversionException {
+	protected static int precedence(BinaryOperatorBooleanEqlNode.InfixOperator op) throws EqlToTargetRepresentationConversionException {
 		
 		/*
 		 * IMPORT: When changing operator precedece, check that it is sound with precedence in method precedence(AbstractBooleanEqlNode)!!!

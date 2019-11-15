@@ -12,6 +12,7 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -281,14 +282,13 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	
 	@Override
 	public List<ProfileField> getProfileFields(@VelocityCheck int companyID, int adminID) throws Exception {
-		List<ComProfileField> comProfileFieldList = getComProfileFields(companyID, adminID);
-		if (comProfileFieldList == null) {
+		List<ComProfileField> fields = getComProfileFields(companyID, adminID);
+
+		if (fields == null) {
 			return null;
-		} else {
-			List<ProfileField> profileFieldList = new ArrayList<>();
-			profileFieldList.addAll(comProfileFieldList);
-			return profileFieldList;
 		}
+
+		return new ArrayList<>(fields);
 	}
 
 	@Override
@@ -601,7 +601,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     			}
 
     			// Change DB Structure if needed (throws an Exception if change is not possible)
-    			boolean createdDbField = addColumnToDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), !comProfileField.getNullable());
+    			boolean createdDbField = addColumnToDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
     			if (!createdDbField) {
     				throw new Exception("DB-field could not be created");
     			}
@@ -623,7 +623,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
     			// Change DB Structure if needed (throws an Exception if change is not possible)
     			if (comProfileField.getDataType() != null) {
-	    			boolean alteredDbField = alterColumnTypeInDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), !comProfileField.getNullable());
+	    			boolean alteredDbField = alterColumnTypeInDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
 	    			if (!alteredDbField) {
 	    				throw new Exception("DB-field could not be changed");
 	    			}
@@ -757,7 +757,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
 	@Override
-	public boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, boolean notNull) throws Exception {
+	public boolean addColumnToDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		if (companyID <= 0) {
     		return false;
     	} else if (StringUtils.isBlank(fieldname)) {
@@ -767,12 +767,12 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     	} else if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			return false;
 		} else if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
-			throw new Exception("Table has too many entries to add a column with default value (>" + MAX_NUMBER_OF_ENTRIES_FOR_DEFAULT_CHANGE + ")");
+			throw new Exception("Table has too many entries to add a column with default value (>" + configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID) + ")");
 		} else if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
 			// check for valid numerical default value failed
 			throw new Exception("Invalid non-numerical default value");
 		} else {
-			boolean result = DbUtilities.addColumnToDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldType, length, fieldDefault, notNull);
+			boolean result = DbUtilities.addColumnToDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldType, length, fieldDefault, fieldDefaultDateFormat, notNull);
 			
 			doPostProcessing(companyID);
 			
@@ -781,7 +781,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 	
 	@Override
-	public boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, boolean notNull) throws Exception {
+	public boolean alterColumnTypeInDbTable(@VelocityCheck int companyID, String fieldname, String fieldType, int length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		if (companyID <= 0) {
     		return false;
     	} else if (StringUtils.isBlank(fieldname)) {
@@ -791,12 +791,12 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     	} else if (!DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			return false;
 		} else if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
-			throw new Exception("Table has too many entries to add a column with default value (>" + MAX_NUMBER_OF_ENTRIES_FOR_DEFAULT_CHANGE + ")");
+			throw new Exception("Table has too many entries to add a column with default value (>" + configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID) + ")");
 		} else if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
 			// check for valid numerical default value failed
 			throw new Exception("Invalid non-numerical default value");
 		} else {
-			boolean result = DbUtilities.alterColumnDefaultValueInDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldDefault, notNull);
+			boolean result = DbUtilities.alterColumnDefaultValueInDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldDefault, fieldDefaultDateFormat, notNull);
 			doPostProcessing(companyID);
 			return result;
 		}
@@ -1008,7 +1008,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			return true;
 		} else {
 			// Field does not exist yet, so a default value which is not empty must be copied in every existing entry, which can take a lot of time
-			return StringUtils.isEmpty(fieldDefault) || selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") <= MAX_NUMBER_OF_ENTRIES_FOR_DEFAULT_CHANGE;
+			return StringUtils.isEmpty(fieldDefault) || selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
 		}
 	}
 	

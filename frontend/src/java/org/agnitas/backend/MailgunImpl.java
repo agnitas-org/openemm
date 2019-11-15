@@ -37,7 +37,7 @@ public class MailgunImpl implements Mailgun {
 	private Map <String, EMMTag>	tagNames = null;
 	private MediaMap		mmap;
 	/** The blacklist information for this mailing */
-	public Blacklist		blist = null;
+	private Blacklist		blist = null;
 	/** Query for normal selection */
 	private String			selectQuery = null;
 	/** Query for the world part selection */
@@ -185,7 +185,7 @@ public class MailgunImpl implements Mailgun {
 	private void doExecute (Map <String, Object> opts) throws Exception {
 		data.resume ();
 		data.options (opts, 2);
-		data.sanityCheck ();
+		data.sanityCheck (blist);
 
 		// get constructed selectvalue based on tag names in Hashtable
 		data.startExecution ();
@@ -279,7 +279,7 @@ public class MailgunImpl implements Mailgun {
 		
 		List <String>	blacklistTables = new ArrayList <> ();
 		int		isLocal;
-		
+
 		if (data.dbase.tableExists ("cust_ban_tbl")) {
 			blacklistTables.add ("cust_ban_tbl");
 		}
@@ -498,7 +498,7 @@ public class MailgunImpl implements Mailgun {
 			}
 			if (rc != null) {
 				if (rc.length () > 0) {
-					rc = "/*+ " + rc + " */ ";
+					rc = "/* " + rc + " */ ";
 				}
 			}
 		}

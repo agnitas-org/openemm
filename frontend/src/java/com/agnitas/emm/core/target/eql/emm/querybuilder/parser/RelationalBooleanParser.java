@@ -20,11 +20,11 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderGroupNode;
 public class RelationalBooleanParser extends GenericEqlNodeParser<RelationalBooleanEqlNode> {
 
     @Override
-    protected QueryBuilderGroupNode parse(RelationalBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> unknownProfileFields) throws EqlToQueryBuilderConversionException {
+    protected QueryBuilderGroupNode parse(RelationalBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         AbstractRelationalEqlNode child = node.getChild();
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         if (parser != null) {
-            return parser.parse(child, groupNode, unknownProfileFields);
+            return parser.parse(child, groupNode, profileFields);
         }
         throw new EqlToQueryBuilderConversionException("Unable to find suitable converter for " + node);
     }

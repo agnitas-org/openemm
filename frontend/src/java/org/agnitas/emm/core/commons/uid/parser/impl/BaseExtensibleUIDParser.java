@@ -48,6 +48,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         this.signatureLength = signatureLength;
     }
 
+    @Override
     public ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
         if (StringUtils.isEmpty(uidString)) {
             return null;
@@ -158,6 +159,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         return (parts.length == minPartsCount || parts.length == maxPartsCount) && parts[parts.length - 1].length() == signatureLength;
     }
 
+    @Override
     public int getHandledUidVersion() {
         return handledUidVersion.getVersionCode();
     }

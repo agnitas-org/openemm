@@ -10,7 +10,7 @@
         count += 1;
         this.el.data('clone-count', count);
 
-        html = _.template(AGN.Opt.Templates[template], {count: count});
+        html = AGN.Lib.Template.text(template, {count: count});
         $html = $(target).append(html);
         AGN.runAll($html);
     });

@@ -71,7 +71,8 @@ public class DateRuleConverter extends GenericRuleConverter {
             throw new QueryBuilderToEqlConversionException("Invalid rule value for node " + node);
         }
 
-        if (TODAY.equalsIgnoreCase((String) values[0])) {
+        if (TODAY.equalsIgnoreCase((String) values[0]) && values.length > 2) {
+            // validate if values contains ['TODAY', '%operator%', '%offset%', '%dateformat%'] data
             parseOffset(node, (String) values[1]);
         }
     }

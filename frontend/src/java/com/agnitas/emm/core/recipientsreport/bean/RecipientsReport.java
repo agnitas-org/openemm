@@ -126,11 +126,18 @@ public class RecipientsReport {
     }
 
     public enum RecipientReportType {
-        IMPORT_REPORT,
-        EXPORT_REPORT,
+        IMPORT_REPORT("recipient.reports.type.import.report"),
+        EXPORT_REPORT("recipient.reports.type.export.report");
         
-        @Deprecated
-        EXPORT_FILE
+    	private String messageKey;
+    	
+        private RecipientReportType(String messageKey) {
+        	this.messageKey = messageKey;
+        }
+
+		public String getMessageKey() {
+			return messageKey;
+		}
     }
 
 	public void setIsError(boolean isError) {

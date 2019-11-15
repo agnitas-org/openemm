@@ -31,10 +31,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
 import javax.sql.DataSource;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.JavaMailService;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -56,6 +55,9 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.jdbc.support.lob.LobCreator;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.JavaMailService;
 
 /**
  * Helper class which hides the dependency injection variables and eases some select and update actions and logging.
@@ -101,8 +103,8 @@ public abstract class BaseDaoImpl {
 	@Required
 	public final void setDataSource(DataSource dataSource) {
 		/*
-		 * Keep this method final to avoid problems with 
-		 * overriding in subclasses! 
+		 * Keep this method final to avoid problems with
+		 * overriding in subclasses!
 		 */
 
 		this.dataSource = dataSource;
@@ -130,8 +132,8 @@ public abstract class BaseDaoImpl {
 	 */
 	protected final JdbcTemplate getJdbcTemplate() {
 		/*
-		 * Keep this method final to avoid problems with 
-		 * overriding in subclasses! 
+		 * Keep this method final to avoid problems with
+		 * overriding in subclasses!
 		 */
 
 		if (jdbcTemplate == null) {
@@ -147,28 +149,23 @@ public abstract class BaseDaoImpl {
 	 */
 	public final boolean isOracleDB() {
 		/*
-		 * Keep this method final to avoid problems with 
+		 * Keep this method final to avoid problems with
 		 * overriding in subclasses!
 		 */
 		
-		if (dbVendor == null) {
-			if (DbUtilities.checkDbVendorIsOracle(getDataSource())) {
-				dbVendor = "oracle";
-			} else if (DbUtilities.checkDbVendorIsMariaDB(getDataSource())) {
-				dbVendor = "mariadb";
-			} else {
-				dbVendor = "mysql";
-			}
-		}
-		return "oracle".equalsIgnoreCase(dbVendor);
+		return "oracle".equalsIgnoreCase(getDbVendorName());
 	}
 	
-	public final boolean isMariaDB() {
+	protected final boolean isMariaDB() {
 		/*
-		 * Keep this method final to avoid problems with 
+		 * Keep this method final to avoid problems with
 		 * overriding in subclasses!
 		 */
 		
+		return "mariadb".equalsIgnoreCase(getDbVendorName());
+	}
+	
+	private final String getDbVendorName() {
 		if (dbVendor == null) {
 			if (DbUtilities.checkDbVendorIsOracle(getDataSource())) {
 				dbVendor = "oracle";
@@ -178,7 +175,8 @@ public abstract class BaseDaoImpl {
 				dbVendor = "mysql";
 			}
 		}
-		return "mariadb".equalsIgnoreCase(dbVendor);
+		
+		return dbVendor;
 	}
 
 	/**
@@ -208,15 +206,15 @@ public abstract class BaseDaoImpl {
 	 * @param parameter
 	 */
 	protected void logSqlError(Exception e, Logger logger, String statement, Object... parameter) {
-		if (javaMailService != null) {
-			javaMailService.sendExceptionMail("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
-		} else {
-			logger.error("Missing javaMailService. So no erroremail was sent.");
-		}
 		if (parameter != null && parameter.length > 0) {
 			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
 		} else {
 			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement, e);
+		}
+		if (javaMailService != null) {
+			javaMailService.sendExceptionMail("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
+		} else {
+			logger.error("Missing javaMailService. So no erroremail was sent.");
 		}
 	}
 	
@@ -292,6 +290,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected List<Map<String, Object>> select(Logger logger, String statement, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForList(statement, parameter);
 		} catch (DataAccessException e) {
@@ -314,6 +313,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected <T> List<T> select(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().query(statement, rowMapper, parameter);
 		} catch (DataAccessException e) {
@@ -335,6 +335,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected void query(Logger logger, String statement, RowCallbackHandler rowHandler, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			getJdbcTemplate().query(statement, rowHandler, parameter);
 		} catch (DataAccessException e) {
@@ -356,6 +357,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected Map<String, Object> selectSingleRow(Logger logger, String statement, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForMap(statement, parameter);
 		} catch (DataAccessException e) {
@@ -378,6 +380,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected <T> T select(Logger logger, String statement, Class<T> requiredType, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (DataAccessException e) {
@@ -401,6 +404,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected <T> T selectObject(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, rowMapper, parameter);
 		} catch (DataAccessException e) {
@@ -414,7 +418,7 @@ public abstract class BaseDaoImpl {
 	
 	/**
 	 * Logs the statement and parameter in debug-level, executes select for an object and logs error.
-	 * If the searched entry does not exist, then null is returned as default value. 
+	 * If the searched entry does not exist, then null is returned as default value.
 	 * If more than one item is found it throws an error saying so.
 	 * 
 	 * @param logger
@@ -460,6 +464,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected int selectIntWithDefaultValue(Logger logger, String statement, int defaultValue, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			Integer value = getJdbcTemplate().queryForObject(statement, parameter, Integer.class);
 			
@@ -489,6 +494,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected <T> T selectWithDefaultValue(Logger logger, String statement, Class<T> requiredType, T defaultValue, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (EmptyResultDataAccessException e) {
@@ -515,6 +521,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected int update(Logger logger, String statement, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(statement, parameter);
 			if (logger.isDebugEnabled()) {
@@ -539,6 +546,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected void execute(Logger logger, String statement) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement);
 			getJdbcTemplate().execute(statement);
 		} catch (DataAccessException e) {
@@ -562,6 +570,7 @@ public abstract class BaseDaoImpl {
 	 */
 	protected int update(Logger logger, String statement, KeyHolder keys, String[] keyColumns, Object... parameter) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(connection -> {
 				PreparedStatement ps = connection.prepareStatement(statement, keyColumns);
@@ -593,6 +602,7 @@ public abstract class BaseDaoImpl {
 	public void updateClob(Logger logger, String statement, String clobData, final Object... parameter) throws Exception {
 		if (clobData == null) {
 			try {
+				validateStatement(statement);
 				logSqlStatement(logger, statement + " clobDataLength: NULL-Clob", parameter);
 				Object[] parameterInclNull = new Object[parameter.length + 1];
 				parameterInclNull[0] = null;
@@ -605,6 +615,7 @@ public abstract class BaseDaoImpl {
 				throw e;
 			}
 		} else {
+			validateStatement(statement);
 			logSqlStatement(logger, statement + " clobDataLength:" + clobData.length(), parameter);
 			
 			checkMaximumDataSize(clobData.getBytes("UTF-8").length);
@@ -664,6 +675,7 @@ public abstract class BaseDaoImpl {
 	public void updateBlob(Logger logger, String statement, final InputStream blobDataInputStream, final Object... parameter) throws Exception {
 		if (blobDataInputStream == null) {
 			try {
+				validateStatement(statement);
 				logSqlStatement(logger, statement + " blobDataLength: NULL-Blob", parameter);
 				Object[] parameterInclNull = new Object[parameter.length + 1];
 				parameterInclNull[0] = null;
@@ -676,6 +688,7 @@ public abstract class BaseDaoImpl {
 				throw e;
 			}
 		} else {
+			validateStatement(statement);
 			logSqlStatement(logger, statement + " blobDataLength:" + blobDataInputStream.available(), parameter);
 			
 			checkMaximumDataSize(blobDataInputStream.available());
@@ -712,14 +725,15 @@ public abstract class BaseDaoImpl {
 	 * @param selectBlobStatement
 	 * @param outputStream
 	 * @param parameter
-	 * @throws SQLException 
-	 * @throws IOException 
+	 * @throws SQLException
+	 * @throws IOException
 	 */
 	public void writeBlobInStream(Logger logger, String selectBlobStatement, OutputStream outputStream, final Object... parameter) throws Exception {
 		try {
 			if (outputStream == null) {
 				throw new RuntimeException("outputStream is null");
 			}
+			validateStatement(selectBlobStatement);
 			logSqlStatement(logger, selectBlobStatement, parameter);
 			Blob blob = getJdbcTemplate().queryForObject(selectBlobStatement, Blob.class, parameter);
 			try (InputStream inputStream = blob.getBinaryStream()) {
@@ -746,6 +760,7 @@ public abstract class BaseDaoImpl {
 	 */
 	public int[] batchupdate(Logger logger, String statement, List<Object[]> values) {
 		try {
+			validateStatement(statement);
 			logSqlStatement(logger, statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			int[] touchedLines = getJdbcTemplate().batchUpdate(statement, values);
 			if (logger.isDebugEnabled()) {
@@ -760,6 +775,7 @@ public abstract class BaseDaoImpl {
 	
 	public int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String insertStatement, List<Object[]> listOfValueArrays) throws Exception {
 		try {
+			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement, "BatchInsertParameterList(Size: " + listOfValueArrays.size() + ")");
 			
 			List<Integer> generatedKeys = new ArrayList<>();
@@ -794,6 +810,7 @@ public abstract class BaseDaoImpl {
 	
 	public int[] batchInsertIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, List<Object[]> parametersList) throws Exception {
 		try {
+			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement, "BatchInsertParameterList(Size: " + parametersList.size() + ")");
 			
 			Object[] parameter = parametersList.isEmpty() ? new Object[0] : parametersList.get(0);
@@ -870,6 +887,7 @@ public abstract class BaseDaoImpl {
 	@DaoUpdateReturnValueCheck
 	protected int insertIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
+			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 
 			int[] insertParameterTypes = new int[parameter.length];
@@ -933,6 +951,7 @@ public abstract class BaseDaoImpl {
 	@DaoUpdateReturnValueCheck
 	protected int insertMultipleIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
+			validateStatement(insertStatement);
 			logSqlStatement(logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 
 			int[] insertParameterTypes = new int[parameter.length];
@@ -1007,6 +1026,10 @@ public abstract class BaseDaoImpl {
 		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, delimiter);
 	}
 
+	/**
+	 * @deprecated use COALESCE operator instead. It's the same for Oracle and MySQL/MariaDB.
+	 */
+	@Deprecated
 	protected String getIfNull() {
 		return isOracleDB() ? "NVL" : "IFNULL";
 	}
@@ -1063,6 +1086,12 @@ public abstract class BaseDaoImpl {
 		return MYSQL_MAXPACKETSIZE;
 	}
 
+	private void validateStatement(String statement) {
+		if (StringUtils.isBlank(statement)) {
+			throw new IllegalArgumentException("SQL statement is missing, empty or blank");
+		}
+	}
+
 	protected String replaceWildCardCharacters(String searchQuery) {
 		return searchQuery.replaceAll("\\*", "%").replaceAll("\\?", "_");
 	}
@@ -1103,4 +1132,12 @@ public abstract class BaseDaoImpl {
 		
 		return AgnUtils.findUniqueCloneName(nameList, prefix);
 	}
+
+    protected String getContentSizeExpression() {
+        if (isOracleDB()) {
+            return "DBMS_LOB.GETLENGTH(content)";
+        } else {
+            return "OCTET_LENGTH(content)";
+        }
+    }
 }

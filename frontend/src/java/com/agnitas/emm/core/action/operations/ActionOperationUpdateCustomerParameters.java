@@ -53,7 +53,6 @@ public class ActionOperationUpdateCustomerParameters extends AbstractActionOpera
 		this.trackingPointId = trackingPointId;
 	}
 
-
 	public String getColumnName() {
 		return columnName;
 	}
@@ -129,12 +128,9 @@ public class ActionOperationUpdateCustomerParameters extends AbstractActionOpera
 			            errors.add("Unkmow TP type and " + dt.getTypeName() + " column", new ActionMessage("error.action.trackpoint.type"));
 						return false;
 				}
-				
 				System.out.println("TP.type is " + tp.getType() + " Colum type is " + dt.toString());
 			}
 		}
-		
 		return true;
 	}
 }
-

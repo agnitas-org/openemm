@@ -10,6 +10,7 @@
 
 package com.agnitas.dao.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	
 	private static final String DB_VERSION_FIELD_VERSION = "version_number";
 	private static final String DB_VERSION_FIELD_USER = "updating_user";
-	private static final String DB_VERSION_FIELD_TIMESTAMP = "update_timestamp"; 
+	private static final String DB_VERSION_FIELD_TIMESTAMP = "update_timestamp";
 	
 	private static final String[] DB_VERSION_FIELD_NAMES = new String[]{DB_VERSION_FIELD_VERSION, DB_VERSION_FIELD_USER, DB_VERSION_FIELD_TIMESTAMP};
 	
@@ -154,22 +155,46 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			String version = select(logger, "SELECT * FROM v$version WHERE rownum = 1", String.class);
 			status.put("db.version", "Oracle " + version);
 			return status;
-		}
-		
-		String version = select(logger, "SELECT VERSION()", String.class);
-		Map<String, Object> runningThreadsMap = selectSingleRow(logger, "SHOW GLOBAL STATUS like 'Threads_running'");
-		Map<String, Object> createdThreadsMap = selectSingleRow(logger, "SHOW GLOBAL STATUS like 'Threads_created'");
-		
-		if (DbUtilities.checkDbVendorIsMariaDB(dataSource)) {
-			status.put("db.version", "MariaDB " + version);
-			status.put("mariadb.createdthreads", createdThreadsMap.get("VARIABLE_VALUE").toString());
-			status.put("mariadb.runningthreads", runningThreadsMap.get("VARIABLE_VALUE").toString());
 		} else {
-			status.put("db.version", "MySQL " + version);
-			status.put("mysql.createdthreads", createdThreadsMap.get("VARIABLE_VALUE").toString());
-			status.put("mysql.runningthreads", runningThreadsMap.get("VARIABLE_VALUE").toString());
+			String version = select(logger, "SELECT VERSION()", String.class);
+			Map<String, Object> runningThreadsMap = selectSingleRow(logger, "SHOW GLOBAL STATUS like 'Threads_running'");
+			Map<String, Object> createdThreadsMap = selectSingleRow(logger, "SHOW GLOBAL STATUS like 'Threads_created'");
+			
+			if (DbUtilities.checkDbVendorIsMariaDB(dataSource)) {
+				status.put("db.version", "MariaDB " + version);
+				try {
+					status.put("mariadb.createdthreads", createdThreadsMap.get("Value").toString());
+				} catch (Exception e) {
+					status.put("mariadb.createdthreads", "Unknown");
+				}
+				try {
+					status.put("mariadb.runningthreads", runningThreadsMap.get("Value").toString());
+				} catch (Exception e) {
+					status.put("mariadb.runningthreads", "Unknown");
+				}
+			} else {
+				status.put("db.version", "MySQL " + version);
+				try {
+					status.put("mariadb.createdthreads", createdThreadsMap.get("VARIABLE_VALUE").toString());
+				} catch (Exception e) {
+					try {
+						status.put("mariadb.createdthreads", createdThreadsMap.get("Value").toString());
+					} catch (Exception e2) {
+						status.put("mariadb.createdthreads", "Unknown");
+					}
+				}
+				try {
+					status.put("mariadb.runningthreads", runningThreadsMap.get("VARIABLE_VALUE").toString());
+				} catch (Exception e) {
+					try {
+						status.put("mariadb.runningthreads", runningThreadsMap.get("Value").toString());
+					} catch (Exception e2) {
+						status.put("mariadb.runningthreads", "Unknown");
+					}
+				}
+			}
+			return status;
 		}
-		return status;
 	}
 	
 	@Override
@@ -185,6 +210,25 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	
 	@Override
 	public List<String> getDKIMKeys() {
-		return select(logger, "SELECT DISTINCT domain FROM dkim_key_tbl WHERE valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP ORDER BY domain", new StringRowMapper());
+		if (DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
+			return select(logger, "SELECT DISTINCT domain FROM dkim_key_tbl WHERE valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP ORDER BY domain", new StringRowMapper());
+		} else {
+			return new ArrayList<>();
+		}
+	}
+	
+	@Override
+	public List<String> killRunningImports() {
+		List<String> killedImportTables = new ArrayList<>();
+		for (String tableName : select(logger, "SELECT temporary_table_name FROM import_temporary_tables", new StringRowMapper())) {
+			try {
+				update(logger, "DROP TABLE " + tableName);
+				update(logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tableName);
+			} catch(Exception e) {
+				logger.error("Cannot clean up import table: " + tableName, e);
+			}
+			killedImportTables.add(tableName);
+		}
+		return killedImportTables;
 	}
 }

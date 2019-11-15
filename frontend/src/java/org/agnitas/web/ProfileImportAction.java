@@ -26,13 +26,24 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
+import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.messages.I18nString;
+import com.agnitas.util.FutureHolderMap;
+import com.agnitas.web.forms.ComNewImportWizardForm;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
@@ -57,7 +68,7 @@ import org.agnitas.service.impl.ImportWizardContentParseException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MediaTypeUtils;
+import org.agnitas.util.ImportUtils;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.util.importvalues.ImportMode;
@@ -73,18 +84,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.messages.I18nString;
-import com.agnitas.util.FutureHolderMap;
-import com.agnitas.web.forms.ComNewImportWizardForm;
+import org.springframework.http.MediaType;
 
 /**
  * Profileimport Action
@@ -347,6 +347,12 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				}
 				
 				ImportProfile importPreviewProfile = importProfileService.getImportProfileById(aForm.getDefaultProfileId());
+				
+				if (!ImportUtils.checkIfFileHasData(getCurrentFile(request), importPreviewProfile)) {
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("autoimport.error.emptyFile", aForm.getCsvFile().getFileName()));
+					destination = mapping.findForward("start");
+					break;
+				}
 
 				request.setAttribute("importProfileMode", importPreviewProfile.getImportMode());
 				if (importPreviewProfile.getImportMode() == ImportMode.REACTIVATE_BOUNCED.getIntValue()) {
@@ -829,8 +835,8 @@ public class ProfileImportAction extends ImportBaseFileAction {
 			try (FileInputStream instream = new FileInputStream(outfile)) {
 				if (outfile.getName().endsWith(".zip")) {
 					response.setContentType("application/zip");
-				} else if (outfile.getName().endsWith(".txt")) {
-					response.setContentType(MediaTypeUtils.TXT_MEDIATYPE);
+				} else if (outfile.getName().endsWith(RecipientReportUtils.TXT_EXTENSION)) {
+					response.setContentType(MediaType.TEXT_PLAIN_VALUE);
 				}
 	            HttpUtils.setDownloadFilenameHeader(response, outfile.getName());
 				response.setContentLength((int) outfile.length());

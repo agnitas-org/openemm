@@ -470,5 +470,5 @@ public interface MailingDao extends ApplicationContextAware {
 
     boolean isOracleDB();
 
-	List<MailingBase> getMailingTemplatesWithPreview(@VelocityCheck int companyId);
+	List<MailingBase> getMailingTemplatesWithPreview(@VelocityCheck int companyId, String sort, String direction);
 }

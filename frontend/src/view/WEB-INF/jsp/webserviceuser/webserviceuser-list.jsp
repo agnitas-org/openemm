@@ -7,151 +7,11 @@
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="webserviceUserForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserForm"--%>
 <%--@elvariable id="webserviceUserListForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm"--%>
-<%--@elvariable id="companyList" type="java.util.List<com.agnitas.emm.core.company.bean.CompanyEntry>"--%>
 
-<emm:ShowByPermission token="webservice.user.show">
+<%@include file="webserviceuser-create.jsp"%>
 
-    <mvc:form servletRelativeAction="/administration/wsmanager/user/new.action" id="createWsmanagerUserForm" modelAttribute="webserviceUserForm"
-              data-form-focus="userName" data-form="resource" >
-        <div class="tile">
-            <div class="tile-header">
-                <h2 class="headline">
-                    <bean:message key="webserviceuser.create" />
-                </h2>
-
-                <ul class="tile-header-actions">
-                    <li>
-                        <button type="button" class="btn btn-regular btn-primary" data-form-set="isShowStatistic: true" data-form-submit-static>
-                            <i class="icon icon-plus"></i>
-                            <span class="text"><bean:message key="button.Create"/></span>
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="tile-content tile-content-forms">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="wsUserName" class="control-label">
-                            <bean:message key="logon.username" />
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:text path="userName" cssClass="form-control" id="wsUserName"/>
-                    </div>
-                </div>
-                <logic:messagesPresent property="userName">
-                    <div class="form-group">
-                        <div class="col-sm-4">&nbsp;</div>
-                        <div class="col-sm-8">
-                            <html:messages id="msg" message="false" property="userName">
-                                <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br/>
-                            </html:messages>
-                        </div>
-                    </div>
-                </logic:messagesPresent>
-
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="email">
-                            <bean:message key="settings.Admin.email"/>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:text path="email" id="email" cssClass="form-control" size="52" maxlength="99"/>
-                    </div>
-                </div>
-                <logic:messagesPresent property="email">
-                    <div class="form-group">
-                        <div class="col-sm-4">&nbsp;</div>
-                        <div class="col-sm-8">
-                            <html:messages id="msg" message="false" property="email">
-                                <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br />
-                            </html:messages>
-                        </div>
-                    </div>
-                </logic:messagesPresent>
-
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="password" class="control-label">
-                            <bean:message key="password" />
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:password path="password" cssClass="form-control" id="password"/>
-                    </div>
-                </div>
-                <logic:messagesPresent property="password">
-                    <div class="form-group">
-                        <div class="col-sm-4">&nbsp;</div>
-                        <div class="col-sm-8">
-                            <html:messages id="msg" message="false" property="password">
-                                <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br/>
-                            </html:messages>
-
-                        </div>
-                    </div>
-                </logic:messagesPresent>
-
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="wsUserPasswordRepeat" class="control-label">
-                            <bean:message key="password.repeat" />
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-
-                        <mvc:password path="passwordRepeat" cssClass="form-control" id="wsUserPasswordRepeat"/>
-                    </div>
-                </div>
-                <logic:messagesPresent property="passwordRepeat">
-                    <div class="form-group">
-                        <div class="col-sm-4">&nbsp;</div>
-                        <div class="col-sm-8">
-                            <html:messages id="msg" message="false" property="passwordRepeat">
-                                <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br/>
-                            </html:messages>
-                        </div>
-                    </div>
-                </logic:messagesPresent>
-
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="wsUserCompanyId" class="control-label">
-                            <bean:message key="webserviceuser.company" />
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:select path="companyId" cssClass="form-control js-select" id="wsUserCompanyId">
-                            <mvc:option value="-1"><bean:message key="select.company"/></mvc:option>
-                            <mvc:options items="${companyList}" itemValue="companyId" itemLabel="shortname"/>
-                        </mvc:select>
-                    </div>
-                </div>
-                <logic:messagesPresent property="companyId">
-                    <div class="form-group">
-                        <div class="col-sm-4">&nbsp;</div>
-                        <div class="col-sm-8">
-                            <html:messages id="msg" message="false" property="companyId">
-                                <i class="icon icon-exclamation-triangle"></i>&nbsp;${msg}<br/>
-                            </html:messages>
-
-                        </div>
-                    </div>
-                </logic:messagesPresent>
-
-            </div>
-
-        </div>
-    </mvc:form>
-
-</emm:ShowByPermission>
-
-
-<mvc:form servletRelativeAction="/administration/wsmanager/users.action" modelAttribute="webserviceUserListForm">
+<mvc:form servletRelativeAction="/administration/wsmanager/users.action" modelAttribute="webserviceUserListForm" data-form="resource">
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "ws-manager-overview": {
@@ -163,17 +23,17 @@
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
-                <bean:message key="default.Overview" />
+                <mvc:message code="default.Overview" />
             </h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-eye"></i>
-                        <span class="text"><bean:message key="button.Show"/></span>
+                        <span class="text"><mvc:message code="button.Show"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="listSize"/></li>
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
                         <li>
                             <label class="label">
                                 <mvc:radiobutton path="numberOfRows" value="20"/>
@@ -192,7 +52,7 @@
                         <li>
                             <p>
                                 <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-submit="">
-                                    <i class="icon icon-refresh"></i><span class="text"><bean:message key="button.Show"/></span>
+                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
                                 </button>
                             </p>
                         </li>
@@ -228,7 +88,7 @@
                                     titleKey="default.status.active"
                                     sortable="true" sortProperty="active">
                         <c:set var="activeMsgKey" value="${wsUser.active ? 'default.status.active' : 'webserviceuser.not_active'}"/>
-                        <bean:message key="${activeMsgKey}"/>
+                        <mvc:message code="${activeMsgKey}"/>
                     </display:column>
 
                     <display:column headerClass="js-table-sort"

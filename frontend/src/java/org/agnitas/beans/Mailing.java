@@ -22,6 +22,7 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -36,13 +37,13 @@ public interface Mailing extends MailingBase {
     int TARGET_MODE_AND = 1;
 
     // TODO: replace with MailingTypes enum
-    int TYPE_NORMAL = 0;
-    int TYPE_ACTIONBASED = 1;
-    int TYPE_DATEBASED = 2;
-    int TYPE_FOLLOWUP = 3;
-    int TYPE_INTERVAL = 4;
+    int TYPE_NORMAL = MailingTypes.NORMAL.getCode();
+    int TYPE_ACTIONBASED = MailingTypes.ACTION_BASED.getCode();
+    int TYPE_DATEBASED = MailingTypes.DATE_BASED.getCode();
+    int TYPE_FOLLOWUP = MailingTypes.FOLLOW_UP.getCode();
+    int TYPE_INTERVAL = MailingTypes.INTERVAL.getCode();
     
-    public enum AccountMailingType {
+    enum AccountMailingType {
     	World("W"), // World sent Mailings
     	EventBased("E"),
     	DateBased("R"),

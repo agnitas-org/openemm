@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
@@ -101,59 +102,71 @@ public class ShowComponent extends HttpServlet {
         
         MailingComponent comp = getComponentDao().getMailingComponent(compId, AgnUtils.getCompanyID(req));
         
-        if(comp!=null) {
-            
-            switch(comp.getType()) {
-                case MailingComponent.TYPE_IMAGE:
-                case MailingComponent.TYPE_HOSTED_IMAGE:
-                    if (comp.getBinaryBlock() != null) {
-                    response.setContentType(comp.getMimeType());
-                    out=response.getOutputStream();
-                    out.write(comp.getBinaryBlock());
-                    out.flush();
-                    out.close();
-                    }
-                    break;
-                case MailingComponent.TYPE_THUMBNAIL_IMAGE:
-                    if (comp.getBinaryBlock() != null) {
-                    response.setContentType(comp.getMimeType());
-                    out=response.getOutputStream();
-                    out.write(comp.getBinaryBlock());
-                    out.flush();
-                    out.close();
-                    }
-                    break;
-                case MailingComponent.TYPE_ATTACHMENT:
-                case MailingComponent.TYPE_PERSONALIZED_ATTACHMENT:
-    	            HttpUtils.setDownloadFilenameHeader(response, comp.getComponentName());
-                    response.setContentType(comp.getMimeType());
-                    out=response.getOutputStream();     
-                   
-                    byte[] attachment = null;
-                    int mailingID = comp.getMailingID(); 
-                                        
-                    if( comp.getType() == MailingComponent.TYPE_PERSONALIZED_ATTACHMENT) { 
-                    	Page page = null;                        
-                        if( customerID == 0 ){ // no customerID is available, take the 1st available test recipient
-                        	ComRecipientDao recipientDao = getRecipientDao();
-                              Map<Integer,String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
-                              customerID = recipientList.keySet().iterator().next();
-                        }
-                        Preview preview = getPreviewFactory().createPreview();   
-                        page = preview.makePreview(mailingID, customerID, false);
-                        attachment = page.getAttachment(comp.getComponentName());
-                        
-                    } else {
-                    	attachment = comp.getBinaryBlock();
-                    }                                       
-                    
-                    len= attachment.length;
-                    response.setContentLength((int)len);
-                    out.write(attachment);
-                    out.flush();
-                    out.close();
-                    break;
-            }
+		if (comp != null) {
+            try {
+				switch (MailingComponentType.getMailingComponentTypeByCode(comp.getType())) {
+				    case Image:
+				    case HostedImage:
+				        if (comp.getBinaryBlock() != null) {
+				        response.setContentType(comp.getMimeType());
+				        out=response.getOutputStream();
+				        out.write(comp.getBinaryBlock());
+				        out.flush();
+				        out.close();
+				        }
+				        break;
+				    case ThumbnailImage:
+				        if (comp.getBinaryBlock() != null) {
+				        response.setContentType(comp.getMimeType());
+				        out=response.getOutputStream();
+				        out.write(comp.getBinaryBlock());
+				        out.flush();
+				        out.close();
+				        }
+				        break;
+				    case Attachment:
+				    case PersonalizedAttachment:
+				        HttpUtils.setDownloadFilenameHeader(response, comp.getComponentName());
+				        response.setContentType(comp.getMimeType());
+				        out=response.getOutputStream();
+				       
+				        byte[] attachment = null;
+				        int mailingID = comp.getMailingID();
+				                            
+				        if (comp.getType() == MailingComponentType.PersonalizedAttachment.getCode()) {
+				        	Page page = null;
+				            if( customerID == 0 ){ // no customerID is available, take the 1st available test recipient
+				            	ComRecipientDao recipientDao = getRecipientDao();
+				                  Map<Integer,String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
+				                  customerID = recipientList.keySet().iterator().next();
+				            }
+				            Preview preview = getPreviewFactory().createPreview();
+				            page = preview.makePreview(mailingID, customerID, false);
+				            attachment = page.getAttachment(comp.getComponentName());
+				            
+				        } else {
+				        	attachment = comp.getBinaryBlock();
+				        }
+				        
+				        len= attachment.length;
+				        response.setContentLength((int)len);
+				        out.write(attachment);
+				        out.flush();
+				        out.close();
+				        break;
+				case PrecAAttachement:
+					// do not show component
+					break;
+				case Template:
+					// do not show component
+					break;
+				default:
+					throw new Exception("Invalid component type");
+				}
+			} catch (Exception e) {
+				logger.error("Invalid component found: " + AgnUtils.getCompanyID(req) + "/" + compId, e);
+				// do not show component
+			}
         }
     }
 

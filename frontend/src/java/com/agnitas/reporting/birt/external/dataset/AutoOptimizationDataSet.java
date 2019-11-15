@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.reporting.birt.external.beans.LightMailing;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
@@ -60,10 +61,11 @@ public class AutoOptimizationDataSet extends BIRTDataSet{
         AutoOptimizationData data = new AutoOptimizationData();
         if ((mailings != null) && (mailings.size() > 0)) {
             List<String> mailingNames = new ArrayList<>();
-            for (Integer mailingID : mailings) {
-                if (mailingID != 0) {
-                    String mailingName = new LightMailingDaoImpl(getDataSource()).getMailing(mailingID, companyID).getShortname();
-                    mailingNames.add(mailingName);
+			LightMailingDaoImpl lightMailingDao = new LightMailingDaoImpl(getDataSource());
+			for (Integer mailingID : mailings) {
+				LightMailing mailing = lightMailingDao.getMailing(mailingID, companyID);
+				if (mailing != null) {
+                    mailingNames.add(mailing.getShortname());
                 } else {
                     mailingNames.add(null);
                 }

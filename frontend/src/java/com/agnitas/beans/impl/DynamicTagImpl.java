@@ -11,8 +11,10 @@
 package com.agnitas.beans.impl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -560,5 +562,18 @@ public final class DynamicTagImpl implements DynamicTag {
 		dynamicTag.setValueTagStart(valueTagStart);
 
 		return dynamicTag;
+	}
+
+	@Override
+	public final Set<Integer> getAllReferencedTargetGroups() {
+		final Set<Integer> targetGroups = new HashSet<>();
+		
+		for(final DynamicTagContent content : this.dynContent.values()) {
+			targetGroups.add(content.getTargetID());
+		}
+
+		targetGroups.remove(0);
+		
+		return targetGroups;
 	}
 }

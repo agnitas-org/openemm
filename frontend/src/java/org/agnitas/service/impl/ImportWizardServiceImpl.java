@@ -13,14 +13,12 @@ package org.agnitas.service.impl;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.web.ComImportWizardForm;
 import org.agnitas.beans.impl.CustomerImportStatusImpl;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.ImportWizardHelper;
@@ -33,6 +31,8 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.web.ComImportWizardForm;
 
 public class ImportWizardServiceImpl implements ImportWizardService {
 
@@ -145,23 +145,16 @@ public class ImportWizardServiceImpl implements ImportWizardService {
 
         // check in the columnMapping for the key column,
         // and eventually for gender and mailtype:
-        String aKey = "";
-        CsvColInfo aCol = null;
-        Enumeration<String> aMapEnu = helper.getColumnMapping().keys();
-
-        while (aMapEnu.hasMoreElements()) {
-            aKey = aMapEnu.nextElement();
-            aCol = helper.getColumnMapping().get(aKey);
-
-            if (aCol.getName().equalsIgnoreCase(ComImportWizardForm.GENDER_KEY) ) {
+        for (CsvColInfo value : helper.getColumnMapping().values()) {
+            if (value.getName().equalsIgnoreCase(ComImportWizardForm.GENDER_KEY) ) {
                 hasGENDER = true;
             }
 
-            if (aCol.getName().equalsIgnoreCase(ComImportWizardForm.MAILTYPE_KEY)) {
+            if (value.getName().equalsIgnoreCase(ComImportWizardForm.MAILTYPE_KEY)) {
                 hasMAILTYPE = true;
             }
 
-            if (aCol.getName().equalsIgnoreCase(helper.getStatus().getKeycolumn())) {
+            if (value.getName().equalsIgnoreCase(helper.getStatus().getKeycolumn())) {
                 hasKeyColumn = true;
             }
         }

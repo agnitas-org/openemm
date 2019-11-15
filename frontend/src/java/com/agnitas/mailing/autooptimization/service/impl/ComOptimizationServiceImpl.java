@@ -277,13 +277,8 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 				mailing.setCampaignID(orgMailing.getCampaignID());
 				mailing.setMediatypes(orgMailing.getMediatypes());
 
-				//If shortname of mailing is after adding of auto-Text is too long, cut the shortname
-				String shortname = "AutoOptMail : " + optimization.getShortname();
-				int maxLength = shortname.length();
-				if(maxLength > 99) {
-					shortname = shortname.substring(0, 95) + "...";
-				}
-				mailing.setShortname(shortname);
+				mailing.setShortname(optimization.getShortname());
+				mailing.setDescription("AutoOptMail");
 
 				int i = 3;
 				if (optimization.getGroup3() != 0) {

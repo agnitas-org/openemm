@@ -84,7 +84,7 @@
                                 </label>
                             </div>
                             <div class="col-md-12">
-                                <mvc:password path="password" id="password" cssClass="form-control input-lg" maxlength="20" showPassword="true" data-controls-group="input-mask" autocomplete="current-password"/>
+                                <mvc:password path="password" id="password" cssClass="form-control input-lg" showPassword="true" data-controls-group="input-mask" autocomplete="current-password"/>
 
                                 <c:if test="${status.error}">
                                     <span class="icon icon-state-alert form-control-feedback"></span>

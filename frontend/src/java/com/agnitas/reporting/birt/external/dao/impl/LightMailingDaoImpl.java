@@ -34,10 +34,10 @@ public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao 
 	
 	@Override
 	public LightMailing getMailing(int mailingId, @VelocityCheck int companyId) {
-		String targetSql="SELECT mailing_id, shortname, description, mailinglist_id, target_expression, campaign_id, mailing_type"
+		String targetSql = "SELECT mailing_id, shortname, description, mailinglist_id, target_expression, campaign_id, mailing_type"
 			+ " FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?";
 				
-		return selectObject(logger, targetSql, new LightMailingRowMapper(), companyId, mailingId);
+		return selectObjectDefaultNull(logger, targetSql, new LightMailingRowMapper(), companyId, mailingId);
 	}
 	
 	private class LightMailingRowMapper implements RowMapper<LightMailing> {

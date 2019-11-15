@@ -16,6 +16,8 @@ parent: form-features
 The `data-custom-loader` attribute makes (if specified) form trigger `form:loadershow` and `form:loaderhide` events (on form element)
 when loader is expected to be shown/hidden so listening those events you can provide custom loading indication.
 
+Also it enables `form:progress` event that is being thrown on form uploading progress.
+
 ```htmlexample
 <form action="#form-features-01" id="customLoaderDemoForm" data-form="" data-custom-loader="">
   <button type="submit" class="btn btn-regular btn-primary">Submit</button>
@@ -32,6 +34,14 @@ $('#customLoaderDemoForm').on({
   }
 });
 ```
+
+The `form:progress` event depends on browser so it's not quite reliable and may be missing. When fired it's supplied with the following data:
+
+Property | Description
+---------|------------
+`loaded` | Number of bytes already loaded (only available if `progress !== true`).
+`total` | Total number of bytes to be loaded (only available if `progress !== true`).
+`progress` | Formatted progress percentage number or `true` (if detailed progress percentage is not supported).
 */
 
 /*doc
@@ -133,6 +143,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     this.$form = $form;
     this.form  = $form[0];
 
+    this._abort = null;
     this._data  = {};
     this._dataNextRequest = {};
     this.fields = [];
@@ -145,6 +156,12 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     this.isMultipart = 'multipart/form-data' == ($form.attr('enctype') || '').toLowerCase();
     this.isCustomLoader = $form.is('[data-custom-loader]');
     this.controlsToDisable = new ControlsToDisable($form.attr('data-disable-controls'));
+
+    if ($form.is('[data-custom-loader]')) {
+      this.isCustomLoader = $form.attr('data-custom-loader') !== 'false';
+    } else {
+      this.isCustomLoader = false;
+    }
 
     this.initFields();
     this.initValidator();
@@ -186,7 +203,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   };
 
   Form.prototype.valid = function() {
-    var fieldsValid = _.all(this.fields, function(field) {
+    var fieldsValid = _.every(this.fields, function(field) {
       return field.valid()
     });
 
@@ -207,6 +224,10 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
       this.handleErrors();
       return false;
     }
+  };
+
+  Form.prototype.get$ = function() {
+    return this.$form;
   };
 
   Form.prototype.getAction = function() {
@@ -248,13 +269,21 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
       $(node).val([value]);
       $(node).trigger('change');
     } else {
-      this._data[field] = value
+      if (typeof value === 'undefined') {
+        delete this._data[field];
+      } else {
+        this._data[field] = value;
+      }
     }
   };
 
   // set a value for the next request,
   Form.prototype.setValueOnce = function(field, value) {
-    this._dataNextRequest[field] = value
+    if (typeof value === 'undefined') {
+      delete this._dataNextRequest[field];
+    } else {
+      this._dataNextRequest[field] = value;
+    }
   };
 
   // get a value
@@ -312,29 +341,62 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   // handle for the ajax request
   Form.prototype.jqxhr = function() {
     var self = this,
+        xhr = $.ajaxSettings.xhr(),
         jqxhr,
         deferred = $.Deferred();
 
     this.$form.trigger('form:submit');
 
+    var parameters = {
+      url: this.getAction(),
+      method: this.method,
+      loader: this.loader(),
+      xhr: function() { return xhr; }
+    };
+
     if (this.isMultipart) {
-      jqxhr = $.ajax({
-        url: this.getAction(),
-        method: this.method,
-        data: this.data(),
-        enctype: 'multipart/form-data',
-        processData: false,
-        contentType: false,
-        loader: this.loader()
-      });
+      parameters.data = this.data();
+      parameters.enctype = 'multipart/form-data';
+      parameters.processData = false;
+      parameters.contentType = false;
     } else {
-      jqxhr = $.ajax({
-        url: this.getAction(),
-        method: this.method,
-        data: this.params(),
-        loader: this.loader()
-      });
+      parameters.data = this.params();
     }
+
+    if (this.isCustomLoader) {
+      var onProgress = function(e) {
+        var progress = true;
+
+        if (e.lengthComputable) {
+          progress = (e.loaded / e.total * 100).toFixed(1);
+        }
+
+        self.$form.trigger('form:progress', {
+          loaded: e.loaded,
+          total: e.total,
+          progress: progress
+        });
+      };
+
+      if ('upload' in xhr) {
+        parameters.xhr = function() {
+          xhr.upload.onprogress = onProgress;
+          return xhr;
+        };
+      } else {
+        parameters.xhrFields = {
+          onprogress: onProgress
+        };
+      }
+    }
+
+    if (typeof xhr.abort === 'function') {
+      this._abort = function() {
+        xhr.abort();
+      };
+    }
+
+    jqxhr = $.ajax(parameters);
 
     this._dataNextRequest = {};
 
@@ -454,9 +516,8 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
     if (!submissionEvent.isDefaultPrevented()) {
       this.$form.trigger('submitted');
+      this._dataNextRequest = {};
     }
-
-    this._dataNextRequest = {};
   };
 
   Form.prototype._submitConfirm = function(actionId) {
@@ -506,7 +567,12 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   };
 
   Form.prototype.abort = function() {
-    // not implemented for generic forms
+    this.$form.trigger('form:abort');
+
+    if (this._abort) {
+      this._abort();
+      this._abort = null;
+    }
   };
 
   Form.prototype.bulkUpdate = function(group, value) {
@@ -671,6 +737,10 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     var $view = this.$form.closest('.modal');
     if (!$view.exists()) {
       $view = $(document);
+    }
+
+    if ($view.find('.popover.support-popover').exists()) {
+      return;
     }
 
     var formPosition = this.$form.offset().top;

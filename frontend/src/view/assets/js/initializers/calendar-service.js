@@ -25,6 +25,7 @@
     var urlCalendarCommentRemove;
     var urlMailingView;
     var urlMailingStatisticsView;
+    var isStatisticsViewPermitted;
 
     var monthNames = t('date.monthsFull');
 
@@ -105,6 +106,7 @@
 
       urlMailingView = conf.urls.MAILING_VIEW;
       urlMailingStatisticsView = conf.urls.MAILING_STATISTICS_VIEW;
+      isStatisticsViewPermitted = conf.isStatisticsViewPermitted;
     }
 
     this.setUp = setUp;
@@ -830,6 +832,8 @@
       $('.calendar-sidebar').css({'max-height': height + 'px'});
     }
 
+    this.adjustSidebarHeight = adjustSidebarHeight;
+
 
     // Ajax methods that work with EMM server - side
 
@@ -931,7 +935,7 @@
         $.each(data, function (index, d) {
           setMailings(d)
         });
-
+        adjustSidebarHeight();
       }).always(stopProgress);
     }
 
@@ -957,7 +961,7 @@
           'mailingLink': mailingLink,
           'workstatus': d.workstatus,
           'shortname': d.shortname,
-          'sendTime': d.sendTime,
+          'sendTime': d.sendTime
         };
 
         $badge = AGN.Lib.Template.dom("calendar-mail-link", musData);
@@ -984,7 +988,7 @@
     function getMailingLink(d) {
       var link;
 
-      if (d.sent && d.workstatus != 'mailing.status.test') {
+      if (d.sent && d.workstatus != 'mailing.status.test' && isStatisticsViewPermitted) {
         link = urlMailingStatisticsView.replace('{mailingId}', d.mailingId);
       } else {
         link = urlMailingView.replace('{mailingId}', d.mailingId);
@@ -1028,13 +1032,14 @@
           endDate: dateToServiceFormat(endDate)
         }
       }).done(function (data) {
-        var createBadge = _.template(AGN.Opt.Templates['calendar-planned-push-notification']);
+        var createBadge = AGN.Lib.Template.prepare('calendar-planned-push-notification');
         $.each(data, function (index, d) {
           var $badge = $(createBadge(d));
 
           $('#day-' + getCalendarDateForPushNotification(d)).append($badge);
           addMailingDragging($badge);
         });
+        adjustSidebarHeight();
       }).always(stopProgress);
     }
 
@@ -1047,7 +1052,7 @@
           startDate: dateToServiceFormat(startDate),
           endDate: dateToServiceFormat(endDate)
         }, success: function (data) {
-          var createBadge = _.template(AGN.Opt.Templates['calendar-auto-optimization']);
+          var createBadge = AGN.Lib.Template.prepare('calendar-auto-optimization');
 
           $.each(data, function (index, d) {
             var $badge = $(createBadge({
@@ -1060,6 +1065,7 @@
             }));
             $('#day-' + d.sendDate).append($badge);
           });
+          adjustSidebarHeight();
         }
       }).always(stopProgress);
     }
@@ -1091,6 +1097,7 @@
 
           AGN.Lib.CalendarService.checkHideCommentIconsVisibility();
           setAllCommentsCheckState();
+          adjustSidebarHeight();
         }
       });
     }

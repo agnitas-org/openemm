@@ -10,7 +10,7 @@
 <c:set var="agnHighlightKey" 		value="statistic.domains" 	scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Statistics" 			scope="request" />
-<c:set var="agnHelpKey" 			value="domainStatistic" 	scope="request" />
+<c:set var="agnHelpKey" 			value="Domain_overview" 	scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

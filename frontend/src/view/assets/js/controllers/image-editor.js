@@ -1,4 +1,7 @@
 AGN.Lib.Controller.new('image-editor', function() {
+    var Confirm = AGN.Lib.Confirm,
+      Template = AGN.Lib.Template;
+
     var x, y;
     var selectedWidth = 0, selectedHeight = 0;
     var isBlocked = false;
@@ -14,6 +17,20 @@ AGN.Lib.Controller.new('image-editor', function() {
     this.addDomInitializer('img-editor-init', function() {
         isBlocked = false;
         isEnableCrop = false;
+
+        // Should be disabled until some changes.
+        $('#editor-result').prop('disabled', true);
+    });
+
+    this.addAction({
+        click: 'editCategory'
+    }, function() {
+        Confirm.create(Template.text('modal-element-category-select', {categoryId: $('#category-id').val()}))
+          .done(function(resp) {
+              if (resp && resp.categoryId) {
+                  $('#category-id').val(resp.categoryId);
+              }
+          });
     });
 
     this.addAction({
@@ -190,7 +207,13 @@ AGN.Lib.Controller.new('image-editor', function() {
     function updateOriginalImage() {
         var canvas = document.getElementById('editor-canvas');
         var newSrc = canvas.toDataURL();
-        $('#editorResult').attr('value', newSrc);
+        var $result = $('#editor-result');
+
+        if ($result.val() != newSrc) {
+            $result.val(newSrc);
+            $result.prop('disabled', false);
+        }
+
         var newWidthOfEditor = canvas.width + $('#l-img-editor-tools').width() + 10;
         $('#l-img-editor').css('min-width', newWidthOfEditor);
     }

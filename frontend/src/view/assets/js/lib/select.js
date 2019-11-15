@@ -68,7 +68,7 @@
       values = [values];
     }
 
-    allValuesFound = _.all(values, function(val) {
+    allValuesFound = _.every(values, function(val) {
       return valuesAvailable.indexOf(val + "") != -1
     });
 

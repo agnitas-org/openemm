@@ -13,7 +13,6 @@ package org.agnitas.emm.core.logintracking.service.impl;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.service.ExtendedConversionService;
 import org.agnitas.beans.FailedLoginData;
 import org.agnitas.dao.LoginTrackDao;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
@@ -22,15 +21,38 @@ import org.agnitas.emm.core.logintracking.service.LoginTrackServiceException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.service.ExtendedConversionService;
+
 /**
  * Implementation of {@link LoginTrackService}.
  */
 public class LoginTrackServiceBasicImpl implements LoginTrackService {
-	
 	/**
 	 * The logger.
 	 */
 	private static final transient Logger logger = Logger.getLogger(LoginTrackServiceBasicImpl.class);
+	
+	/**
+	 * DAO for login tracking.
+	 */
+	protected LoginTrackDao loginTrackDao;
+	
+	protected ExtendedConversionService conversionService;
+	
+	/**
+	 * Set DAO for login tracking.
+	 *
+	 * @param dao DAO for login tracking
+	 */
+	@Required
+	public final void setLoginTrackDao(LoginTrackDao dao) {
+		this.loginTrackDao = dao;
+	}
+	
+	@Required
+	public void setConversionService(ExtendedConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
 	
 	// -------------------------------------------------------------------------------------------------- Business Code
 	@Override
@@ -109,29 +131,5 @@ public class LoginTrackServiceBasicImpl implements LoginTrackService {
 		} else {
 			return false;
 		}
-	}
-	
-	
-	// -------------------------------------------------------------------------------------------------- Dependency Injection
-	/**
-	 * DAO for login tracking.
-	 */
-	private LoginTrackDao loginTrackDao;
-	
-	protected ExtendedConversionService conversionService;
-	
-	/**
-	 * Set DAO for login tracking.
-	 *
-	 * @param dao DAO for login tracking
-	 */
-	@Required
-	public void setLoginTrackDao(LoginTrackDao dao) {
-		this.loginTrackDao = dao;
-	}
-	
-	@Required
-	public void setConversionService(ExtendedConversionService conversionService) {
-		this.conversionService = conversionService;
 	}
 }

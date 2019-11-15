@@ -21,6 +21,8 @@ import java.util.Set;
  * general class to read configuration files
  */
 public class Config {
+	/** prefix to access keys from system configuration */
+	private String		systemConfigPrefix;
 	/** optional logger	 */
 	private Log		log;
 	/** the name of the configuration file */
@@ -31,19 +33,17 @@ public class Config {
 	/**
 	 * Constructor for the class
 	 */
-	public Config () {
-		log = null;
+	public Config (Log newLog, String newSystemConfigPrefix) {
+		log = newLog;
+		systemConfigPrefix = newSystemConfigPrefix;
 		filename = null;
 		config = new Properties ();
 	}
-	/**
-	 * Constructor for the class
-	 * 
-	 * @param nLog optional Log instance for logging
-	 */
-	public Config (Log nLog) {
-		this ();
-		log = nLog;
+	public Config (Log newLog) {
+		this (newLog, null);
+	}
+	public Config () {
+		this (null, null);
 	}
 
 	/**
@@ -140,6 +140,9 @@ public class Config {
 				logging (Log.ERROR, "Failed to read config file " + filename + ": " + e.toString ());
 			}
 		}
+		if (rc) {
+			copySystemConfig ();
+		}
 		return rc;
 	}
 
@@ -189,6 +192,9 @@ public class Config {
 		} catch (Exception ex) {
 			logging (Log.ERROR, "Failed to parse resource bundle: " + ex.toString ());
 			rc = false;
+		}
+		if (rc) {
+			copySystemConfig ();
 		}
 		return rc;
 	}
@@ -259,6 +265,25 @@ public class Config {
 		if (log != null) {
 			log.out (level, "config", msg);
 		}
+	}
+	
+	private void copySystemConfig () {
+		(new Systemconfig ())
+			.get ()
+			.entrySet ()
+			.stream ()
+			.filter (entry -> (systemConfigPrefix == null) || (entry.getKey ().startsWith (systemConfigPrefix)))
+			.forEach (entry -> {
+				String	key = entry.getKey ();
+				
+				if (systemConfigPrefix != null) {
+					key = key.substring (systemConfigPrefix.length ());
+				}
+				key = key.toUpperCase ();
+				if (! config.containsKey (key)) {
+					config.put (key, entry.getValue ());
+				}
+			});
 	}
 
 	/**

@@ -3,6 +3,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 
 <%--@elvariable id="sendDiagnosisResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="jobStartResult" type="com.agnitas.service.SimpleServiceResult"--%>
@@ -35,6 +36,10 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <tr>
+                                <td>License</td>
+                                <td>${serverStatus.licenseName}</td>
+                            </tr>
                             <tr>
                                 <td>Hostname</td>
                                 <td>${serverStatus.hostName}</td>
@@ -89,6 +94,15 @@
             </div>
             <div class="tile">
                 <div class="tile-content tile-content-forms">
+<!-- ----------Updatecheck------------------------------------------------------------- -->
+                    <div class="form-group" style="padding:5px; margin-left:-12px !important; margin-right:-12px !important;">
+                        <div class="col-sm-12">
+                            <c:url var="updatecheckUrl" value="/serverstatus/updatecheck.action"/>
+                            <button type="button" class="btn btn-primary btn-regular col-sm-12" data-form-url="${updatecheckUrl}" data-form-submit="" style="white-space: normal; padding:5px">
+                            	<mvc:message code="checkForUpdate" />
+                            </button>
+                        </div>
+                    </div>
 <!-- ----------Jobstart------------------------------------------------------------- -->
                     <div class="form-group" style="padding:5px; margin-left:-12px !important; margin-right:-12px !important;">
                         <div class="col-sm-7">
@@ -295,3 +309,5 @@
         </div>
     </div>
 </mvc:form>
+
+<%@ include file="serverstatus-license-upload.jspf" %>

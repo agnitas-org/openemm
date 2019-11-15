@@ -19,6 +19,8 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.web.CdnImage;
+
 public interface ComMailingComponentDao extends MailingComponentDao {
 	Date getComponentTime(@VelocityCheck int companyID, int mailingID, String name);
 
@@ -41,6 +43,20 @@ public interface ComMailingComponentDao extends MailingComponentDao {
     int getImageComponent(@VelocityCheck int companyId, int mailingId, int componentType);
 
     List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<Integer> type);
+
+    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName, boolean isMobileRequest);
+
+	MailingComponent getComponentByCdnID(String cdnID);
+
+    /**
+     * Method for marking unpresent components of some mailing
+     *
+     * @param mailingId mailing with components which will be marked as unpresent
+     * @param presentComponents components which will not be marked as unpresent
+     *
+     * @return count of updated rows (unpresent components)
+     */
+	int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents);
 
 	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, int componentType, Collection<String> namePatterns, byte[] value);
 }

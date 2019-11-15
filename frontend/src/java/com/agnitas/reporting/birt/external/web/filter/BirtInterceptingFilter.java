@@ -11,12 +11,7 @@
 package com.agnitas.reporting.birt.external.web.filter;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -24,155 +19,108 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
 
 public class BirtInterceptingFilter implements Filter {
 	/** Logger. */
 	private static final transient Logger logger = Logger.getLogger(BirtInterceptingFilter.class);
+	
+	protected ConfigService configService;
 
-	private DataSource dataSource;
-	private String privateKeyString;
-	private String errorPage;
-
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		// Nothing to do here...
+	}
+	
 	@Override
 	public void destroy() {
 		// Nothing to do here...
 	}
 
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-		String encodedUID = request.getParameter("uid");
+		String securityToken = request.getParameter("sec");
 		String companyIDStr = request.getParameter("companyID");
 
-		if (encodedUID == null) {
+		if (StringUtils.isBlank(securityToken)) {
 			forwardToErrorPage(request, response);
-			return;
-		}
-
-		if ("".equals(encodedUID.trim())) {
+		} else if (StringUtils.isBlank(companyIDStr)) {
 			forwardToErrorPage(request, response);
-			return;
-		}
-
-		if (companyIDStr == null) {
+		} else if (!companyIDStr.matches("[0-9]*")) {
 			forwardToErrorPage(request, response);
-			return;
-		}
-
-		if ("".equals(companyIDStr.trim())) {
+		} else if (!verifySecurityToken(securityToken, Integer.parseInt(companyIDStr))) {
 			forwardToErrorPage(request, response);
-			return;
+		} else {
+			filterChain.doFilter(request, response);
 		}
-
-		if (!companyIDStr.matches("[0-9]*")) {
-			forwardToErrorPage(request, response);
-			return;
-		}
-
-		if (!validateUID(encodedUID, Integer.parseInt(companyIDStr))) {
-			forwardToErrorPage(request, response);
-			return;
-		}
-
-		filterChain.doFilter(request, response);
 	}
 
 	private void forwardToErrorPage(ServletRequest request, ServletResponse response) throws ServletException, IOException {
 		request.setAttribute("error", new Exception("Not authenticated"));
-		RequestDispatcher dispatcher = request.getRequestDispatcher(errorPage);
+		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtErrorPage));
 		dispatcher.forward(request, response);
 	}
 
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		// error page for redirects
-		errorPage = filterConfig.getInitParameter("errorpage");
-		if (errorPage == null) {
-			errorPage = "/error.do";
+	private boolean verifySecurityToken(String securityTokenString, @VelocityCheck int companyID) {
+		String privateKeyString = getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtPrivateKey, companyID);
+		if (StringUtils.isBlank(privateKeyString) ) {
+			logger.warn("Birt private key is missing");
+			return false;
 		}
-		
-		ConfigService configService = ConfigService.getInstance();
-		
+		String securityTokenContent;
 		try {
-			if (dataSource == null) {
-				String datasourceName = "jdbc/" + configService.getValue(ConfigValue.EmmDbJndiName);
-				Context context = (Context) new InitialContext().lookup("java:comp/env");
-				dataSource = (DataSource) context.lookup(datasourceName);
-				if (dataSource == null) {
-					throw new Exception("'" + datasourceName + "' is an unknown DataSource");
-				}
-			}
+			securityTokenContent = RSACryptUtil.decrypt(securityTokenString, privateKeyString);
 		} catch (Exception e) {
-			throw new ServletException("Cannot create datasource: " + e.getMessage(), e);
+			logger.warn("Could not decrpyt securityToken(sec):" + securityTokenString, e);
+			return false;
 		}
-		
+		if (StringUtils.isBlank(securityTokenContent) ) {
+			logger.warn("Empty securityToken:" + securityTokenString);
+			return false;
+		}
+		int companyIdFromSecurityToken;
 		try {
-			privateKeyString = RSACryptUtil.getPrivateKey(configService.getValue(ConfigValue.BirtPrivateKeyFile));
+			companyIdFromSecurityToken = Integer.parseInt(securityTokenContent);
 		} catch (Exception e) {
-			logger.error("BirtPrivateKeyFile: " + configService.getValue(ConfigValue.BirtPrivateKeyFile));
-			throw new ServletException("Cannot read BirtPrivateKeyFile: " + e.getMessage(), e);
+			logger.warn("Could not read securityToken(sec):" + securityTokenContent, e);
+			return false;
+		}
+		if (companyIdFromSecurityToken != companyID) {
+			logger.warn("Invalid companyID in securityToken(sec). Expected: " + companyID + " Actually: " + companyIdFromSecurityToken);
+			return false;
+		} else {
+			return true;
 		}
 	}
+	
+	public static String createSecurityToken(ConfigService configService, int companyID) throws Exception {
+		String publicKeyString = configService.getValue(AgnUtils.getHostName(), ConfigValue.BirtPublicKey, companyID);
+        if (StringUtils.isBlank(publicKeyString)) {
+            throw new Exception("Parameter 'birt.publickey' is missing");
+        } else {
+        	return RSACryptUtil.encrypt(Integer.toString(companyID), publicKeyString);
+        }
+	}
 
-	private boolean validateUID(String encodedUID, @VelocityCheck int companyID) {
-		String uid = "";
-
-		try {
-			uid = RSACryptUtil.decrypt(encodedUID, privateKeyString);
-		} catch (Exception e) {
-			logger.error("Could not decrpyt uid :" + encodedUID, e);
-			return false;
+    private ConfigService getConfigService() {
+		if (configService == null) {
+			// Doesn't work here, because this filter runs in BIRT environment, which has no Spring context:
+			// configService = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext()).getBean("ConfigService", ConfigService.class);
+			// So we use:
+			configService = ConfigService.getInstance();
 		}
-
-		String[] tokens = UIDUtils.extractSecurityTokensFromUID(uid);
-
-		String userIDStr = tokens[0];
-		long userID = Integer.parseInt(userIDStr);
-
-		String usercompanyIDStr = tokens[1];
-		long usercompanyId = Integer.parseInt(usercompanyIDStr);
-
-		String providedSecurePasswordHash = tokens[2];
-
-		if (companyID != usercompanyId) {
-			return false;
-		}
-
-		try (Connection connection = dataSource.getConnection()) {
-			try (PreparedStatement statement = connection.prepareStatement("SELECT secure_password_hash FROM admin_tbl WHERE admin_id = ? AND company_id = ?")) {
-				statement.setLong(1, userID);
-				statement.setLong(2, companyID);
-				
-				try (ResultSet resultSet = statement.executeQuery()) {
-					if (resultSet.next()) {
-						String securePasswordHash = resultSet.getString("secure_password_hash") != null ? resultSet.getString("secure_password_hash") : "";
-						
-						if(securePasswordHash.length() > 32) {
-							// According to UIDUtils.createUID(), password hash is cropped to 32 bytes
-							securePasswordHash = securePasswordHash.substring(0, 32);
-						}
-						
-						return providedSecurePasswordHash.equals(securePasswordHash);
-					} else {
-						if (logger.isInfoEnabled()) {
-							logger.info("Didn't get authentication data for given username: " + userID + " (company ID: " + companyID + ")");
-						}
-
-						return false;
-					}
-				}
-			}
-		} catch (Exception e) {
-			logger.error("Couldn't get password for adminID:" + userID, e);
-			return false;
-		}
+		return configService;
 	}
 }

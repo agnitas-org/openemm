@@ -27,10 +27,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.JavaMailService.MailAttachment;
+import com.agnitas.emm.core.JavaMailAttachment;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtreport.util.ComBirtReportUtils;
@@ -42,12 +40,11 @@ public class ComBirtReportJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(ComBirtReportJobWorker.class);
 
 	@Override
-	public void runJob() {
+	public String runJob() {
 		try {
 			final ComBirtReportService birtReportService = serviceLookupFactory.getBeanBirtReportService();
             final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
 			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-			final ComAdminDao adminDao = daoLookupFactory.getBeanAdminDao();
 			final Date currentDate = new Date();
 
 			// get reports which we need to send
@@ -63,10 +60,6 @@ public class ComBirtReportJobWorker extends JobWorker {
 					final int companyID = report.getCompanyID();
 
 					final Integer accountId = companyDao.getCompany(companyID).getId();
-					final ComAdmin authenticationAdmin = adminDao.getAdminForReport(companyID);
-					if (authenticationAdmin == null) {
-						logger.error(String.format("Report %d cannot be generated because company %d has no active admin", report.getId(), report.getCompanyID()));
-					}
 					final Map<String, String> urlsMap = new HashMap<>();
 					final List<ComBirtReportSettings> reportSettings = report.getSettings();
 
@@ -74,7 +67,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 						// if we have a time-triggered report (daily, weekly etc.)
 						if (!report.isTriggeredByMailing()) {
 							urlsMap.putAll(birtStatisticsService
-									.getReportStatisticsUrlMap(reportSettings, authenticationAdmin, currentDate, report, companyID, accountId));
+									.getReportStatisticsUrlMap(reportSettings, currentDate, report, companyID, accountId));
 
 							sendReport(report, urlsMap);
 						}
@@ -88,7 +81,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 								urlsMap.putAll(
 										birtStatisticsService.getReportStatisticsUrlMap(
 												Collections.singletonList(report.getReportMailingSettings()),
-												authenticationAdmin, currentDate, report, companyID, accountId));
+												currentDate, report, companyID, accountId));
 								sendReport(report, urlsMap);
 							}
 
@@ -109,12 +102,13 @@ public class ComBirtReportJobWorker extends JobWorker {
 		} catch (Exception e) {
 			logger.error("Unknown error in ComBirtReportJobWorker.runJob(): " + e.getMessage(), e);
 		}
+		
+		return null;
 	}
 
 	protected void sendReports(List<ComBirtReport> reportsForSend) {
 		try {
 			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-			final ComAdminDao adminDao = daoLookupFactory.getBeanAdminDao();
             final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
 			final Date currentDate = new Date();
 
@@ -125,11 +119,9 @@ public class ComBirtReportJobWorker extends JobWorker {
 				try {
 					final int companyID = report.getCompanyID();
 					final Integer accountId = companyDao.getCompany(companyID).getId();
-					final ComAdmin authenticationAdmin = adminDao.getAdminForReport(companyID);
 					final List<ComBirtReportSettings> reportSettings = report.getSettings();
 
-					urlsMap.putAll(birtStatisticsService
-									.getReportStatisticsUrlMap(reportSettings, authenticationAdmin, currentDate, report, companyID, accountId));
+					urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(reportSettings, currentDate, report, companyID, accountId));
 					sendReport(report, urlsMap);
 				} catch (MalformedURLException e) {
 					logger.fatal("Malformed report URL reported in report ID: " + report.getId() + ": " + e.getMessage(), e);
@@ -153,12 +145,12 @@ public class ComBirtReportJobWorker extends JobWorker {
 
 		final HttpClient httpClient = ComBirtReportUtils.initializeHttpClient(birtUrl);
 
-		final List<MailAttachment> attachments = new ArrayList<>();
+		final List<JavaMailAttachment> attachments = new ArrayList<>();
         for(final Map.Entry<String, String> entry : urlsMap.entrySet()) {
         	try {
                 logger.error("BIRT report for sending\nreport id: " + report.getId() + "\nURL:" + entry.getValue());
         		File temporaryFile = ComBirtReportUtils.getBirtReportBodyAsTemporaryFile(report.getId(), entry.getValue(), httpClient, logger);
-        		attachments.add(new MailAttachment(entry.getKey(), FileUtils.readFileToByteArray(temporaryFile), String.format("application/%s", report.getFormatName())));
+        		attachments.add(new JavaMailAttachment(entry.getKey(), FileUtils.readFileToByteArray(temporaryFile), String.format("application/%s", report.getFormatName())));
         	} catch( Exception e) {
         		logger.error( "Error retrieving report data for BIRT report " + report.getId(), e);
         	}
@@ -173,6 +165,6 @@ public class ComBirtReportJobWorker extends JobWorker {
         	content = report.getEmailDescription();
         }
         final String emailDescription = content;
-        serviceLookupFactory.getBeanJavaMailService().sendEmail(email, emailSubject, emailDescription, emailDescription, attachments.toArray(new MailAttachment[attachments.size()]));
+        serviceLookupFactory.getBeanJavaMailService().sendEmail(email, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
 	}
 }

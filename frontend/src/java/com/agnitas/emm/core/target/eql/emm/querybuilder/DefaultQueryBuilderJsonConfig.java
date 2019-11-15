@@ -18,6 +18,7 @@ import antlr.collections.List;
 import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
 import net.sf.json.util.NewBeanInstanceStrategy;
+import net.sf.json.util.PropertyFilter;
 
 public class DefaultQueryBuilderJsonConfig extends JsonConfig {
 
@@ -36,10 +37,21 @@ public class DefaultQueryBuilderJsonConfig extends JsonConfig {
 			}
 		}
 	}
+	
+	private static final class QueryBuilderPropertyFilter implements PropertyFilter {
+		@Override
+		public boolean apply(Object source, String name, Object value) {
+			if (source instanceof QueryBuilderRuleNode) {
+				return "field".equals(name) || "input".equals(name);
+			}
+			return false;
+		}
+	}
 
 	public DefaultQueryBuilderJsonConfig() {
 		setRootClass(QueryBuilderGroupNode.class);
 		setNewBeanInstanceStrategy(new QueryBuilderNewBeanInstanceStrategy());
+		setJavaPropertyFilter(new QueryBuilderPropertyFilter());
 		setClassMap(createClassMap());
 	}
 	

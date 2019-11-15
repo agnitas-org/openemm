@@ -142,7 +142,7 @@ public class UserFormEditAction extends StrutsActionBase {
                 case UserFormEditAction.ACTION_CLONE_FORM:
                     loadUserForm(aForm, request);
                     aForm.setFormID(0);
-                    String newFormName = SafeString.getLocaleString("CopyOf", AgnUtils.getLocale(request)) + " " + aForm.getFormName();
+                    String newFormName = SafeString.getLocaleString("mailing.CopyOf", AgnUtils.getLocale(request)) + " " + aForm.getFormName();
                     aForm.setFormName(newFormName.replaceAll(" ", "_"));
                     loadEmmActions(request);
                     aForm.setAction(UserFormEditAction.ACTION_SAVE);

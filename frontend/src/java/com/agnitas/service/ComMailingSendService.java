@@ -12,6 +12,7 @@ package com.agnitas.service;
 
 import java.util.List;
 
+import com.agnitas.messages.Message;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionErrors;
@@ -38,6 +39,8 @@ public interface ComMailingSendService {
 	 * @param userActions a list of user actions to store one if succeeded (for UAL).
 	 */
 	void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, ActionMessages messages, ActionErrors errors, List<UserAction> userActions);
+
+	void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> messages, List<UserAction> userActions);
 
 	void deactivateMailing(int mailingId, int companyId);
 }

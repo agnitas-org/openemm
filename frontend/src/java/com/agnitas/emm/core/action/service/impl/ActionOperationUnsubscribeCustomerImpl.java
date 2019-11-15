@@ -40,31 +40,27 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 		ActionOperationUnsubscribeCustomerParameters op =(ActionOperationUnsubscribeCustomerParameters) operation;
 		int companyID = op.getCompanyId();
 
-        int customerID=0;
-        int mailingID=0;
-        Integer tmpNum=null;
+        int customerID = 0;
+        int mailingID = 0;
         Recipient aCust = beanLookupFactory.getBeanRecipient();
-        boolean returnValue=false;
         
         aCust.setCompanyID(companyID);
-        if(params.get("customerID")!=null) {
-            tmpNum=(Integer)params.get("customerID");
-            customerID=tmpNum.intValue();
+        if (params.get("customerID") != null) {
+            customerID = ((Integer) params.get("customerID")).intValue();
         }
         
-        if(params.get("mailingID")!=null) {
-            tmpNum=(Integer)params.get("mailingID");
-            mailingID=tmpNum.intValue();
+        if (params.get("mailingID") != null) {
+            mailingID = ((Integer) params.get("mailingID")).intValue();
         }
         
-        if(customerID!=0 && mailingID!=0) {
+        if (customerID != 0 && mailingID != 0) {
             aCust.setCustomerID(customerID);
             aCust.loadCustDBStructure();
             aCust.loadAllListBindings();
 
-            Mailing aMailing=mailingDao.getMailing(mailingID, companyID);
+            Mailing aMailing = mailingDao.getMailing(mailingID, companyID);
 
-            int mailinglistID=aMailing.getMailinglistID();
+            int mailinglistID = aMailing.getMailinglistID();
             Map<Integer, Map<Integer, BindingEntry>> aTbl = aCust.getListBindings();
 
             if (aTbl.containsKey(mailinglistID)) {
@@ -73,25 +69,29 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
                     BindingEntry aEntry = aTbl2.get(MediaTypes.EMAIL.getMediaCode());
                     switch(UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
                         case Active:
-                            if(!aEntry.getUserType().equals(UserType.TestVIP.getTypeCode()) &&
-                               !aEntry.getUserType().equals(UserType.WorldVIP.getTypeCode())) {
+                        case Bounce:
+                        case Suspend:
+                            if (!aEntry.getUserType().equals(UserType.TestVIP.getTypeCode()) && !aEntry.getUserType().equals(UserType.WorldVIP.getTypeCode())) {
                                 aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
                                 aEntry.setUserRemark("Opt-Out-Mailing: " + mailingID);
                                 aEntry.setExitMailingID(mailingID);
                                 aEntry.updateBindingInDB(companyID);
                                 params.put("__agn_USER_STATUS", "4"); // next Event-Mailing goes to a user with status 4
-                                returnValue=true;
                             }
-                            break;
+                            return true;
+                            
+                        case AdminOut:
+                        case UserOut:
+                        	params.put("__agn_USER_STATUS", "4"); // next Event-Mailing goes to a user with status 4
+                        	return true;
                             
                         default:
-                            returnValue=false;
+                            return false;
                     }
                 }
             }
         }
-        
-        return returnValue;
+        return false;
 	}
 
 	/**
@@ -106,5 +106,4 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
 		this.beanLookupFactory = beanLookupFactory;
 	}
-
 }

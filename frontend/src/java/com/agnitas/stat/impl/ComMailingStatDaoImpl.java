@@ -93,7 +93,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 
 			// deep link pagetags
 			try {
-				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_ext_link_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
+				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_ext_link_tbl WHERE mailing_id = ?", mailingID);
 				for (Map<String, Object> map : list) {
 					deepLinkTags.add((String) map.get("page_tag"));
 				}
@@ -103,7 +103,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 
 			// deep numeric pagetags
 			try {
-				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_val_num_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
+				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_val_num_tbl WHERE mailing_id = ?", mailingID);
 				for (Map<String, Object> map : list) {
 					if (!((String) map.get("PAGE_TAG")).equals("revenue")) {
 						deepNumTags.add((String) map.get("page_tag"));
@@ -115,7 +115,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 
 			// deep alphanumeric pagetags
 			try {
-				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_val_alpha_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
+				List<Map<String, Object>> list = select(logger, "SELECT DISTINCT page_tag FROM rdirlog_" + companyID + "_val_alpha_tbl WHERE mailing_id = ?", mailingID);
 				for (Map<String, Object> map : list) {
 					deepAlphaTags.add((String) map.get("page_tag"));
 				}
@@ -151,7 +151,7 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		// collect csv data
 		csvDataBuilder.append("\"Mailing:\";\"");
 		csvDataBuilder.append(aMailing.getShortname());
-		csvDataBuilder.append("\"\r\n\r\n\""+ SafeString.getLocaleString("KlickStats", aLocale) + ":\"");
+		csvDataBuilder.append("\"\r\n\r\n\""+ SafeString.getLocaleString("statistic.KlickStats", aLocale) + ":\"");
 		csvDataBuilder.append("\r\n\r\n\"" + SafeString.getLocaleString("URL", aLocale) + "\";\"" + SafeString.getLocaleString("Description", aLocale) + "\"");
 		
 		int aTotalClicks = 0;
@@ -168,11 +168,11 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		// LOAD URL_CLICKS
 		String selectClicks = "SELECT count(rdir.customer_id) AS total, COUNT(DISTINCT rdir.customer_id) AS distotal, rdir.url_id AS urlid"
 			+ " FROM rdirlog_" + companyID + "_tbl rdir"
-        	+ " WHERE rdir.mailing_id = ? AND rdir.company_id = ?"
+        	+ " WHERE rdir.mailing_id = ?"
         	+ " GROUP BY rdir.url_id ORDER BY distotal DESC";
 		// sortierung wird hier komplett ignoriert
 		try {
-			List<Map<String, Object>> list = select(logger, selectClicks, mailingID, companyID);
+			List<Map<String, Object>> list = select(logger, selectClicks, mailingID);
 			// this will become the clickStatValues - Hashtable in the
 			// current MailingStatEntry:
 			Map<Integer, URLStatEntry> aktClickStatValues = new Hashtable<>();
@@ -211,12 +211,12 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		if (deepTracking) {
 			String selectExtLinkClicks = "SELECT COUNT(customer_id) AS total, COUNT(DISTINCT customer_id) AS distotal, page_tag"
 				+ " FROM rdirlog_" + companyID + "_ext_link_tbl"
-				+ " WHERE mailing_id = ? AND company_id = ?"
+				+ " WHERE mailing_id = ?"
 				+ " GROUP BY page_tag"
 				+ " ORDER BY COUNT(page_tag) DESC";
 
 			try {
-				List<Map<String, Object>> list = select(logger, selectExtLinkClicks, mailingID, companyID);
+				List<Map<String, Object>> list = select(logger, selectExtLinkClicks, mailingID);
 
 				// this will become the deeptrackStatValues - Hashtable
 				// in the current MailingStatEntry:
@@ -239,12 +239,12 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 			// alphanumeric link klicks
 			String selectAlphaLinkClicks = "SELECT COUNT(customer_id) AS total, COUNT(DISTINCT customer_id) AS distotal, page_tag"
 				+ " FROM rdirlog_" + companyID + "_val_alpha_tbl"
-				+ " WHERE mailing_id = ? AND company_id = ?"
+				+ " WHERE mailing_id = ?"
 				+ " GROUP BY page_tag"
 				+ " ORDER BY COUNT(page_tag) DESC";
 
 			try {
-				List<Map<String, Object>> list = select(logger, selectAlphaLinkClicks, mailingID, companyID);
+				List<Map<String, Object>> list = select(logger, selectAlphaLinkClicks, mailingID);
 
 				// this will become the deepAlphaValues - Hashtable in
 				// the current MailingStatEntry:
@@ -270,12 +270,12 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 			// numeric link klicks
 			String selectNumLinkClicks = "SELECT COUNT(customer_id) AS total, COUNT(DISTINCT customer_id) AS distotal, page_tag"
 				+ " FROM rdirlog_" + companyID + "_val_num_tbl"
-				+ " WHERE mailing_id = ? AND company_id = ?"
+				+ " WHERE mailing_id = ?"
 				+ " GROUP BY page_tag"
 				+ " ORDER BY COUNT(page_tag) DESC";
 
 			try {
-				List<Map<String, Object>> list = select(logger, selectNumLinkClicks, mailingID, companyID);
+				List<Map<String, Object>> list = select(logger, selectNumLinkClicks, mailingID);
 
 				// this will become the deepNumValues - Hashtable in the
 				// current MailingStatEntry:
@@ -306,8 +306,8 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		if (deepTracking) {
 			try {
 				String selectRevenue = "SELECT SUM(deep.num_parameter) AS total from rdirlog_" + companyID + "_val_num_tbl deep"
-					+ " WHERE deep.mailing_id = ? AND deep.company_id = ? AND deep.page_tag = 'revenue'";
-				statValue.setRevenue(selectIntWithDefaultValue(logger, selectRevenue, 0, mailingID, companyID));
+					+ " WHERE deep.mailing_id = ? AND deep.page_tag = 'revenue'";
+				statValue.setRevenue(selectIntWithDefaultValue(logger, selectRevenue, 0, mailingID));
 			} catch (Exception e) {
 				logger.error(" revenueQuery Problem: " + e.getMessage(), e);
 			}
@@ -316,10 +316,10 @@ public class ComMailingStatDaoImpl extends BaseDaoImpl implements ComMailingStat
 		// CLICK_SUBSCRIBERS
 		String selectTotalSuscribers = "SELECT COUNT(DISTINCT rdir.customer_id)"
 			+ " FROM rdirlog_" + companyID + "_tbl rdir, rdir_url_tbl url"
-			+ " WHERE rdir.company_id = ? AND rdir.mailing_id = ? and rdir.url_id = url.url_id AND url.relevance = 0";
+			+ " WHERE rdir.mailing_id = ? and rdir.url_id = url.url_id AND url.relevance = 0";
 
 		try {
-			statValue.setTotalClickSubscribers(selectInt(logger, selectTotalSuscribers, companyID, mailingID));
+			statValue.setTotalClickSubscribers(selectInt(logger, selectTotalSuscribers, mailingID));
 		} catch (Exception e) {
 			logger.error("getMailingStatFromDB: " + e);
 		}

@@ -37,7 +37,7 @@ public class ComHelpUtil {
 		
 		StringBuilder manualUrl = new StringBuilder();
 		// Some new SpringMVC based sites use url-context, so we must use the EMM systemurl for direct site root-context in manual links.
-		manualUrl.append(ConfigService.getInstance().getValue(ConfigValue.SystemUrl));
+		manualUrl.append(ConfigService.getInstance().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
 		manualUrl.append("/");
 		manualUrl.append(ComManualServlet.MANUAL_CONTEXT);
 		manualUrl.append("/");

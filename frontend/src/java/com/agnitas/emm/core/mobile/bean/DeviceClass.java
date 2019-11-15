@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.mobile.bean;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public enum DeviceClass {
     DESKTOP(1),
     MOBILE(2),
@@ -36,12 +40,18 @@ public enum DeviceClass {
     }
 
     public static DeviceClass fromId(int id) {
-        for (DeviceClass deviceClass : DeviceClass.values()) {
-            if (deviceClass.getId() == id) {
-                return deviceClass;
+        return fromIdWithDefault(id, UNKNOWN_DESKTOP);
+    }
+    
+    public static DeviceClass fromIdWithDefault(int id, DeviceClass desktop) {
+        if (id > 0) {
+            for (DeviceClass deviceClass : DeviceClass.values()) {
+                if (deviceClass.getId() == id) {
+                    return deviceClass;
+                }
             }
         }
-        return UNKNOWN_DESKTOP;
+        return desktop;
     }
 
     public int getId() {
@@ -50,5 +60,11 @@ public enum DeviceClass {
 
     public String getName() {
         return toString();
+    }
+    
+    public static List<DeviceClass> getOnlyKnownDeviceClasses() {
+        return Arrays.stream(DeviceClass.values())
+                .filter(item -> !item.getName().startsWith("UNKNOWN_"))
+                .collect(Collectors.toList());
     }
 }

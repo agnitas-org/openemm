@@ -28,11 +28,11 @@
                                 <bean:message key="statistics.exportFormats"/>
                             </li>
                             <li>
-                                <a target="_blank" tabindex="-1" href="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&uid=${uid}&__format=csv&language=${language}">
+                                <a target="_blank" tabindex="-1" href="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&sec=${sec}&__format=csv&language=${language}">
                                     <i class="icon icon-file-excel-o"></i>
                                     <bean:message key="export.message.csv"/>
                                 </a>
-                                <%--<a target="_blank" tabindex="-1" href="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&uid=${uid}&__format=pdf&language=${language}">--%>
+                                <%--<a target="_blank" tabindex="-1" href="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&sec=${sec}&__format=pdf&language=${language}">--%>
                                     <%--<i class="icon icon-file-pdf-o"></i>--%>
                                     <%--<bean:message key="export.message.pdf"/>--%>
                                 <%--</a>--%>
@@ -42,7 +42,7 @@
                 </ul>
             </div>
             <div class="tile-content">
-                <iframe src="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&language=${language}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&uid=${uid}"
+                <iframe src="${birturl}/run?__report=formula_click_stat.rptdesign&companyID=${companyID}&language=${language}&emmsession=${emmsession}&formID=${formID}&targetbaseurl=${targetbaseurl}&sec=${sec}"
                         border="0" frameborder="0" scrolling="auto" width="100%" >
                     Your Browser does not support IFRAMEs, please update!
                 </iframe>

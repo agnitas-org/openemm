@@ -3,6 +3,7 @@
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.emm.core.commons.util.Constants" %>
 <%@ page import="com.agnitas.reporting.birt.web.ComMailingBIRTStatAction" %>
+<%@ page import="com.agnitas.beans.ComMailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -22,6 +23,8 @@
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= ComMailingBaseAction.ACTION_BULK_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_MAILINGSTAT" value="<%= ComMailingBIRTStatAction.ACTION_MAILINGSTAT %>"/>
+
+<c:set var="MAILING_TYPE_NORMAL" value="<%= ComMailing.TYPE_NORMAL %>"/>
 
 <c:set var="DATE_PATTERN" value="<%= Constants.DATE_PATTERN %>"/>
 
@@ -792,6 +795,13 @@
                 </div>
             </div>
 
+            <%-- Replace 0 values with "n/a" for all the mailings but normal --%>
+            <c:forEach var="mailing" items="${mailinglist.list}">
+                <c:if test="${mailing.mailing_type ne MAILING_TYPE_NORMAL}">
+                    <c:set target="${mailing}" property="recipientsCount"><bean:message key="NotAvailableShort"/></c:set>
+                </c:if>
+            </c:forEach>
+
             <!-- Table BEGIN -->
             <div class="table-wrapper table-overflow-visible">
                 <display:table
@@ -845,6 +855,9 @@
                     <logic:equal name="mailingBaseForm" property="isTemplate" value="false">
                         <display:column titleKey="Status" sortable="true" sortProperty="work_status" headerClass="js-table-sort js-filter-status" class="align-center">
                             <c:if test="${not empty mailing.workstatus}">
+                                <c:set var="workstatus">
+                                    <bean:message key="${mailing.workstatus}"/>
+                                </c:set>
                                 <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${workstatus}"></span>
                             </c:if>
                         </display:column>

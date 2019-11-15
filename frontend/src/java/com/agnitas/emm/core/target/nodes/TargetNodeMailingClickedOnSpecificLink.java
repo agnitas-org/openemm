@@ -143,37 +143,6 @@ public class TargetNodeMailingClickedOnSpecificLink extends TargetNode implement
 	}
 
 	@Override
-	public String generateEmbeddedSQL() {
-		StringBuffer buffer = new StringBuffer();
-		
-		// Negate result if primary operator says to
-		if(primaryOperator == TargetNode.OPERATOR_NO.getOperatorCode())
-			buffer.append(" NOT ");
-		
-		// Build the WHERE clause
-		buffer.append(" EXISTS (SELECT 1 FROM ");
-		
-		buffer.append("rdirlog_");
-		buffer.append(companyId);
-		buffer.append("_tbl rl");
-		
-		buffer.append(" WHERE rl.company_id=");
-		buffer.append(companyId);
-		buffer.append(" AND rl.customer_id=cust.customer_id");
-		buffer.append(" AND rl.mailing_id=");
-		buffer.append(this.mailingID);
-		buffer.append(" AND rl.url_id=");
-		buffer.append(this.linkID);
-		buffer.append(")");
-		
-		/*
-		 * EXISTS (SELECT 1 FROM rdirlog_${COMPANY_ID}_tbl rl WHERE rl.customer_id=cust.customer_id AND rl.mailing_id=${MAILING_ID} AND rl.company_id=${COMPANY_ID} AND rl.url_id=${URL_ID})
-		 */
-		
-		return buffer.toString();
-	}
-
-	@Override
 	public String generateBsh() {
 		try {
 			throw new RuntimeException("BSH generation is not supported!");

@@ -35,7 +35,7 @@
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="textKey" value="import.Wizard"/>
+        <c:set target="${agnBreadcrumb}" property="textKey" value="import.csv_upload"/>
         <c:set target="${agnBreadcrumb}" property="url" value="${importWizardLink}"/>
     </emm:instantiate>
 

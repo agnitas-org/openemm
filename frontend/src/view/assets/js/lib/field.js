@@ -128,7 +128,7 @@ This field prevents form submission when an input is not valid.
 
   CustomField.prototype.valid = function() {
     var validator = AGN.Lib.Validator.get(this.validatorName);
-    if (validator) {
+    if (validator && this.$target.exists()) {
       return validator.valid(this.$target, this.options);
     } else {
       console.debug('Validator `' + this.validatorName + "` doesn't exist");
@@ -138,7 +138,7 @@ This field prevents form submission when an input is not valid.
 
   CustomField.prototype.errors = function() {
     var validator = AGN.Lib.Validator.get(this.validatorName);
-    if (validator) {
+    if (validator && this.$target.exists()) {
       return validator.errors(this.$target, this.options);
     } else {
       console.debug('Validator `' + this.validatorName + "` doesn't exist");
@@ -246,7 +246,7 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
         valueTarget = this.$target.find('option:selected').val(),
         template = '{{ _.forEach(opts, function(name, value) { }}<option value="{{- value }}" {{- ( value == valueSelected ) ? "selected" : "" }}>{{- name }}</option>{{ }); }}';
 
-    template = _.template(template, { opts: this.options[valueSource], valueSelected: valueTarget });
+    template = _.template(template)({ opts: this.options[valueSource], valueSelected: valueTarget });
     this.$target.html(template);
     AGN.runAll(this.el);
   }
@@ -570,7 +570,7 @@ The required field helps with preventing a form from submit, when its field valu
     if ( pass.length == 0 ) return true;
     if ( pass.length < 8 ) return false;
 
-    return _.all(checks, function(check) {
+    return _.every(checks, function(check) {
       return self.passesCheck(pass, check);
     });
 
@@ -801,7 +801,7 @@ The required field helps with preventing a form from submit, when its field valu
   DateFilterField.prototype.constructor = DateFilterField;
 
   DateFilterField.prototype.isEnabled = function() {
-    return _.any(this.$filters, function(filter) {
+    return _.some(this.$filters, function(filter) {
       return $(filter).val() != '';
     });
   }

@@ -25,8 +25,10 @@ public class ComCalendarCommentMailingServiceJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(ComCalendarCommentMailingServiceJobWorker.class);
 		
 	@Override
-	public void runJob() {
+	public String runJob() {
         ComReminderService reminderService = serviceLookupFactory.getBeanCalendarReminderService();//(ComReminderService) applicationContext.getBean("calendarReminderService");
         reminderService.send();
+		
+		return null;
     }
 }

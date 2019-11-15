@@ -15,6 +15,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
+import org.agnitas.exceptions.InvalidUserStatusException;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 public class BindingExceptionResolver extends CommonExceptionResolver {
@@ -31,6 +32,10 @@ public class BindingExceptionResolver extends CommonExceptionResolver {
 				|| ex instanceof DeprecatedUIDVersionException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Invalid UID");
+			return definition;
+		} else if (ex instanceof InvalidUserStatusException) {
+			SoapFaultDefinition definition = getDefaultDefinition(ex);
+			definition.setFaultStringOrReason("Invalid user status");
 			return definition;
 		}
 		return super.getFaultDefinition(endpoint, ex);

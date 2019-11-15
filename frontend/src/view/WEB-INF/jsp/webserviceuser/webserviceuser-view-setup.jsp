@@ -35,7 +35,7 @@
             <c:set target="${itemActionsSettings}" property="1" value="${saveAction}"/>
 
             <c:set target="${saveAction}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${saveAction}" property="extraAttributes" value="data-form-target='#editWebserviceUserForm' data-form-submit"/>
+            <c:set target="${saveAction}" property="extraAttributes" value="data-form-target='#wsuser-edit-form' data-form-submit"/>
             <c:set target="${saveAction}" property="iconBefore" value="icon-save"/>
             <c:set target="${saveAction}" property="name">
                 <bean:message key="button.Save"/>

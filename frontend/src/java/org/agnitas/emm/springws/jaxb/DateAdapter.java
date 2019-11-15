@@ -20,11 +20,11 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 public class DateAdapter extends XmlAdapter<String, Date>{
 	
-	private static final SimpleDateFormat AGN_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz");
+	private static final String AGN_FORMAT = "yyyy-MM-dd HH:mm:ss zzz";
 	
 	@Override
 	public String marshal(Date dt) throws Exception {
-        return AGN_FORMAT.format(dt);
+        return new SimpleDateFormat(AGN_FORMAT).format(dt);
     }
 
 	@Override
@@ -38,7 +38,7 @@ public class DateAdapter extends XmlAdapter<String, Date>{
 				final LocalDateTime parsedWithoutTimezone = LocalDateTime.parse(s);
 				return Date.from(parsedWithoutTimezone.atZone(ZoneId.systemDefault()).toInstant());
 			} catch(Exception e2) {
-				return AGN_FORMAT.parse(s);
+				return new SimpleDateFormat(AGN_FORMAT).parse(s);
 			}
 		}
     }

@@ -10,7 +10,10 @@
 
 package com.agnitas.emm.wsmanager.service.impl;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -21,15 +24,20 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserEntryDto;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
 import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
+import com.agnitas.emm.wsmanager.common.WebserviceUser;
 import com.agnitas.emm.wsmanager.common.WebserviceUserCredential;
 import com.agnitas.emm.wsmanager.common.WebserviceUserException;
 import com.agnitas.emm.wsmanager.common.WebserviceUserListItem;
 import com.agnitas.emm.wsmanager.common.impl.WebserviceUserCredentialImpl;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDaoException;
+import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
@@ -49,21 +57,24 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
     private static final String DATA_SOURCE_URI = "";
 
 	/** DAO accessing webservice user data. */
-	private WebserviceUserDao webserviceUserDao;
+	private final WebserviceUserDao webserviceUserDao;
 	
 	/** Service handling data sources. */
-	private DataSourceService datasourceService;
+	private final DataSourceService datasourceService;
 	
 	/** Configuration service. */
-	private ConfigService configService;
+	private final ConfigService configService;
 
-	private ExtendedConversionService conversionService;
+	private final ExtendedConversionService conversionService;
 	
-	public WebserviceUserServiceImpl(WebserviceUserDao webserviceUserDao, DataSourceService datasourceService, ConfigService configService, ExtendedConversionService conversionService) {
-		this.webserviceUserDao = webserviceUserDao;
-		this.datasourceService = datasourceService;
-		this.configService = configService;
-		this.conversionService = conversionService;
+	private final WebservicePermissionService permissionService;
+	
+	public WebserviceUserServiceImpl(final WebserviceUserDao webserviceUserDao, final DataSourceService datasourceService, final ConfigService configService, final ExtendedConversionService conversionService, final WebservicePermissionService permissionService) {
+		this.webserviceUserDao = Objects.requireNonNull(webserviceUserDao);
+		this.datasourceService = Objects.requireNonNull(datasourceService);
+		this.configService = Objects.requireNonNull(configService);
+		this.conversionService = Objects.requireNonNull(conversionService);
+		this.permissionService = Objects.requireNonNull(permissionService, "Webservice permission service is null");
 	}
 	
 	@Override
@@ -97,7 +108,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		int dataSourceId = 0;
 		try {
 			WebserviceUserCredential convertedUser = conversionService.convert(user, WebserviceUserCredential.class);
-			
+
 			int companyId = convertedUser.getCompanyID();
 			int dsGroup = configService.getIntegerValue(ConfigValue.WebserviceDatasourceGroupId);
 			String dsDescription = String.format(USER_DESCRIPTION_PATTERN, username);
@@ -111,6 +122,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			logger.info(String.format("Created datasource ID %d as default datasource for webservice user %s", convertedUser.getDefaultDatasourceID(), username));
 
 			webserviceUserDao.createWebserviceUser(convertedUser, dataSourceId, bulkSizeLimit);
+			saveGrantedPermissionsAndGroups(convertedUser);
 		} catch (Exception e) {
 			logger.error("Error creating new webservice user: " + username, e);
 			
@@ -134,6 +146,8 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		try {
 			this.webserviceUserDao.updateUser(convertedUser);
 
+			saveGrantedPermissionsAndGroups(convertedUser);
+
 			String passwordHash = convertedUser.getPasswordHash();
 
 			if(StringUtils.isNotEmpty(passwordHash)) {
@@ -147,7 +161,12 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public void saveWebServiceUser(WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException {
+	public void saveWebServiceUser(ComAdmin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException {
+		
+		if (!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
+            user.setCompanyId(admin.getCompanyID());
+        }
+		
 		if(isNew) {
 			createWebserviceUser(user);
 		} else {
@@ -170,5 +189,21 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	@Override
 	public int getNumberOfWebserviceUsers() {
 		return webserviceUserDao.getNumberOfWebserviceUsers();
+	}
+	
+	private final void sanitizePermissions(final WebserviceUser user) {
+		final WebservicePermissions allPermissions = this.permissionService.listAllPermissions();
+		final Set<String> allPermissionNames = allPermissions.getAllPermissions().stream().map(perm -> perm.getEndpointName()).collect(Collectors.toSet());
+		
+		// Retain only those permissions listed in database
+		user.getGrantedPermissions().retainAll(allPermissionNames);
+	}
+	
+	private final void saveGrantedPermissionsAndGroups(final WebserviceUser user) {
+		// Do not modify permissions, if permissions are disabled
+		if(configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, user.getCompanyID())) {
+			sanitizePermissions(user);
+			this.webserviceUserDao.saveGrantedPermissionsAndGroups(user);
+		}
 	}
 }

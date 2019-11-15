@@ -35,10 +35,15 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
+
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.ServerCommand.Command;
+import org.agnitas.util.ServerCommand.Server;
 import org.agnitas.util.Systemconfig;
 import org.agnitas.util.Tuple;
 import org.agnitas.util.XmlUtilities;
@@ -53,8 +58,12 @@ import org.w3c.dom.Document;
 
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
+import com.agnitas.dao.LicenseDao;
+import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
+import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
@@ -105,17 +114,24 @@ public class ConfigService {
 	/** DAO for access supervisor table. */
 	protected ComSupervisorDao supervisorDao;
 	
+	/** DAO for access license table. */
+	protected LicenseDao licenseDao;
+	
 	/** DataEncryptor. */
 	protected DataEncryptor dataEncryptor;
+	
+	/** DAO for access server_command_tbl table. */
+	protected ComServerMessageDao serverMessageDao;
 
 	private static Boolean IS_ORACLE_DB = null;
-	private static Map<String, String> LICENSE_VALUES = null;
-	private static Map<String, String> EMM_PROPERTIES_VALUES = null;
-	private static Map<String, String> CONFIGURATIONVALUES = null;
+	private static Map<ConfigKey, String> LICENSE_VALUES = null;
+	private static Map<ConfigKey, String> EMM_PROPERTIES_VALUES = null;
+	private static Map<ConfigKey, String> CONFIGURATIONVALUES = null;
+	private static Date LASTREFRESHTIME = null;
 	private static Calendar EXPIRATIONTIME = null;
-	
+		
 	/**
-	 * Method for gathering the ConfigService within JSP-files or in environments without the spring context like "Listener" and "Filter" defined in web.xml
+	 * Method for gathering the ConfigService within JSP-files or in (BIRT-)environments without the spring context like "Listener" and "Filter" defined in web.xml
 	 * All other access to ConfigService should be done via spring context or dependency injection
 	 * 
 	 * see also: singleton pattern
@@ -123,6 +139,29 @@ public class ConfigService {
 	public static synchronized ConfigService getInstance() {
 		if (instance == null) {
 			instance = new ConfigService();
+			DataSource dataSource;
+			try {
+				dataSource = (DataSource) new InitialContext().lookup("java:comp/env/jdbc/emm_db");
+			} catch (Exception e) {
+				logger.error("Cannot find datasource in JNDI context: " + e.getMessage(), e);
+				throw new RuntimeException("Cannot find datasource in JNDI context: " + e.getMessage(), e);
+			}
+			
+			ConfigTableDao configTableDao = new ConfigTableDaoImpl();
+			((ConfigTableDaoImpl) configTableDao).setDataSource(dataSource);
+			instance.setConfigTableDao(configTableDao);
+			
+			LicenseDao licenseDao = new LicenseDaoImpl();
+			((LicenseDaoImpl) licenseDao).setDataSource(dataSource);
+			instance.setLicenseDao(licenseDao);
+			
+			CompanyInfoDao companyInfoDao = new CompanyInfoDao();
+			companyInfoDao.setDataSource(dataSource);
+			instance.setCompanyInfoDao(companyInfoDao);
+			
+			ComServerMessageDao serverMessageDao = new ComServerMessageDaoImpl();
+			((ComServerMessageDaoImpl) serverMessageDao).setDataSource(dataSource);
+			instance.setServerMessageDao(serverMessageDao);
 		}
 		return instance;
 	}
@@ -182,6 +221,18 @@ public class ConfigService {
 	}
 	
 	/**
+	 * Set DAO accessing license data.
+	 * 
+	 * @param licenseDao DAO accessing company data
+	 */
+	@Required
+	public void setLicenseDao(LicenseDao licenseDao) {
+		this.licenseDao = licenseDao;
+		invalidateCache();
+		LICENSE_VALUES = null;
+	}
+	
+	/**
 	 * Set DAO accessing admin data.
 	 * 
 	 * @param adminDao DAO accessing admin data
@@ -196,7 +247,7 @@ public class ConfigService {
 	/**
 	 * Set DAO accessing admin data.
 	 * 
-	 * @param adminDao DAO accessing admin data
+	 * @param webserviceUserDao DAO accessing admin data
 	 */
 	@Required
 	public void setWebserviceUserDao(WebserviceUserDao webserviceUserDao) {
@@ -227,6 +278,11 @@ public class ConfigService {
 		this.dataEncryptor = dataEncryptor;
 	}
 	
+	@Required
+	public void setServerMessageDao(ComServerMessageDao serverMessageDao) {
+		this.serverMessageDao = serverMessageDao;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 
@@ -240,7 +296,7 @@ public class ConfigService {
 				// On ConfigService startup check db vendor
 				IS_ORACLE_DB = ((ConfigTableDaoImpl) configTableDao).isOracleDB();
 			}
-			
+
 			if (LICENSE_VALUES == null) {
 				// On ConfigService startup read license data and check licensefile signature
 				LICENSE_VALUES = readLicenseData();
@@ -255,23 +311,38 @@ public class ConfigService {
 			}
 			
 			if (CONFIGURATIONVALUES == null || EXPIRATIONTIME == null || GregorianCalendar.getInstance().after(EXPIRATIONTIME)) {
-				Map<String, String> newValues = new HashMap<>(EMM_PROPERTIES_VALUES);
+				Date now = new Date();
+				
+				// Check for server reset commands
+				if (LICENSE_VALUES != null && serverMessageDao.getCommand(LASTREFRESHTIME, now, Server.ALL, Command.RELOAD_LICENSE_DATA).size() > 0) {
+					// This is needed to allow checkLicenseData() to not get stuck in dead lock
+					LASTREFRESHTIME = now;
+					
+					LICENSE_VALUES = readLicenseData();
+					
+					// On license reset check the new license data
+					checkLicenseData();
+				}
+				
+				LASTREFRESHTIME = now;
+				
+				Map<ConfigKey, String> newValues = new HashMap<>(EMM_PROPERTIES_VALUES);
 
 				if (configTableDao != null) {
-					for (Entry<String, String> entry : configTableDao.getAllEntries().entrySet()) {
+					for (Entry<ConfigKey, String> entry : configTableDao.getAllEntries().entrySet()) {
 						newValues.put(entry.getKey(), AgnUtils.replaceHomeVariables(entry.getValue()));
 					}
 				}
 
 				if (companyInfoDao != null) {
-					for (Entry<String, String> entry : companyInfoDao.getAllEntries().entrySet()) {
+					for (Entry<ConfigKey, String> entry : companyInfoDao.getAllEntries().entrySet()) {
 						newValues.put(entry.getKey(), AgnUtils.replaceHomeVariables(entry.getValue()));
 					}
 				}
 
 				int minutes;
-				if (newValues.containsKey(ConfigValue.ConfigurationExpirationMinutes.toString())) {
-					minutes = NumberUtils.toInt(newValues.get(ConfigValue.ConfigurationExpirationMinutes.toString()));
+				if (newValues.containsKey(new ConfigKey(ConfigValue.ConfigurationExpirationMinutes.toString(), 0, null))) {
+					minutes = NumberUtils.toInt(newValues.get(new ConfigKey(ConfigValue.ConfigurationExpirationMinutes.toString(), 0, null)));
 				} else {
 					minutes = NumberUtils.toInt(ConfigValue.ConfigurationExpirationMinutes.getDefaultValue());
 				}
@@ -299,20 +370,20 @@ public class ConfigService {
 			CONFIGURATIONVALUES = null;
 			EXPIRATIONTIME = null;
 			
-			logger.error("LicenseError: " + e.getMessage());
+			logger.error(e.getMessage());
 			throw e;
 		} catch (Exception e) {
 			logger.error("Cannot refresh config data from database", e);
 		}
 	}
 
-	private Map<String, String> readEmmPropertiesFile() throws Exception {
+	private Map<ConfigKey, String> readEmmPropertiesFile() throws Exception {
 		try {
-			Map<String, String> emmPropertiesMap = new HashMap<>();
+			Map<ConfigKey, String> emmPropertiesMap = new HashMap<>();
 			Properties properties = new Properties();
 			properties.load(getClass().getClassLoader().getResourceAsStream("emm.properties"));
 			for (String key : properties.stringPropertyNames()) {
-				emmPropertiesMap.put(key, AgnUtils.replaceHomeVariables(properties.getProperty(key)));
+				emmPropertiesMap.put(new ConfigKey(key, 0, null), AgnUtils.replaceHomeVariables(properties.getProperty(key)));
 			}
 			return emmPropertiesMap;
 		} catch (Exception e) {
@@ -320,61 +391,65 @@ public class ConfigService {
 		}
 	}
 	
-	private Map<String, String> readLicenseData() {
-		ClassLoader classLoader = ConfigService.class.getClassLoader();
+	private Map<ConfigKey, String> readLicenseData() throws Exception {
+		byte[] licenseDataArray;
+		byte[] licenseSignatureDataArray;
 		
-		int licenseID;
-		
-		Map<String, String> licenseData = null;
-		try (InputStream licenseStream = classLoader.getResourceAsStream("emm.license.xml")) {
-			if (licenseStream == null) {
-				throw new Exception("LicenseData emm.license.xml is missing");
+		if (licenseDao.hasLicenseData()) {
+			licenseDataArray = licenseDao.getLicenseData();
+			licenseSignatureDataArray = licenseDao.getLicenseSignatureData();
+		} else {
+			ClassLoader classLoader = ConfigService.class.getClassLoader();
+			try (InputStream licenseStream = classLoader.getResourceAsStream("emm.license.xml")) {
+				licenseDataArray = IOUtils.toByteArray(licenseStream);
 			}
+			if (classLoader.getResource("emm.license.xml.sig") != null) {
+				try (InputStream signatureStream = classLoader.getResourceAsStream("emm.license.xml.sig")) {
+					licenseSignatureDataArray = IOUtils.toByteArray(signatureStream);
+				}
 			
-			Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(IOUtils.toByteArray(licenseStream), "UTF-8", null);
-			licenseData = XmlUtilities.getSimpleValuesOfNode(licenseDocument.getElementsByTagName("emm.license").item(0));
-	
-			// Handle different names
-			licenseData.put(ConfigValue.System_Licence.toString(), licenseData.get("licenseID"));
-			licenseData.remove("licenseID");
-
-			licenseID = Integer.parseInt(licenseData.get(ConfigValue.System_Licence.toString()));
-		} catch (Exception e) {
-			throw new LicenseError("Error while reading license data: " + e.getMessage(), e);
+				PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
+				boolean success = CryptographicUtilities.verifyData(licenseDataArray, publicKey, licenseSignatureDataArray);
+				if (success) {
+					licenseDao.storeLicenseData(licenseDataArray);
+					licenseDao.storeLicenseSignatureData(licenseSignatureDataArray);
+				}
+			} else {
+				licenseSignatureDataArray = null;
+			}
 		}
+
+		Map<ConfigKey, String> licenseData = new HashMap<>();
+		Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(licenseDataArray, "UTF-8", null);
+		Map<String, String> licenseDataFromXml = XmlUtilities.getSimpleValuesOfNode(licenseDocument.getElementsByTagName("emm.license").item(0));
+		for (Entry<String, String> entry : licenseDataFromXml.entrySet()) {
+			licenseData.put(new ConfigKey(entry.getKey(), 0, null), entry.getValue());
+		}
+
+		// Handle different names
+		licenseData.put(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null), licenseData.get(new ConfigKey("licenseID", 0, null)));
+		licenseData.remove(new ConfigKey("licenseID", 0, null));
+
+		int licenseID = Integer.parseInt(licenseData.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
 		
 		if (licenseID == 0) {
 			// OpenEMM: No signature check, but remove all data for company_id > 1
 			if (companyDao != null) {
 				companyDao.deactivateExtendedCompanies();
 			}
-		} else {
-			try (InputStream licenseStream = classLoader.getResourceAsStream("emm.license.xml")) {
-				if (licenseStream == null) {
-					throw new Exception("LicenseData emm.license.xml is missing");
-				}
-				
-				try (InputStream signatureStream = classLoader.getResourceAsStream("emm.license.xml.sig")) {
-					if (signatureStream == null) {
-						throw new Exception("LicenseSignature emm.license.xml.sig is missing");
-					}
-				
-					byte[] signatureData = IOUtils.toByteArray(signatureStream);
-					PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
-					boolean success = CryptographicUtilities.verifyStream(licenseStream, publicKey, signatureData);
-	
-					if (!success) {
-						throw new Exception("LicenseSignature emm.license.xml.sig is invalid");
-					}
-				}
-			} catch (Exception e) {
-				throw new LicenseError("Error while checking license: " + e.getMessage(), e);
+		} else if (licenseSignatureDataArray != null) {
+			PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
+			boolean success = CryptographicUtilities.verifyData(licenseDataArray, publicKey, licenseSignatureDataArray);
+			if (!success) {
+				throw new Exception("LicenseSignature is invalid");
 			}
+		} else {
+			throw new Exception("LicenseSignature is missing");
 		}
 		
 		return licenseData;
 	}
-
+	
 	private void checkLicenseData() throws Exception {
 		// Check validity of license data to current db data
 		
@@ -383,15 +458,15 @@ public class ConfigService {
 		}
 		
 		if (configTableDao != null) {
-			if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString())) > 0) {
+			if (NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null))) > 0) {
 				// Check or set license ID in DB
 				try {
-					String storedLicenseID = configTableDao.getAllEntries().get(ConfigValue.System_Licence.toString());
+					String storedLicenseID = configTableDao.getAllEntries().get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null));
 					if (StringUtils.isBlank(storedLicenseID)) {
-						configTableDao.storeEntry("system", "licence", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()));
-						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()));
-					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()))) {
-						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()), storedLicenseID);
+						configTableDao.storeEntry("system", "licence", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
+						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
+					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)))) {
+						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)), storedLicenseID);
 					}
 				} catch (SQLException e) {
 					throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
@@ -400,28 +475,28 @@ public class ConfigService {
 				// Check license ID in licence.cfg file, if exists
 				String	licenceCfgLicenseId = (new Systemconfig ()).get ("licence");
 				
-				if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString())))) {
-					throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()), licenceCfgLicenseId);
+				if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null))))) {
+					throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)), licenceCfgLicenseId);
 				}
 			}
 		}
 		
 		// Check validity time limit
 		Date validUntil;
-		if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()))) {
+		if (StringUtils.isNotBlank(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)))) {
 			try {
-				validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()) + " 23:59:59");
+				validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)) + " 23:59:59");
 			} catch (ParseException e) {
 				throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
 			}
 			if (new Date().after(validUntil)) {
-				throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()));
+				throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)), EMM_PROPERTIES_VALUES.get(new ConfigKey(ConfigValue.Mailaddress_Support.toString(), 0, null)));
 			}
 		}
 
 		if (companyDao != null) {
 			// Check maximum number of companies
-			int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()));
+			int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfCompanies.toString(), 0, null)));
 			if (maximumNumberOfCompanies >= 0) {
 				int numberOfCompanies = companyDao.getNumberOfCompanies();
 				if (numberOfCompanies > maximumNumberOfCompanies) {
@@ -432,7 +507,7 @@ public class ConfigService {
 
 		if (adminDao != null) {
 			// Check maximum number of admins
-			int maximumNumberOfAdmins = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAdmins.toString()));
+			int maximumNumberOfAdmins = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfAdmins.toString(), 0, null)));
 			if (maximumNumberOfAdmins >= 0) {
 				int numberOfAdmins = adminDao.getNumberOfAdmins();
 				if (numberOfAdmins > maximumNumberOfAdmins) {
@@ -443,7 +518,7 @@ public class ConfigService {
 
 		if (webserviceUserDao != null) {
 			// Check maximum number of admins
-			int maximumNumberOfWebserviceUsers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString()));
+			int maximumNumberOfWebserviceUsers = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString(), 0, null)));
 			if (maximumNumberOfWebserviceUsers >= 0) {
 				int numberOfWebserviceUsers = webserviceUserDao.getNumberOfWebserviceUsers();
 				if (numberOfWebserviceUsers > maximumNumberOfWebserviceUsers) {
@@ -454,7 +529,7 @@ public class ConfigService {
 
 		if (supervisorDao != null) {
 			// Check maximum number of supervisors
-			int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()));
+			int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfSupervisors.toString(), 0, null)));
 			if (maximumNumberOfSupervisors >= 0) {
 				int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
 				if (numberOfSupervisors > maximumNumberOfSupervisors) {
@@ -465,7 +540,7 @@ public class ConfigService {
 
 		if (companyDao != null) {
 			// Check maximum number of customers
-			int maximumNumberOfCustomers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCustomers.toString()));
+			int maximumNumberOfCustomers = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfCustomers.toString(), 0, null)));
 			if (maximumNumberOfCustomers >= 0) {
 				int numberOfCustomers = companyDao.getMaximumNumberOfCustomers();
 				if (numberOfCustomers > maximumNumberOfCustomers) {
@@ -474,7 +549,7 @@ public class ConfigService {
 			}
 		
 			// Check maximum number of profile fields
-			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfProfileFields.toString()));
+			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfProfileFields.toString(), 0, null)));
 			if (maximumNumberOfProfileFields >= 0) {
 				int numberOfProfileFields;
 				try {
@@ -488,7 +563,7 @@ public class ConfigService {
 			}
 		
 			// Check allowed premium features
-			String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString());
+			String allowedPremiumFeaturesData = LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_AllowedPremiumFeatures.toString(), 0, null));
 			Set<String> allowedPremiumFeatures = new HashSet<>();
 			Set<String> unAllowedPremiumFeatures = new HashSet<>();
 			for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
@@ -580,7 +655,7 @@ public class ConfigService {
 	public String getValue(ConfigValue configurationValueID) {
 		try {
 			refreshValues();
-			String value = CONFIGURATIONVALUES.get(configurationValueID.toString());
+			String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
 			if (value == null) {
 				value = configurationValueID.getDefaultValue();
 			}
@@ -588,7 +663,7 @@ public class ConfigService {
 		} catch (LicenseError e) {
 			if (ConfigValue.SupportEmergencyUrl.equals(configurationValueID))  {
 				try {
-					return configTableDao.getAllEntries().get(ConfigValue.SupportEmergencyUrl.toString());
+					return configTableDao.getAllEntries().get(new ConfigKey(ConfigValue.SupportEmergencyUrl.toString(), 0, null));
 				} catch (SQLException e1) {
 					throw new RuntimeException("Cannot load SupportEmergencyUrl from database", e1);
 				}
@@ -636,10 +711,57 @@ public class ConfigService {
 	public String getValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
 		refreshValues();
 		
-		String value = CONFIGURATIONVALUES.get(configurationValueID.toString() + "." + companyID);
+		String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, null));
 		
 		if (value == null) {
-			value = CONFIGURATIONVALUES.get(configurationValueID.toString() + "." + 0);
+			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
+		}
+
+		if (value == null) {
+			value = getValue(configurationValueID);
+		}
+		
+		return value;
+	}
+
+	public String getValue(String hostName, ConfigValue configurationValueID) {
+		return getValue(hostName, configurationValueID, 0);
+	}
+	
+	/**
+	 * Does a chained search for specified configuration. Search stops at first match:
+	 * 
+	 * <ol>
+	 *   <li>Search configuration value for given company ID and hostname.</li>
+	 *   <li>Search configuration value for given hostname and the default company ID 0</li>
+	 *   <li>Search configuration value for given company ID.</li>
+	 *   <li>Search configuration value for company ID 0.</li>
+	 *   <li>Search configuration value without company ID</li>
+	 * </ol>
+	 * 
+	 * If there is no matching configuration, {@code null} is returned.
+	 * 
+	 * @param hostName hostName
+	 * @param configurationValueID configuration value ID
+	 * @param companyID company ID
+
+	 * @return configuration value as String or {@code null}
+	 */
+	public String getValue(String hostName, ConfigValue configurationValueID, @VelocityCheck int companyID) {
+		refreshValues();
+		
+		String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, hostName));
+		
+		if (value == null) {
+			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, hostName));
+		}
+		
+		if (value == null) {
+			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, null));
+		}
+		
+		if (value == null) {
+			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
 		}
 
 		if (value == null) {
@@ -702,6 +824,18 @@ public class ConfigService {
 		String value = getValue(configurationValueID, companyID);
 		
 		return Integer.parseInt(value);
+	}
+	
+	public long getLongValue(ConfigValue configurationValueID, @VelocityCheck int companyID, int defaultValue) {
+		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
+		
+		return Long.parseLong(value);
+	}
+	
+	public long getLongValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+		String value = getValue(configurationValueID, companyID);
+		
+		return Long.parseLong(value);
 	}
 
 	public float getFloatValue(ConfigValue configurationValueID, @VelocityCheck int companyID){
@@ -978,6 +1112,10 @@ public class ConfigService {
 		return getValue(ConfigValue.FullviewFormName, companyID);
 	}
 	
+	public final boolean isSessionHijackingPreventionEnabled() {
+		return getBooleanValue(ConfigValue.SessionHijackingPrevention);
+	}
+	
 	public final Map<String, String> getHostSystemProperties() {
 		Map<String, String> hostProperties = new HashMap<>();
 		Map<String, String> systemProperties = new Systemconfig().get();
@@ -1007,5 +1145,9 @@ public class ConfigService {
 			logger.error("Cannot reach to host " + hostName, e);
 		}
 		return new Tuple<>(propertyName, reachable);
+	}
+
+	public void enforceExpiration() {
+		EXPIRATIONTIME = new GregorianCalendar();
 	}
 }

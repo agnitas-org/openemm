@@ -48,7 +48,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientStatisticDto;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
@@ -302,10 +302,10 @@ public class MailinglistController {
 	}
 	
 	private void loadStatistics(ComAdmin admin, MailinglistForm form, Model model) throws Exception {
-		RecipientStatisticDto statistic = form.getStatistic();
+		RecipientProgressStatisticDto statistic = form.getStatistic();
 		
 		if(statistic == null) {
-			statistic = new RecipientStatisticDto();
+			statistic = new RecipientProgressStatisticDto();
 		}
 		
 		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();

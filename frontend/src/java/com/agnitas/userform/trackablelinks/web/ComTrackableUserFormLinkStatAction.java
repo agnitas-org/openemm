@@ -13,16 +13,17 @@ package com.agnitas.userform.trackablelinks.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.UserFormDao;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
+import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.reporting.birt.util.URLUtils;
 import com.agnitas.userform.bean.UserForm;
 
@@ -32,12 +33,11 @@ import com.agnitas.userform.bean.UserForm;
 public class ComTrackableUserFormLinkStatAction extends DispatchAction {
 	private static final transient Logger logger = Logger.getLogger(ComTrackableUserFormLinkStatAction.class);
 
-	private String publicKeyFilename;
-
+	protected ConfigService configService;
     protected UserFormDao userFormDao;
 
 	/**
-	 * For retrieving the statistics for trackable user links 
+	 * For retrieving the statistics for trackable user links
 	 *
 	 * @param mapping - action mapping
 	 * @param form - action form
@@ -50,7 +50,9 @@ public class ComTrackableUserFormLinkStatAction extends DispatchAction {
 			HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
 		
-		if (logger.isDebugEnabled()) logger.debug("Starting action method statistics");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Starting action method statistics");
+		}
 		
 		ActionForward destination = mapping.findForward("stat");
 		
@@ -58,8 +60,10 @@ public class ComTrackableUserFormLinkStatAction extends DispatchAction {
 			return mapping.findForward("logon");
 		}
 		
-		if (logger.isDebugEnabled()) logger.debug("Finished action method statistics");
-		request.setAttribute("uid", URLUtils.encodeURL( RSACryptUtil.encrypt(UIDUtils.createUID(AgnUtils.getAdmin(request)),RSACryptUtil.getPublicKey(publicKeyFilename))));
+		if (logger.isDebugEnabled()) {
+			logger.debug("Finished action method statistics");
+		}
+		request.setAttribute("sec", URLUtils.encodeURL(BirtInterceptingFilter.createSecurityToken(configService, AgnUtils.getAdmin(request).getCompanyID())));
 		request.setAttribute("language", getLocale(request).getLanguage());
         ComTrackableUserFormLinkStatForm linkStatForm = (ComTrackableUserFormLinkStatForm) form;
         UserForm userForm = userFormDao.getUserForm(linkStatForm.getFormID(), AgnUtils.getCompanyID(request));
@@ -68,10 +72,12 @@ public class ComTrackableUserFormLinkStatAction extends DispatchAction {
 		return destination;
 	}
 
-	public void setPublicKeyFilename(String publicKeyFilename) {
-		this.publicKeyFilename = publicKeyFilename;
-	}
+	@Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
+    }
 
+	@Required
     public void setUserFormDao(UserFormDao userFormDao) {
         this.userFormDao = userFormDao;
     }

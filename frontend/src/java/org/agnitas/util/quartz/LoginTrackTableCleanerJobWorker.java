@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
  * Example Insert in DB:
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '0400', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.LoginTrackTableCleanerJobWorker', 1);
- *    
+ * 
  *  Optional:
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'retentionTime', '7');
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'deleteBlockSize', '1000');
@@ -38,7 +38,7 @@ public class LoginTrackTableCleanerJobWorker extends JobWorker {
 	public static final int DEFAULT_DELETE_BLOCK_SIZE = 1000;
 		
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		int retentionTime;
 		try {
 			if (StringUtils.isBlank(job.getParameters().get("retentionTime"))) {
@@ -68,10 +68,14 @@ public class LoginTrackTableCleanerJobWorker extends JobWorker {
 		if(loginTrackDao == null) {
 			logger.error("no LoginTrackDao object defined - job stopped");
 		} else {
-			// Delete in blocks 
+			// Delete in blocks
 			while((affectedRows = loginTrackDao.deleteOldRecords(retentionTime, deleteBlockSize)) > 0) {
-				if (logger.isInfoEnabled()) logger.info("deleted " + affectedRows + " records");
+				if (logger.isInfoEnabled()) {
+					logger.info("deleted " + affectedRows + " records");
+				}
 			}
 		}
+		
+		return null;
 	}
 }

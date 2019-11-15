@@ -19,11 +19,11 @@
         '<svg class="grid-view center-block" viewBox="0 0 {{= viewWidth }} {{= viewHeight }}" style="width: {{= viewWidth }}px; height: {{= viewHeight }}px">' +
           '<g class="grid-columns"></g>' +
         '</svg>' +
-      '</div>', {
-        viewWidth: config.templateWidth,
-        viewHeight: 100
-      }
-    )
+      '</div>'
+    )({
+      viewWidth: config.templateWidth,
+      viewHeight: 100
+    });
   }
 
   GridView.prototype.data = function() {
@@ -109,11 +109,11 @@
         '<svg class="column-view center-block" viewBox="0 0 {{= viewWidth }} {{= viewHeight }}" style="width: {{= viewWidth }}px; height: {{= viewHeight }}px">' +
           '<g class="grid-columns"></g>' +
         '</svg>' +
-      '</div>', {
-        viewWidth:  config.templateWidth,
-        viewHeight: config.columnNum * 35 - 5
-      }
-    )
+      '</div>'
+    )({
+      viewWidth:  config.templateWidth,
+      viewHeight: config.columnNum * 35 - 5
+    });
   }
 
   GridColumnView.prototype.data = function() {
@@ -216,10 +216,10 @@
       .attr("x", config.gutter / 2 + 10)
       .attr("y", 20)
       .text(function(d, i) {
-        return _.template("{{= width }}px / {{= perc }}%", {
+        return _.template("{{= width }}px / {{= perc }}%")({
           width: d[1].width,
           perc: Math.floor( 100 * ( i + 1 ) / config.columnNum )
-        })
+        });
       })
 
   }

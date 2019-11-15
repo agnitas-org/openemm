@@ -25,6 +25,7 @@ import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.CustomerImportStatusImpl;
 import org.agnitas.service.impl.CSVColumnState;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ImportReportEntry;
 import org.agnitas.web.ProfileImportAction;
 import org.agnitas.web.forms.ImportBaseFileForm;
@@ -310,7 +311,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
 	}
 	
 	public void setSelectedMailinglist(int id, String value) {
-		if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true"))) {
+		if (AgnUtils.interpretAsBoolean(value)) {
 			selectedMailinglists.add(id);
 		} else {
 			selectedMailinglists.remove(id);

@@ -14,10 +14,11 @@
     }
 
     _.each(events, function(selector, trigger) {
-      $scope.on(trigger, selector, function(e) {
+      $scope.on(trigger, selector, function(e, data) {
         self.event = e;
         self.trigger = trigger;
         self.el = $(this);
+        self.data = data;
         action();
 
         if ($(self.event.target).is("a")) {

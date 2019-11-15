@@ -97,7 +97,7 @@ public class MailingClicksDayStatDataSet extends BIRTDataSet {
 				+ " left join ( "
 				+ " select to_char(rdir.timestamp, 'HH24') time "
 				+ " , count( rdir.customer_id) clicks_gros , count( distinct rdir.customer_id) clicks_net from rdirlog_<COMPANYID>_tbl rdir "
-				+ " where rdir.company_id= <COMPANYID> and rdir.mailing_id= <MAILINGID> "
+				+ " where rdir.mailing_id= <MAILINGID> "
 				+ " and to_char( rdir.timestamp, 'yyyymmdd') = '<STARTDATE>' group by to_char( rdir.timestamp, 'HH24'))  clicks "
 				+ " on ( hours.hh = clicks.time ) " + " order by hh";
 	}
@@ -174,7 +174,7 @@ public class MailingClicksDayStatDataSet extends BIRTDataSet {
 	private String getSubSelectTemplateClicksPerHourAndTarget() {
 		return "select to_char(rdir.timestamp, 'HH24') hh  , count( rdir.customer_id) clicks_gros , count( distinct rdir.customer_id) clicks_net, '<TARGETGROUP>' targetgroup "
 				+ " from rdirlog_<COMPANYID>_tbl rdir join customer_<COMPANYID>_tbl cust ON ( (<TARGETSQL>) and cust.customer_id = rdir.customer_id) "
-				+ " where rdir.company_id= <COMPANYID> and rdir.mailing_id= <MAILINGID>  and to_char( rdir.timestamp, 'YYYYMMDD') = '<STARTDATE>' "
+				+ " where rdir.mailing_id= <MAILINGID>  and to_char( rdir.timestamp, 'YYYYMMDD') = '<STARTDATE>' "
 				+ " group by  to_char(rdir.timestamp, 'HH24')";
 	}
 }

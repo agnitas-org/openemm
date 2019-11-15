@@ -13,6 +13,7 @@ package com.agnitas.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,7 +76,8 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	@Override
 	public BindingEntry get(int recipientID, @VelocityCheck int companyID, int mailinglistID, int mediaType) {
 		try {
-			String sql = "SELECT customer_id, mailinglist_id, mediatype, user_type, user_status, timestamp, exit_mailing_id, user_remark, creation_date FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
+			// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
+			String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 			List<BindingEntry> list = select(logger, sql, new BindingEntry_RowMapper(this), recipientID, mailinglistID, mediaType);
 			if (list.size() > 0) {
 				return list.get(0);
@@ -105,7 +107,10 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	public void save(@VelocityCheck int companyID, BindingEntry entry) {
 		if (companyID <= 0) {
 			return;
+		} else if (entry.getMailinglistID() <= 0) {
+			return;
 		}
+		
 		String existsSql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 		List<BindingEntry> list = select(logger, existsSql, new BindingEntry_RowMapper(this), entry.getCustomerID(), entry.getMailinglistID(), entry.getMediaType());
 		if (list.size() > 0) {
@@ -128,34 +133,34 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		try {
 			if (companyID <= 0) {
 				return false;
+			} else if (entry.getMailinglistID() <= 0) {
+				return false;
 			}
 			
 			int touchedLines;
 			
-			if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_binding_tbl", "referrer")) {
-				String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, referrer = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-				touchedLines = update(logger,
-					sql,
-					entry.getUserStatus(),
-					entry.getUserRemark(),
-					entry.getReferrer(),
-					entry.getExitMailingID(),
-					entry.getUserType(),
-					entry.getCustomerID(),
-					entry.getMailinglistID(),
-					entry.getMediaType());
-			} else {
-				String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-				touchedLines = update(logger,
-					sql,
-					entry.getUserStatus(),
-					entry.getUserRemark(),
-					entry.getExitMailingID(),
-					entry.getUserType(),
-					entry.getCustomerID(),
-					entry.getMailinglistID(),
-					entry.getMediaType());
+			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
+			
+			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP";
+			List<Object> sqlParameters = new ArrayList<>();
+			sqlParameters.add(entry.getUserStatus());
+			sqlParameters.add(entry.getUserRemark());
+			sqlParameters.add(entry.getExitMailingID());
+			sqlParameters.add(entry.getUserType());
+			if (bindingColumns.contains("referrer")) {
+				sql += ", referrer = ?";
+				sqlParameters.add(entry.getReferrer());
 			}
+			if (bindingColumns.contains("entry_mailing_id")) {
+				sql += ", entry_mailing_id = ?";
+				sqlParameters.add(entry.getEntryMailingID());
+			}
+			sql += " WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
+			sqlParameters.add(entry.getCustomerID());
+			sqlParameters.add(entry.getMailinglistID());
+			sqlParameters.add(entry.getMediaType());
+			
+			touchedLines = update(logger, sql, sqlParameters.toArray());
 
 			return touchedLines >= 1;
 		} catch (Exception e) {
@@ -171,34 +176,36 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 				return false;
 			} else if (entry.getCustomerID() <= 0) {
 				return false;
+			} else if (entry.getMailinglistID() <= 0) {
+				return false;
 			} else {
-				if(checkAssignedProfileFieldIsSet(entry, companyID)) {
-					if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_binding_tbl", "referrer")) {
-						String insertSql = "INSERT INTO customer_" + companyID + "_binding_tbl (mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, referrer, creation_date, exit_mailing_id, mediatype) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, CURRENT_TIMESTAMP, ?, ?)";
-						update(logger,
-							insertSql,
-							entry.getMailinglistID(),
-							entry.getCustomerID(),
-							entry.getUserType(),
-							entry.getUserStatus(),
-							entry.getUserRemark(),
-							entry.getReferrer(),
-							entry.getExitMailingID(),
-							entry.getMediaType());
-						return true;
-					} else {
-						String insertSql = "INSERT INTO customer_" + companyID + "_binding_tbl (mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?)";
-						update(logger,
-							insertSql,
-							entry.getMailinglistID(),
-							entry.getCustomerID(),
-							entry.getUserType(),
-							entry.getUserStatus(),
-							entry.getUserRemark(),
-							entry.getExitMailingID(),
-							entry.getMediaType());
-						return true;
+				if (checkAssignedProfileFieldIsSet(entry, companyID)) {
+					List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
+					
+					String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
+					String sqlValuePart = "?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?";
+					List<Object> sqlParameters = new ArrayList<>();
+					sqlParameters.add(entry.getMailinglistID());
+					sqlParameters.add(entry.getCustomerID());
+					sqlParameters.add(entry.getUserType());
+					sqlParameters.add(entry.getUserStatus());
+					sqlParameters.add(entry.getUserRemark());
+					sqlParameters.add(entry.getExitMailingID());
+					sqlParameters.add(entry.getMediaType());
+					if (bindingColumns.contains("referrer")) {
+						sqlInsertPart += ", referrer";
+						sqlValuePart += ", ?";
+						sqlParameters.add(entry.getReferrer());
 					}
+					if (bindingColumns.contains("entry_mailing_id")) {
+						sqlInsertPart += ", entry_mailing_id";
+						sqlValuePart += ", ?";
+						sqlParameters.add(entry.getEntryMailingID());
+					}
+					String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (" + sqlInsertPart + ") VALUES (" + sqlValuePart + ")";
+					
+					update(logger, sql, sqlParameters.toArray());
+					return true;
 				} else {
 					return false;
 				}
@@ -217,7 +224,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			if(mediaType.getAssignedProfileField() == null) {
 				return true;
 			} else {
-				final Map<String, Object> map = this.recipientDao.getCustomerDataFromDb(companyID, entry.getCustomerID()); 
+				final Map<String, Object> map = this.recipientDao.getCustomerDataFromDb(companyID, entry.getCustomerID());
 				
 				final Object value = map.get(mediaType.getAssignedProfileField());
 				
@@ -234,30 +241,27 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 				return false;
 			}
 			
-			int touchedLines;
+			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 			
-			if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_binding_tbl", "referrer")) {
-				String sqlUpdateStatus = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, exit_mailing_id = ?, user_remark = ?, referrer = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-				touchedLines = update(logger,
-					sqlUpdateStatus,
-					entry.getUserStatus(),
-					entry.getExitMailingID(),
-					entry.getUserRemark(),
-					entry.getReferrer(),
-					entry.getCustomerID(),
-					entry.getMailinglistID(),
-					entry.getMediaType());
-			} else {
-				String sqlUpdateStatus = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, exit_mailing_id = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-				touchedLines = update(logger,
-					sqlUpdateStatus,
-					entry.getUserStatus(),
-					entry.getExitMailingID(),
-					entry.getUserRemark(),
-					entry.getCustomerID(),
-					entry.getMailinglistID(),
-					entry.getMediaType());
+			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, exit_mailing_id = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP";
+			List<Object> sqlParameters = new ArrayList<>();
+			sqlParameters.add(entry.getUserStatus());
+			sqlParameters.add(entry.getExitMailingID());
+			sqlParameters.add(entry.getUserRemark());
+			if (bindingColumns.contains("referrer")) {
+				sql += ", referrer = ?";
+				sqlParameters.add(entry.getReferrer());
 			}
+			if (bindingColumns.contains("entry_mailing_id")) {
+				sql += ", entry_mailing_id = ?";
+				sqlParameters.add(entry.getEntryMailingID());
+			}
+			sql += " WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
+			sqlParameters.add(entry.getCustomerID());
+			sqlParameters.add(entry.getMailinglistID());
+			sqlParameters.add(entry.getMediaType());
+			
+			int touchedLines = update(logger, sql, sqlParameters.toArray());
 			
 			return touchedLines >= 1;
 		} catch (Exception e) {
@@ -342,7 +346,9 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	public List<BindingEntry> getBindings(@VelocityCheck int companyID, int recipientID) {
-		String sql = "SELECT customer_id, mailinglist_id, mediatype, user_type, user_status, timestamp, exit_mailing_id, user_remark, creation_date FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ?";
+
+		// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
+		String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ?";
 		return select(logger, sql, new BindingEntry_RowMapper(this), recipientID);
 	}
 
@@ -397,7 +403,6 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	}
 
 	private class PlainBindingEntryRowMapper implements RowMapper<PlainBindingEntry> {
-
 		@Override
 		public PlainBindingEntry mapRow(ResultSet resultSet, int i) throws SQLException {
 			PlainBindingEntry plainBindingEntry = new PlainBindingEntryImpl();
@@ -409,6 +414,16 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			plainBindingEntry.setUserStatus(resultSet.getInt("user_status"));
 			plainBindingEntry.setTimestamp(resultSet.getTimestamp("timestamp"));
 			plainBindingEntry.setExitMailingId(resultSet.getInt("exit_mailing_id"));
+			
+			if (DbUtilities.resultsetHasColumn(resultSet, "entry_mailing_id")) {
+				plainBindingEntry.setEntryMailingId(resultSet.getInt("entry_mailing_id"));
+				if (resultSet.wasNull()) {
+					plainBindingEntry.setEntryMailingId(0);
+				}
+			} else {
+				plainBindingEntry.setEntryMailingId(0);
+			}
+			
 			plainBindingEntry.setUserRemark(resultSet.getString("user_remark"));
 			plainBindingEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
 
@@ -438,6 +453,16 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			if (resultSet.wasNull()) {
 				readEntry.setExitMailingID(0);
 			}
+			
+			if (DbUtilities.resultsetHasColumn(resultSet, "entry_mailing_id")) {
+				readEntry.setEntryMailingID(resultSet.getInt("entry_mailing_id"));
+				if (resultSet.wasNull()) {
+					readEntry.setEntryMailingID(0);
+				}
+			} else {
+				readEntry.setEntryMailingID(0);
+			}
+			
 			readEntry.setUserRemark(resultSet.getString("user_remark"));
 			if (DbUtilities.resultsetHasColumn(resultSet, "referrer")) {
 				readEntry.setReferrer(resultSet.getString("referrer"));

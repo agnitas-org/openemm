@@ -143,6 +143,15 @@ public interface TargetLight {
      * @return true, if target group is valid.
      */
     boolean isValid();
+    
+    /**
+     * Sets validity flag of target group.
+     *
+     * @param valid true, if target group is valid.
+     *
+     * @see #isValid()
+     */
+    void setValid(boolean valid);
 
     /**
      * Checks, if target group is defined as a list split by the workflow manager.

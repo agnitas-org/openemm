@@ -1,1 +1,1 @@
-<%-- file left blank intentionally --%>
+<%-- This file was left empty intentionally. --%>

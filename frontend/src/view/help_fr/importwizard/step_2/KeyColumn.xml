@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title>Colonne cl&eacute;</title>
+	<title><![CDATA[Colonne cl&eacute;]]></title>
 	<content><![CDATA[Il est important de d&eacute;terminer les crit&egrave;res que le syst&egrave;me doit utiliser pour d&eacute;cider si une entr&eacute;e est en double ou non. Pour les envois envoy&eacute;s par courrier &eacute;lectronique, il convient d'utiliser le champ e-mail. C'est le r&eacute;glage par d&eacute;faut. Il se peut qu'un destinataire s'inscrive plusieurs fois, en utilisant &agrave; chaque fois une adresse e-mail diff&eacute;rente, mais il est pratiquement impossible pour un syst&egrave;me de contr&ocirc;le automatique de le d&eacute;tecter. Ce param&egrave;tre s'applique &eacute;galement aux mises &agrave; jour du profil du destinataire. La liste d&eacute;roulante pr&eacute;sente tous les champs utilis&eacute;s dans la base de donn&eacute;es des profils, qu'ils soient standard ou individuels.]]></content>
 </HelpBalloon>

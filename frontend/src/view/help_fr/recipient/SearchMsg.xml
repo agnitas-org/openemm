@@ -1,4 +1,4 @@
 <HelpBalloon>
 	<title><![CDATA[Recherche &eacute;tendue]]></title>
-	<content><![CDATA[Il est possible de rechercher dans les champs pr&eacute;nom, nom et e-mail &agrave; l'aide de caract&egrave;res g&eacute;n&eacute;riques. Les caract&egrave;res g&eacute;n&eacute;riques * et % restent pour un nombre quelconque de caract&egrave;res. Les caract&egrave;res g&eacute;n&eacute;riques _ et ? ne repr&eacute;sentent qu'un seul caractère variable. A moins d'utiliser des caract&egrave;res g&eacute;n&eacute;riques, l'entr&eacute;e exacte sera recherch&eacute;e.]]></content>
+	<content><![CDATA[Il est possible de rechercher dans les champs pr&eacute;nom, nom et e-mail &agrave; l'aide de caract&egrave;res g&eacute;n&eacute;riques. Les caract&egrave;res g&eacute;n&eacute;riques * et % restent pour un nombre quelconque de caract&egrave;res. Les caract&egrave;res g&eacute;n&eacute;riques _ et ? ne repr&eacute;sentent qu'un seul caract&egrave;re variable. A moins d'utiliser des caract&egrave;res g&eacute;n&eacute;riques, l'entr&eacute;e exacte sera recherch&eacute;e.]]></content>
 </HelpBalloon>

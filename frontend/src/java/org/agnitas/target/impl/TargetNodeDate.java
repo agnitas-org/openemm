@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
 import org.apache.commons.lang.StringUtils;
@@ -86,73 +85,6 @@ public class TargetNodeDate extends TargetNode implements Serializable {
     @Override
     protected void initializeOperatorLists() {
         typeOperators = TargetNodeDate.getValidOperators();
-    }
-    
-    @Override
-    public String generateSQL() {
-		StringBuffer tmpSQL = new StringBuffer("");
-
-		switch (this.chainOperator) {
-			case TargetNode.CHAIN_OPERATOR_AND:
-				tmpSQL.append(" AND ");
-				break;
-			case TargetNode.CHAIN_OPERATOR_OR:
-				tmpSQL.append(" OR ");
-				break;
-			default:
-				tmpSQL.append(" ");
-		}
-
-		if (this.openBracketBefore) {
-			tmpSQL.append("(");
-		}
-
-        TargetOperator operator = null;
-
-        // Permitted range: [1, N]
-        if (this.primaryOperator > 0 && this.primaryOperator < this.typeOperators.length) {
-            // Notice that array entry permitted to be null
-            operator = this.typeOperators[this.primaryOperator - 1];
-        }
-
-        if (operator == null) {
-            operator = TargetNode.OPERATOR_IS;
-        }
-
-        String columnName;
-        if (primaryField.equalsIgnoreCase("CURRENT_TIMESTAMP") || primaryField.equalsIgnoreCase("SYSDATE")) {
-            columnName = this.primaryField;
-        } else {
-            columnName = "cust." + this.primaryField;
-        }
-
-		if (operator.getOperatorCode() == TargetNode.OPERATOR_IS.getOperatorCode()) {
-			tmpSQL.append(columnName);
-			tmpSQL.append(" ");
-			tmpSQL.append(operator.getOperatorSymbol());
-			tmpSQL.append(" ");
-			tmpSQL.append(getSQLSafeString(this.primaryValue));
-		} else {
-			tmpSQL.append(sqlDateString(ConfigService.isOracleDB(), columnName, this.dateFormat)).append(" ");
-			tmpSQL.append(operator.getOperatorSymbol());
-
-            String value = " '" + primaryValue + "' ";
-            if (StringUtils.isNotBlank(primaryValue)) {
-                String expression = primaryValue.toUpperCase();
-                if (expression.contains("CURRENT_TIMESTAMP") || expression.contains("SYSDATE") || expression.contains("NOW()")) {
-                    value = primaryValue.replaceAll("(?i)sysdate", "CURRENT_TIMESTAMP")
-                            .replaceAll("(?i)now\\(\\)", "CURRENT_TIMESTAMP")
-                            .replaceAll("(?i)current_timestamp", "CURRENT_TIMESTAMP");
-                    value = " " + sqlDateString(ConfigService.isOracleDB(), value, dateFormat);
-                }
-            }
-            tmpSQL.append(value);
-		}
-
-		if (this.closeBracketAfter) {
-			tmpSQL.append(")");
-		}
-		return tmpSQL.toString();
     }
     
 	/**

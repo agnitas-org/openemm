@@ -1,0 +1,8 @@
+<HelpBalloon>
+    <title><![CDATA[Adresse du filtre]]></title>
+    <content><![CDATA[L'adresse du filtre peut &ecirc;tre renseign&eacute;e de deux fa&ccedil;ons : 
+    1. Vous laissez le champ Adresse du filtre vide. 
+    	Dans ce cas, l'EMM g&eacute;n&egrave;re automatiquement une adresse de filtre lorsque le filtre rebond est cr&eacute;&eacute;. 
+    2. Vous saisissez une adresse de filtre manuellement. 
+    	Le remplissage manuel de l'adresse du filtre n'a d'importance que si vous avez saisi le serveur de filtrage de l'EMM (filter.agnitas.de) comme serveur de r&eacute;ception du courrier dans votre DNS (Domain Name System). Pour plus de d&eacute;tails, veuillez contacter le support AGNITAS.]]></content>
+</HelpBalloon>

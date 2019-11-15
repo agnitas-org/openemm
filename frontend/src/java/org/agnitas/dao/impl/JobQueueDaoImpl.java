@@ -246,7 +246,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 				
 				if (touchedLines != 1) {
 					throw new RuntimeException("Invalid touched lines amount");
-				} else {		
+				} else {
 					return true;
 				}
 			} catch (Exception e) {
@@ -279,10 +279,10 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int resetJobsForCurrentHost() {
-		return update(logger, 
+		return update(logger,
 			"UPDATE job_queue_tbl"
 			+ " SET " + FIELD_RUNNING + " = 0, " + FIELD_NEXTSTART + " = CURRENT_TIMESTAMP"
-			+ " WHERE " + FIELD_HOSTNAME + " = ? AND " + FIELD_RUNNING + " = 1 AND (" + FIELD_DELETED + " IS NULL OR " + FIELD_DELETED + " = 0)",
+			+ " WHERE " + FIELD_HOSTNAME + " = ? AND " + FIELD_RUNNING + " = 1",
 			AgnUtils.getHostName());
 	}
 

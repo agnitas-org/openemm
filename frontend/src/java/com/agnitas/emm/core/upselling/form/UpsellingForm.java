@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.upselling.form;
 
+import java.util.Map;
+
+import org.agnitas.util.AgnUtils;
+
 /**
  * Represents set of fields for displaying upselling page
  */
@@ -18,6 +22,8 @@ public class UpsellingForm {
     private String featureNameKey;
     private String sidemenuActive;
     private String sidemenuSubActive;
+    private String navigationKey;
+    private String extraParams;
 
     public String getPage() {
         return page;
@@ -49,5 +55,25 @@ public class UpsellingForm {
 
     public void setSidemenuSubActive(String sidemenuSubActive) {
         this.sidemenuSubActive = sidemenuSubActive;
+    }
+    
+    public String getNavigationKey() {
+        return navigationKey;
+    }
+    
+    public void setNavigationKey(String navigationKey) {
+        this.navigationKey = navigationKey;
+    }
+    
+    public String getExtraParams() {
+        return extraParams;
+    }
+    
+    public void setExtraParams(String extraParams) {
+        this.extraParams = extraParams;
+    }
+    
+    public Map<String, String> getExtraParamsMap() {
+        return AgnUtils.getParamsMap(extraParams, "&", "=");
     }
 }

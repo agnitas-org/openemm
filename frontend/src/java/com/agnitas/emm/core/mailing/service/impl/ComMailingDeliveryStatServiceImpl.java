@@ -12,16 +12,16 @@ package com.agnitas.emm.core.mailing.service.impl;
 
 import java.util.Date;
 
-import org.agnitas.beans.Mailing;
-import org.agnitas.dao.MailingDao;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MailingBackendLog;
 import com.agnitas.dao.DeliveryStatDao;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import org.agnitas.dao.MailingDao;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStatService {
 
@@ -74,23 +74,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
             return deliveryStatistic;
         }
 
-        String statusField;
-        switch (mailingType) {
-            case Mailing.TYPE_NORMAL:
-                statusField = "W";
-                break;
-
-            case Mailing.TYPE_DATEBASED:
-                statusField = "R";
-                break;
-
-            case Mailing.TYPE_ACTIONBASED:
-                statusField = "C";
-                break;
-                
-			default:
-				statusField = "W";
-        }
+        String statusField = getStatusField(mailingType);
 
         // check generation status first
         try {
@@ -128,7 +112,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
         }
 
         //----------------------------------------------------------------------
-        if (!deliveryStatistic.getLastType().equalsIgnoreCase("W")) {
+        if (!deliveryStatistic.getLastType().equalsIgnoreCase(MaildropStatus.WORLD.getCodeString())) {
             int lastWorldMailingStatusID = mailingDao.getStatusidForWorldMailing(deliveryStatistic.getMailingID(), deliveryStatistic.getCompanyID());
             if (lastWorldMailingStatusID != 0) {
                 // mailing has been sent, but a test or admin mailing follows
@@ -193,7 +177,28 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
 
         return deliveryStatistic;
     }
-
+    
+    private String getStatusField(int mailingType) {
+        MailingTypes type = MailingTypes.getByCode(mailingType);
+        if (type != null) {
+            switch (type) {
+                case NORMAL:
+                    return MaildropStatus.WORLD.getCodeString();
+        
+                case DATE_BASED:
+                    return MaildropStatus.DATE_BASED.getCodeString();
+        
+                case ACTION_BASED:
+                    //TODO: check if it's possible to change UNKNOWN_C to ACTION_BASED('E')
+                    return MaildropStatus.UNKNOWN_C.getCodeString();
+        
+                default:
+                    //nothing do
+            }
+        }
+        return MaildropStatus.WORLD.getCodeString();
+    }
+    
     @Override
     public boolean cancelDelivery(int companyID, int mailingID) {
         return deliveryStatDao.cancelDelivery(companyID, mailingID);

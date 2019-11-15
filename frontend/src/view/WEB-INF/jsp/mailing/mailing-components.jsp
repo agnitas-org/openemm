@@ -41,24 +41,109 @@
 
         <div id="tile-imageUpload" class="tile-content">
             <emm:ShowByPermission token="mailing.components.change">
-                <agn:agnForm action="/mcomponents"
-                             enctype="multipart/form-data"
-                             class="form-vertical"
-                             data-form="upload">
-                    <div id="tab-imageUploadSingleImage">
-                        <div class="tile-content-forms">
-                            <jsp:include page="../upload-file.jsp">
-                                <jsp:param name="requestParams" value="mailingID:${mailingComponentsForm.mailingID}, action:${ACTION_SAVE_COMPONENTS}"/>
-                                <jsp:param name="fileName" value="newFile[]"/>
-                                <jsp:param name="tableHeaderTemplate" value="upload-image-template-header"/>
-                                <jsp:param name="tableRowTemplate" value="upload-image-template-add"/>
-                            </jsp:include>
+                <div data-initializer="upload">
+                    <agn:agnForm action="/mcomponents"
+                                 enctype="multipart/form-data"
+                                 class="form-vertical"
+                                 data-custom-loader=""
+                                 data-form="resource">
+                        <div id="tab-imageUploadSingleImage">
+                            <agn:agnHidden property="mailingID"/>
+                            <agn:agnHidden property="action" value="${ACTION_SAVE_COMPONENTS}"/>
+
+                            <div class="tile-content-forms">
+                                <div class="dropzone" data-upload-dropzone="">
+                                    <div class="dropzone-text">
+                                        <strong>
+                                            <i class="icon icon-reply"></i>&nbsp;<bean:message key="upload_dropzone.title"/>
+                                        </strong>
+                                        <span class="btn btn-regular btn-primary btn-upload">
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <span class="text"><bean:message key="button.multiupload.select"/></span>
+                                            <input type="file" name="newFile[]" multiple="multiple" data-upload=""/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hidden" data-upload-add="">
+                                <div class="actions actions-top">
+                                    <div class="action-left">
+                                        <button type="button" class="btn btn-regular" data-upload-reset="">
+                                            <i class="icon icon-times"></i>
+                                            <span class="text">
+                                                <bean:message key="button.Cancel"/>
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="action-right">
+                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <span class="text">
+                                                <bean:message key="button.Upload"/>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th class="squeeze-column"><bean:message key="mailing.Preview"/></th>
+                                        <th><bean:message key="Description"/></th>
+                                        <th><bean:message key="ComponentLink"/></th>
+                                        <th><bean:message key="mailing.Graphics_Component.sourceForMobile"/></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody data-upload-add-template="upload-image-template-add"></tbody>
+                                </table>
+
+                                <div class="actions">
+                                    <div class="action-left">
+                                        <button type="button" class="btn btn-regular" data-upload-reset="">
+                                            <i class="icon icon-times"></i>
+                                            <span class="text">
+                                                <bean:message key="button.Cancel"/>
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <div class="action-right">
+                                        <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <span class="text">
+                                                <bean:message key="button.Upload"/>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hidden" data-upload-progress="">
+                                <div class="actions actions-top actions-bottom">
+                                    <div class="action-right">
+                                        <button type="button" class="btn btn-regular" data-form-abort="">
+                                            <i class="icon icon-times"></i>
+                                            <span class="text"><bean:message key="button.Cancel"/></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="progress-wrapper" data-upload-progress-template="upload-template-progress"></div>
+                                <div class="actions actions-top">
+                                    <div class="action-right">
+                                        <button type="button" class="btn btn-regular" data-form-abort="">
+                                            <i class="icon icon-times"></i>
+                                            <span class="text"><bean:message key="button.Cancel"/></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </agn:agnForm>
+                    </agn:agnForm>
+                </div>
             </emm:ShowByPermission>
 
-			<%@include file="/WEB-INF/jsp/mailing/mailing-components-sftp-content.jspf" %>
+			<%@include file="mailing-components-sftp-content.jspf" %>
         </div>
     </div>
 
@@ -180,7 +265,7 @@
                                 </a>
                             </c:if>
 
-                            <c:if test="${component.type == MAILING_COMPONENT_TYPE_HOSTED_IMAGE}">
+                            <c:if test="${component.type == MAILING_COMPONENT_TYPE_HOSTED_IMAGE || component.present == 0}">
                                 <c:set var="pictureDeleteMessage" scope="page">
                                     <bean:message key="mailing.Graphics_Component.delete"/>
                                 </c:set>
@@ -225,7 +310,7 @@
                    <div class="modal-body">
                         <html:hidden property="mailingID"/>
                         <html:hidden property="action" value="${ACTION_UPDATE_HOST_IMAGE}"/>
-                        <html:hidden property="imageFile" styleId="editorResult"/>
+                        <html:hidden property="imageFile" styleId="editor-result"/>
 
                         <input class="hidden" name="componentId" value="{{= componentId }}"/>
                         <div id="l-img-editor" data-initializer="img-editor-init">
@@ -331,23 +416,16 @@
     </div>
 </script>
 
-<script id="upload-image-template-header" type="text/x-mustache-template">
-    <tr>
-        <th><bean:message key="mailing.files"/></th>
-        <th><bean:message key="Description"/></th>
-        <th><bean:message key="ComponentLink"/></th>
-        <th><bean:message key="mailing.Graphics_Component.sourceForMobile"/></th>
-    </tr>
-</script>
-
 <script id="upload-image-template-add" type="text/x-mustache-template">
 {{ var isArchive = filename && filename.toLowerCase().endsWith('.zip'); }}
 <tr>
     <td {{= isArchive ? 'colspan="4"' : '' }}>
         {{ if (preview) { }}
-            <img data-display-dimensions="scope: tr" src="{{= preview }}" style="max-width: 100px; max-height: 150px; width: auto; height: auto; display: block;" />
+        <img src="{{= preview }}" style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;" border="0"/>
         {{ } else { }}
-            {{- filename }}
+        <img src="<c:url value='/assets/core/images/facelift/no_preview.svg'/>"
+             style="max-width: 250px; max-height: 250px; width: auto; height: auto; margin: 20px;"
+             border="0"/>
         {{ } }}
     </td>
 
@@ -377,3 +455,5 @@
     {{ } }}
 </tr>
 </script>
+
+<%@include file="../fragments/upload-template-progress-fragment.jspf" %>

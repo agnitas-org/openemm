@@ -17,13 +17,13 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 public interface ColumnInfoService {
-	public ProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception;
+	ProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception;
 	
-	public List<ProfileField> getColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getColumnInfos(@VelocityCheck int companyID) throws Exception;
 	
-	public List<ProfileField> getColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
+	List<ProfileField> getColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
 
-	public CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID) throws Exception;
 	
-	public CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception;
 }

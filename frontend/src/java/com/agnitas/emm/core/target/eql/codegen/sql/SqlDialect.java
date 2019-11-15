@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.codegen.sql;
 
+import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
 
 /**

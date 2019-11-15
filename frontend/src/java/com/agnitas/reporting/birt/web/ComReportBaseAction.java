@@ -43,15 +43,10 @@ public class ComReportBaseAction extends StrutsActionBase {
        	boolean hourScale;
     }
 	
-	protected String publicKeyFilename;
     protected ComMailingBIRTStatService birtservice;
 	protected ComTargetService targetService;
 	protected ComMailinglistService mailinglistService;
 	private MailinglistApprovalService mailinglistApprovalService;
-	  
-    public void setPublicKeyFilename(String publicKeyFilename) {
-		this.publicKeyFilename = publicKeyFilename;
-	}
     
     @Required
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {

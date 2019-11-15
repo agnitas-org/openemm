@@ -10,44 +10,25 @@
 
 package com.agnitas.emm.core.wsmanager.form;
 
-import javax.validation.constraints.Min;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.agnitas.emm.core.validator.annotation.FieldsValueMatch;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotEmpty;
-
-@FieldsValueMatch(field = "password", fieldMatch = "passwordRepeat", message = "error.webserviceuser.mismatching_passwords",
-        groups = {WebserviceUserForm.ValidationStepTwo.class, WebserviceUserForm.ValidationEditUser.class})
 public class WebserviceUserForm {
 
-    public interface ValidationStepOne {
-    	// Do nothing
-    }
-
-    public interface ValidationStepTwo {
-    	// Do nothing
-    }
-
-    public interface ValidationEditUser {
-    	// Do nothing
-    }
-
-    @NotEmpty(message = "error.webserviceuser.no_username", groups = {ValidationStepOne.class})
     private String userName;
 
-    @Email(message = "error.invalid.email", groups = {ValidationStepOne.class, ValidationEditUser.class})
     private String email;
 
-    @NotEmpty(message = "error.password.missing", groups = {ValidationStepOne.class})
     private String password;
-
-    private String passwordRepeat;
 
     private int companyId;
 
     private String contactInfo;
 
     private boolean active;
+    
+    private final Map<String, String> endpointPermissions = new HashMap<>();
+    private final Map<Integer, String> grantedPermissionGroups = new HashMap<>();
 
     public String getEmail() {
         return email;
@@ -73,14 +54,6 @@ public class WebserviceUserForm {
         this.password = password;
     }
 
-    public String getPasswordRepeat() {
-        return passwordRepeat;
-    }
-
-    public void setPasswordRepeat(String passwordRepeat) {
-        this.passwordRepeat = passwordRepeat;
-    }
-
     public int getCompanyId() {
         return companyId;
     }
@@ -103,5 +76,23 @@ public class WebserviceUserForm {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+     
+    public final void setEndpointPermission(final Map<String, String> map) {
+    	this.endpointPermissions.clear();
+    	this.endpointPermissions.putAll(map);
+    }
+    
+    public final Map<String, String> getEndpointPermission() {
+    	return this.endpointPermissions;
+    }
+    
+    public final void setPermissionGroups(final Map<Integer, String> map) {
+    	this.grantedPermissionGroups.clear();
+    	this.grantedPermissionGroups.putAll(map);
+    }
+    
+    public final Map<Integer,String> getPermissionGroup() {
+    	return this.grantedPermissionGroups;
     }
 }

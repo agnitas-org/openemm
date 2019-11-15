@@ -38,10 +38,12 @@ public class AdminLocaleResolver extends SessionLocaleResolver {
         return admin.getLocale();
     }
 
+    @Override
     public Locale resolveLocale(HttpServletRequest request) {
         return getLocale(request);
     }
 
+    @Override
     public LocaleContext resolveLocaleContext(final HttpServletRequest request) {
         return new TimeZoneAwareLocaleContext() {
             public Locale getLocale() {

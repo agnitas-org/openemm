@@ -58,9 +58,9 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     }
 
 	@Override
-	public AdminGroup getAdminGroup(int groupID) {
+	public AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor) {
 		try {
-			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", adminGroupRowMapper, groupID);
+			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), groupID);
 			if (groups.size() > 0) {
 				return groups.get(0);
 			} else {
@@ -206,6 +206,35 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 			group.setGroupPermissions(Permission.fromTokens(getGroupPermissionsTokens(group.getGroupID())));
 			
 			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(group.getCompanyID());
+			group.setCompanyPermissions(companyPermissions);
+			
+			return group;
+		}
+	}
+    
+    private class AdminGroupRowMapperWithOtherCompanyId implements RowMapper<AdminGroup> {
+    	private int companyID;
+    	
+    	/**
+    	 * Overrides allowed companyPermissions of this group, because it may be some default group of company id 1 or other parent company
+    	 * 
+    	 * @param companyID
+    	 */
+    	public AdminGroupRowMapperWithOtherCompanyId(int companyID) {
+    		this.companyID = companyID;
+    	}
+    	
+		@Override
+		public AdminGroup mapRow(ResultSet resultSet, int row) throws SQLException {
+			AdminGroup group = new AdminGroupImpl();
+			
+			group.setGroupID((resultSet.getInt("admin_group_id")));
+			group.setCompanyID((resultSet.getInt("company_id")));
+			group.setShortname(resultSet.getString("shortname"));
+			group.setDescription(resultSet.getString("description"));
+			group.setGroupPermissions(Permission.fromTokens(getGroupPermissionsTokens(group.getGroupID())));
+			
+			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(companyID);
 			group.setCompanyPermissions(companyPermissions);
 			
 			return group;

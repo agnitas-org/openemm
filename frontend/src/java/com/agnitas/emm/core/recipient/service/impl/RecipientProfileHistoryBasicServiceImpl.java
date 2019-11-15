@@ -22,7 +22,7 @@ import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledExcept
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
-import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryBasicDaoImpl;
+import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImplBasic;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -36,7 +36,7 @@ import org.springframework.beans.factory.annotation.Required;
 public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfileHistoryService {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(RecipientProfileHistoryBasicDaoImpl.class);
+	private static final transient Logger logger = Logger.getLogger(RecipientProfileHistoryDaoImplBasic.class);
 
 	/** Service accessing profile history data. */
 	protected RecipientProfileHistoryDao profileHistoryDao;

@@ -22,7 +22,7 @@
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request"/>
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 				scope="request"/>
 <c:set var="agnBreadcrumbsRootUrl" 	value="${mailingsOverviewLink}"	scope="request"/>
-<c:set var="agnHelpKey" 			value="Heatmap2" 				scope="request" />
+<c:set var="agnHelpKey" 			value="heatmap" 				scope="request" />
 
 <c:choose>
     <c:when test="${ecsForm.isMailingGrid}">

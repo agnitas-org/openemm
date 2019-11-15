@@ -12,9 +12,8 @@ package com.agnitas.emm.core.workflow.beans;
 
 import java.io.Serializable;
 
-import org.codehaus.jackson.map.annotate.JsonDeserialize;
-
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowConnectionImpl;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(as = WorkflowConnectionImpl.class)
 public interface WorkflowConnection extends Serializable {

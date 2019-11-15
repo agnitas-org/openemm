@@ -1,4 +1,4 @@
 <HelpBalloon>
 	<title>Modification du champ creation_date</title>
-	<content><![CDATA[L'exportation comprendra toutes les donn&eacute;es pour lesquelles la date dans la zone date_de_création correspond à la période définie. Pour choisir le jour courant, vous devez choisir "0".]]></content>
+	<content><![CDATA[L'exportation comprendra toutes les donn&eacute;es pour lesquelles la date dans la zone date_de_cr&eacute;ation correspond &agrave; la p&eacute;riode d&eacute;finie. Pour choisir le jour courant, vous devez choisir "0".]]></content>
 </HelpBalloon>

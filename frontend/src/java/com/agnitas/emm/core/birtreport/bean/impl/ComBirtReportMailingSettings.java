@@ -22,14 +22,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.birtreport.dto.BirtReportType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import org.agnitas.util.EmmCalendar;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class ComBirtReportMailingSettings extends ComBirtReportSettings {
 
@@ -144,7 +145,7 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
         Map<String, String> dateRange =  new HashMap<>();
         String startDate = "";
         String stopDate = "";
-        final SimpleDateFormat reportDateFormat = BirtReportSettingsUtils.REPORT_DATE_FORMAT;
+        final SimpleDateFormat reportDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT);
         final Calendar calendar = new GregorianCalendar();
         calendar.setTime(new Date());
 
@@ -152,7 +153,7 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
         if (!BirtReportSettingsUtils.equalParameter(getReportSettingAsString(MAILING_GENERAL_TYPES_KEY), MAILING_NORMAL)) {
             switch (getPeriodType()) {
                 case DATE_RANGE_DAY:
-                    SimpleDateFormat dayDateFormat = BirtReportSettingsUtils.REPORT_DATE_FORMAT_FOR_DAY;
+                    SimpleDateFormat dayDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT_FOR_DAY);
                     calendar.add(EmmCalendar.DAY_OF_YEAR, -1);
                     setDayStart(calendar);
                     startDate = dayDateFormat.format(calendar.getTime());

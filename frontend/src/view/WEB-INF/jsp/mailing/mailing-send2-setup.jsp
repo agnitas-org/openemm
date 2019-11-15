@@ -62,7 +62,7 @@
 <c:set var="agnHighlightKey" 		value="Send_Mailing" 		scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 			scope="request" />
-<c:set var="agnHelpKey" 			value="mailingTestAndSend"	scope="request" />
+<c:set var="agnHelpKey" 			value="sendMailing"	        scope="request" />
 
 <c:choose>
     <c:when test="${isMailingGrid}">

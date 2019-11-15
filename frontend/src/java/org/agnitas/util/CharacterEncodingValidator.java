@@ -15,11 +15,15 @@ import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
+import org.agnitas.exceptions.EncodingError;
 import org.agnitas.web.forms.MailingBaseForm;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.web.ComMailingContentForm;
+
+import java.nio.charset.CharsetEncoder;
+import java.util.Set;
 
 /**
  * This class validates the content of a mailing against the character set
@@ -73,6 +77,8 @@ public interface CharacterEncodingValidator {
 	boolean validate(DynamicTag dynTag, String charsetName);
 
     void validateMod( MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod;
+
+	Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder);
 
     void validateContentMod(ComMailingContentForm form, String charset) throws CharacterEncodingValidationExceptionMod;
 

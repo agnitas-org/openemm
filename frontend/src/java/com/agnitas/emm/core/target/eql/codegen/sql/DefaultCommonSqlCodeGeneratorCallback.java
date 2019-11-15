@@ -42,6 +42,7 @@ import com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RelationalBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StartsWithRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.StringConstantWithEscapeCharsAtomEqlNode;
+import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorImplementationException;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
@@ -65,6 +66,7 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldTypeResolver
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.UnknownReferenceTableColumnException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.UnknownReferenceTableException;
+import com.agnitas.emm.core.target.eql.codegen.util.DataTypeUtils;
 import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidationException;
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidator;
@@ -171,17 +173,12 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	 * 
 	 * @throws InvalidTypeException
 	 *             if code fragment does not evaluate to one of the listed types
+	 *             
+	 *             @see DataTypeUtils#requireDataType(CodeFragment, CodeLocation, DataType...)
 	 */
+	@Deprecated // Replace by DataTypeUtils.requireDataType();
 	public void checkType(CodeLocation location, CodeFragment fragment, DataType... expectedTypes) throws InvalidTypeException {
-		DataType actualType = fragment.evaluatesToType();
-
-		for (DataType expectedType : expectedTypes) {
-			if (actualType == expectedType) {
-				return;
-			}
-		}
-
-		throw new InvalidTypeException(location, actualType, expectedTypes);
+		DataTypeUtils.requireDataType(fragment, location, expectedTypes);
 	}
 
 	@Override
@@ -297,12 +294,12 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	private void binaryRelationalOperationOnDate(final BinaryOperatorRelationalEqlNode node, final CodeFragment left, final CodeFragment right, final EqlDateFormat dateFormat) throws CodeGeneratorException {
 		checkType(node.getStartLocation(), left, DataType.DATE, DataType.TEXT);
 		checkType(node.getStartLocation(), right, DataType.DATE, DataType.TEXT);
-		
+
 		// Date comparison required DATEFORMAT specifier
-		if(dateFormat == null) {
+		if (dateFormat == null) {
 			throw new MissingDateFormatException();
 		}
-		
+
 		try {
 			binaryRelationalOperationWithOperandTransformation(node, left, getDateTransformFunction(left, dateFormat), right, getDateTransformFunction(right, dateFormat));
 		} catch (EqlDateValueFormatException e) {
@@ -314,11 +311,11 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 		if (fragment.evaluatesToType(DataType.DATE)) {
 			return x -> this.sqlDialect.dateToString(x, dateFormat);
 		}
-				
+
 		if (fragment.evaluatesToType(DataType.TEXT)) {
 			return x -> normalizeDateValue(dateFormat, x);
 		}
-		
+
 		return Function.identity();
 	}
 
@@ -329,7 +326,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 			return dateFormat.normalizeValue(value);
 		}
 	}
-	
+
 	private void binaryRelationalOperationWithOperandTransformation(final BinaryOperatorRelationalEqlNode node, final CodeFragment left, final Function<String, String> transformLeft, final CodeFragment right, final Function<String, String> transformRight) throws CodeGeneratorException {
 		// Use identity function if transformation is null
 		final Function<String, String> fnLeft = transformLeft != null ? transformLeft : Function.identity();
@@ -612,8 +609,6 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 
 			buffer.append(" WHERE t.customer_id=cust.customer_id AND t.mailing_id=");
 			buffer.append(node.getMailingId());
-			buffer.append(" AND t.company_id=");
-			buffer.append(companyId);
 
 			if (node.hasDeviceQuery()) {
 				assert deviceQueryFragment != null;
@@ -732,9 +727,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 				buffer.append(buildDeviceQueryTableList());
 			}
 
-			buffer.append(" WHERE t.company_id=");
-			buffer.append(companyId);
-			buffer.append(" AND t.customer_id=cust.customer_id");
+			buffer.append(" WHERE t.customer_id=cust.customer_id");
 			buffer.append(" AND t.mailing_id=");
 			buffer.append(node.getMailingId());
 

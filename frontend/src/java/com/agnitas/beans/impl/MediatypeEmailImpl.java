@@ -11,20 +11,25 @@
 package com.agnitas.beans.impl;
 
 import java.util.Map;
-
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.mail.internet.InternetAddress;
-
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.MediatypeImpl;
-import org.agnitas.util.ParameterParser;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.impl.MediatypeImpl;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.ParameterParser;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+
+import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
 
 public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail {
 	/** The logger. */
@@ -82,6 +87,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 	/** Holds value of property mailingID. */
 	protected int mailingID;
+	
+	protected String bccRecipients;
 
 	/** Creates a new instance of MediatypeEmailImpl */
 	public MediatypeEmailImpl() {
@@ -102,7 +109,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/**
 	 * Setter for property envelopeAdr.
 	 * 
-	 * @param envelopeAdr
+	 * @param envelopeEmail
 	 *            New value of property envelopeAdr.
 	 */
 	@Override
@@ -188,7 +195,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/**
 	 * Setter for property fromAdr.
 	 * 
-	 * @param fromAdr
+	 * @param fromEmail
 	 *            New value of property fromAdr.
 	 *
 	 */
@@ -211,7 +218,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/**
 	 * Setter for property fromAdr.
 	 * 
-	 * @param fromAdr
+	 * @param fromFullname
 	 *            New value of property fromAdr.
 	 *
 	 */
@@ -280,7 +287,12 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	public void setMailFormat(MailType mailType) {
 		this.mailFormat = mailType.getIntValue();
 	}
-
+	
+	@Override
+	public void deleteDateBasedParameters() {
+		setBccRecipients("");
+	}
+	
 	/**
 	 * Getter for property charset.
 	 * 
@@ -332,7 +344,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/**
 	 * Setter for property replyAdr.
 	 * 
-	 * @param replyAdr
+	 * @param replyEmail
 	 *            New value of property replyAdr.
 	 */
 	@Override
@@ -385,7 +397,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/**
 	 * Setter for property onepixel.
 	 * 
-	 * @param onepixel
+	 * @param htmlTemplate
 	 *            New value of property onepixel.
 	 */
 	@Override
@@ -398,8 +410,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		Map<String, String> parameters = new ParameterParser(param).parse();
 
 		String from = parameters.get("from");
-
-		if (from.length() > 0) {
+		fromEmail = "";
+		fromFullname = "";
+		if (StringUtils.isNotEmpty(from)) {
 			try {
 				InternetAddress adr = new InternetAddress(from);
 
@@ -407,114 +420,67 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 				fromFullname = adr.getPersonal();
 			} catch (Exception e) {
 				// Cannot check from address
-				fromEmail = "";
-				fromFullname = "";
 			}
-		} else {
-			fromEmail = "";
-			fromFullname = "";
 		}
 
 		String reply = parameters.get("reply");
-		if (reply == null) {
-			reply = parameters.get("from");
-		}
-
-		if (reply.length() > 0) {
+		replyEmail = "";
+		replyFullname = "";
+		if (StringUtils.isNotEmpty(reply)) {
 			try {
 				InternetAddress adr = new InternetAddress(reply);
-
+				
 				replyEmail = adr.getAddress();
 				replyFullname = adr.getPersonal();
 			} catch (Exception e) {
 				// Cannot check reply address
-				replyEmail = "";
-				replyFullname = "";
 			}
 		} else {
-			replyEmail = "";
-			replyFullname = "";
+			replyEmail = fromFullname;
+			replyFullname = fromFullname;
 		}
 
 		String envelope = parameters.get("envelope");
-		if (envelope != null) {
-			if (envelope.length() > 0) {
-				InternetAddress adr = new InternetAddress(envelope);
-
-				envelopeEmail = adr.getAddress();
-			} else {
-				envelopeEmail = "";
-			}
+		envelopeEmail = "";
+		if (StringUtils.isNotBlank(envelope)) {
+			InternetAddress adr = new InternetAddress(envelope);
+			envelopeEmail = adr.getAddress();
 		}
 
 		charset = parameters.get("charset");
-		if (charset == null || charset.trim().equals("")) {
+		if (StringUtils.isBlank(charset)) {
 			charset = "ISO-8859-1";
 		}
 
 		subject = parameters.get("subject");
 
-		int mailFormatTemp;
-		try {
-			mailFormatTemp = Integer.parseInt(parameters.get("mailformat"));
-		} catch (Exception e) {
-			mailFormatTemp = 2; // default: Offline-HTML
-		}
-		mailFormat = mailFormatTemp;
+		mailFormat = NumberUtils.toInt(parameters.get("mailformat"), OFFLINE_HTML.getValue());
 
-		int linefeedTemp;
-		try {
-			linefeedTemp = Integer.parseInt(parameters.get("linefeed"));
-		} catch (Exception e) {
-			linefeedTemp = 72; // default: after 72 characters
-		}
-		linefeed = linefeedTemp;
+		linefeed = NumberUtils.toInt(parameters.get("linefeed"), 72);
 
-		onepixel = parameters.get("onepixlog");
-		if (onepixel == null) {
-			onepixel = MediatypeEmail.ONEPIXEL_TOP;
-		}
+		onepixel = StringUtils.defaultIfEmpty(parameters.get("onepixlog"), MediatypeEmail.ONEPIXEL_TOP);
 
-		followupFor = parameters.get("followup_for");
-		if (followupFor == null) {
-			followupFor = "";
-		}
+		followupFor = StringUtils.defaultString(parameters.get("followup_for"));
 
 		// set the follow-up method
 		// we have 4 different types:
 		// "non-opener" ,"opener", "non-clicker", "clicker"
 		// they all have to be lowercase!
-		followUpMethod = parameters.get("followup_method");
-		if (followUpMethod == null) {
-			// default is nothing.
-			followUpMethod = "";
-		}
+		followUpMethod = StringUtils.defaultString(parameters.get("followup_method"));
 
-		String str = parameters.get("remove_dups");
-		if (str != null) {
-			doublechecking = true;
-		}
+		doublechecking = StringUtils.isNotEmpty(parameters.get("remove_dups"));
 
 		String skip = parameters.get("skipempty");
-		if (skip != null) {
-			if (skip.equalsIgnoreCase("true")) {
-				skipempty = true;
-			} else {
-				skipempty = false;
-			}
-		}
+		skipempty = BooleanUtils.toBoolean(skip);
 
 		String intelliAdEnableParam = parameters.get(INTELLIAD_ENABLE_PARAM);
-		if (intelliAdEnableParam != null) {
-			try {
-				setIntelliAdEnabled(Boolean.parseBoolean(intelliAdEnableParam));
-			} catch (NumberFormatException e) {
-				setIntelliAdEnabled(false);
-			}
-		}
+		setIntelliAdEnabled(BooleanUtils.toBoolean(intelliAdEnableParam));
 
 		String intelliAdStringParam = parameters.get(INTELLIAD_STRING_PARAM);
-		setIntelliAdString(intelliAdStringParam);
+		setIntelliAdString(StringUtils.trimToEmpty(intelliAdStringParam));
+		
+		String bcc = parameters.get(BCC_STRING_PARAM);
+		setBccRecipients(bcc);
 	}
 
 	@Override
@@ -602,6 +568,14 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append(INTELLIAD_STRING_PARAM);
 			result.append("=\"");
 			result.append(getIntelliAdString());
+			result.append("\"");
+		}
+		
+		if (StringUtils.isNotBlank(getBccRecipients())) {
+			result.append(", ");
+			result.append(BCC_STRING_PARAM);
+			result.append("=\"");
+			result.append(getBccRecipients());
 			result.append("\"");
 		}
 
@@ -696,7 +670,18 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	public String getHtmlTemplate() {
 		return htmlTemplate;
 	}
-
+	
+	@Override
+	public String getBccRecipients() throws Exception {
+		return Stream.of(AgnUtils.getEmailAddressesFromList(bccRecipients))
+					.map(InternetAddress::toString).collect(Collectors.joining(", "));
+	}
+	
+	@Override
+	public void setBccRecipients(String bccRecipients) {
+		this.bccRecipients = bccRecipients;
+	}
+	
 	/**
 	 * Makes a standalone copy of this mediatype without any references to this
 	 * objects data

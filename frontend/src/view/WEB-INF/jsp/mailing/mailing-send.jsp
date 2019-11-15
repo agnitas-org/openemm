@@ -7,6 +7,7 @@
 <%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -54,6 +55,11 @@
 <c:set var="tmpMailingID" value="${mailingSendForm.mailingID}" />
 
 <c:if test="${isWorkflowDriven}">
+	<%--todo: GWUA-4271: change after test sucessfully--%>
+	<%--<c:url var="WORKFLOW_LINK" value="/workflow/${workflowParameters.workflowId}/view.action">--%>
+		<%--<c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>--%>
+	<%--</c:url>--%>
+
 	<c:url var="WORKFLOW_LINK" value="/workflow.do">
 		<c:param name="method" value="view"/>
 		<c:param name="workflowId" value="${workflowParameters.workflowId}"/>
@@ -835,6 +841,28 @@
 									</div>
 								</agn:agnForm>
 
+								<div class="form-group">
+									<div class="col-sm-4">
+										<label class="control-label" for="sendStatusOnErrorOnly-toggle">
+											<bean:message key="mailing.SendStatusOnErrorOnly" />
+											<button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/SendStatusOnErrorOnly.xml"></button>
+										</label>
+									</div>
+									<div class="col-sm-8">
+										<c:url var="switchSendStatusOnErrorOnlyUrl" value="/mailingsend.do">
+											<c:param name="action" value="${ACTION_SAVE_STATUSMAIL_ONERRORONLY}" />
+											<c:param name="mailingId" value="${mailingSendForm.mailingID}" />
+										</c:url>
+
+										<label class="toggle">
+											<input type="checkbox"
+													data-action="sendStatusOnErrorOnly-toggle"
+													data-url="${switchSendStatusOnErrorOnlyUrl}"
+													${mailingSendForm.statusmailOnErrorOnly ? "checked" : ""}>
+											<div class="toggle-control"></div>
+										</label>
+									</div>
+								</div>
 							</c:if>
 						</div>
 						<!-- Tile Content END -->
@@ -864,7 +892,6 @@
 					<!-- Col END -->
 				</c:if>
 			</c:if>
-
 		</div>
 	</tiles:put>
 </tiles:insert>

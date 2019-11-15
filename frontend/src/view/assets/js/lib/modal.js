@@ -41,7 +41,7 @@
   Modal.createFromTemplate = function(conf, template) {
     template = AGN.Opt.Templates[template] || AGN.Opt.Templates['modal'];
 
-    return Modal.create(_.template(template, conf), conf);
+    return Modal.create(_.template(template)(conf), conf);
   };
 
   // static method

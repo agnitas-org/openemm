@@ -10,25 +10,33 @@
 
 package com.agnitas.emm.core.usergroup.web;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupForm;
+import com.agnitas.emm.core.usergroup.service.UserGroupService;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -43,18 +51,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.PermissionFilter;
-import com.agnitas.emm.core.company.service.ComCompanyService;
-import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
-import com.agnitas.emm.core.usergroup.form.UserGroupForm;
-import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.emm.core.usergroup.service.impl.UserGroupServiceImpl;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
 @Controller
 @RequestMapping("/administration/usergroup")
 @PermissionMapping("user.group")
@@ -62,15 +58,11 @@ public class UserGroupController {
 
     private static final Logger logger = Logger.getLogger(UserGroupController.class);
 
-    public static final int ROOT_ADMIN_ID = UserGroupServiceImpl.ROOT_ADMIN_ID;
-
-    public static final int ROOT_GROUP_ID = UserGroupServiceImpl.ROOT_GROUP_ID;
+    public static final int ROOT_ADMIN_ID = PermissionsOverviewData.ROOT_ADMIN_ID;
 
     public static final int NEW_USER_GROUP_ID = -1;
 
     private UserGroupService userGroupService;
-
-    private ComCompanyService companyService;
 
     private WebStorage webStorage;
 
@@ -79,19 +71,15 @@ public class UserGroupController {
     private UserActivityLogService userActivityLogService;
 
     private ConversionService conversionService;
-
-    private final PermissionFilter permissionFilter;
-
-    public UserGroupController(UserGroupService userGroupService, ComCompanyService companyService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, ConversionService conversionService, final PermissionFilter permissionFilter) {
+    
+    public UserGroupController(UserGroupService userGroupService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, ConversionService conversionService) {
         this.userGroupService = userGroupService;
-        this.companyService = companyService;
         this.webStorage = webStorage;
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
         this.conversionService = conversionService;
-        this.permissionFilter = permissionFilter;
     }
-
+    
     @RequestMapping("/list.action")
     public String list(ComAdmin admin, @ModelAttribute("userGroupListForm") PaginationForm form, Model model, Popups popups) {
         PaginatedListImpl<UserGroupDto> userGroupList;
@@ -120,7 +108,7 @@ public class UserGroupController {
         }
 
         UserGroupForm form = null;
-		if(model.asMap().containsKey("userGroupForm")) {
+		if(model.containsAttribute("userGroupForm")) {
 			form = (UserGroupForm) model.asMap().get("userGroupForm");
 		} else {
             UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
@@ -162,7 +150,7 @@ public class UserGroupController {
 
         if(!isValid(admin, form, result, popups)) {
             model.addFlashAttribute("userGroupForm", form);
-            return "redirect:/administration/usergroup/" + userGroupId + "/view.action";
+            return "redirect:/administration/usergroup/list.action";
         }
 
         if(isNew || form.getCompanyId() == admin.getCompanyID() || admin.getAdminID() == ROOT_ADMIN_ID) {
@@ -170,7 +158,7 @@ public class UserGroupController {
 
             int savedUsergroupId = userGroupService.saveUserGroup(admin, conversionService.convert(form, UserGroupDto.class));
             if (savedUsergroupId >= 0) {
-                userGroupId = savedUsergroupId;
+                form.setId(savedUsergroupId);
                 popups.success("default.changes_saved");
                 userActivityLogService.writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "user group", getDescription(form), logger);
 
@@ -181,21 +169,17 @@ public class UserGroupController {
                 List<String> removedPermissions = ListUtils.removeAll(oldPermissions, savedPermissions);
                 List<String> addedPermissions = ListUtils.removeAll(savedPermissions, oldPermissions);
 
-                if (!addedPermissions.isEmpty()) {
-					userActivityLogService.writeUserActivityLog(admin, "edit user group permissions", getPermissionDescription(userGroup, addedPermissions, true), logger);
-				}
-				if (!removedPermissions.isEmpty()) {
-					userActivityLogService.writeUserActivityLog(admin, "edit user group permissions", getPermissionDescription(userGroup, removedPermissions, false), logger);
-				}
+                writeUserGroupPermissionChangesLog(admin, form, addedPermissions, removedPermissions);
             } else {
                 logger.error("Cannot save userGroup with ID:" + userGroupId);
                 popups.alert(isNew ? "error.usergroup.save": "error.group.change.permission");
             }
         }
 
-        return "redirect:/administration/usergroup/" + userGroupId + "/view.action";
+        return "redirect:/administration/usergroup/list.action";
     }
 
+    
     @GetMapping("/{id:-?[0-9]\\d*}/confirmDelete.action")
     public String confirmDelete(ComAdmin admin, @PathVariable("id") int userGroupId, Model model, Popups popups) {
         UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
@@ -253,37 +237,8 @@ public class UserGroupController {
     }
 
     private void loadPermissionsSettings(ComAdmin admin, int groupId, int groupCompanyId, Model model) {
-        Map<String, Map<String, Set<String>>> permissionCategoriesMap = new HashMap<>();
-        Set<String> permissionChangeable = new HashSet<>();
-        List<String> permissionCategories = userGroupService.getUserGroupPermissionCategories(groupId, groupCompanyId, admin);
-
-        if(groupId == ROOT_GROUP_ID || groupCompanyId == admin.getCompanyID() || groupCompanyId == admin.getCompany().getCreatorID() || admin.getAdminID() == ROOT_ADMIN_ID) {
-            Set<Permission> companyPermissions = companyService.getCompanyPermissions(groupCompanyId);
-            for(Permission permission: Permission.getAllPermissionsAndCategories().keySet()) {
-            	if(permissionFilter.isVisible(permission)) {
-	                String permissionCategory = permission.getCategory();
-	                if(permissionCategories.contains(permissionCategory)) {
-	                    String category = permission.getCategory();
-	                    String subCategory = StringUtils.defaultIfEmpty(permission.getSubCategory(), "");
-	                    String permissionName = permission.toString();
-
-	                    permissionCategoriesMap
-	                            .computeIfAbsent(category, (key) -> new TreeMap<>())
-	                            .computeIfAbsent(subCategory, (key) -> new TreeSet<>())
-	                            .add(permissionName);
-
-
-	                    if(userGroupService.isUserGroupPermissionChangeable(admin, permission, companyPermissions)) {
-	                        permissionChangeable.add(permissionName);
-	                    }
-	                }
-            	}
-            }
-        }
-
-        model.addAttribute("permissionCategoryList", permissionCategories);
-        model.addAttribute("permissionCategoriesMap", permissionCategoriesMap);
-        model.addAttribute("permissionChangeable", permissionChangeable);
+        Map<String, PermissionsOverviewData.PermissionCategoryEntry> permissionCategories = userGroupService.getPermissionOverviewData(admin, groupId, groupCompanyId);
+        model.addAttribute("permissionCategories", permissionCategories.values());
     }
 
     private String getDescription(String shortname, int userGroupId, int userGroupCompanyId) {
@@ -294,12 +249,70 @@ public class UserGroupController {
         return getDescription(form.getShortname(), form.getId(), form.getCompanyId());
     }
 
-    private String getPermissionDescription(UserGroupDto userGroupDto, List<String> permissions, boolean isAdded) {
-        return String.format("Usergroup: \"%s\"(%d). %s permissions: %s",
-                userGroupDto.getShortname(),
-                userGroupDto.getUserGroupId(),
-                (isAdded ? "Added" : "Removed"),
-                StringUtils.join(permissions, ","));
+    private void writeUserGroupPermissionChangesLog(ComAdmin admin, UserGroupForm form, List<String> addedPermissions, List<String> removedPermissions) {
+        try {
+            List<String> permissionCategories = userGroupService.getUserGroupPermissionCategories(form.getId(), form.getCompanyId(), admin);
+            int userGroupId = form.getId();
+            String userGroupName = form.getShortname();
+            
+            List<UserAction> addedPermissionUserActions = getPermissionsChangesLog(userGroupId, userGroupName,
+                    addedPermissions, permissionCategories, true);
+            addedPermissionUserActions.forEach(action -> writeUserActivityLog(admin, action));
+            
+            List<UserAction> removedPermissionUserActions = getPermissionsChangesLog(userGroupId, userGroupName,
+                    removedPermissions, permissionCategories, false);
+            removedPermissionUserActions.forEach(action -> writeUserActivityLog(admin, action));
+            
+            if (logger.isInfoEnabled()) {
+                logger.info("Log User Group: edit user group permissions");
+            }
+        } catch (Exception e) {
+            if (logger.isInfoEnabled()) {
+                logger.error("Log User Group permissions save error" + e);
+            }
+        }
+    }
+    
+    private List<UserAction> getPermissionsChangesLog(int userGroupId, String userGroupName, List<String> changedPermissions, List<String> permissionCategories, boolean isAdded) {
+        List<UserAction> userActions = new ArrayList<>();
+        
+        if (CollectionUtils.isEmpty(changedPermissions) || CollectionUtils.isEmpty(permissionCategories)) {
+            return userActions;
+        }
+       
+        Map<Permission, String> allPermissionsAndCategories = Permission.getAllPermissionsAndCategories();
+        for (String category : permissionCategories) {
+            List<String> permissionsForCategory = allPermissionsAndCategories.entrySet().stream()
+                    .filter(pair -> StringUtils.equals(pair.getValue(), category))
+                    .map(Map.Entry::getKey)
+                    .filter(Permission::isVisible)
+                    .map(Permission::getTokenString)
+                    .filter(changedPermissions::contains)
+                    .collect(Collectors.toList());
+
+            if (CollectionUtils.isNotEmpty(permissionsForCategory)) {
+                UserAction userAction = new UserAction("edit user group permissions in category: " + category,
+                        getPermissionChangesDescription(userGroupId, userGroupName, isAdded, permissionsForCategory));
+                userActions.add(userAction);
+            }
+        }
+        return userActions;
+    }
+    
+    private String getPermissionChangesDescription(int userGroupId, String userGroupName, boolean isAdded, List<String> changedPermissions) {
+        return String.format("Usergroup: \"%s\"(%d). Permissions were %s: %s",
+                                userGroupName,  userGroupId, (isAdded ? "activated" : "deactivated"),
+                                StringUtils.join(changedPermissions, ", "));
+    }
+    
+    private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+        if (Objects.nonNull(userActivityLogService)) {
+            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
+        } else {
+            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
+            logger.info(String.format("Userlog: %s %s %s", admin.getUsername(), userAction.getAction(),
+                    userAction.getDescription()));
+        }
     }
 
 }

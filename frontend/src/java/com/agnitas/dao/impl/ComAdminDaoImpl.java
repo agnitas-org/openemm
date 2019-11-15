@@ -547,7 +547,7 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(readComAdmin.getCompanyID());
 			readComAdmin.setCompanyPermissions(companyPermissions);
 			
-			AdminGroup adminGroup = adminGroupDao.getAdminGroup(resultSet.getInt("admin_group_id"));
+			AdminGroup adminGroup = adminGroupDao.getAdminGroup(resultSet.getInt("admin_group_id"), readComAdmin.getCompanyID());
 			readComAdmin.setGroup(adminGroup);
 
 			return readComAdmin;
@@ -761,6 +761,11 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 	public int getNumberOfAdmins() {
 		return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl");
 	}
+	
+	@Override
+	public int getNumberOfAdmins(@VelocityCheck int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE company_id = ?", companyID);
+	}
 
 	@Override
 	public void deleteFeaturePermissions(Set<String> unAllowedPremiumFeatures) {
@@ -809,5 +814,10 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 				+ " FROM admin_tbl WHERE company_id = ? AND admin_id = (SELECT MIN(admin_id) FROM admin_tbl WHERE company_id = ?)",
 				new ComAdmin_RowMapper(), companyID, companyID);
 		}
+	}
+
+	@Override
+	public boolean checkBlacklistedAdminNames(String username) {
+		return selectInt(logger, "SELECT COUNT(*) FROM admin_blacklist_tbl WHERE username = ?", username) > 0;
 	}
 }

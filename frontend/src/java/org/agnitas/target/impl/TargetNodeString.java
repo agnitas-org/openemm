@@ -14,11 +14,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
-
-import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 
 public class TargetNodeString extends TargetNode implements Serializable {
     
@@ -78,103 +75,6 @@ public class TargetNodeString extends TargetNode implements Serializable {
 	protected void initializeOperatorLists() {
         typeOperators = TargetNodeString.getValidOperators();
 	}
-
-    @Override
-	public String generateSQL() {
-        final char SQL_ESCAPE_CHAR = '!';
-
-        StringBuilder tmpSQL = new StringBuilder();
-
-        int operator = primaryOperator;
-        String value = getSQLSafeString(primaryValue);
-
-        if (primaryOperator == TargetNode.OPERATOR_CONTAINS.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_LIKE.getOperatorCode();
-            value = "%" + StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_NLIKE.getOperatorCode();
-            value = "%" + StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_STARTS_WITH.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_LIKE.getOperatorCode();
-            value = StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        } else if (primaryOperator == TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode()) {
-            operator = TargetNode.OPERATOR_NLIKE.getOperatorCode();
-            value = StringUtil.convertEqlToSqlString(value, SQL_ESCAPE_CHAR) + "%";
-        }
-
-        switch (chainOperator) {
-            case TargetNode.CHAIN_OPERATOR_AND:
-                tmpSQL.append(" AND ");
-                break;
-            case TargetNode.CHAIN_OPERATOR_OR:
-                tmpSQL.append(" OR ");
-                break;
-            default:
-                tmpSQL.append(" ");
-        }
-
-        if (openBracketBefore) {
-            tmpSQL.append("(");
-        }
-
-		StringBuilder mainSQL = new StringBuilder();
-
-		if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            mainSQL.append("cust.");
-        } else {
-            mainSQL.append("LOWER(cust.");
-        }
-
-        mainSQL.append(primaryField);
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            mainSQL.append(" ");
-        } else {
-            mainSQL.append(") ");
-        }
-
-        mainSQL.append(typeOperators[operator - 1].getOperatorSymbol());
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            mainSQL.append(" ");
-        } else {
-            mainSQL.append(" LOWER('");
-        }
-
-        mainSQL.append(value);
-
-        if (operator == TargetNode.OPERATOR_IS.getOperatorCode()) {
-            mainSQL.append(" ");
-        } else {
-            mainSQL.append("')");
-
-            if (operator == TargetNode.OPERATOR_CONTAINS.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_STARTS_WITH.getOperatorCode() ||
-                    operator == TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode()) {
-                mainSQL.append(" ESCAPE '").append(SQL_ESCAPE_CHAR).append("' ");
-            }
-        }
-
-        // MySQL needs special sql check for empty String on "is null" check in EMM-target logic
-		if (!ConfigService.isOracleDB() && this.primaryOperator == TargetNode.OPERATOR_IS.getOperatorCode() &&
-				("null".equals(primaryValue) || "not null".equals(primaryValue))) {
-			String compareString = "null".equals(primaryValue) ? "=''" : "<>''";
-			String mainStr = mainSQL.toString();
-			mainSQL = new StringBuilder();
-			mainSQL.append("(");
-			mainSQL.append(mainStr).append(" OR cust.").append(primaryField).append(compareString);
-			mainSQL.append(")");
-		}
-
-		tmpSQL.append(mainSQL);
-
-        if (closeBracketAfter) {
-            tmpSQL.append(")");
-        }
-
-        return tmpSQL.toString();
-    }
     
     @Override
     public String generateBsh() {

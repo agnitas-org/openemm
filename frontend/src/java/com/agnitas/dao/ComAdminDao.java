@@ -77,6 +77,8 @@ public interface ComAdminDao {
 	 * Get number of active and not deleted admins
 	 */
 	int getNumberOfAdmins();
+	
+	int getNumberOfAdmins(@VelocityCheck int companyID);
 
 	void deleteFeaturePermissions(Set<String> unAllowedPremiumFeatures);
 
@@ -114,6 +116,8 @@ public interface ComAdminDao {
      * @return true if the admin exists, and false otherwise.
      */
 	boolean adminExists(String username);
+
+	boolean checkBlacklistedAdminNames(String username);
 
     /**
      * Saves permission set for given admin

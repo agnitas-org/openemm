@@ -15,6 +15,7 @@ import java.util.List;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingNotExistException;
 import org.agnitas.emm.core.binding.service.BindingService;
@@ -25,6 +26,7 @@ import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
 import org.agnitas.emm.core.validator.annotation.Validate;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.exceptions.InvalidUserStatusException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,6 +93,14 @@ public abstract class BindingServiceImpl implements BindingService {
 		if (model.getExitMailingId() != 0 && !mailingDao.exist(model.getExitMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException();
 		}
+		
+		// Check, that user status has valid value
+		try {
+			UserStatus.getUserStatusByID(model.getStatus());
+		} catch(final Exception e) {
+			throw new InvalidUserStatusException(model.getStatus());
+		}
+		
 		BindingEntry binding = bindingEntryDao.get(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype());
         if(binding == null) {
             binding = getBindingEntry();

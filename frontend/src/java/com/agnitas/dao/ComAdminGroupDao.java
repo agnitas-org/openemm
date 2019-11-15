@@ -25,7 +25,7 @@ public interface ComAdminGroupDao {
      *          The id of the AdminGroup that should be loaded.
      * @return  The AdminGroup or null on failure.
      */
-	AdminGroup getAdminGroup(int groupID);
+	AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor);
 
     /**
      * Loads list of AdminGroups for specified company id

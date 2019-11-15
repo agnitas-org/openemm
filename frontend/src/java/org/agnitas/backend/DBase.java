@@ -378,7 +378,7 @@ public class DBase {
 			query = "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)";
 			break;
 		}
-				
+
 		if (query != null) try (With with = with ()) {
 			rc = queryInt (with.jdbc (), query, "tableName", table) > 0;
 		}
@@ -594,19 +594,25 @@ public class DBase {
 	public long asLong (Object o) {
 		return asLong (o, 0L);
 	}
-	public String asString (Object o, int minLength, String ifNull) {
+	public String asString (Object o, int minLength, String ifNull, boolean trim) {
 		String	s = validate ((String) o, minLength);
 
-		return s != null ? s : ifNull;
+		return s != null ? (trim ? s.trim () : s) : ifNull;
+	}
+	public String asString (Object o, int minLength, String ifNull) {
+		return asString (o, minLength, ifNull, false);
 	}
 	public String asString (Object o, int minLength) {
-		return asString (o, minLength, null);
+		return asString (o, minLength, null, false);
 	}
 	public String asString (Object o, String ifNull) {
-		return asString (o, 1, ifNull);
+		return asString (o, 1, ifNull, false);
+	}
+	public String asString (Object o, boolean trim) {
+		return asString (o, 1, null, trim);
 	}
 	public String asString (Object o) {
-		return asString (o, 1, null);
+		return asString (o, 1, null, false);
 	}
 	public String asClob (Object o) {
 		if (o == null) {
@@ -722,6 +728,17 @@ public class DBase {
 			data.logging (Log.DEBUG, "dbase", m);
 		}
 	}
+	public void showq (String what, String query, Object ... param) {
+		Map <String, Object>	parsedParam = null;
+		
+		if (param.length > 0) {
+			parsedParam = new HashMap <> ();
+			for (int n = 0; n < param.length; ++n) {
+				parsedParam.put (":" + (n + 1), param[n]);
+			}
+		}
+		show (what, query, parsedParam);
+	}
 
 	/**
 	 * get a connection from the data source to directly operate on
@@ -729,6 +746,10 @@ public class DBase {
 	 */
 	public Connection getConnection () throws SQLException {
 		return DATASOURCE.getConnection ();
+	}
+	public Connection getConnection (String query, Object ... param) throws SQLException {
+		showq ("CONN", query, param);
+		return getConnection ();
 	}
 
 	/**

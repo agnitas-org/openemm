@@ -101,7 +101,7 @@ public class ComEmmActionAction extends EmmActionAction {
                 ActionForward destination;
                 emmActionForm.setAction(ACTION_VIEW);
                 destination = super.execute(mapping, form, req, res);
-                emmActionForm.setShortname(SafeString.getLocaleString("CopyOf", (Locale) req.getSession().getAttribute(Globals.LOCALE_KEY)) + " " + emmActionForm.getShortname());
+                emmActionForm.setShortname(SafeString.getLocaleString("mailing.CopyOf", (Locale) req.getSession().getAttribute(Globals.LOCALE_KEY)) + " " + emmActionForm.getShortname());
                 emmActionForm.setActionID(0);
 
                 // An operations should be cloned, not referenced

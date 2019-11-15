@@ -400,10 +400,6 @@
 	<filter>
 		<filter-name>BirtNoDocumentParameterInterceptor</filter-name>
 		<filter-class>com.agnitas.reporting.birt.external.web.filter.BirtNoDocumentParameterInterceptor</filter-class>
-		<init-param>
-			<param-name>errorpage</param-name>
-			<param-value>/webcontent/birt/pages/common/Error.jsp</param-value>
-		</init-param>
 	</filter>
 	<filter-mapping>
 		<filter-name>BirtNoDocumentParameterInterceptor</filter-name>
@@ -425,10 +421,6 @@
 	<filter>
 		<filter-name>BirtSecurityInterceptor</filter-name>
 		<filter-class>com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter</filter-class>
-		<init-param>
-			<param-name>errorpage</param-name>
-			<param-value>/webcontent/birt/pages/common/Error.jsp</param-value>
-		</init-param>
 	</filter>
 	<filter-mapping>
 		<filter-name>BirtSecurityInterceptor</filter-name>

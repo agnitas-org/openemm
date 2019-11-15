@@ -36,7 +36,7 @@ public class AggregateRdirTrafficStatisticJobWorker extends JobWorker {
 	private static final transient Logger logger = Logger.getLogger(AggregateRdirTrafficStatisticJobWorker.class);
 
 	@Override
-	public void runJob() throws Exception {
+	public String runJob() throws Exception {
 		List<Integer> includedCompanyIds = null;
 		String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
 		if (StringUtils.isNotBlank(includedCompanyIdsString)) {
@@ -71,6 +71,8 @@ public class AggregateRdirTrafficStatisticJobWorker extends JobWorker {
 				rdirTrafficAmountDao.aggregateExistingTrafficAmountEntries(companyID, dateToAggregate);
 			}
 		}
+		
+		return null;
 	}
 
 	private boolean checkTime(int currentCompanyID, int workingTimeStartHourOfDay, int workingTimeEndHourOfDay) {

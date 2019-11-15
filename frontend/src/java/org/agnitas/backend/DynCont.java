@@ -45,8 +45,8 @@ public class DynCont {
 		id = dynContId;
 		targetID = dynTarget;
 		order = dynOrder;
-		text = new BlockData(StringOps.removeHTMLTagsAndEntities(dynContent), null, null, BlockData.TEXT, 0, 0, "text/plain", true, true, false, false, false, false, BlockData.SIG_NONE, false);
-		html = new BlockData(dynContent, null, null, BlockData.HTML, 0, 0, "text/html", true, true, false, false, false, false, BlockData.SIG_NONE, false);
+		text = new BlockData(StringOps.removeHTMLTagsAndEntities(dynContent), null, null, BlockData.TEXT, 0, 0, "text/plain", true, true, false, false, false, false);
+		html = new BlockData(dynContent, null, null, BlockData.HTML, 0, 0, "text/html", true, true, false, false, false, false);
 		condition = null;
 	}
 

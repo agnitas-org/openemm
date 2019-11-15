@@ -30,6 +30,7 @@ public class ComMailingSendForm extends MailingSendForm {
 	private static final long serialVersionUID = -2719144223604027921L;
 
 	private String statusmailRecipients = "";
+	private boolean statusmailOnErrorOnly = false;
 	private String followupFor = "";
 	private String followUpType = "";
 	private String reportSendEmail;
@@ -136,11 +137,19 @@ public class ComMailingSendForm extends MailingSendForm {
 	}
 
 	public void setStatusmailRecipients(String statusmailRecipients) {
-		if(statusmailRecipients != null) {
+		if (statusmailRecipients != null) {
 			this.statusmailRecipients = statusmailRecipients.toLowerCase();
 		} else {
 			this.statusmailRecipients = statusmailRecipients;
 		}
+	}
+
+	public boolean isStatusmailOnErrorOnly() {
+		return statusmailOnErrorOnly;
+	}
+
+	public void setStatusmailOnErrorOnly(boolean statusmailOnErrorOnly) {
+		this.statusmailOnErrorOnly = statusmailOnErrorOnly;
 	}
 
 	public boolean isSkipempty() {
@@ -163,7 +172,7 @@ public class ComMailingSendForm extends MailingSendForm {
 	 * Returns the amount of mailings who will get this follow-up mailing.
 	 * @return
 	 */
-	public int getFollowUpStat() {		
+	public int getFollowUpStat() {
 		return followUpCount;
 	}
 	
@@ -171,12 +180,12 @@ public class ComMailingSendForm extends MailingSendForm {
 	 * sets the amunt of mailings who will get the follow-up mailing
 	 */
 	public void setFollowUpStat(int followUpCount) {
-		this.followUpCount = followUpCount;		
+		this.followUpCount = followUpCount;
 	}
 	
 	/**
-	 * returns the Follow-Up Type of this mailing. This can be 
-	 * clicker, non-clicker, opener, non-opener. The definition can 
+	 * returns the Follow-Up Type of this mailing. This can be
+	 * clicker, non-clicker, opener, non-opener. The definition can
 	 * be found in Mailing.java (e.g. Mailing.TYPE_FOLLOWUP_OPENER = "opener")
 	 * 
 	 * @return
@@ -194,9 +203,9 @@ public class ComMailingSendForm extends MailingSendForm {
 	}
 
 	/**
-	 * sets the followUp-type. 
+	 * sets the followUp-type.
 	 * possible values are "clicker", "non-clicker", "opener", "non-opener" but its better
-	 * to use the constant definition from Mailing.java like 
+	 * to use the constant definition from Mailing.java like
 	 * Mailing.TYPE_FOLLOWUP_OPENER
 	 * @param followUpType
 	 */
@@ -292,14 +301,18 @@ public class ComMailingSendForm extends MailingSendForm {
 			ComMailingContentForm aForm = null;
 			if (req != null) {
 				aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-				if (aForm != null) aForm.setNoImages(this.isNoImages());
+				if (aForm != null) {
+					aForm.setNoImages(this.isNoImages());
+				}
 			}
 		}
 		if (action == MailingSendAction.ACTION_PREVIEW) {
 			ComMailingContentForm aForm = null;
 			if (req != null) {
 				aForm = (ComMailingContentForm) req.getSession().getAttribute("mailingContentForm");
-				if (aForm != null) this.setNoImages(aForm.isNoImages());
+				if (aForm != null) {
+					this.setNoImages(aForm.isNoImages());
+				}
 			}
 		}
 

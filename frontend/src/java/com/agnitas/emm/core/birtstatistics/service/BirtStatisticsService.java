@@ -18,8 +18,11 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientStatisticDto;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
+import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 
 public interface BirtStatisticsService {
 	
@@ -32,7 +35,7 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getDomainStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, DomainStatisticDto domainStatistic) throws Exception;
+	String getDomainStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception;
 	
 	
 	/**
@@ -44,7 +47,7 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, MonthlyStatisticDto monthlyStatistic) throws Exception;
+	String getMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, MonthlyStatisticDto monthlyStatistic, boolean forInternalUse) throws Exception;
 	
 	/**
 	 * Generates birt URL for recipient monthly statistic
@@ -55,13 +58,12 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getRecipientMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientStatisticDto monthlyStatistic) throws Exception;
+	String getRecipientMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientProgressStatisticDto monthlyStatistic) throws Exception;
 	
 	/**
 	 * Generates birt URL for every active statistic report type
 	 *
 	 * @param reportSettings
-	 * @param admin
 	 * @param currentDate
 	 * @param report
 	 * @param companyId
@@ -69,11 +71,17 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	Map<String, String> getReportStatisticsUrlMap(List<ComBirtReportSettings> reportSettings, ComAdmin admin, Date currentDate, ComBirtReport report, int companyId, Integer accountId) throws Exception;
-    
-    String generateUid(ComAdmin admin) throws Exception;
-	
+	Map<String, String> getReportStatisticsUrlMap(List<ComBirtReportSettings> reportSettings, Date currentDate, ComBirtReport report, int companyId, Integer accountId) throws Exception;
+
 	String generateUrlWithParamsForInternalAccess(Map<String, Object> parameters);
 
 	String generateUrlWithParamsForExternalAccess(Map<String, Object> parameters);
+    
+    String getRecipientStatisticUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientStatisticDto recipientStatistic) throws Exception;
+
+    String getMailingStatisticUrl(ComAdmin admin, String sessionId, MailingStatisticDto mailingStatistic) throws Exception;
+
+    String changeFormat(String inputUrl, String newFormat);
+    
+    String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 }

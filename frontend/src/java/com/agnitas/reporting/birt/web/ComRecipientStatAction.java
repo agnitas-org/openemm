@@ -35,8 +35,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
+import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.reporting.birt.util.URLUtils;
 import com.agnitas.web.forms.ComBirtStatForm;
 import com.agnitas.web.forms.ComBirtStatForm.DateMode;
@@ -102,7 +101,7 @@ public  class ComRecipientStatAction  extends ComReportBaseAction {
 	 	GregorianCalendar startDate = new GregorianCalendar();
         Date creationDate = ((ComCompany) company).getCreationDate();
 
-        if(creationDate == null) {   
+        if(creationDate == null) {
           creationDate = new Date();
         }
         
@@ -126,7 +125,7 @@ public  class ComRecipientStatAction  extends ComReportBaseAction {
 		ComAdmin admin = AgnUtils.getAdmin(request);
 		if (admin != null) {
 			language = admin.getAdminLang();
-		}		
+		}
  		
 		StringBuffer br = new StringBuffer();
 		br.append(configService.getValue(ConfigValue.BirtUrl)).append("/run?");
@@ -141,7 +140,7 @@ public  class ComRecipientStatAction  extends ComReportBaseAction {
 		br.append("&hourScale=").append(birtParams.hourScale);
 		br.append("&language=").append(language);
 		br.append("&__format=").append(aForm.getReportFormat());
-		br.append("&uid=").append(URLUtils.encodeURL(RSACryptUtil.encrypt(UIDUtils.createUID(AgnUtils.getAdmin(request)), RSACryptUtil.getPublicKey(publicKeyFilename))));
+		br.append("&sec=").append(URLUtils.encodeURL(BirtInterceptingFilter.createSecurityToken(configService, admin.getCompanyID())));
 		br.append("&emmsession=").append(request.getSession(false).getId());
 		br.append("&targetbaseurl=").append(URLUtils.encodeURL(configService.getValue(ConfigValue.BirtDrilldownUrl)));
 		return br.toString();
@@ -159,10 +158,10 @@ public  class ComRecipientStatAction  extends ComReportBaseAction {
  			form.setDateMode(DateMode.SELECT_MONTH);
  		}
  		if (form.getMonth()==null) {
- 			form.setMonth(cal.get(Calendar.MONTH)); 
+ 			form.setMonth(cal.get(Calendar.MONTH));
  		}
  		if (form.getYear()==null) {
- 			form.setYear(cal.get(Calendar.YEAR)); 
+ 			form.setYear(cal.get(Calendar.YEAR));
  		}
  		
  		if (null== form.getEndDay())  {

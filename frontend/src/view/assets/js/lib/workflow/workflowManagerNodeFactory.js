@@ -1,6 +1,7 @@
 (function() {
 
-  var NodeFactory = {
+  var DateTimeUtils = AGN.Lib.WM.DateTimeUtils,
+    NodeFactory = {
 
     NODE_TYPE_START: "start",
     NODE_TYPE_STOP: "stop",
@@ -219,6 +220,12 @@
           node.type = "form";
           break;
         case "mailing":
+        	node.data = {
+        	  mailingId: 0,
+        	  skipEmptyBlocks: true,
+        	  doubleCheck: true
+        	};
+        	break;
         case "actionbased_mailing":
         case "datebased_mailing":
           node.data = {
@@ -294,28 +301,24 @@
         iconTitle: clientNode.iconTitle
       };
 
-      if (clientNode.data != undefined) {
+      if (!!clientNode.data) {
         var keys = Object.keys(clientNode.data);
         for(var i = 0; i < keys.length; i++) {
           node[keys[i]] = clientNode.data[keys[i]];
         }
       }
 
-      if (clientNode.value != undefined) {
+      if (!!clientNode.value) {
         node.value = clientNode.value;
       }
-      if (clientNode.mailinglistId != undefined) {
+      if (!!clientNode.mailinglistId) {
         node.mailinglistId = clientNode.mailinglistId;
       }
-      if (node.date && node.date.getMonth) {
-        node.date = node.date.getTime();
-      }
-      if (node.remindDate && node.remindDate.getMonth) {
-        node.remindDate = node.remindDate.getTime();
-      }
-      if (node.decisionDate && node.decisionDate.getMonth) {
-        node.decisionDate = node.decisionDate.getTime();
-      }
+
+      node.date = DateTimeUtils.getDateTimeValue(node.date, node.hour, node.minute);
+      node.remindDate = DateTimeUtils.getDateTimeValue(node.remindDate, node.remindHour, node.remindMinute);
+      node.decisionDate = DateTimeUtils.getDateTimeValue(node.decisionDate);
+
       node['id'] = clientNode.id;
       return node;
     },

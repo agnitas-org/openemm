@@ -11,6 +11,10 @@
 package com.agnitas.emm.core.workflow.service.util;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -31,7 +35,6 @@ import org.agnitas.util.DbColumnType;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
-import com.agnitas.emm.core.workflow.beans.WorkflowDeadline.WorkflowDeadlineTimeUnit;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
@@ -131,18 +134,34 @@ public class WorkflowUtils {
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
 		return bd.doubleValue();
 	}
+	
+	public static Date getStartStopIconDate(WorkflowStartStop icon) {
+		return getStartStopIconDate(icon, TimeZone.getTimeZone(icon.getAdminTimezone()));
+	}
 
-	public static Date getStartStopIconDate(WorkflowStartStop icon, TimeZone timezone) {
+	public static Date getStartStopIconDate(WorkflowStartStop icon, TimeZone timeZone) {
 		Date date = icon.getDate();
 
 		if (date == null) {
 			return null;
 		} else {
-			Calendar calendar = DateUtilities.calendar(date, timezone);
-			calendar.set(Calendar.HOUR_OF_DAY, icon.getHour());
-			calendar.set(Calendar.MINUTE, icon.getMinute());
-			return calendar.getTime();
+			return mergeIconDateAndTime(date, icon.getHour(), icon.getMinute(), timeZone);
 		}
+	}
+	
+	public static Date mergeIconDateAndTime(Date date, int hour, int minute) {
+		return mergeIconDateAndTime(date, hour, minute, TimeZone.getDefault());
+	}
+	
+	public static Date mergeIconDateAndTime(Date date, int hour, int minute, TimeZone timeZone) {
+		if (date == null) {
+			return null;
+		}
+		
+		LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		LocalTime localTime = LocalTime.of(hour, minute);
+		LocalDateTime localDateTime = DateUtilities.merge(localDate, localTime);
+		return DateUtilities.toDate(localDateTime, TimeZone.getTimeZone(timeZone.getID()).toZoneId());
 	}
 
 	public static Date getReminderSpecificDate(WorkflowStartStop icon, TimeZone timezone) {
@@ -151,10 +170,7 @@ public class WorkflowUtils {
 		if (date == null || !icon.isRemindSpecificDate()) {
 			return null;
 		} else {
-			Calendar calendar = DateUtilities.calendar(date, timezone);
-			calendar.set(Calendar.HOUR_OF_DAY, icon.getRemindHour());
-			calendar.set(Calendar.MINUTE, icon.getRemindMinute());
-			return calendar.getTime();
+			return mergeIconDateAndTime(date, icon.getHour(), icon.getMinute(), timezone);
 		}
 	}
 
@@ -208,7 +224,7 @@ public class WorkflowUtils {
 	public static Deadline asDeadline(WorkflowDeadline deadline, TimeZone timezone) {
 		switch (deadline.getDeadlineType()) {
 			case TYPE_DELAY:
-				return asDeadline(deadline.getTimeUnit(), deadline.getDelayValue());
+				return asDelayDeadline(deadline);
 
 			case TYPE_FIXED_DEADLINE:
 				return asDeadline(deadline.getDate(), deadline.getHour(), deadline.getMinute(), timezone);
@@ -255,14 +271,19 @@ public class WorkflowUtils {
 		}
 	}
 
-	private static Deadline asDeadline(WorkflowDeadlineTimeUnit deadlineTimeUnit, int value) {
-		switch (deadlineTimeUnit) {
+	private static Deadline asDelayDeadline(WorkflowDeadline deadline) {
+		int value = deadline.getDelayValue();
+		switch (deadline.getTimeUnit()) {
 			case TIME_UNIT_MINUTE:
 				return new Deadline(TimeUnit.MINUTES.toMillis(value));
 			case TIME_UNIT_HOUR:
 				return new Deadline(TimeUnit.HOURS.toMillis(value));
 			case TIME_UNIT_DAY:
-				return new Deadline(TimeUnit.DAYS.toMillis(value));
+				if (deadline.isUseTime()) {
+					return new Deadline(TimeUnit.DAYS.toMillis(value), deadline.getHour(), deadline.getMinute());
+				} else {
+					return new Deadline(TimeUnit.DAYS.toMillis(value));
+				}
 			case TIME_UNIT_WEEK:
 				return new Deadline(TimeUnit.DAYS.toMillis(value * 7));
 			case TIME_UNIT_MONTH:
@@ -273,7 +294,7 @@ public class WorkflowUtils {
 	}
 
 	private static Deadline asDeadline(Date date, int hours, int minutes, TimeZone timezone) {
-		return new Deadline(DateUtilities.merge(date, hours, minutes, timezone));
+		return new Deadline(WorkflowUtils.mergeIconDateAndTime(date, hours, minutes, timezone));
 	}
 
 	public static final class Deadline {

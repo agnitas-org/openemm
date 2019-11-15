@@ -14,10 +14,8 @@ import java.io.ByteArrayInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +48,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	private static final transient Logger logger = Logger.getLogger(ImportWizardHelperImpl.class);
 
 	private CustomerImportStatus status = null;
-	private final GregorianCalendar borderDate = new GregorianCalendar(1000, 0, 1);	// The Date is 01.01.1000	
+	private final GregorianCalendar borderDate = new GregorianCalendar(1000, 0, 1);	// The Date is 01.01.1000
 
 	/**
 	 * Holds value of property csvAllColumns.
@@ -135,7 +133,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	/**
 	 * Holds value of property columnMapping.
 	 */
-	private Hashtable<String, CsvColInfo> columnMapping;
+	private Map<String, CsvColInfo> columnMapping;
 
 //	/**
 //	 * Holds value of property blacklist.
@@ -156,8 +154,8 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * user may choose a default mailing-type in case of no column for mailing-type has been assigned
 	 */
 
-	private String manualAssignedMailingType = Integer.toString(Recipient.MAILTYPE_HTML); 
-	private String manualAssignedGender = Integer.toString(Recipient.GENDER_UNKNOWN); 
+	private String manualAssignedMailingType = Integer.toString(Recipient.MAILTYPE_HTML);
+	private String manualAssignedGender = Integer.toString(Recipient.GENDER_UNKNOWN);
 	
 	private boolean mailingTypeMissing = false;
 	private boolean genderMissing = false;
@@ -433,14 +431,16 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 					}
 					if (aInfo.getName().equalsIgnoreCase("email")) {
 						if (aValue.length() == 0) {
-                            if(addErrors)
-							    setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
+                            if(addErrors) {
+								setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
+							}
 							logger.info("Empty email: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							return null;
 						}
 						if (aValue.indexOf('@') == -1) {
-                            if(addErrors)
-							    setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
+                            if(addErrors) {
+								setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
+							}
 							logger.info("No @ in email: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							return null;
 						}
@@ -542,7 +542,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 											valueList.add(Double.valueOf(1));
 										} else if (aValue.equalsIgnoreCase("offline")) {
 											valueList.add(Double.valueOf(2));
-										} 
+										}
 									} else {
                                         if(addErrors) {
                                             setError(ImportErrorType.NUMERIC_ERROR,	StringUtils.join(inputData, " ") + ";"+ SafeString.getLocaleString("import.error.NumberFormat",locale)
@@ -613,7 +613,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 		int i = 1;
 		CsvColInfo aCol = null;
 		// initialize columnMapping hashtable:
-		columnMapping = new Hashtable<>();
+		columnMapping = new HashMap<>();
 
 		for (i = 1; i < (csvAllColumns.size() + 1); i++) {
 			String pName = "map_" + i;
@@ -645,7 +645,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 		if (mode == ImportMode.ADD.getIntValue() || mode == ImportMode.ADD_AND_UPDATE.getIntValue()) {
 			if (columnIsMapped(ComImportWizardForm.GENDER_KEY)) {
 				if (isGenderMissing()) {
-					// remove the former added dummy field, because the user corrected the mapping now 
+					// remove the former added dummy field, because the user corrected the mapping now
 					columnMapping.remove(ComImportWizardForm.GENDER_KEY + "_dummy");
 				}
 				setGenderMissing(false);
@@ -659,20 +659,20 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 
 			if (columnIsMapped(ComImportWizardForm.MAILTYPE_KEY)) {
 				if (isMailingTypeMissing()) {
-					// remove the former added dummy field, because the user corrected the mapping now 
+					// remove the former added dummy field, because the user corrected the mapping now
 					columnMapping.remove(ComImportWizardForm.MAILTYPE_KEY + "_dummy");
 				}
 				setMailingTypeMissing(false);
 			} else {
 				CsvColInfo mailtypeCol = new CsvColInfo();
 				mailtypeCol.setName(ComImportWizardForm.MAILTYPE_KEY);
-				mailtypeCol.setType(CsvColInfo.TYPE_CHAR);			
+				mailtypeCol.setType(CsvColInfo.TYPE_CHAR);
 				columnMapping.put(ComImportWizardForm.MAILTYPE_KEY + "_dummy", mailtypeCol);
 				setMailingTypeMissing(true);
 			}
 		}
 		
-		// check if the mailtype/ gender is allready in columnmapping , if we find only a dummy -> add a dummy to csvAllColumns too 
+		// check if the mailtype/ gender is allready in columnmapping , if we find only a dummy -> add a dummy to csvAllColumns too
 		if (getColumnMapping().containsKey(ComImportWizardForm.GENDER_KEY + "_dummy") && !csvAllColumnsContainsMapping(ComImportWizardForm.GENDER_KEY + "_dummy")) {
 			CsvColInfo mailtypeDummy = new CsvColInfo();
 			mailtypeDummy.setName(ComImportWizardForm.GENDER_KEY+"_dummy");
@@ -687,16 +687,14 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 			mailtypeDummy.setActive(true);
 			mailtypeDummy.setType(CsvColInfo.TYPE_CHAR);
 			csvAllColumns.add(mailtypeDummy);
-		}		
+		}
 	}
 
 	private boolean columnIsMapped(String key) {
-		Enumeration<CsvColInfo> elements = columnMapping.elements();
-		while(elements.hasMoreElements()) {
-			CsvColInfo colInfo = elements.nextElement();
-			if(key.equalsIgnoreCase(colInfo.getName())) {
+		for (CsvColInfo value : columnMapping.values()) {
+			if(key.equalsIgnoreCase(value.getName())) {
 				return true;
-			}			
+			}
 		}
 		return false;
 	}
@@ -870,7 +868,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getColumnMapping()
 	 */
 	@Override
-	public Hashtable<String, CsvColInfo> getColumnMapping() {
+	public Map<String, CsvColInfo> getColumnMapping() {
 		return columnMapping;
 	}
 
@@ -878,7 +876,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#setColumnMapping(java.util.Hashtable)
 	 */
 	@Override
-	public void setColumnMapping(Hashtable<String, CsvColInfo> columnMapping) {
+	public void setColumnMapping(Map<String, CsvColInfo> columnMapping) {
 		this.columnMapping = columnMapping;
 	}
 
@@ -970,7 +968,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	@Override
 	public int getReadlines() {
 		return readlines;
-	}	
+	}
 	
 	 /* (non-Javadoc)
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getLinesOKFromFile()

@@ -82,23 +82,25 @@
 									<%@include file="mailing-content-list-contentsource-datelimit.jsp" %>
                                 </div>
 
-                                <table class="table table-bordered table-striped table-hover js-table" id="contentList">
-                                    <thead>
-                                    <tr>
-                                        <th><bean:message key="Text_Module"/></th>
-                                        <th><bean:message key="Target"/></th>
-                                        <th><bean:message key="default.Content"/></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="table_body">
-                                    </tbody>
-                                </table>
+                                <c:choose>
+                                    <c:when test="${hasTempBetaPermission}">
+                                        <table class="table table-bordered table-striped table-hover js-table" id="contentList">
+                                            <thead>
+                                            <tr>
+                                                <th><bean:message key="Text_Module"/></th>
+                                                <th><bean:message key="Target"/></th>
+                                                <th><bean:message key="default.Content"/></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="table_body">
+                                            </tbody>
+                                        </table>
 
-                                <c:url var="saveUrl" value="/mailingcontent/save.action"/>
+                                        <c:url var="saveUrl" value="/mailingcontent/save.action"/>
 
-                                <%--todo: mailingContentForm.tags contains extra information.--%>
-                                <%--todo: Please create DTO for that entity during migration --%>
-                                <script data-initializer="mailing-content-initializer" type="application/json">
+                                        <%--todo: mailingContentForm.tags contains extra information.--%>
+                                        <%--todo: Please create DTO for that entity during migration --%>
+                                        <script data-initializer="mailing-content-initializer" type="application/json">
                                             {
                                                 "saveUrl": "${saveUrl}",
                                                 "targetGroupList": ${emm:toJson(mailingContentForm.availableTargetGroups)},
@@ -106,7 +108,75 @@
                                                 "dynTagNames": ${emm:toJson(mailingContentForm.dynTagNames)},
                                                 "dynTagsMap": ${emm:toJson(mailingContentForm.tags)}
                                             }
-                            	</script>
+                                        </script>
+                                    </c:when>
+                                    <%-- TODO: remove the following block when GWUA-3758 will be successful tested --%>
+                                    <c:otherwise>
+                                        <table class="table table-bordered table-striped table-hover js-table" id="contentList">
+                                            <thead>
+                                            <tr>
+                                                <th><bean:message key="Text_Module"/></th>
+                                                <th><bean:message key="Target"/></th>
+                                                <th><bean:message key="default.Content"/></th>
+                                            </tr>
+                                            </thead>
+
+                                            <c:forEach var="dyntag" items="${mailingContentForm.tags}">
+                                                <c:set var="dynTag" value="${dyntag.value}"/>
+
+                                                <c:url var="viewLink" value="/mailingcontent.do">
+                                                    <c:param name="action" value="${ACTION_VIEW_TEXTBLOCK}"/>
+                                                    <c:param name="dynNameID" value="${dynTag.id}"/>
+                                                    <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
+                                                </c:url>
+
+                                                <tr data-dyn-name-id="${dynTag.id}">
+                                                    <td class="align-top">
+                                                        <strong>${dynTag.dynName}</strong>
+                                                        <a href="${viewLink}" class="hidden js-row-show"></a>
+                                                    </td>
+                                                    <td class="align-top">
+                                                        <c:forEach var="dyncontent" items="${dyntag.value.dynContent}">
+                                                            <c:set var="tagContent" value="${dyncontent.value}"/>
+
+                                                            <a href="${viewLink}#content${tagContent.id}">
+                                                                <c:choose>
+                                                                    <c:when test="${tagContent.targetID eq 0}">
+                                                                        <bean:message key="statistic.all_subscribers"/>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <c:forEach var="target" items="${mailingContentForm.availableTargetGroups}">
+                                                                            <logic:equal name="target" property="id" value="${tagContent.targetID}">
+                                                                                <c:choose>
+                                                                                    <c:when test="${target.deleted == 0}">
+                                                                                        <span class="multiline-sm-400">${target.targetName} (${target.id})</span>
+                                                                                    </c:when>
+                                                                                    <c:otherwise>
+                                                                                        <span class="multiline-sm-400">${target.targetName} (<bean:message key="target.Deleted"/>)</span>
+                                                                                    </c:otherwise>
+                                                                                </c:choose>
+                                                                            </logic:equal>
+                                                                        </c:forEach>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </a>
+                                                            <br>
+                                                        </c:forEach>
+                                                        <a href="${viewLink}#content0">
+                                                            <bean:message key="New_Content"/>
+                                                        </a>
+                                                    </td>
+                                                    <td class="align-top">
+                                                        <logic:iterate id="dyncontent" name="dyntag" property="value.dynContent">
+                                                            <span class="multiline-sm-300">${fn:escapeXml(emm:abbreviate(dyncontent.value.dynContent, 35))}</span>
+                                                            <br>
+                                                        </logic:iterate>
+                                                    </td>
+                                                </tr>
+                                            </c:forEach>
+                                        </table>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                             <!-- Tile Content END -->
                         </div>
@@ -134,6 +204,8 @@
     </tiles:put>
 </tiles:insert>
 
+<%-- TODO: remove this cheking when GWUA-3758 will be successful tested --%>
+<c:if test="${hasTempBetaPermission}" >
 <c:set var="mailingId" value="${mailingContentForm.mailingID}"/>
 
 <%@ include file="fragments/content-editor-template.jspf"  %>
@@ -141,3 +213,4 @@
 <%@ include file="fragments/enlarged-content-editor-template.jspf"  %>
 
 <%@ include file="fragments/mailing-content-table-entry-template.jspf"  %>
+</c:if>

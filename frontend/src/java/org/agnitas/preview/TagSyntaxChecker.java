@@ -22,7 +22,6 @@ import org.agnitas.beans.TagDefinition;
 import org.agnitas.dao.TagDao;
 import org.agnitas.preview.AgnTagError.AgnTagErrorKey;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.CsvDataException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -31,17 +30,12 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class TagSyntaxChecker {
 	/**
-	 * Currently it is allowed to use simple values for parametervalues without quotes.
-	 * If this is not wanted anymore change this value.
-	 */
-	private static boolean ALLOW_UNQUOTED_PARAMETER_VALUES = true;
-	
-	/**
-	 * Any agnTag may have a closing slash, this is not defined by now.
-	 * In a future implementation any standalone agnTags should have a closing slash analog to XML-Tags and only opening agnDYN-Tags should look like an opening XML-Tag without any slashes.
+	 * Any agnTag may have a closing slash, this is not defined by now. In a
+	 * future implementation any standalone agnTags should have a closing slash
+	 * analog to XML-Tags and only opening agnDYN-Tags should look like an
+	 * opening XML-Tag without any slashes.
 	 */
 	private static boolean ALLOW_LEGACY_MISSING_CLOSING_SLASHES = true;
-
 
 	/** The tag dao. */
 	private TagDao tagDao;
@@ -49,62 +43,71 @@ public class TagSyntaxChecker {
 	/**
 	 * Sets the tag dao.
 	 *
-	 * @param tagDao the new tag dao
+	 * @param tagDao
+	 *            the new tag dao
 	 */
 	@Required
 	public void setTagDao(TagDao tagDao) {
 		this.tagDao = tagDao;
 	}
 
-    /**
-     * Check a component text for agnTag syntax validity
-     *
-     * @param companyID the company id
-     * @param contentText the content text
-     * @return true, if successful
-     */
-    public List<AgnTagError> check(int companyID, String contentText) {
-    	List<AgnTagError> returnList = new ArrayList<>();
-    	try {
+	/**
+	 * Check a component text for agnTag syntax validity
+	 *
+	 * @param companyID
+	 *            the company id
+	 * @param contentText
+	 *            the content text
+	 * @return true, if successful
+	 */
+	public List<AgnTagError> check(int companyID, String contentText) {
+		List<AgnTagError> returnList = new ArrayList<>();
+		try {
 			check(companyID, contentText, returnList);
 		} catch (Exception e) {
 			returnList.add(new AgnTagError(AgnTagErrorKey.exceptionWhileChecking, e.getMessage()));
 		}
-    	return returnList;
-    }
-	
-    /**
-     * Check a component text for agnTag syntax validity
-     *
-     * @param companyID the company id
-     * @param contentText the content text
-     * @param agnTagSyntaxErrors the agn tag syntax errors
-     * @return true, if successful
-     * @throws Exception the exception
-     */
-    public boolean check(int companyID, String contentText, List<AgnTagError> agnTagSyntaxErrors) throws Exception {
-    	try {
+		return returnList;
+	}
+
+	/**
+	 * Check a component text for agnTag syntax validity
+	 *
+	 * @param companyID
+	 *            the company id
+	 * @param contentText
+	 *            the content text
+	 * @param agnTagSyntaxErrors
+	 *            the agn tag syntax errors
+	 * @return true, if successful
+	 * @throws Exception
+	 *             the exception
+	 */
+	public boolean check(int companyID, String contentText, List<AgnTagError> agnTagSyntaxErrors) throws Exception {
+		try {
 			String tagStartText = "[agn";
 			String closingTagStartText = "[/agn";
 			String tagEndText = "]";
 			char tagNameSeparator = ' ';
 			String trailingCloserSign = "/"; // used for [agnTag name="xxx"/]
-			String closingTagSign = "/"; // only allowed for agnDYN-Tags: [/agnDYN name="xxx"]
+			String closingTagSign = "/"; // only allowed for agnDYN-Tags:
+											// [/agnDYN name="xxx"]
 			int searchIndex = 0;
 			boolean errorsFoundGlobal = false;
 			boolean errorsFoundInCurrentTag;
 			Stack<String> openAgnDynTags = new Stack<>();
-			
+
 			Map<String, TagDefinition> tagDefinitions = tagDao.getTagDefinitionsMap(companyID);
-			
+
 			while ((searchIndex = AgnUtils.searchNext(contentText, searchIndex, tagStartText, closingTagStartText)) >= 0) {
 				errorsFoundInCurrentTag = false;
-				
+
 				// Search the border brackets of this tag
 				int tagStartIndex = searchIndex;
 				int tagEndIndex = contentText.indexOf(tagEndText, tagStartIndex + tagStartText.length());
 				if (tagEndIndex < 0) {
-					// No end bracket was found. Try to find the end of this tags name for error text
+					// No end bracket was found. Try to find the end of this
+					// tags name for error text
 					Matcher nextNonWordMatcher = Pattern.compile("[\\W]").matcher(contentText);
 					boolean foundNonWord = nextNonWordMatcher.find(tagStartIndex + tagStartText.length());
 					String maybeTagName;
@@ -115,11 +118,11 @@ public class TagSyntaxChecker {
 					}
 					agnTagSyntaxErrors.add(new AgnTagError(maybeTagName.substring(1), maybeTagName, AgnTagErrorKey.missingClosingBracket, contentText, tagStartIndex));
 					errorsFoundInCurrentTag = true;
-					
+
 					searchIndex++;
 				} else {
 					String fullTagText = contentText.substring(tagStartIndex, tagEndIndex + 1);
-					
+
 					// Search for the end of the tag name
 					int tagNameEndIndex = tagEndIndex;
 					int tagNameSeparatorIndex = contentText.indexOf(tagNameSeparator, tagStartIndex + tagStartText.length());
@@ -128,7 +131,7 @@ public class TagSyntaxChecker {
 					}
 
 					String tagName = contentText.substring(tagStartIndex + 1, tagNameEndIndex);
-					
+
 					// tag is like [/agnTag name="xxx"]
 					boolean isClosingTag = false;
 					if (tagName.startsWith(closingTagSign)) {
@@ -138,13 +141,13 @@ public class TagSyntaxChecker {
 
 					boolean hasTrailingCloserSign = false;
 					Map<String, String> tagParameterMap = new HashMap<>();
-					
+
 					if (tagName.endsWith(trailingCloserSign)) {
 						// tag is like [agnTag/]
-						tagName = tagName.substring(0, tagName.length() -1);
+						tagName = tagName.substring(0, tagName.length() - 1);
 						hasTrailingCloserSign = true;
 					}
-					
+
 					if (!errorsFoundInCurrentTag && tagNameEndIndex < tagEndIndex) {
 						// Read tag parameters
 						String tagParameterString = contentText.substring(tagNameEndIndex + 1, tagEndIndex);
@@ -153,7 +156,7 @@ public class TagSyntaxChecker {
 							tagParameterString = tagParameterString.substring(0, tagParameterString.length() - trailingCloserSign.length());
 							hasTrailingCloserSign = true;
 						}
-						
+
 						if (tagNameEndIndex + 1 < tagEndIndex) {
 							// Read all parameters
 							try {
@@ -186,26 +189,34 @@ public class TagSyntaxChecker {
 							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidAgnTagSlashes, contentText, tagStartIndex));
 							errorsFoundInCurrentTag = true;
 						} else if (!"agnDYN".equals(tagName) && isClosingTag) {
-							// Only agnDYN-Tag may start with slash as a closing tag
+							// Only agnDYN-Tag may start with slash as a closing
+							// tag
 							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidClosingAgnTag, contentText, tagStartIndex));
 							errorsFoundInCurrentTag = true;
 						} else if (!"agnDYN".equals(tagName) && !hasTrailingCloserSign && !ALLOW_LEGACY_MISSING_CLOSING_SLASHES) {
-							// Any agnTag may have a closing slash, this is not defined by now.
-							// In a future implementation any standalone agnTags should have a closing slash analog to XML-Tags and only opening agnDYN-Tags should look like an opening XML-Tag without any slashes.
+							// Any agnTag may have a closing slash, this is not
+							// defined by now.
+							// In a future implementation any standalone agnTags
+							// should have a closing slash analog to XML-Tags
+							// and only opening agnDYN-Tags should look like an
+							// opening XML-Tag without any slashes.
 							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.missingAgnTagClosingSlash, contentText, tagStartIndex));
 							errorsFoundInCurrentTag = true;
 						} else {
 							for (String mandatoryParameterName : tagDefinitions.get(tagName).getMandatoryParameters()) {
-								if (!tagParameterMap.containsKey(mandatoryParameterName)) {
-									agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.missingParameter,contentText, tagStartIndex, mandatoryParameterName));
+								String mandatoryParameterValue = tagParameterMap.getOrDefault(mandatoryParameterName, "");
+								if (StringUtils.isBlank(mandatoryParameterValue)) {
+									agnTagSyntaxErrors
+											.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.missingParameter, contentText, tagStartIndex, mandatoryParameterName));
 									errorsFoundInCurrentTag = true;
 								}
 							}
 						}
 					}
-					
+
 					if ("agnDYN".equals(tagName)) {
-						// Check for order of agnDYN-Tags, which can be opened and closed
+						// Check for order of agnDYN-Tags, which can be opened
+						// and closed
 						if (isClosingTag) {
 							if (openAgnDynTags.size() == 0) {
 								agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidClosingAgnDynTag_notOpened, contentText, tagStartIndex));
@@ -213,7 +224,8 @@ public class TagSyntaxChecker {
 							} else if (openAgnDynTags.peek().equals(tagParameterMap.get("name"))) {
 								openAgnDynTags.pop();
 							} else {
-								agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidClosingAgnDynTag_notMatchingLastOpenedName, contentText, tagStartIndex, openAgnDynTags.peek()));
+								agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidClosingAgnDynTag_notMatchingLastOpenedName, contentText,
+										tagStartIndex, openAgnDynTags.peek()));
 								errorsFoundInCurrentTag = true;
 							}
 						} else if (!hasTrailingCloserSign) {
@@ -223,51 +235,56 @@ public class TagSyntaxChecker {
 							}
 						}
 					} else if ("agnDVALUE".equals(tagName)) {
-						// Check for enclosing of agnDVALUE-Tags, which may only be used within the matching agnDYN-Tags
+						// Check for enclosing of agnDVALUE-Tags, which may only
+						// be used within the matching agnDYN-Tags
 						if (!openAgnDynTags.contains(tagParameterMap.get("name"))) {
-							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.unwrappedAgnDvalueTag, contentText, tagStartIndex, tagParameterMap.get("name")));
+							agnTagSyntaxErrors
+									.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.unwrappedAgnDvalueTag, contentText, tagStartIndex, tagParameterMap.get("name")));
 							errorsFoundInCurrentTag = true;
 						}
 					}
-					
+
 					searchIndex = tagEndIndex;
 				}
-				
+
 				errorsFoundGlobal = errorsFoundGlobal || errorsFoundInCurrentTag;
 			}
-			
+
 			if (openAgnDynTags.size() > 0) {
 				agnTagSyntaxErrors.add(new AgnTagError("agnDYN", "[agnDYN name=\"" + openAgnDynTags.peek() + "\"]", AgnTagErrorKey.missingClosingAgnDynTag, openAgnDynTags.peek()));
 				errorsFoundGlobal = true;
 			}
-			
+
 			return !errorsFoundGlobal;
 		} catch (Exception e) {
 			throw new Exception("Error in agn-Tags: " + e.getMessage(), e);
 		}
-    }
-    
-    /**
-     * Scann for name attributes of occurences of a defined list of agnTag names.
-     * 
-     * 
-     * @param contentText
-     * @param tagNames
-     * @return
-     * @throws Exception
-     */
+	}
+
+	/**
+	 * Scann for name attributes of occurences of a defined list of agnTag
+	 * names.
+	 * 
+	 * 
+	 * @param contentText
+	 * @param tagNames
+	 * @return
+	 * @throws Exception
+	 */
 	public static List<String> scanForAgnTags(String contentText, String... tagNames) throws Exception {
 		if (contentText == null) {
 			return new ArrayList<>();
 		}
-		
+
 		int searchIndex = 0;
 		try {
 			List<String> tagContents = new ArrayList<>();
 			char tagNameSeparator = ' ';
 
 			for (String tagName : tagNames) {
-				// Only if the tagname is followed by tagNameSeparator, there can be a name attribute, other occurences of this agnTag are ignored
+				// Only if the tagname is followed by tagNameSeparator, there
+				// can be a name attribute, other occurences of this agnTag are
+				// ignored
 				String tagStartText = "[" + tagName + tagNameSeparator;
 				String tagEndText = "]";
 				while ((searchIndex = AgnUtils.searchNext(contentText, searchIndex, tagStartText)) >= 0) {
@@ -279,7 +296,7 @@ public class TagSyntaxChecker {
 						throw new Exception("Error in scanForAgnTagNameValues for '" + tagName + "' at position: " + tagStartIndex + " : Missing closing brackets");
 					} else {
 						tagContents.add(contentText.substring(tagStartIndex, tagEndIndex + tagEndText.length()));
-						
+
 						searchIndex = tagEndIndex + tagEndText.length();
 					}
 				}
@@ -289,29 +306,32 @@ public class TagSyntaxChecker {
 			throw new Exception("Error in scanForAgnTagNameValues at position " + searchIndex + ": " + e.getMessage(), e);
 		}
 	}
-    
-    /**
-     * Scann for name attributes of occurences of a defined list of agnTag names.
-     * 
-     * 
-     * @param contentText
-     * @param tagNames
-     * @return
-     * @throws Exception
-     */
+
+	/**
+	 * Scann for name attributes of occurences of a defined list of agnTag
+	 * names.
+	 * 
+	 * 
+	 * @param contentText
+	 * @param tagNames
+	 * @return
+	 * @throws Exception
+	 */
 	public static List<String> scanForAgnTagNameValues(String contentText, String... tagNames) throws Exception {
 		if (contentText == null) {
 			return new ArrayList<>();
 		}
-		
+
 		int searchIndex = 0;
 		try {
-			List <String>	nameValues = new ArrayList <> ();
-			char		tagNameSeparator = ' ';
-			String		trailingCloserSign = "/";
-			
+			List<String> nameValues = new ArrayList<>();
+			char tagNameSeparator = ' ';
+			String trailingCloserSign = "/";
+
 			for (String tagName : tagNames) {
-				// Only if the tagname is followed by tagNameSeparator, there can be a name attribute, other occurences of this agnTag are ignored
+				// Only if the tagname is followed by tagNameSeparator, there
+				// can be a name attribute, other occurences of this agnTag are
+				// ignored
 				String tagStartText = "[" + tagName + tagNameSeparator;
 				String tagEndText = "]";
 				while ((searchIndex = AgnUtils.searchNext(contentText, searchIndex, tagStartText)) >= 0) {
@@ -327,9 +347,9 @@ public class TagSyntaxChecker {
 						if (tagParameterString.endsWith(trailingCloserSign)) {
 							tagParameterString = tagParameterString.substring(0, tagParameterString.length() - trailingCloserSign.length());
 						}
-						
+
 						try {
-							Map<String, String>  tagParameterMap = readTagParameterString(tagParameterString);
+							Map<String, String> tagParameterMap = readTagParameterString(tagParameterString);
 							if (tagParameterMap.containsKey("name")) {
 								nameValues.add(tagParameterMap.get("name"));
 							}
@@ -339,10 +359,11 @@ public class TagSyntaxChecker {
 							ate.setTextPosition(contentText, tagStartIndex);
 							throw new Exception("Error in scanForAgnTagNameValues for '" + tagName + "': " + ate.getMessage(), ate);
 						} catch (Exception e) {
-							AgnTagError ate = new AgnTagError(tagName, contentText.substring(tagStartIndex, tagEndIndex + tagEndText.length()), AgnTagErrorKey.invalidParameterSyntax, contentText, tagStartIndex, e.getMessage());
+							AgnTagError ate = new AgnTagError(tagName, contentText.substring(tagStartIndex, tagEndIndex + tagEndText.length()),
+									AgnTagErrorKey.invalidParameterSyntax, contentText, tagStartIndex, e.getMessage());
 							throw new Exception("Error in scanForAgnTagNameValues for '" + tagName + "': " + ate.getMessage(), ate);
 						}
-						
+
 						searchIndex = tagEndIndex + tagEndText.length();
 					}
 				}
@@ -352,138 +373,152 @@ public class TagSyntaxChecker {
 			throw new Exception("Error in scanForAgnTagNameValues at position " + searchIndex + ": " + e.getMessage(), e);
 		}
 	}
-    
-    /**
-     * Read tag parameter string.
-     *
-     * @param agnTagParameterString the agn tag parameter string
-     * @return the map
-     * @throws Exception the exception
-     */
-    public static Map<String, String> readTagParameterString(String agnTagParameterString) throws Exception {
+
+	/**
+	 * Read tag parameter string.
+	 *
+	 * @param agnTagParameterString
+	 *            the agn tag parameter string
+	 * @return the map
+	 * @throws Exception
+	 *             the exception
+	 */
+	public static Map<String, String> readTagParameterString(String agnTagParameterString) throws Exception {
 		Map<String, String> returnMap = new HashMap<>();
-		
-		if (StringUtils.isEmpty(agnTagParameterString)) {
+
+		if (StringUtils.isBlank(agnTagParameterString)) {
 			return returnMap;
 		}
 		
+		// Normalize Linebreaks
+		agnTagParameterString = agnTagParameterString.replace("\r\n", "\n").replace("\r", "\n").trim();
+
 		StringBuilder nextKey = new StringBuilder();
 		StringBuilder nextValue = new StringBuilder();
-		boolean readingKey = true;
-		boolean insideString = false;
-		char stringQuoteChar1 = '"';
-		char stringQuoteChar2 = '\'';
-		char lastUsedStringQuoteChar = '"';
-		char entrySeparator = ' ';
-		char keyValueSeparator = '=';
-		
-		// trim entrySeparator-Characters (allow unnecessary blanks)
-		String entrySeparatorString = Character.toString(entrySeparator);
-		while (agnTagParameterString.startsWith(entrySeparatorString)) {
-			agnTagParameterString = agnTagParameterString.substring(1);
-		}
-		while (agnTagParameterString.endsWith(entrySeparatorString)) {
-			agnTagParameterString = agnTagParameterString.substring(0, agnTagParameterString.length() - 1);
-		}
-		
-		for (int i = 0; i < agnTagParameterString.length(); i++) {
-			char nextChar = agnTagParameterString.charAt(i);
-			if (nextChar == '\t' || nextChar == '\r' || nextChar == '\n' || (nextChar == ' ' && i - 1 >= 0 && agnTagParameterString.charAt(i - 1) == ' ')) {
-				// whitespaces are not allowed when not inside of a value string or near the equal sign
-				throw new AgnTagError(AgnTagErrorKey.invalidWhitespace);
-			} else if (nextChar == stringQuoteChar1 || nextChar == stringQuoteChar2) {
-				if (readingKey) {
-					throw new AgnTagError(AgnTagErrorKey.invalidQuotedKey);
-				} else if (!insideString && nextValue.length() > 0) {
-					throw new AgnTagError(AgnTagErrorKey.invalidUnquotedValue);
-				} else {
-					nextValue.append(nextChar);
-					if (!insideString) {
-						lastUsedStringQuoteChar = nextChar;
-						insideString = true;
-					} else if (lastUsedStringQuoteChar == nextChar) {
-						insideString = false;
-					}
-				}
-			} else if (!insideString) {
-				if (nextChar == entrySeparator) {
-					if (nextKey.length() == 0) {
-						throw new AgnTagError(AgnTagErrorKey.invalidEmptyKey);
-					} else {
-						// Add entry
-						if (returnMap.containsKey(nextKey.toString())) {
-							throw new AgnTagError(AgnTagErrorKey.duplicateKey);
-						}
-						returnMap.put(nextKey.toString(), parseValueDataString(nextValue.toString(), lastUsedStringQuoteChar));
-						nextKey = new StringBuilder();
-						nextValue = new StringBuilder();
-						readingKey = true;
-					}
-				} else if (nextChar == keyValueSeparator) {
-					readingKey = false;
-				} else {
-					if (readingKey) {
-						nextKey.append(nextChar);
-					} else {
-						if (ALLOW_UNQUOTED_PARAMETER_VALUES) {
-							nextValue.append(nextChar);
-						} else {
-							throw new AgnTagError(AgnTagErrorKey.invalidUnquotedValue);
-						}
-					}
-				}
-			} else { // insideString
-				if (readingKey) {
-					nextKey.append(nextChar);
-				} else {
-					nextValue.append(nextChar);
-				}
+		for (int index = 0; index < agnTagParameterString.length(); index++) {
+			char nextChar = agnTagParameterString.charAt(index);
+			
+			if (returnMap.size() > 0 && nextChar != '\n' && nextChar != '\t' && nextChar != ' ') {
+				// Missing keyValuePairSeparator
+				throw new AgnTagError(AgnTagErrorKey.invalidParameterSyntax);
 			}
-		}
-		
-		if (insideString) {
-			throw new AgnTagError(AgnTagErrorKey.unexpectedEndOfValue);
-		} else if (readingKey) {
-			throw new AgnTagError(AgnTagErrorKey.unexpectedEndOfKey);
-		} else {
-			if (nextKey.length() == 0) {
+			
+			// skip leading whitespaces before key
+			while (nextChar == '\n' || nextChar == '\t' || nextChar == ' ') {
+				index++;
+				if (index >= agnTagParameterString.length()) {
+					break;
+				}
+				nextChar = agnTagParameterString.charAt(index);
+			}
+
+			if (index >= agnTagParameterString.length()) {
+				break;
+			}
+			
+			// read up to keyValueSeparator (keys may not be quoted)
+			while (nextChar != '=') {
+				nextKey.append(nextChar);
+				index++;
+				if (index >= agnTagParameterString.length()) {
+					break;
+				}
+				nextChar = agnTagParameterString.charAt(index);
+			}
+
+			if (index >= agnTagParameterString.length()) {
+				break;
+			}
+			
+			nextKey = new StringBuilder(nextKey.toString().trim());
+			
+			// Skip keyValueSeparator
+			index++;
+			if (index >= agnTagParameterString.length()) {
+				break;
+			}
+			nextChar = agnTagParameterString.charAt(index);
+			
+			// skip leading whitespaces before value
+			while (nextChar == '\n' || nextChar == '\t' || nextChar == ' ') {
+				index++;
+				if (index >= agnTagParameterString.length()) {
+					break;
+				}
+				nextChar = agnTagParameterString.charAt(index);
+			}
+			
+			if (index >= agnTagParameterString.length()) {
+				break;
+			}
+			
+			// read quoted value
+			if (nextChar == '"' || nextChar == '\'') {
+				nextValue.append(nextChar);
+				char quoteChar = nextChar;
+				index++;
+				if (index >= agnTagParameterString.length()) {
+					break;
+				}
+				nextChar = agnTagParameterString.charAt(index);
+				while (nextChar != quoteChar) {
+					nextValue.append(nextChar);
+					index++;
+					if (index >= agnTagParameterString.length()) {
+						break;
+					}
+					nextChar = agnTagParameterString.charAt(index);
+				}
+				if (index >= agnTagParameterString.length()) {
+					throw new AgnTagError(AgnTagErrorKey.invalidQuotesInValue);
+				}
+				nextValue.append(nextChar);
+				if (nextValue.charAt(nextValue.length() - 1) == quoteChar) {
+					// remove enclosing quotes
+					nextValue.deleteCharAt(nextValue.length() - 1);
+					nextValue.deleteCharAt(0);
+				}
+			} else {
+				while (nextChar != '\n' && nextChar != '\t' && nextChar != ' ') {
+					if (nextChar == '\'' || nextChar == '"') {
+						throw new AgnTagError(AgnTagErrorKey.invalidQuotesInValue);
+					}
+					nextValue.append(nextChar);
+					index++;
+					if (index >= agnTagParameterString.length()) {
+						break;
+					}
+					nextChar = agnTagParameterString.charAt(index);
+				}
+				nextValue = new StringBuilder(nextValue.toString().trim());
+			}
+
+			if (nextKey.indexOf("'") > -1 || nextKey.indexOf("\"") > -1) {
+				throw new AgnTagError(AgnTagErrorKey.invalidQuotedKey);
+			} else if (nextKey.indexOf(" ") > -1 || nextKey.indexOf("\n") > -1 || nextKey.indexOf("\t") > -1) {
+				throw new AgnTagError(AgnTagErrorKey.invalidWhitespace);
+			} else if (nextValue.length() == 0) {
 				throw new AgnTagError(AgnTagErrorKey.invalidEmptyKey);
 			} else {
-				// Add last entry
-				if (returnMap.containsKey(nextKey.toString())) {
-					throw new AgnTagError(AgnTagErrorKey.duplicateKey);
-				}
-				returnMap.put(nextKey.toString(), parseValueDataString(nextValue.toString(), lastUsedStringQuoteChar));
-				return returnMap;
-			}
-		}
-	}
-	
-	/**
-	 * Remove stringQuotes at start and end and unescape double stringQuotes within the resulting string.
-	 *
-	 * @param rawValue the raw value
-	 * @param stringQuote the string quote
-	 * @return the string
-	 * @throws CsvDataException the csv data exception
-	 */
-	private static String parseValueDataString(String rawValue, char stringQuote) {
-		String returnValue = rawValue;
-		String stringQuoteString = Character.toString(stringQuote);
-		
-		if (StringUtils.isNotEmpty(rawValue)) {
-			if (returnValue.charAt(0) == stringQuote && returnValue.charAt(returnValue.length() - 1) == stringQuote) {
-				returnValue = returnValue.substring(1, returnValue.length() - 1);
-				returnValue = returnValue.replace(stringQuoteString + stringQuoteString, stringQuoteString);
-			}
-			returnValue = returnValue.replace("\r\n", "\n").replace('\r', '\n');
-			
-			if (returnValue.contains(stringQuoteString)) {
-				throw new AgnTagError(AgnTagErrorKey.invalidUnquotedValue);
+				returnMap.put(nextKey.toString(), nextValue.toString());
+				nextKey = new StringBuilder();
+				nextValue = new StringBuilder();
 			}
 		}
 
-		return returnValue;
+		if (nextKey.length() > 0) {
+			if (nextKey.indexOf("'") > -1 || nextKey.indexOf("\"") > -1) {
+				throw new AgnTagError(AgnTagErrorKey.invalidQuotedKey);
+			} else if (nextKey.indexOf(" ") > -1 || nextKey.indexOf("\n") > -1 || nextKey.indexOf("\t") > -1) {
+				throw new AgnTagError(AgnTagErrorKey.invalidWhitespace);
+			} else if (nextValue.length() == 0) {
+				throw new AgnTagError(AgnTagErrorKey.invalidEmptyKey);
+			} else {
+				returnMap.put(nextKey.toString(), nextValue.toString());
+			}
+		}
+
+		return returnMap;
 	}
 
 	public static Map<String, String> getParametersFromAgnTagString(String agnTagString) throws Exception {

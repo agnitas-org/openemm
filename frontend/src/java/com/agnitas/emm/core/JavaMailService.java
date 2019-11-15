@@ -14,44 +14,10 @@ public interface JavaMailService {
 	boolean sendVelocityExceptionMail(String formUrl, Exception e);
 	
 	boolean sendExceptionMail(String comment, Exception e);
-	
-	boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, MailAttachment... attachments);
 
-	boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, MailAttachment... attachments);
-	
-	class MailAttachment {
-		private String name;
-		private byte[] data;
-		private String mimeType;
-		
-		public MailAttachment(String name, byte[] data, String mimeType) {
-			this.name = name;
-			this.data = data;
-			this.mimeType = mimeType;
-		}
+	boolean sendEmail(String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
 
-		public String getName() {
-			return name;
-		}
-		
-		public void setName(String name) {
-			this.name = name;
-		}
-		
-		public byte[] getData() {
-			return data;
-		}
-		
-		public void setData(byte[] data) {
-			this.data = data;
-		}
-		
-		public String getMimeType() {
-			return mimeType;
-		}
-		
-		public void setMimeType(String mimeType) {
-			this.mimeType = mimeType;
-		}
-	}
+	boolean sendEmail(String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
+
+	boolean sendEmail(String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments);
 }

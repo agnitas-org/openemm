@@ -15,7 +15,7 @@ public enum UserActivityLogActions {
     CREATE("UserActivitylog.Action.Create", "create"),
     EDIT("UserActivitylog.Action.Edit", "edit"),
     DELETE("UserActivitylog.Action.Delete", "delete"),
-    VIEW("UserActivitylog.Action.View", "view"),
+    VIEW("default.View", "view"),
     DO("UserActivitylog.Action.Do", "do"),
     UPLOAD_DOWNLOAD("UserActivitylog.Action.UploadDownload", "download", "upload"),
     SEND("UserActivitylog.Action.Send", "send"),

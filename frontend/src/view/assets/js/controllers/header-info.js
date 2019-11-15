@@ -8,9 +8,8 @@ AGN.Lib.Controller.new('header-info', function() {
 
     this.addAction({click : 'add-mailing-parameter'}, function() {
         var trLast = $('#mailingParamsTable tr:last');
-        var parameterKey = this.el.data('parameter-key');
 
-        var newRow = _.template(AGN.Opt.Templates['header-info-mailing-param-row-new'], { key: ++parameterKey })
+        var newRow = AGN.Lib.Template.text('header-info-mailing-param-row-new', { key: ++mailingParamsIndex });
         trLast.after(newRow);
 
         var newBtn = trLast.find('#newMailingParameterBtn');

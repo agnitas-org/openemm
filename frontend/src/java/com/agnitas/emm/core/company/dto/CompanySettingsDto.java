@@ -27,9 +27,11 @@ public class CompanySettingsDto {
     private String timeZone;
     private boolean hasForceSending;
     private boolean hasRecipientsCleanup;
+    private boolean hasRecipientsAnonymisation;
     private boolean hasTrackingVeto;
     private int sector;
     private int business;
+    private int maxAdminMails;
     private boolean hasTwoFactorAuthentication;
 
     public boolean isHasMailTracking() {
@@ -143,8 +145,16 @@ public class CompanySettingsDto {
     public void setHasRecipientsCleanup(boolean hasRecipientsCleanup) {
         this.hasRecipientsCleanup = hasRecipientsCleanup;
     }
+    
+    public boolean isHasRecipientsAnonymisation() {
+		return hasRecipientsAnonymisation;
+	}
 
-    public boolean isHasTrackingVeto() {
+	public void setHasRecipientsAnonymisation(boolean hasRecipientsAnonymisation) {
+		this.hasRecipientsAnonymisation = hasRecipientsAnonymisation;
+	}
+
+	public boolean isHasTrackingVeto() {
         return hasTrackingVeto;
     }
 
@@ -175,4 +185,12 @@ public class CompanySettingsDto {
     public void setHasTwoFactorAuthentication(boolean hasTwoFactorAuthentication) {
         this.hasTwoFactorAuthentication = hasTwoFactorAuthentication;
     }
+
+	public int getMaxAdminMails() {
+		return maxAdminMails;
+	}
+
+	public void setMaxAdminMails(int maxAdminMails) {
+		this.maxAdminMails = maxAdminMails;
+	}
 }

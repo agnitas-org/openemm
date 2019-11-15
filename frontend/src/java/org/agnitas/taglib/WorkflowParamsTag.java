@@ -12,6 +12,7 @@
 package org.agnitas.taglib;
 
 import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
@@ -22,7 +23,8 @@ import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.log4j.Logger;
 
 public class WorkflowParamsTag extends TagSupport {
-	
+	private static final long serialVersionUID = -5936536463929869069L;
+
 	private static final Logger logger = Logger.getLogger(WorkflowParamsTag.class);
 	
     private boolean disabled;

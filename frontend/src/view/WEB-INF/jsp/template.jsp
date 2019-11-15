@@ -12,6 +12,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="MENU_POSITION_LEFT" value="<%= EmmLayoutBase.MENU_POSITION_LEFT%>" scope="page"/>
 <c:set var="MENU_POSITION_TOP" value="<%= EmmLayoutBase.MENU_POSITION_TOP%>" scope="page"/>
@@ -36,7 +37,7 @@
     <header class="l-header">
         <ul class="header-menu">
             <li>
-                <a class="menu-open">
+                <a class="menu-open" href="#">
                     <i class="icon icon-bars"></i>
                 </a>
             </li>
@@ -130,6 +131,7 @@
                     <span class="text"><bean:message key="help"/></span>
                 </button>
             </li>
+            <%@ include file="itemactions-support.jspf" %>
             <tiles:insert attribute="newresource"/>
             <tiles:insert attribute="itemactions"/>
         </ul>
@@ -191,16 +193,7 @@
                     <span class="menu-item-text" id="session-time-field"></span>
                 </li>
             <tiles:insert attribute="sidemenu"/>
-			<% if (Integer.parseInt(ConfigService.getInstance().getValue(ConfigValue.System_Licence)) <= 1000) { %>
-            	<emm:HideByPermission token="user.xpress">
-            		<li>
-						<html:link page="/information.do?method=list" styleClass="menu-item">
-							<i class="menu-item-logo icon icon-shield"></i>
-							<span class="menu-item-text"><bean:message key="ISO-information"/></span>
-						</html:link>
-					</li>
-				</emm:HideByPermission>
-			<% } %>
+            <%@include file="information-link.jspf"%>
             <li class="account-data">
                 <html:link page="/selfservice.do?action=showChangeForm" styleClass="menu-item">
                     <p class="small"><bean:message key="username.message"/></p>

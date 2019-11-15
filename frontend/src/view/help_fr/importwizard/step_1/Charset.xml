@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title>Jeu de caract&eacute;res</title>
+	<title><![CDATA[Jeu de caract&eacute;res]]></title>
 	<content><![CDATA[La valeur par d&eacute;faut est le jeu de caract&egrave;res d'Europe occidentale ISO 8859-1, que vous pouvez tout aussi bien utiliser. Vous ne devez s&eacute;lectionner un jeu de caract&eacute;res diff&eacute;rent que si votre fichier csv utilise &eacute;galement ce jeu de caract&eacute;res.]]></content>
 </HelpBalloon>

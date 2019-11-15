@@ -71,66 +71,7 @@ public class TargetNodeDate extends TargetNode implements Serializable {
             	OPERATOR_GT_EQ
         };
     }
-    
-    @Override
-	public String generateSQL() {
-        StringBuffer tmpSQL=new StringBuffer("");
-        
-        switch(this.chainOperator) {
-            case TargetNode.CHAIN_OPERATOR_AND:
-                tmpSQL.append(" AND ");
-                break;
-            case TargetNode.CHAIN_OPERATOR_OR:
-                tmpSQL.append(" OR ");
-                break;
-            default:
-                tmpSQL.append(" ");
-        }
-        
-        if(this.openBracketBefore) {
-            tmpSQL.append("(");
-        }
-        
-        if(this.primaryOperator==TargetNode.OPERATOR_IS.getOperatorCode()) {
-            if(!this.primaryField.equals("sysdate")) {
-                tmpSQL.append("cust.");
-            }
-            tmpSQL.append(this.primaryField);
-            tmpSQL.append(" ");
-            tmpSQL.append(this.typeOperators[this.primaryOperator-1].getOperatorSymbol());
-            tmpSQL.append(" ");
-            tmpSQL.append(getSQLSafeString(this.primaryValue));
-        } else {
-            if(this.primaryField.equals("sysdate")) {
-                tmpSQL.append("to_char(");
-            } else {
-                tmpSQL.append("to_char(cust.");
-            }
-            tmpSQL.append(this.primaryField);
-            tmpSQL.append(", '");
-            tmpSQL.append(this.dateFormat);
-            tmpSQL.append("') ");
-            tmpSQL.append(this.typeOperators[this.primaryOperator-1].getOperatorSymbol());
-            if(this.primaryValue.startsWith("sysdate")) {
-                tmpSQL.append(" to_char(");
-                tmpSQL.append(this.primaryValue);
-                tmpSQL.append(", '");
-                tmpSQL.append(this.dateFormat);
-                tmpSQL.append("') ");
-            } else {
-                tmpSQL.append(" '");
-                tmpSQL.append(getSQLSafeString(this.primaryValue));
-                tmpSQL.append("'");
-            }
-        }
-        
-        if(this.closeBracketAfter) {
-            tmpSQL.append(")");
-        }
-        
-        return tmpSQL.toString();
-    }
-    
+      
     @Override
 	public String generateBsh() {
         StringBuffer tmpBsh=new StringBuffer("");

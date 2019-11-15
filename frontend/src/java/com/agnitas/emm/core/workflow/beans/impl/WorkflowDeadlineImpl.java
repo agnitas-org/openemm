@@ -12,6 +12,7 @@ package com.agnitas.emm.core.workflow.beans.impl;
 
 
 import java.util.Date;
+import java.util.Objects;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
@@ -101,5 +102,25 @@ public class WorkflowDeadlineImpl extends BaseWorkflowIcon implements WorkflowDe
     @Override
     public void setUseTime(boolean useTime) {
         this.useTime = useTime;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowDeadlineImpl that = (WorkflowDeadlineImpl) o;
+        return delayValue == that.delayValue &&
+                hour == that.hour &&
+                minute == that.minute &&
+                useTime == that.useTime &&
+                deadlineType == that.deadlineType &&
+                Objects.equals(date, that.date) &&
+                timeUnit == that.timeUnit;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), deadlineType, date, timeUnit, delayValue, hour, minute, useTime);
     }
 }

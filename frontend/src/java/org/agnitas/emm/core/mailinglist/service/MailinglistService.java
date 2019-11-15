@@ -25,6 +25,12 @@ public interface MailinglistService {
 
 	boolean deleteMailinglist(MailinglistModel model) throws MailinglistException;
 
+	/**
+	 * Deprecated, because MailinglistModel is overkill here. This method just takes the company ID from the model.
+	 * @see #listMailinglists(int)
+	 */
+	@Deprecated
 	List<Mailinglist> getMailinglists(MailinglistModel model) throws MailinglistException;
 	
+	List<Mailinglist> listMailinglists(final int companyID) throws MailinglistException;
 }

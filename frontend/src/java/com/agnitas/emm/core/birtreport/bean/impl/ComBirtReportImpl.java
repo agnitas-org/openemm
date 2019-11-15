@@ -11,9 +11,12 @@
 package com.agnitas.emm.core.birtreport.bean.impl;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import org.agnitas.util.DateUtilities;
 
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
@@ -196,101 +199,54 @@ public class ComBirtReportImpl implements ComBirtReport {
 	public void calculateSendDate() {
         if (isTriggeredByMailing()) {
             return;
+        } else {
+        	BirtReportType birtReportType = BirtReportType.getTypeByCode(getReportType());
+    		Calendar sendTimeCalendar = new GregorianCalendar();
+    		sendTimeCalendar.setTime(sendTime);
+	        if (birtReportType == BirtReportType.TYPE_MONTHLY_FIRST) {
+	        	String intervalPattern = "M01:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
+	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_15TH) {
+	        	String intervalPattern = "M15:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
+	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_LAST) {
+	        	String intervalPattern = "M99:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
+	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        } else if (birtReportType == BirtReportType.TYPE_WEEKLY || birtReportType == BirtReportType.TYPE_BIWEEKLY) {
+	    		String intervalPattern = "";
+	        	if (isSend(MONDAY)) {
+	        		intervalPattern += "Mo";
+	        	}
+	        	if (isSend(TUESDAY)) {
+	        		intervalPattern += "Tu";
+	        	}
+	        	if (isSend(WEDNESDAY)) {
+	        		intervalPattern += "We";
+	        	}
+	        	if (isSend(THURSDAY)) {
+	        		intervalPattern += "Th";
+	        	}
+	        	if (isSend(FRIDAY)) {
+	        		intervalPattern += "Fr";
+	        	}
+	        	if (isSend(SATURDAY)) {
+	        		intervalPattern += "Sa";
+	        	}
+	        	if (isSend(SUNDAY)) {
+	        		intervalPattern += "Su";
+	        	}
+	        	intervalPattern += ":" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
+
+	            if (birtReportType == BirtReportType.TYPE_BIWEEKLY) {
+	            	sendDate = DateUtilities.addDaysToDate(DateUtilities.calculateNextJobStart(intervalPattern), 7);
+	            } else {
+	            	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	            }
+	        } else {
+	        	String intervalPattern = String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
+	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        }
         }
-        GregorianCalendar aCal = new GregorianCalendar();
-        GregorianCalendar aTime = new GregorianCalendar();
-
-        aTime.setTime(sendTime);
-        aTime.set(GregorianCalendar.DAY_OF_MONTH, aCal.get(GregorianCalendar.DAY_OF_MONTH));
-        aTime.set(GregorianCalendar.MONTH, aCal.get(GregorianCalendar.MONTH));
-        aTime.set(GregorianCalendar.YEAR, aCal.get(GregorianCalendar.YEAR));
-        // Values of seconds and milliseconds are set to 0 to eliminate their influence on the next "if" statement.
-        aTime.set(GregorianCalendar.SECOND, 0);
-        aTime.set(GregorianCalendar.MILLISECOND, 0);
-        if (aCal.after(aTime)) {
-            aCal.add(GregorianCalendar.DATE, 1);
-        }
-
-        BirtReportType reportType = BirtReportType.getTypeByCode(this.getReportType());
-        if ((reportType == BirtReportType.TYPE_WEEKLY) || (reportType == BirtReportType.TYPE_BIWEEKLY)) {
-            for (int i = 1; i <= 7; i++) {
-                switch (aCal.get(GregorianCalendar.DAY_OF_WEEK)) {
-                    case GregorianCalendar.MONDAY:
-                        if (isSend(MONDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.TUESDAY:
-                        if (isSend(TUESDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.WEDNESDAY:
-                        if (isSend(WEDNESDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.THURSDAY:
-                        if (isSend(THURSDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.FRIDAY:
-                        if (isSend(FRIDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.SATURDAY:
-                        if (isSend(SATURDAY)) {
-                            i = 8;
-                        }
-                        break;
-
-                    case GregorianCalendar.SUNDAY:
-                        if (isSend(SUNDAY)) {
-                            i = 8;
-                        }
-                        break;
-        				
-    				default:
-    					throw new RuntimeException("Invalid day");
-                }
-                if (i <= 7) {
-                    aCal.add(GregorianCalendar.DATE, 1);
-                }
-            }
-            if (reportType == BirtReportType.TYPE_BIWEEKLY) {
-                aCal.add(GregorianCalendar.DATE, 7);
-            }
-        }
-        if (reportType == BirtReportType.TYPE_MONTHLY_FIRST) {
-        	aCal.set(GregorianCalendar.DAY_OF_MONTH, 1);
-            aCal.add(GregorianCalendar.MONTH, 1);
-        }
-        if (reportType == BirtReportType.TYPE_MONTHLY_15TH) {
-        	aCal.set(GregorianCalendar.DAY_OF_MONTH, 15);
-            aCal.add(GregorianCalendar.MONTH, 1);
-        }
-        if (reportType == BirtReportType.TYPE_MONTHLY_LAST) {
-        	// Set to first of month before incrementing month to avoid problems when incrementing to a month with less days than current day of month
-        	aCal.set(GregorianCalendar.DAY_OF_MONTH, 1);
-            aCal.add(GregorianCalendar.MONTH, 1);
-
-            // Move to ultimo
-            aCal.set(GregorianCalendar.DAY_OF_MONTH, aTime.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
-        }
-
-        aCal.set(GregorianCalendar.HOUR_OF_DAY, aTime.get(GregorianCalendar.HOUR_OF_DAY));
-        aCal.set(GregorianCalendar.MINUTE, aTime.get(GregorianCalendar.MINUTE));
-        aCal.set(GregorianCalendar.SECOND, 0);
-        aCal.set(GregorianCalendar.MILLISECOND, 0);
-
-        sendDate = aCal.getTime();
     }
 
     @Override

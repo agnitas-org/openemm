@@ -15,13 +15,14 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.DomainStatRow;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.DomainStatRow;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class DomainStatDataSet extends BIRTDataSet {
 	/** The logger. */
@@ -52,7 +53,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 		if (null != mailinglistId) {
 			mailingListSql = "AND bind.mailinglist_id = " + mailinglistId;
 		}
-		
+			
 		int totalCount = getDomainsTotalCount(companyID, mailingListSql, targetSql);
 		List<DomainStatRow> domainList = getTopDomainList(companyID, mailingListSql, targetSql, limit, totalCount, language,  topLevelDomains);
   

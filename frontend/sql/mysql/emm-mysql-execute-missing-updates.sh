@@ -1,5 +1,5 @@
 #!/bin/bash
-scriptDir=$(dirname ${0})
+scriptDir=$(dirname "${0}")
 
 if [ "$1" = "dbcfg" ]; then {
 	if [ -f "/opt/agnitas.com/etc/dbcfg" ]; then {
@@ -92,7 +92,10 @@ function getVersionNumber {
 	echo ${version}
 }
 
-updatefiles=""
+updatefiles="${updatefiles} ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql"
+for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-messages-*.sql" | sort`;do
+	updatefiles="${updatefiles} ${sqlfilename}"
+done
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql" | sort`;do
 	updatefileVersion=$(getVersionNumber ${sqlfilename})
 	
@@ -103,10 +106,6 @@ for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql"
 	} else {
 			updatefiles="${updatefiles} ${sqlfilename}"
 	} fi
-done
-updatefiles="${updatefiles} ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql"
-for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-messages-*.sql" | sort`;do
-	updatefiles="${updatefiles} ${sqlfilename}"
 done
 
 echo

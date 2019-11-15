@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -68,7 +69,7 @@ import org.apache.log4j.Logger;
  *     <li></i>disabled</i>: The node is active but will receive only request with session IDs pointing to that node. This is the state to shutdown the node in future.</li>
  *     <li></i>stopped</i>: The node is inactive and will not receive any request.</li>
  *   </ul>
- *   
+ * 
  *   (See documentation of mod_jk for better descriptions.)
  * </p>
  */
@@ -96,8 +97,9 @@ public class LoadBalancerFilter implements Filter {
 		if( loadBalancerActivation != null) {
 			
 			// Request attribute is present, so the node is behind a load balancer
-			if( logger.isDebugEnabled())
+			if( logger.isDebugEnabled()) {
 				logger.debug( "Load balancer activation is " + loadBalancerActivation);
+			}
 
 			// Check, if activation state of current node is "disabled".
 			if( "DIS".equals( loadBalancerActivation)) {
@@ -109,16 +111,18 @@ public class LoadBalancerFilter implements Filter {
 					// Check validity of session ID
 					if( !req.isRequestedSessionIdValid()) {
 						// Session ID is not valid for the current node, the requests sends a redirect to system URL specified in property "system.url"
-						if( logger.isInfoEnabled())
+						if( logger.isInfoEnabled()) {
 							logger.info( "Requested session is invalid.");
+						}
 						
 						HttpServletResponse resp = (HttpServletResponse) response;
 						resp.sendRedirect( systemUrl);
 					} else {
 						
 						// The session ID seems to be valid for the current node, so processing will continue.
-						if( logger.isInfoEnabled())
+						if( logger.isInfoEnabled()) {
 							logger.info( "Requested session is valid. Proceeding with request.");
+						}
 						
 						filterChain.doFilter( request, response);
 					}
@@ -131,19 +135,21 @@ public class LoadBalancerFilter implements Filter {
 				}
 			} else {
 				// The node is either active or stopped.
-				if( logger.isInfoEnabled())
+				if( logger.isInfoEnabled()) {
 					logger.info( "Node not disabled.");
+				}
 
 				filterChain.doFilter( request, response);
 			}
 		} else {
 			/*
-			 *  We got no information about the activation state of the current node, so we have to assume, 
+			 *  We got no information about the activation state of the current node, so we have to assume,
 			 *  that the node is not behind a load balancer and is active all the time.
 			 */
 			
-			if( logger.isInfoEnabled()) 
+			if( logger.isInfoEnabled()) {
 				logger.info( "No information about load balancer activation found.");
+			}
 			
 			filterChain.doFilter( request, response);
 		}
@@ -153,7 +159,7 @@ public class LoadBalancerFilter implements Filter {
 	public void init(FilterConfig filterConfig) throws ServletException {
 		try {
 			// Read system URL. This URL will be used for redirection in case of invalid sessions on disabled nodes.
-			systemUrl = ConfigService.getInstance().getValue(ConfigValue.SystemUrl);
+			systemUrl = ConfigService.getInstance().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
 		} catch (Exception e) {
 			throw new ServletException("Cannot read system url: " + e.getMessage(), e);
 		}

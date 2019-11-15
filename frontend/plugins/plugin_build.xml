@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="all" name="PLUGIN">
+	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="../lib_ant/xmltask.jar" />
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="../lib_ant/ant-contrib-1.0b3.jar" />
+	
+	<property name="builddir" value="./build" />
+
+	<target name="all" depends="checkProperties, compile, createZipFile" description="Build Plugin">
+		<!-- delete build -->
+		<delete dir="${builddir}" />
+		
+		<echo message="Plugin ${pluginName} was built." />
+		
+		<!-- Sometimes build is to fast to show all output in console -->
+		<sleep milliseconds="2000"/>
+	</target>
+
+	<target name="checkProperties" description="Check the existence of the propertyfile and import it">
+		<property file="plugin_build.properties" />
+		<available file="plugin_build.properties" property="isBuildPropertiesAvailable" />
+		<fail message="Missing plugin_build.properties">
+			<condition>
+				<not>
+					<istrue value="${isBuildPropertiesAvailable}" />
+				</not>
+			</condition>
+		</fail>
+
+		<propertyregex property="builddir" input="${builddir}" regexp="~" replace="${user.home}" global="true" override="true" />
+		<propertyregex property="emm.build" input="${emm.build}" regexp="~" replace="${user.home}" global="true" override="true" />
+
+		<available file="${emm.build}/WEB-INF/classes" property="isEmmBuildAvailable" />
+		<fail message="Missing emm build: You must build the EMM first">
+			<condition>
+				<not>
+					<istrue value="${isEmmBuildAvailable}" />
+				</not>
+			</condition>
+		</fail>
+		
+		<fail message="Missing pluginName: Start ant build with parameter '-DpluginName=&lt;name_of_plugin_directory>'">
+			<condition>
+				<not>
+					<isset property="pluginName" />
+				</not>
+			</condition>
+		</fail>
+
+		<!-- delete old build -->
+		<delete dir="${builddir}" />
+		<delete file="${pluginName}.zip" />
+		
+		<echo message="Building plugin ${pluginName}" />
+		
+		<if>
+			<not>
+				<isset property="javaVersion" />
+			</not>
+			<then>
+				<property name="javaVersion" value="1.8" />
+			</then>
+		</if>
+		<echo message="Using Java version ${javaVersion}" /> 
+	</target>
+
+	<target name="compile" depends="checkProperties" description="Build plugin classes">
+		<mkdir dir="${builddir}/bin/classes" />
+
+		<path id="build.classpath">
+			<fileset dir="../lib">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+
+		<path id="build.containerPath">
+			<fileset dir="${container.home}/lib">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+
+		<echo message="JDK for compile: ${jdk}" />
+		<echo message="Container home: ${container.home}" />
+
+		<javac debug="true" classpath="${emm.build}/WEB-INF/classes" nowarn="true" deprecation="false" destdir="${builddir}/bin/classes" executable="${jdk}/bin/javac" fork="yes" source="${javaVersion}" target="${javaVersion}" srcdir="${pluginName}/src" includeantruntime="false">
+			<classpath refid="build.containerPath" />
+			<classpath refid="build.classpath" />
+		</javac>
+	</target>
+
+	<target name="createZipFile" depends="checkProperties, compile" description="Create plugin zip file">
+		<if>
+			<available file="${pluginName}/jsp" type="dir"/>
+			<then>
+				<copy todir="${builddir}/jsp">
+					<fileset dir="${pluginName}/jsp">
+						<include name="*" />
+					</fileset>
+				</copy>
+			</then>
+		</if>
+		
+		<copy todir="${builddir}/bin/classes">
+			<fileset dir="${pluginName}/bin/classes">
+				<include name="*.properties" />
+			</fileset>
+		</copy>
+
+		<copy todir="${builddir}" file="${pluginName}/plugin.xml" />
+
+		<zip destfile="${pluginName}.zip" basedir="${builddir}" />
+	</target>
+</project>

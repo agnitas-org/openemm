@@ -129,14 +129,16 @@
         </div>
 
         <div class="tile-content tile-content-forms">
-            <c:forEach items="${permissionCategoryList}" var="category" varStatus="categoryIndex">
+            <%--@elvariable id="permissionCategories" type="java.util.Set<com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionCategoryEntry>"--%>
+            <c:forEach items="${permissionCategories}" var="category" varStatus="categoryIndex">
                 <div class="tile">
                     <div class="tile-header">
                         <a href="#" class="headline" data-toggle-tile="#permission_category_${categoryIndex.index}">
                             <i class="icon tile-toggle icon-angle-up"></i>
-							<bean:message key="${category}"/>
+							<bean:message key="${category.name}"/>
                         </a>
                         <ul class="tile-header-actions">
+                            <!-- dropdown for toggle all on/off -->
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" >
                                     <i class="icon icon-pencil"></i>
@@ -160,42 +162,39 @@
                             </li>
                         </ul>
                     </div>
-                    <c:set var="subCategories" value="${permissionCategoriesMap[category].keySet()}"/>
-                    <c:if test="${not empty subCategories}">
+                    <c:if test="${not empty category.subCategories}">
                         <div id="permission_category_${categoryIndex.index}" class="tile-content tile-content-forms checkboxes-content">
-                            <c:forEach items="${subCategories}" var="subCategory">
+                            <c:forEach items="${category.subCategories.values()}" var="subCategory">
+                            <%--@elvariable id="subCategory" type="com.agnitas.emm.core.admin.web.PermissionsOverviewData.PermissionSubCategoryEntry"--%>
 
-                                <c:if test="${not empty subCategory}">
+                                <c:if test="${not empty subCategory.name}">
                                     <div class="tile-header">
-                                        <h3 class="headline"><bean:message key="${subCategory}"/></h3>
+                                        <h3 class="headline"><bean:message key="${subCategory.name}"/></h3>
                                     </div>
                                 </c:if>
 
                                 <div>
                                     <ul class="list-group">
-                                        <c:set var="permissions" value="${permissionCategoriesMap[category][subCategory]}"/>
-                                        <c:if test="${not empty permissions}">
-                                            <c:forEach items="${permissions}" var="permission">
-                                                <li class="list-group-item">
-                                                    <label class="checkbox-inline">
-                                                        <mvc:checkbox path="grantedUserPermissions" value="${permission}" cssClass="js-form-change checkboxes-item"
-                                                                      disabled="${not permissionChangeable.contains(permission)}"/>
-                                                        &nbsp;
-                                                        <c:if test="${category eq 'others'}">
-                                                            ${permission}
+                                        <c:forEach items="${subCategory.permissions}" var="permission">
+                                            <li class="list-group-item">
+                                                <label class="checkbox-inline">
+                                                    <mvc:checkbox path="grantedUserPermissions" value="${permission.name}" cssClass="js-form-change checkboxes-item"
+                                                                  disabled="${not permission.changeable}"/>
+                                                    &nbsp;
+                                                    <c:if test="${category.name eq 'others'}">
+                                                        ${permission.name}
+                                                    </c:if>
+                                                    <c:if test="${category.name ne 'others'}">
+                                                        <c:if test="${empty subCategory.name}">
+                                                            <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category.name}.${permission.name}" /><br>
                                                         </c:if>
-                                                        <c:if test="${category ne 'others'}">
-                                                            <c:if test="${empty subCategory}">
-                                                                <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category}.${permission}" /><br>
-                                                            </c:if>
-                                                            <c:if test="${not empty subCategory}">
-                                                                <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category}#${subCategory}.${permission}" /><br>
-                                                            </c:if>
+                                                        <c:if test="${not empty subCategory.name}">
+                                                            <mvc:message code="${USERRIGHT_MESSAGEKEY_PREFIX}${category.name}#${subCategory.name}.${permission.name}" /><br>
                                                         </c:if>
-                                                    </label>
-                                                </li>
-                                            </c:forEach>
-                                        </c:if>
+                                                    </c:if>
+                                                </label>
+                                            </li>
+                                        </c:forEach>
                                     </ul>
                                 </div>
                             </c:forEach>

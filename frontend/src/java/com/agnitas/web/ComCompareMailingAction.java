@@ -37,8 +37,7 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComTargetDao;
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-import com.agnitas.reporting.birt.util.UIDUtils;
+import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.reporting.birt.util.URLUtils;
 import com.agnitas.reporting.birt.web.ComReportBaseAction;
 
@@ -194,7 +193,7 @@ public final class ComCompareMailingAction extends ComReportBaseAction {
         builder.append("&selectedMailings=").append(StringUtils.join(aForm.getMailings(), ","));
         builder.append("&language=").append(language);
 		builder.append("&__format=").append(aForm.getReportFormat());
-        builder.append("&uid=").append(URLUtils.encodeURL(RSACryptUtil.encrypt(UIDUtils.createUID(AgnUtils.getAdmin(request)), RSACryptUtil.getPublicKey(publicKeyFilename))));
+        builder.append("&sec=").append(URLUtils.encodeURL(BirtInterceptingFilter.createSecurityToken(configService, AgnUtils.getAdmin(request).getCompanyID())));
         builder.append("&emmsession=").append(request.getSession(false).getId());
         builder.append("&targetbaseurl=").append(URLUtils.encodeURL(configService.getValue(ConfigValue.BirtDrilldownUrl)));
         Company company = AgnUtils.getCompany(request);

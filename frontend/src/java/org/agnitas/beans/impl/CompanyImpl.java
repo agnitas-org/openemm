@@ -26,8 +26,8 @@ public class CompanyImpl implements Company {
 	private int loginBlockTime;
 	private Number minimumSupportedUIDVersion;
 	private int maxRecipients = 10000;
-	private String rdirDomain = "http://rdir.de";
-	private String mailloopDomain = "filter.agnitas.de";
+	private String rdirDomain;
+	private String mailloopDomain;
 	private int useUTF;
 
 	@Override

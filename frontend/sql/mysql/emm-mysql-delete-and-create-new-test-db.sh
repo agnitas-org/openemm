@@ -1,5 +1,5 @@
 #!/bin/bash
-scriptDir=$(dirname ${0})
+scriptDir=$(dirname "${0}")
 
 hostname=$1
 username=$2
@@ -95,7 +95,10 @@ for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql"
     } fi
 done
 
-sqlScriptsToDo+=" ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql ${scriptDir}/emm-mysql-messages-deleted.sql"
+sqlScriptsToDo+=" ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql"
+for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-messages-*.sql" | sort`;do
+	sqlScriptsToDo="${sqlScriptsToDo} ${sqlfilename}"
+done
 if [ -e "${scriptDir}/emm-mysql-test-post-update.sql" ]; then {
 	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-test-post-update.sql"
 } fi

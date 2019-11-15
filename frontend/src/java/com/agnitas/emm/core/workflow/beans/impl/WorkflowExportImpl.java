@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.workflow.beans.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
@@ -44,5 +45,19 @@ public class WorkflowExportImpl extends BaseWorkflowIcon implements WorkflowExpo
         }
 
         return dependencies;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        WorkflowExportImpl that = (WorkflowExportImpl) o;
+        return autoExportId == that.autoExportId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), autoExportId);
     }
 }

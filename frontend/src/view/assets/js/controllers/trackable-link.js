@@ -2,7 +2,7 @@ AGN.Lib.Controller.new('trackable-link', function() {
   var self = this;
 
   this.addAction({
-    'click': 'delete-link'
+    'click': 'link-details-delete-link'
   }, function(){
     var linkId = this.el.data('link-id');
 
@@ -10,14 +10,14 @@ AGN.Lib.Controller.new('trackable-link', function() {
   });
 
   this.addAction({
-    'click': 'delete-all-links'
+    'click': 'link-details-delete-all-links'
   }, function(){
     $('#linkPropertyTable').find('tbody tr').remove();
   });
 
 
   this.addAction({
-    'click': 'add-extension'
+    'click': 'link-details-add-extension'
   }, function(){
 
     var cTemplate,
@@ -32,7 +32,7 @@ AGN.Lib.Controller.new('trackable-link', function() {
       count = $('#linkPropertyTable').find('tbody tr').length + 1 ;
     }
 
-    cTemplate = _.template(AGN.Opt.Templates['link-table-row'], {
+    cTemplate = AGN.Lib.Template.text('link-table-row', {
       count: count,
       linkName: '',
       linkValue: ''
@@ -43,13 +43,13 @@ AGN.Lib.Controller.new('trackable-link', function() {
   });
 
   this.addAction({
-    'change': 'trackable'
+    'change': 'link-details-trackable'
   }, function() {
     self.runInitializer('trackableAction');
   });
 
   this.addInitializer('trackableAction', function($scope) {
-    var $trigger = $('[data-action="trackable"] :selected');
+    var $trigger = $('[data-action="link-details-trackable"] :selected');
 
     if ( $trigger.val() == 0 ) {
       $('#linkAction').prop('disabled', true);

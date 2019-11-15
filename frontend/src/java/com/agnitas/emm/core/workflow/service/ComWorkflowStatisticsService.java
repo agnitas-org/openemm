@@ -109,9 +109,7 @@ public class ComWorkflowStatisticsService {
 		Workflow workflow = workflowDao.getWorkflow(workflowId, companyId);
 
 		Calendar firstCalendar = GregorianCalendar.getInstance();
-		firstCalendar.setTime(startIcon.getDate());
-		firstCalendar.set(Calendar.HOUR_OF_DAY, startIcon.getHour());
-		firstCalendar.set(Calendar.MINUTE, startIcon.getMinute());
+		firstCalendar.setTime(WorkflowUtils.getStartStopIconDate(startIcon));
 		firstCalendar.add(Calendar.DATE, -4);
 
 		Calendar lastCalendar = Calendar.getInstance();
@@ -181,6 +179,11 @@ public class ComWorkflowStatisticsService {
 		List<WorkflowNode> mailingNodes = workflowGraph.getAllNodesByTypes(Arrays.asList(
 				WorkflowIconType.MAILING.getId(), WorkflowIconType.FOLLOWUP_MAILING.getId(),
 				WorkflowIconType.DATE_BASED_MAILING.getId(), WorkflowIconType.ACTION_BASED_MAILING.getId()));
+
+		if (mailingNodes.isEmpty()) {
+			return;
+		}
+
 		Set<Integer> mailingIds = new HashSet<>();
 		HashMap<Integer, WorkflowMailingAware> mailingIcons = new HashMap<>();
 		for (WorkflowNode mailingNode : mailingNodes) {
@@ -213,7 +216,7 @@ public class ComWorkflowStatisticsService {
 			WorkflowMailingAware mailingIcon = mailingIcons.get(mailingId);
 
 			double clickerRatio = sentNumber.get(mailingId) == 0 ? 0.0 : (((double)clickers.get(mailingId)) / ((double) sentNumber.get(mailingId)))*100;
-			String clickerString = SafeString.getLocaleString("statistic.TotalClickSubscribers.short", locale) + ": " +
+			String clickerString = SafeString.getLocaleString("statistic.clicker", locale) + ": " +
 					clickers.get(mailingId) + " (" + formatter.format(clickerRatio) + "%)";
 
 			double openerRatio = sentNumber.get(mailingId) == 0 ? 0.0 : (((double)openers.get(mailingId)) / ((double) sentNumber.get(mailingId)))*100;

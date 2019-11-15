@@ -13,13 +13,15 @@ package com.agnitas.reporting.birt.external.dataset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
@@ -28,16 +30,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-
-public class RecipientsStatisticDataSet extends BIRTDataSet {
+public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 	private static final transient Logger logger = Logger.getLogger(RecipientsStatisticDataSet.class);
 
-	public final static String ACTIVE = "recipient.MailingState1";
-	public final static int ACTIVE_INDEX = 1;
+	private static final SimpleDateFormat PARAMETER_FORMAT = new SimpleDateFormat(DATE_PARAMETER_FORMAT);
 
 	public final static String OPENERS = "report.opens";
 	public final static int OPENERS_INDEX = 3;
@@ -45,30 +41,14 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	public final static int CLICKER_INDEX = 6;
 
 	public final static String OPENERS_TRACKED = "report.individual.opens.measured";
-	public final static int OPENERS_TRACKED_INDEX = 13;
 	public final static String OPENERS_PC = "report.individual.opens.pc";
-	public final static int OPENERS_PC_INDEX = 14;
 	public final static String OPENERS_MOBILE = "report.individual.opens.mobile";
-	public final static int OPENERS_MOBILE_INDEX = 15;
 	public final static String OPENERS_TABLET = "report.individual.opens.tablet";
-	public final static int OPENERS_TABLET_INDEX = 16;
 	public final static String OPENERS_SMARTTV = "report.opens.smarttv";
-	public final static int OPENERS_SMARTTV_INDEX = 17;
 	public final static String OPENERS_MULTIPLE_DEVICES = "report.openers.multiple-devices";
-	public final static int OPENERS_MULTIPLE_DEVICES_INDEX = 18;
 
 	public final static String CLICKER_TRACKED = "report.clicker";
 	public final static int CLICKER_TRACKED_INDEX = 19;
-	public final static String CLICKER_PC = "statistic.clicker.pc";
-	public final static int CLICKER_PC_INDEX = 20;
-	public final static String CLICKER_MOBILE = "statistic.clicker.mobile";
-	public final static int CLICKER_MOBILE_INDEX = 21;
-	public final static String CLICKER_TABLET = "statistic.clicker.tablet";
-	public final static int CLICKER_TABLET_INDEX = 22;
-	public final static String CLICKER_SMARTTV = "statistic.clicker.smarttv";
-	public final static int CLICKER_SMARTTV_INDEX = 23;
-	public final static String CLICKER_MULTIPLE_DEVICES = "statistic.clicker.multiple";
-	public final static int CLICKER_MULTIPLE_DEVICES_INDEX = 24;
 
 	public final static int ACTIVE_START_DATE_INDEX = 25;
 	public final static int ACTIVE_END_DATE_INDEX = 26;
@@ -87,59 +67,66 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	public final static int OPENERS_SMARTTV_END_DATE_INDEX = 39;
 	public final static int OPENERS_MULTIPLE_DEVICES_END_DATE_INDEX = 40;
 
-	// All recipients is a targetgroup
-	public final static String ALL_SUBSCRIBERS = "statistic.all_subscribers";
-	public final static int ALL_SUBSCRIBERS_TARGETGROUPID = 1;
-	public final static int ALL_SUBSCRIBERS_INDEX = 1;
-
 	public final static int DATE_CONSTRAINT_BETWEEN = 0;
 	public final static int DATE_CONSTRAINT_LESS_THAN_START = 1;
 	public final static int DATE_CONSTRAINT_LESS_THAN_STOP = 2;
 
-	protected Map<Integer, String> mailinglistNamesById = new HashMap<>();
 	
 	private List<RecipientsStatisticRow> statList = new ArrayList<>();
 	private List<RecipientCollectedStatisticRow> collectedStatisticList;
+	
+	/**
+	 * Generates temp table name with specific ID
+	 * @param tempTableId
+	 * @return
+	 */
+	private static String getTempReportTableName(int tempTableId) {
+		return "tmp_report_aggregation_" + tempTableId + "_tbl";
+	}
+
 
 	public Map<String, Integer> initRecipientsStatistic(@VelocityCheck int companyId, String selectedMailingListsAsString, String selectedTargets, String startDateString, String stopDateString, String figuresOptions) throws Exception {
-		List<Integer> mailingListIds = new ArrayList<>();
-		for (String mailingListIdString : Arrays.asList(selectedMailingListsAsString.split(","))) {
-			mailingListIds.add(Integer.parseInt(mailingListIdString));
+		try {
+			List<Integer> mailingListIds = new ArrayList<>();
+			for (String mailingListIdString : selectedMailingListsAsString.split(",")) {
+				mailingListIds.add(Integer.parseInt(mailingListIdString));
+			}
+
+			List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
+			int tempTableId = createRecipientsStatisticTempTable();
+
+			insertEmptyRowsIntoTempTable(companyId, tempTableId, mailingListIds, selectedTargets);
+
+			if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {
+				addRecipientStatMailtype(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString);
+			}
+
+			// this method calculate recipients count for chart "Recipient analysis by
+			// target groups" which is shown always
+			addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, false);
+			
+			 // we need active in the end of period for crossTab
+			if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)
+					|| figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)
+					|| figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)
+					|| figures.contains(BirtReporUtils.BirtReportFigure.ACTIVITY_ANALYSIS)
+					|| figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
+					|| figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {
+				addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, true);
+			}
+
+			updateNumberOfTargetGroups(tempTableId, selectedTargets.split(",").length);
+
+			int tempTableInfoInColumnId = prepareReport(companyId, selectedTargets, selectedMailingListsAsString, startDateString, stopDateString, figuresOptions, tempTableId);
+
+			Map<String, Integer> tempTableIds = new HashMap<>();
+			tempTableIds.put("tempTableInfoInRowId", tempTableId);
+			tempTableIds.put("tempTableInfoInColumnId", tempTableInfoInColumnId);
+			return tempTableIds;
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			throw e;
 		}
-	
-		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
-		int tempTableId = createRecipientsStatisticTempTable();
-
-		populateSelectedMailinglists(companyId, mailingListIds);
-
-		insertEmptyRowsIntoTempTable(companyId, tempTableId, mailingListIds, selectedTargets);
-
-		if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {
-			addRecipientStatMailtype(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString);
-		}
-
-		// this method calculate recipients count for chart "Recipient analysis by
-		// target groups" which is shown always
-		addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, false);
-		
-		 // we need active in the end of period for crossTab
-		if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)
-				|| figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)
-				|| figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)
-				|| figures.contains(BirtReporUtils.BirtReportFigure.ACTIVITY_ANALYSIS)
-				|| figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
-				|| figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {
-			addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, true);
-		}
-
-		updateNumberOfTargetGroups(tempTableId, selectedTargets.split(",").length);
-
-		int tempTableInfoInColumnId = prepareReport(companyId, selectedTargets, selectedMailingListsAsString, startDateString, stopDateString, figuresOptions, tempTableId);
-
-		Map<String, Integer> tempTableIds = new HashMap<>();
-		tempTableIds.put("tempTableInfoInRowId", tempTableId);
-		tempTableIds.put("tempTableInfoInColumnId", tempTableInfoInColumnId);
-		return tempTableIds;
 	}
 
 	/**
@@ -148,26 +135,25 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	 *
 	 * @param tempTableId
 	 * @return
-	 * @throws Exception 
-	 * @throws  
+	 * @throws Exception
+	 * @throws
 	 */
 	public List<RecipientsStatisticRow> getRecipientsStatistic(int tempTableId) throws Exception {
 		if (statList.size() == 0) {
-			String selectMailinglistSsql = "SELECT mailinglist_id, mailinglist_group_id, targetgroup_id, mailinglist_name, targetgroup_name, count_type_text, count_type_html,"
+			String selectMailinglistSsql = "SELECT mailinglist_id, mailinglist_name, mailinglist_group_id, targetgroup_id, mailinglist_name, targetgroup_name, count_type_text, count_type_html,"
 					+ " count_type_offline_html, count_active, count_active_for_period, count_waiting_for_confirm, count_blacklisted, count_optout, count_bounced, count_gender_male,"
 					+ " count_gender_female, count_gender_unknown, count_recipient, count_target_group, count_active_as_of, count_blacklisted_as_of, count_optout_as_of, count_bounced_as_of,"
 					+ " count_waiting_for_confirm_as_of, count_recipient_as_of"
 				+ " FROM " + getTempReportTableName(tempTableId)
 				+ " ORDER BY mailinglist_id, targetgroup_id";
 
-			statList = selectEmbedded(logger, selectMailinglistSsql, new RecipientsStatisticRowMapper(mailinglistNamesById));
+			statList = selectEmbedded(logger, selectMailinglistSsql, new RecipientsStatisticRowMapper());
 
-			ArrayList<RecipientsStatisticRow> statisticRows = new ArrayList<>();
-			statisticRows.addAll(statList);
-			Collections.sort(statisticRows, new RecipientsStatisticRowComparator());
+			List<RecipientsStatisticRow> statisticRows = new ArrayList<>(statList);
+			statisticRows.sort(new RecipientsStatisticRowComparator());
 
 			int previousMailingListId = -1;
-			int currentMailingListGroupId = -1;
+			int currentMailingListGroupId = 0;
 			for (RecipientsStatisticRow row : statisticRows) {
 				if (previousMailingListId != row.getMailingListId()) {
 					currentMailingListGroupId++;
@@ -183,30 +169,25 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	 * Prepare report by collecting the values from different queries in one table
 	 * 
 	 * @return id of the created temporary table
-	 * @throws Exception 
+	 * @throws Exception
 	 **/
-	public int prepareReport(@VelocityCheck int companyId, String selectedTargetsAsString, String selectedMailingListsAsString, String startDateString, String endDateString, String figuresOptions, int tempTableInfoInRowId) throws Exception {
+	private int prepareReport(@VelocityCheck int companyId, String selectedTargetsAsString, String selectedMailingListsAsString, String startDateString, String endDateString, String figuresOptions, int tempTableInfoInRowId) throws Exception {
 		List<Integer> mailingListIds = new ArrayList<>();
-		for (String mailingListIdString : Arrays.asList(selectedMailingListsAsString.split(","))) {
+		for (String mailingListIdString : selectedMailingListsAsString.split(",")) {
 			mailingListIds.add(Integer.parseInt(mailingListIdString));
 		}
 		
-		LightTarget allSubscribers = new LightTarget();
-		allSubscribers.setId(ALL_SUBSCRIBERS_TARGETGROUPID);
-		allSubscribers.setName(ALL_SUBSCRIBERS);
-		allSubscribers.setTargetSQL("");
-		List<LightTarget> targetGroups = new ArrayList<>();
-		targetGroups.add(allSubscribers);
+		List<LightTarget> targetGroups = new ArrayList<>(Collections.singletonList(getAllSubscribersTarget()));
 		targetGroups.addAll(getTargets(selectedTargetsAsString, companyId));
 		
 		Date startDate = null;
 		if (StringUtils.isNotBlank(startDateString)) {
-			startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(startDateString);
+			startDate = PARAMETER_FORMAT.parse(startDateString);
 		}
 		
 		Date endDate = null;
 		if (StringUtils.isNotBlank(endDateString)) {
-			endDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(endDateString);
+			endDate = PARAMETER_FORMAT.parse(endDateString);
 		}
 		
 		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
@@ -233,8 +214,6 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 
 		updateAllRates(tempTableId, companyId, targetGroups, figures);
 
-		populateSelectedMailinglists(companyId, mailingListIds);
-
 		return tempTableId;
 	}
 
@@ -243,19 +222,19 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	 * 
 	 * @param tempTableId
 	 * @return list
-	 * @throws Exception 
-	 * @throws DataAccessException 
+	 * @throws Exception
+	 * @throws DataAccessException
 	 */
 	public List<RecipientCollectedStatisticRow> getData(int tempTableId) throws Exception {
 		if (collectedStatisticList == null) {
-			String query = "SELECT mailinglist_id, category, category_index, targetgroup_id, targetgroup, targetgroup_index, value, rate"
+			String query = "SELECT mailinglist_id, mailinglist_name, category_name, category_index, targetgroup_id, targetgroup_name, targetgroup_index, value, rate"
 				+ " FROM " + getTempReportTableName(tempTableId)
 				+ " ORDER BY mailinglist_id, category_index, targetgroup_index";
 
-			collectedStatisticList = selectEmbedded(logger, query, new RecipientCollectedStatisticRowMapper(mailinglistNamesById));
+			collectedStatisticList = selectEmbedded(logger, query, new RecipientCollectedStatisticRowMapper());
 
 			int previousMailingListId = -1;
-			int currentMailingListGroupId = -1;
+			int currentMailingListGroupId = 0;
 			for (RecipientCollectedStatisticRow row : collectedStatisticList) {
 				if (previousMailingListId != row.getMailingListId()) {
 					currentMailingListGroupId++;
@@ -270,26 +249,27 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	/**
 	 * create a temporary table to collect the values from different queries for the
 	 * report in one table
-	 * 
+	 *
 	 * @return id of the create temporary table
-	 * @throws Exception 
-	 * @throws  
+	 * @throws Exception
+	 * @throws
 	 **/
 	private int createTempTable() throws Exception {
 		int tempTableId = getNextTmpID();
 
 		String createTableSQL = "CREATE TABLE " + getTempReportTableName(tempTableId)
 			+ " (mailinglist_id INTEGER,"
-			+ " category VARCHAR(200),"
+			+ " mailinglist_name VARCHAR(200),"
+			+ " category_name VARCHAR(200),"
 			+ " category_index INTEGER,"
 			+ " targetgroup_id INTEGER,"
-			+ " targetgroup VARCHAR(200),"
+			+ " targetgroup_name VARCHAR(200),"
 			+ " targetgroup_index INTEGER,"
 			+ " value INTEGER,"
 			+ " rate DOUBLE)";
 
 		executeEmbedded(logger, createTableSQL);
-		
+
 		return tempTableId;
 	}
 
@@ -306,9 +286,12 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		String createTableSQL = "CREATE TABLE " + getTempReportTableName(tempTableId)
 			+ " (mailinglist_id INTEGER,"
 			+ " mailinglist_group_id INTEGER,"
-			+ " targetgroup_id INTEGER,"
 			+ " mailinglist_name VARCHAR(200),"
+			+ " category_name VARCHAR(200),"
+			+ " category_index INTEGER,"
+			+ " targetgroup_id INTEGER,"
 			+ " targetgroup_name VARCHAR(200),"
+			+ " targetgroup_index INTEGER,"
 			+ " count_type_text INTEGER,"
 			+ " count_type_html INTEGER,"
 			+ " count_type_offline_html INTEGER,"
@@ -351,136 +334,143 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		String insertEmbedded = getTempInsertQuery(tempTableId);
 
 		for (int mailingListId : mailingListIds) {
-			int targetgroupIndex = ALL_SUBSCRIBERS_INDEX;
+			String mailinglistName = getMailinglistName(companyId, mailingListId);
+			int targetgroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 			for (LightTarget target : targetGroups) {
+				target = getDefaultTarget(target);
+				
+				if (target.getId() == CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID) {
+					targetgroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
+				}
+
 				String targetSql = target.getTargetSQL();
 				boolean useTargetSql = false;
 				if (StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
 					useTargetSql = true;
 				}
 
-				// Overall clickers
-		        StringBuilder queryOverallClickers = new StringBuilder("SELECT COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_" + companyId + "_tbl r");
-		        List<Object> queryOverallClickersParameters = new ArrayList<>();
-
-		        if (useTargetSql && targetSql.contains("cust.")) {
-		        	queryOverallClickers.append(" JOIN customer_" + companyId + "_tbl cust ON r.customer_id = cust.customer_id");
-				}
-		        
-		        queryOverallClickers.append(" WHERE r.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
-		        queryOverallClickersParameters.add(companyId);
-		        queryOverallClickersParameters.add(mailingListId);
-		        
-		        queryOverallClickers.append(" AND r.customer_id != 0");
-
-				if (startDate != null) {
-					queryOverallClickers.append(" AND ? <= r.timestamp");
-					queryOverallClickersParameters.add(startDate);
-		        }
-				
-				if (endDate != null) {
-					queryOverallClickers.append(" AND r.timestamp <= ?");
-					queryOverallClickersParameters.add(endDate);
-		        }
-				
-				if (useTargetSql) {
-					queryOverallClickers.append(" AND (").append(targetSql).append(")");
-				}
-
-				List<Map<String, Object>> resultOverallClickers = selectLongRunning(logger, queryOverallClickers.toString(), queryOverallClickersParameters.toArray(new Object[0]));
-				int overallClickers = ((Number) resultOverallClickers.get(0).get("counter")).intValue();
-				
 				// Unique deviceclass clickers
-		        StringBuilder queryClickersPerUniqueDevices = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_" + companyId + "_tbl r");
-		        List<Object> queryClickersPerUniqueDevicesParameters = new ArrayList<>();
-		        
-		        if (useTargetSql && targetSql.contains("cust.")) {
-					queryClickersPerUniqueDevices.append(" JOIN customer_" + companyId + "_tbl cust ON r.customer_id = cust.customer_id");
-				}
-		        
-				queryClickersPerUniqueDevices.append(" WHERE r.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
-		        queryClickersPerUniqueDevicesParameters.add(companyId);
-		        queryClickersPerUniqueDevicesParameters.add(mailingListId);
-		        
-		        queryClickersPerUniqueDevices.append(" AND r.customer_id != 0");
-		        
-		        // Exclude clicks of clickers with combinations of deviceclasses
-		        queryClickersPerUniqueDevices.append(" AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyId + "_tbl rdir WHERE rdir.device_class_id != r.device_class_id AND rdir.customer_id = r.customer_id)");
-
-				if (startDate != null) {
-					queryClickersPerUniqueDevices.append(" AND ? <= r.timestamp");
-					queryClickersPerUniqueDevicesParameters.add(startDate);
-		        }
+				Map<DeviceClass, Integer> uniqueDeviceClassClickers = getUniqueDeviceClassClickers(companyId, mailingListId, startDate, endDate, targetSql, useTargetSql);
 				
-				if (endDate != null) {
-					queryClickersPerUniqueDevices.append(" AND r.timestamp <= ?");
-					queryClickersPerUniqueDevicesParameters.add(endDate);
-		        }
-				
-				if (useTargetSql) {
-					queryClickersPerUniqueDevices.append(" AND (").append(targetSql).append(")");
-				}
-				
-				queryClickersPerUniqueDevices.append(" GROUP BY r.device_class_id");
-
-				List<Map<String, Object>> result = selectLongRunning(logger, queryClickersPerUniqueDevices.toString(), queryClickersPerUniqueDevicesParameters.toArray(new Object[0]));
-				
-				Map<DeviceClass, Integer> uniqueDeviceClassClickers = new HashMap<>();
-				// Initialize default values 0 for no clickers at all
-				for (DeviceClass deviceClass : CommonKeys.AVAILABLE_DEVICECLASSES) {
-					uniqueDeviceClassClickers.put(deviceClass, 0);
-				}
-				for (Map<String, Object> row : result) {
-					DeviceClass deviceClass;
-					if (row.get("deviceClassId") == null) {
-						// Some old entries dont't have a deviceclassid, those are desktop values
-						deviceClass = DeviceClass.DESKTOP;
-					} else {
-						deviceClass = DeviceClass.fromId(((Number) row.get("deviceClassId")).intValue());
-					}
-					uniqueDeviceClassClickers.put(deviceClass, ((Number) row.get("counter")).intValue() + uniqueDeviceClassClickers.get(deviceClass));
-				}
+				// Overall clickers
+				int overallClickers = getOverallClickersCounter(companyId, mailingListId, startDate, endDate, targetSql, useTargetSql);
 				
 				// Others
-				int multipleDeviceClassClickers = overallClickers;
-				for (int deviceClassClickers : uniqueDeviceClassClickers.values()) {
-					multipleDeviceClassClickers = multipleDeviceClassClickers - deviceClassClickers;
-				}
+				int multipleDeviceClassClickers = overallClickers - uniqueDeviceClassClickers.values().stream().mapToInt(Integer::intValue).sum();
 
 				if (calculateDeviceClasses) {
-					updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_PC, CLICKER_PC_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.DESKTOP));
-					updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_MOBILE, CLICKER_MOBILE_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.MOBILE));
-					updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_TABLET, CLICKER_TABLET_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.TABLET));
-					updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_SMARTTV, CLICKER_SMARTTV_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.SMARTTV));
-					updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_MULTIPLE_DEVICES, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassClickers);
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC, CLICKER_PC_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.DESKTOP));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_MOBILE, CLICKER_MOBILE_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.MOBILE));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_TABLET, CLICKER_TABLET_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.TABLET));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_SMARTTV, CLICKER_SMARTTV_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.SMARTTV));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC_AND_MOBILE, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassClickers);
 				}
 
-				updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER, CLICKER_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
-				updateEmbedded(logger, insertEmbedded, mailingListId, CLICKER_TRACKED, CLICKER_TRACKED_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
+				updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CLICKER, CLICKER_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
+				updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CLICKER_TRACKED, CLICKER_TRACKED_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
 
 				targetgroupIndex++;
 			}
 		}
 	}
+	
+	private Map<DeviceClass, Integer> getUniqueDeviceClassClickers(int companyId, int mailingListId, Date startDate, Date endDate, String targetSql, boolean useTargetSql) throws Exception {
+		StringBuilder queryClickersPerUniqueDevices = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(DISTINCT r.customer_id) AS counter FROM " + getRdirLogTableName(companyId) + " r ");
+		List<Object> paramsClickersPerUniqueDevices = new ArrayList<>();
+		
+		if (useTargetSql && targetSql.contains("cust.")) {
+			queryClickersPerUniqueDevices.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON r.customer_id = cust.customer_id");
+		}
+  
+		queryClickersPerUniqueDevices.append(" WHERE r.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
+		paramsClickersPerUniqueDevices.add(companyId);
+		paramsClickersPerUniqueDevices.add(mailingListId);
+		
+		queryClickersPerUniqueDevices.append(" AND r.customer_id != 0");
+		
+		// Exclude clicks of clickers with combinations of deviceclasses
+		queryClickersPerUniqueDevices.append(" AND NOT EXISTS (SELECT 1 FROM ").append(getRdirLogTableName(companyId)).append(" rdir ")
+				.append(" WHERE rdir.device_class_id != r.device_class_id AND rdir.customer_id = r.customer_id)");
 
+		if (startDate != null) {
+			queryClickersPerUniqueDevices.append(" AND ? <= r.timestamp");
+			paramsClickersPerUniqueDevices.add(startDate);
+		}
+		
+		if (endDate != null) {
+			queryClickersPerUniqueDevices.append(" AND r.timestamp <= ?");
+			paramsClickersPerUniqueDevices.add(endDate);
+		}
+		
+		if (useTargetSql) {
+			queryClickersPerUniqueDevices.append(" AND (").append(targetSql).append(")");
+		}
+		
+		queryClickersPerUniqueDevices.append(" GROUP BY r.device_class_id");
+
+		List<Map<String, Object>> result = selectLongRunning(logger, queryClickersPerUniqueDevices.toString(), paramsClickersPerUniqueDevices.toArray(new Object[0]));
+		
+		Map<DeviceClass, Integer> uniqueDeviceClassClickers = new HashMap<>();
+		// Initialize default values 0 for no clickers at all
+		for (DeviceClass deviceClass : CommonKeys.AVAILABLE_DEVICECLASSES) {
+			uniqueDeviceClassClickers.put(deviceClass, 0);
+		}
+		
+		mapDeviceClass(result, uniqueDeviceClassClickers);
+		return uniqueDeviceClassClickers;
+	}
+	
+	private int getOverallClickersCounter(int companyId, int mailingListId, Date startDate, Date endDate, String targetSql, boolean useTargetSql) throws Exception {
+		StringBuilder queryOverallClickers = new StringBuilder("SELECT COUNT(DISTINCT r.customer_id) AS counter FROM ").append(getRdirLogTableName(companyId)).append(" r");
+		List<Object> paramsOverallClickers = new ArrayList<>();
+
+		if (useTargetSql && targetSql.contains("cust.")) {
+			queryOverallClickers.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON r.customer_id = cust.customer_id");
+		}
+		
+		queryOverallClickers.append(" WHERE r.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
+		paramsOverallClickers.add(companyId);
+		paramsOverallClickers.add(mailingListId);
+		
+		queryOverallClickers.append(" AND r.customer_id != 0");
+
+		if (startDate != null) {
+			queryOverallClickers.append(" AND ? <= r.timestamp");
+			paramsOverallClickers.add(startDate);
+		}
+		
+		if (endDate != null) {
+			queryOverallClickers.append(" AND r.timestamp <= ?");
+			paramsOverallClickers.add(endDate);
+		}
+		
+		if (useTargetSql) {
+			queryOverallClickers.append(" AND (").append(targetSql).append(")");
+		}
+		
+		List<Map<String, Object>> result = selectLongRunning(logger, queryOverallClickers.toString(), paramsOverallClickers.toArray(new Object[0]));
+		
+		return ((Number) result.get(0).get("counter")).intValue();
+	}
+	
 	private void insertOpenersIntoTempTable(int tempTableId, @VelocityCheck int companyId, List<LightTarget> targetGroups, List<Integer> mailingListIds, Date startDate, Date endDate, Map<String, Integer> indexes, int dateConstraintType, boolean calculateDeviceClasses) throws Exception {
 		String insertEmbedded = getTempInsertQuery(tempTableId);
 
 		for (int mailingListId : mailingListIds) {
-			int targetgroupIndex = ALL_SUBSCRIBERS_INDEX;
+			String mailinglistName = getMailinglistName(companyId, mailingListId);
+			int targetgroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 			for (LightTarget target : targetGroups) {
+				target = getDefaultTarget(target);
+				
 				String targetSql = target.getTargetSQL();
-				boolean useTargetSql = false;
-				if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
-					useTargetSql = true;
-				}
+				boolean useTargetSql = StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1");
 
 				// Overall openers
-		        StringBuilder queryOverallOpeners = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyId + "_tbl o");
+		        StringBuilder queryOverallOpeners = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) AS counter FROM " + getOnepixelDeviceTableName(companyId) + " o");
 		        List<Object> queryOverallOpenersParameters = new ArrayList<>();
 
-		        if (useTargetSql && targetSql.contains("cust.")) {
-		        	queryOverallOpeners.append(" JOIN customer_" + companyId + "_tbl cust ON o.customer_id = cust.customer_id");
+		        if (useTargetSql && StringUtils.isNotBlank(targetSql) && targetSql.contains("cust.")) {
+		        	queryOverallOpeners.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON o.customer_id = cust.customer_id");
 				}
 		        
 		        queryOverallOpeners.append(" WHERE o.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
@@ -507,11 +497,11 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 				int overallOpeners = ((Number) resultOverallOpeners.get(0).get("counter")).intValue();
 				
 				// Unique deviceclass openers
-		        StringBuilder queryOpenersPerUniqueDevices = new StringBuilder("SELECT o.device_class_id AS deviceClassId, COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyId + "_tbl o");
+		        StringBuilder queryOpenersPerUniqueDevices = new StringBuilder("SELECT o.device_class_id AS deviceClassId, COUNT(DISTINCT o.customer_id) AS counter FROM " + getOnepixelDeviceTableName(companyId) + " o");
 		        List<Object> queryOpenersPerUniqueDevicesParameters = new ArrayList<>();
 		        
-		        if (useTargetSql && targetSql.contains("cust.")) {
-					queryOpenersPerUniqueDevices.append(" JOIN customer_" + companyId + "_tbl cust ON o.customer_id = cust.customer_id");
+		        if (useTargetSql && StringUtils.isNotBlank(targetSql) && targetSql.contains("cust.")) {
+					queryOpenersPerUniqueDevices.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON o.customer_id = cust.customer_id");
 				}
 		        
 				queryOpenersPerUniqueDevices.append(" WHERE o.mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND mailinglist_id = ?)");
@@ -521,7 +511,7 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		        queryOpenersPerUniqueDevices.append(" AND o.customer_id != 0");
 		        
 		        // Exclude openings of openers with combinations of deviceclasses
-		        queryOpenersPerUniqueDevices.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_device_" + companyId + "_tbl opl WHERE opl.device_class_id != o.device_class_id AND opl.customer_id = o.customer_id)");
+		        queryOpenersPerUniqueDevices.append(" AND NOT EXISTS (SELECT 1 FROM ").append(getOnepixelDeviceTableName(companyId)).append(" opl WHERE opl.device_class_id != o.device_class_id AND opl.customer_id = o.customer_id)");
 
 				if (startDate != null) {
 					queryOpenersPerUniqueDevices.append(" AND ? <= o.creation");
@@ -546,16 +536,7 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 				for (DeviceClass deviceClass : CommonKeys.AVAILABLE_DEVICECLASSES) {
 					uniqueDeviceClassOpeners.put(deviceClass, 0);
 				}
-				for (Map<String, Object> row : result) {
-					DeviceClass deviceClass;
-					if (row.get("deviceClassId") == null) {
-						// Some old entries dont't have a deviceclassid, those are desktop values
-						deviceClass = DeviceClass.DESKTOP;
-					} else {
-						deviceClass = DeviceClass.fromId(((Number) row.get("deviceClassId")).intValue());
-					}
-					uniqueDeviceClassOpeners.put(deviceClass, ((Number) row.get("counter")).intValue() + uniqueDeviceClassOpeners.get(deviceClass));
-				}
+				mapDeviceClass(result, uniqueDeviceClassOpeners);
 				
 				// Others
 				int multipleDeviceClassOpeners = overallOpeners;
@@ -564,21 +545,30 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 				}
 				
 				if (calculateDeviceClasses) {
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_TRACKED, indexes.get(OPENERS_TRACKED), target.getName(), target.getId(), targetgroupIndex, overallOpeners);
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_PC, indexes.get(OPENERS_PC), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.DESKTOP));
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_MOBILE, indexes.get(OPENERS_MOBILE), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.MOBILE));
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_TABLET, indexes.get(OPENERS_TABLET), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.TABLET));
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_SMARTTV, indexes.get(OPENERS_SMARTTV), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.SMARTTV));
-					updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS_MULTIPLE_DEVICES, indexes.get(OPENERS_MULTIPLE_DEVICES), target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassOpeners);
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_TRACKED, indexes.get(OPENERS_TRACKED), target.getName(), target.getId(), targetgroupIndex, overallOpeners);
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_PC, indexes.get(OPENERS_PC), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.DESKTOP));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_MOBILE, indexes.get(OPENERS_MOBILE), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.MOBILE));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_TABLET, indexes.get(OPENERS_TABLET), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.TABLET));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_SMARTTV, indexes.get(OPENERS_SMARTTV), target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassOpeners.get(DeviceClass.SMARTTV));
+					updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS_MULTIPLE_DEVICES, indexes.get(OPENERS_MULTIPLE_DEVICES), target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassOpeners);
 				}
 
-				updateEmbedded(logger, insertEmbedded, mailingListId, OPENERS, indexes.get(OPENERS), target.getName(), target.getId(), targetgroupIndex, overallOpeners);
+				updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS, indexes.get(OPENERS), target.getName(), target.getId(), targetgroupIndex, overallOpeners);
 
 				targetgroupIndex++;
 			}
 		}
 	}
-
+	
+	private void mapDeviceClass(List<Map<String, Object>> result, Map<DeviceClass, Integer> uniqueDeviceClassOpeners) {
+		for (Map<String, Object> row : result) {
+			DeviceClass deviceClass;
+			int deviceClassId = ((Number) row.get("deviceClassId")).intValue();
+			deviceClass = DeviceClass.fromIdWithDefault(deviceClassId, DeviceClass.DESKTOP);
+			uniqueDeviceClassOpeners.put(deviceClass, ((Number) row.get("counter")).intValue() + uniqueDeviceClassOpeners.get(deviceClass));
+		}
+	}
+	
 	/**
 	 * Calculate rates for collected calues
 	 *
@@ -592,7 +582,7 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)
 				|| figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
 			updateRates(tempTableId, companyId, targetGroups,
-				new Object[] { ALL_SUBSCRIBERS_INDEX, CLICKER_TRACKED_END_DATE_INDEX },
+				new Object[] { CommonKeys.ALL_SUBSCRIBERS_INDEX, CLICKER_TRACKED_END_DATE_INDEX },
 				new Integer[] { CLICKER_TRACKED_END_DATE_INDEX, CLICKER_PC_END_DATE_INDEX,
 						CLICKER_MOBILE_END_DATE_INDEX, CLICKER_TABLET_END_DATE_INDEX,
 						CLICKER_SMARTTV_END_DATE_INDEX, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX });
@@ -601,18 +591,18 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
 				|| figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
 			updateRates(tempTableId, companyId, targetGroups,
-				new Object[] { ALL_SUBSCRIBERS_INDEX, OPENERS_TRACKED_END_DATE_INDEX },
+				new Object[] { CommonKeys.ALL_SUBSCRIBERS_INDEX, OPENERS_TRACKED_END_DATE_INDEX },
 				new Integer[] { OPENERS_TRACKED_END_DATE_INDEX, OPENERS_PC_END_DATE_INDEX,
 						OPENERS_MOBILE_END_DATE_INDEX, OPENERS_TABLET_END_DATE_INDEX,
 						OPENERS_SMARTTV_END_DATE_INDEX, OPENERS_MULTIPLE_DEVICES_END_DATE_INDEX });
 		}
 
 		updateRates(tempTableId, companyId, targetGroups,
-			new Object[] { ALL_SUBSCRIBERS_INDEX, ACTIVE_INDEX },
-			new Integer[] { ACTIVE_INDEX, OPENERS_INDEX, CLICKER_INDEX });
+			new Object[] { CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.ACTIVE_INDEX },
+			new Integer[] { CommonKeys.ACTIVE_INDEX, OPENERS_INDEX, CLICKER_INDEX });
 
 		updateRates(tempTableId, companyId, targetGroups,
-			new Object[] { ALL_SUBSCRIBERS_INDEX, ACTIVE_END_DATE_INDEX },
+			new Object[] { CommonKeys.ALL_SUBSCRIBERS_INDEX, ACTIVE_END_DATE_INDEX },
 			new Integer[] { ACTIVE_END_DATE_INDEX, OPENERS_END_DATE_INDEX, CLICKER_END_DATE_INDEX });
 	}
 	
@@ -623,15 +613,14 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 			Integer mailingListId = row.get("mailinglist_id") != null ? ((Number) row.get("mailinglist_id")).intValue() : 0;
 			Integer total = row.get("value") != null ? ((Number) row.get("value")).intValue() : 0;
 			if (total > 0) {
-				StringBuilder query = new StringBuilder("UPDATE ").append(getTempReportTableName(tempTableId))
-					.append(" SET rate = (value * 1.0) / ?  WHERE targetgroup_index = ? AND mailinglist_id = ? AND category_index IN (")
-					.append(StringUtils.join(indexes, ", "))
-					.append(")");
-				String queryUpdateRate = query.toString();
-				updateEmbedded(logger, queryUpdateRate, total, ALL_SUBSCRIBERS_INDEX, mailingListId);
+				String queryUpdateRate = "UPDATE " + getTempReportTableName(tempTableId) +
+						" SET rate = (value * 1.0) / ?  WHERE targetgroup_index = ? AND mailinglist_id = ? AND category_index IN (" +
+						StringUtils.join(indexes, ", ") +
+						")";
+				updateEmbedded(logger, queryUpdateRate, total, CommonKeys.ALL_SUBSCRIBERS_INDEX, mailingListId);
 				
 				if (!CollectionUtils.isEmpty(targetGroups) && isMailingTrackingActivated(companyId)) {
-					int targetGroupIndex = ALL_SUBSCRIBERS_INDEX;
+					int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 					for(int index = 0; index < targetGroups.size(); index++) {
 						try {
 							++targetGroupIndex;
@@ -652,27 +641,27 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 
 			// insert data for each target group
 			List<LightTarget> targets = getTargets(selectedTargets, companyId);
-			if (targets != null) {
-				for (LightTarget target : targets) {
-					addRecipientStatMailtype(companyId, tempTableId, mailinglistId, target, startDate, stopDate);
-				}
+			for (LightTarget target : targets) {
+				addRecipientStatMailtype(companyId, tempTableId, mailinglistId, target, startDate, stopDate);
 			}
 		}
 	}
 
 	private void addRecipientStatMailtype(@VelocityCheck int companyId, int tempTableId, int mailinglistId, LightTarget target, String startDate, String stopDate) throws Exception {
+		target = getDefaultTarget(target);
+
 		StringBuilder recipientStatMailtypeTempate = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) AS mailtype_count, cust.mailtype AS mailtype")
-			.append(" FROM customer_" + companyId + "_binding_tbl bind")
-			.append(" JOIN customer_" + companyId + "_tbl cust ON (bind.customer_id = cust.customer_id)")
-			.append(" WHERE bind.user_status = ").append(UserStatus.Active.getStatusCode())
-			.append(" AND bind.mailinglist_id = " + mailinglistId);
+				.append(" FROM ").append(getCustomerBindingTableName(companyId)).append(" bind")
+				.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON (bind.customer_id = cust.customer_id)")
+				.append(" WHERE bind.user_status = ").append(UserStatus.Active.getStatusCode())
+				.append(" AND bind.mailinglist_id = ").append(mailinglistId);
 		
-		if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
-			recipientStatMailtypeTempate.append(" AND (" + target.getTargetSQL() + ")");
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+			recipientStatMailtypeTempate.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 		
 		// add date constraint
-		recipientStatMailtypeTempate.append(getDateConstraint("bind.timestamp", startDate, stopDate, DATE_CONSTRAINT_LESS_THAN_STOP));
+		recipientStatMailtypeTempate.append(getDateConstraint(startDate, stopDate, DATE_CONSTRAINT_LESS_THAN_STOP));
 		
 		recipientStatMailtypeTempate.append(" GROUP BY cust.mailtype");
 		
@@ -692,13 +681,15 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 				case HTML_OFFLINE:
 					countTypeOfflineHtml = count;
 					break;
+				default:
+					throw new Exception("Invalid MailType");
 			}
 		}
 
-		String updateQuery = new StringBuilder("UPDATE ").append(getTempReportTableName(tempTableId))
-			.append(" SET count_type_text = ?, count_type_html = ?, count_type_offline_html = ?")
-			.append(" WHERE mailinglist_id = ? AND targetgroup_id = ?").toString();
-		updateEmbedded(logger, updateQuery, countTypeText, countTypeHtml, countTypeOfflineHtml, mailinglistId, (target != null ? target.getId() : 0));
+		String updateQuery = "UPDATE " + getTempReportTableName(tempTableId) +
+				" SET count_type_text = ?, count_type_html = ?, count_type_offline_html = ?" +
+				" WHERE mailinglist_id = ? AND targetgroup_id = ?";
+		updateEmbedded(logger, updateQuery, countTypeText, countTypeHtml, countTypeOfflineHtml, mailinglistId, target.getId());
 	}
 	
 	private void addRecipientStatUserStatus(@VelocityCheck int companyId, int tempTableId, List<Integer> mailingListIds, String selectedTargets, String startDate, String stopDate, boolean isAsOf) throws Exception {
@@ -717,17 +708,19 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	}
 
 	private void insertRecipientStatUserStatus(@VelocityCheck int companyId, int tempTableId, int mailinglistId, LightTarget target, String startDate, String stopDate, boolean isAsOf) throws Exception {
-		StringBuilder recipientStatUserStatusTempate = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) AS status_count, bind.user_status AS user_status")
-			.append(" FROM customer_" + companyId + "_binding_tbl bind")
-			.append(" JOIN customer_" + companyId + "_tbl cust ON (bind.customer_id = cust.customer_id)")
-			.append(" WHERE bind.mailinglist_id = " + mailinglistId);
+		target = getDefaultTarget(target);
 		
-		if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
-			recipientStatUserStatusTempate.append(" AND (" + target.getTargetSQL() + ")");
+		StringBuilder recipientStatUserStatusTempate = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) AS status_count, bind.user_status AS user_status")
+				.append(" FROM ").append(getCustomerBindingTableName(companyId)).append(" bind")
+				.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON (bind.customer_id = cust.customer_id)")
+				.append(" WHERE bind.mailinglist_id = ").append(mailinglistId);
+		
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+			recipientStatUserStatusTempate.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 		
 		// add date constraint
-		recipientStatUserStatusTempate.append(getDateConstraint("bind.timestamp", startDate, stopDate, (isAsOf ? DATE_CONSTRAINT_LESS_THAN_STOP : DATE_CONSTRAINT_BETWEEN)));
+		recipientStatUserStatusTempate.append(getDateConstraint(startDate, stopDate, (isAsOf ? DATE_CONSTRAINT_LESS_THAN_STOP : DATE_CONSTRAINT_BETWEEN)));
 		
 		recipientStatUserStatusTempate.append(" GROUP BY bind.user_status");
 
@@ -741,34 +734,37 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		List<Map<String, Object>> result = select(logger, recipientStatUserStatusTempate.toString());
 		for (Map<String, Object> row : result) {
 			int amount = ((Number) row.get("status_count")).intValue();
-			int status = ((Number) row.get("user_status")).intValue();
-
-			switch (UserStatus.getUserStatusByID(status)) {
-				case Active:
-					activeCountForPeriod = amount;
-					break;
-
-				case Bounce:
-					bouncedCount = amount;
-					break;
-
-				case Blacklisted:
-					blacklistedCount = amount;
-					break;
-
-				case AdminOut:
-				case UserOut:
-					optoutCount += amount;
-					break;
-
-				case WaitForConfirm:
-					waitingForConfirmCount = amount;
-					break;
+			UserStatus status = getUserStatus(((Number) row.get("user_status")).intValue());
+			
+			if (status != null) {
+				switch (status) {
+					case Active:
+						activeCountForPeriod = amount;
+						break;
 					
-				default:
-					// do nothing
+					case Bounce:
+						bouncedCount = amount;
+						break;
+					
+					case Blacklisted:
+						blacklistedCount = amount;
+						break;
+					
+					case AdminOut:
+					case UserOut:
+						optoutCount += amount;
+						break;
+					
+					case WaitForConfirm:
+						waitingForConfirmCount = amount;
+						break;
+					
+					default:
+						// do nothing
+					
+				}
 			}
-
+			
 			recipientCount += amount;
 		}
 		StringBuilder update = new StringBuilder("UPDATE ").append(getTempReportTableName(tempTableId));
@@ -780,20 +776,11 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		update.append(" WHERE mailinglist_id = ? AND targetgroup_id = ?");
 
 		updateEmbedded(logger, update.toString(), activeCountForPeriod, waitingForConfirmCount, blacklistedCount, optoutCount,
-			bouncedCount, recipientCount, mailinglistId, (target != null ? target.getId() : 0));
+			bouncedCount, recipientCount, mailinglistId, target.getId());
 	}
 
-	private void populateSelectedMailinglists(int companyId, List<Integer> mailingListIds) {
-		if (mailinglistNamesById.size() == 0) {
-			List<LightMailingList> mailingLists = getMailingLists(mailingListIds, companyId);
-			for (LightMailingList mailingList : mailingLists) {
-				mailinglistNamesById.put(mailingList.getMailingListId(), mailingList.getShortname());
-			}
-		}
-	}
-
-	private String getDateConstraint(String fieldName, String startDate, String stopDate, int constraintType) throws Exception {
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+	private String getDateConstraint(String startDate, String stopDate, int constraintType) throws Exception {
+		SimpleDateFormat format = RECIPIENT_DATE_FORMAT;
 		try {
 			// validate date format
 			switch (constraintType) {
@@ -818,24 +805,24 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		if (isOracleDB()) {
 			switch (constraintType) {
 				case DATE_CONSTRAINT_BETWEEN:
-					return new StringBuilder(" AND ").append(fieldName).append(" BETWEEN TO_DATE('").append(startDate).append("', 'yyyy-mm-dd')")
-						.append(" AND (TO_DATE('").append(stopDate).append("', 'yyyy-mm-dd') + 1) ").toString();
+					return " AND bind.timestamp BETWEEN TO_DATE('" + startDate + "', 'yyyy-mm-dd')" +
+							" AND (TO_DATE('" + stopDate + "', 'yyyy-mm-dd') + 1) ";
 				case DATE_CONSTRAINT_LESS_THAN_START:
-					return new StringBuilder(" AND ").append(fieldName).append(" < (TO_DATE('").append(startDate).append("', 'yyyy-mm-dd') + 1)").toString();
+					return " AND bind.timestamp < (TO_DATE('" + startDate + "', 'yyyy-mm-dd') + 1)";
 				case DATE_CONSTRAINT_LESS_THAN_STOP:
-					return new StringBuilder(" AND ").append(fieldName).append(" < (TO_DATE('").append(stopDate).append("', 'yyyy-mm-dd') + 1)").toString();
+					return " AND bind.timestamp < (TO_DATE('" + stopDate + "', 'yyyy-mm-dd') + 1)";
 				default:
 					throw new Exception("Can not create DateConstraint");
 			}
 		} else {
 			switch (constraintType) {
 				case DATE_CONSTRAINT_BETWEEN:
-					return new StringBuilder(" AND ").append(fieldName).append(" BETWEEN STR_TO_DATE('").append(startDate).append("', '%Y-%m-%d')")
-						.append(" AND STR_TO_DATE('").append(stopDate).append("', '%Y-%m-%d') + INTERVAL 1 DAY ").toString();
+					return " AND bind.timestamp BETWEEN STR_TO_DATE('" + startDate + "', '%Y-%m-%d')" +
+							" AND STR_TO_DATE('" + stopDate + "', '%Y-%m-%d') + INTERVAL 1 DAY ";
 				case DATE_CONSTRAINT_LESS_THAN_START:
-					return new StringBuilder(" AND ").append(fieldName).append(" < STR_TO_DATE('").append(startDate).append("', '%Y-%m-%d') + INTERVAL 1 DAY").toString();
+					return " AND bind.timestamp < STR_TO_DATE('" + startDate + "', '%Y-%m-%d') + INTERVAL 1 DAY";
 				case DATE_CONSTRAINT_LESS_THAN_STOP:
-					return new StringBuilder(" AND ").append(fieldName).append(" < STR_TO_DATE('").append(stopDate).append("', '%Y-%m-%d') + INTERVAL 1 DAY").toString();
+					return " AND bind.timestamp < STR_TO_DATE('" + stopDate + "', '%Y-%m-%d') + INTERVAL 1 DAY";
 				default:
 					throw new Exception("Can not create DateConstraint");
 			}
@@ -843,30 +830,26 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	}
 
 	private void insertEmptyRowsIntoTempTable(@VelocityCheck int companyId, int tempTableId, List<Integer> mailingListIds, String selectedTargets) throws Exception {
-		String tempRecipientsStatRowInsert = new StringBuilder("INSERT INTO ").append(getTempReportTableName(tempTableId))
-			.append(" (mailinglist_id, targetgroup_id, mailinglist_name, targetgroup_name)")
-			.append(" VALUES (?, ?, ?, ?)").toString();
+		String tempRecipientsStatRowInsert = "INSERT INTO " + getTempReportTableName(tempTableId) +
+				" (mailinglist_id, targetgroup_id, mailinglist_name, targetgroup_name)" +
+				" VALUES (?, ?, ?, ?)";
 		
 		for (int mailinglistId : mailingListIds) {
 			// All subscribers
+			String mailinglistName = getMailinglistName(companyId, mailinglistId);
 			updateEmbedded(logger, tempRecipientsStatRowInsert,
 				mailinglistId,
-				0,
-				mailinglistNamesById.get(mailinglistId),
-				"");
+				CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
+				mailinglistName,
+				CommonKeys.ALL_SUBSCRIBERS);
 
 			// insert data for each target group
 			// we need just insert empty rows
 			List<LightTarget> targets = getTargets(selectedTargets, companyId);
-			if (targets != null) {
-				for (LightTarget target : targets) {
-					int mailinglistId1 = mailinglistId;
-					updateEmbedded(logger, tempRecipientsStatRowInsert,
-						mailinglistId1,
-						(target != null ? target.getId() : 0),
-						mailinglistNamesById.get(mailinglistId1),
-						(target != null ? target.getName() : ""));
-				}
+			for (LightTarget target : targets) {
+				target = getDefaultTarget(target);
+				updateEmbedded(logger, tempRecipientsStatRowInsert, mailinglistId, target.getId(),
+					mailinglistName, target.getName());
 			}
 		}
 	}
@@ -874,45 +857,43 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	private void addActiveRecipients(@VelocityCheck int companyId, List<LightTarget> targetGroups, List<Integer> mailingListIds, String startDateString, String endDateString, int tempTableId, int tempTableInfoInRowId, boolean calculateRecipientDevelopmentNet) throws Exception {
 		// we expect that list has already sorted by mailinglistId and targetgroupId
 		List<RecipientsStatisticRow> statisticRows = getRecipientsStatistic(tempTableInfoInRowId);
-		int targetGroupIndex = ALL_SUBSCRIBERS_INDEX;
+		int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 		int previousMailinglistId = -1;
-		for (int i = 0; i < statisticRows.size(); i++) {
-			RecipientsStatisticRow row = statisticRows.get(i);
-
+		for (RecipientsStatisticRow row: statisticRows) {
+			
+			int targetGroupId = row.getTargetGroupId() > 0 ? row.getTargetGroupId() : CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
+			String targetGroupName = row.getTargetGroupId() > 0 ? row.getTargetGroupName() : CommonKeys.ALL_SUBSCRIBERS;
+			
 			if (row.getMailingListId() != previousMailinglistId) {
 				previousMailinglistId = row.getMailingListId();
-				targetGroupIndex = ALL_SUBSCRIBERS_INDEX;
-			}
-			
-			int targetGroupId = ALL_SUBSCRIBERS_TARGETGROUPID;
-			String targetGroupName = ALL_SUBSCRIBERS;
-			
-			if(row.getTargetGroupId() > 0) {
-				targetGroupId = row.getTargetGroupId();
-				targetGroupName = row.getTargetGroupName();
+				targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 			}
 
+			String insertEmbedded = getTempInsertQuery(tempTableId);
+			int mailinglistId = row.getMailingListId();
+			String mailinglistName = row.getMailingListName();
+
 			// active recipients for period
-			updateEmbedded(logger, getTempInsertQuery(tempTableId),
-					row.getMailingListId(), ACTIVE, ACTIVE_INDEX,
+			updateEmbedded(logger, insertEmbedded,
+					mailinglistId, mailinglistName, CommonKeys.ACTIVE, CommonKeys.ACTIVE_INDEX,
 					targetGroupName, targetGroupId,
 					targetGroupIndex, row.getCountActiveForPeriod());
 
 			// active recipients in the end of period
-			updateEmbedded(logger, getTempInsertQuery(tempTableId),
-					row.getMailingListId(), endDateString, ACTIVE_END_DATE_INDEX,
-					targetGroupName, targetGroupId,
-					targetGroupIndex, row.getCountActiveAsOf());
-
+			updateEmbedded(logger, insertEmbedded,
+					mailinglistId, mailinglistName, endDateString, ACTIVE_END_DATE_INDEX,
+					targetGroupName, targetGroupId, targetGroupIndex, row.getCountActiveAsOf());
+			
 			if (calculateRecipientDevelopmentNet) {
 				// active recipients in the start of period
-				for (int mailinglistId : mailingListIds) {
+				for (int mlID : mailingListIds) {
+					String mlName = getMailinglistName(companyId, mlID);
 					// All subscribers
-					insertRecipientStat(companyId, tempTableId, mailinglistId, null, ALL_SUBSCRIBERS_INDEX, startDateString, endDateString);
+					insertRecipientStat(companyId, tempTableId, mlID, mlName, null, CommonKeys.ALL_SUBSCRIBERS_INDEX, startDateString, endDateString);
 				
 					// insert data for each target group
 					for (LightTarget target : targetGroups) {
-						insertRecipientStat(companyId, tempTableId, mailinglistId, target, targetGroupIndex, startDateString, endDateString);
+						insertRecipientStat(companyId, tempTableId, mlID, mlName, target, targetGroupIndex, startDateString, endDateString);
 					}
 				}
 			}
@@ -921,39 +902,32 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void insertRecipientStat(@VelocityCheck int companyId, int tempTableId, int mailinglistId, LightTarget target, int targetGroupIndex, String startDateString, String endDateString) throws Exception {
+	private void insertRecipientStat(@VelocityCheck int companyId, int tempTableId, int mailinglistId, String mailinglistName, LightTarget target, int targetGroupIndex, String startDateString, String endDateString) throws Exception {
 		StringBuilder recipientStatActiveTemplate = new StringBuilder("SELECT COUNT(*) AS active_count")
-			.append(" FROM customer_" + companyId + "_binding_tbl bind")
-			.append(" JOIN customer_" + companyId + "_tbl cust ON (bind.customer_id = cust.customer_id)")
-			.append(" WHERE bind.user_status = ").append(UserStatus.Active.getStatusCode())
-			.append(" AND bind.mailinglist_id = " + mailinglistId);
-			
-		if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
-			recipientStatActiveTemplate.append(" AND (" + target.getTargetSQL() + ")");
+				.append(" FROM  ").append(getCustomerBindingTableName(companyId)).append(" bind")
+				.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON (bind.customer_id = cust.customer_id)")
+				.append(" WHERE bind.user_status = ").append(UserStatus.Active.getStatusCode())
+				.append(" AND bind.mailinglist_id = ").append(mailinglistId);
+		
+		target = getDefaultTarget(target);
+		
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+			recipientStatActiveTemplate.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 
 		// add date constraint
-		recipientStatActiveTemplate.append(getDateConstraint("bind.timestamp", startDateString, endDateString, DATE_CONSTRAINT_LESS_THAN_START));
+		recipientStatActiveTemplate.append(getDateConstraint(startDateString, endDateString, DATE_CONSTRAINT_LESS_THAN_START));
 
 		int recipientCount = selectInt(logger, recipientStatActiveTemplate.toString());
-
+		
 		updateEmbedded(logger, getTempInsertQuery(tempTableId),
 			mailinglistId,
+			mailinglistName,
 			startDateString,
 			ACTIVE_START_DATE_INDEX,
-			(targetGroupIndex == ALL_SUBSCRIBERS_INDEX ? ALL_SUBSCRIBERS : (target != null ? target.getName() : "")),
-			(target != null ? target.getId() : ALL_SUBSCRIBERS_TARGETGROUPID),
-			targetGroupIndex,
-			recipientCount);
+			target.getName(), target.getId(), targetGroupIndex, recipientCount);
 	}
 
-	/**
-	 * @param tempTableId
-	 * @return
-	 */
-	private String getTempReportTableName(int tempTableId) {
-		return "tmp_report_aggregation_" + tempTableId + "_tbl";
-	}
 
 	/**
 	 * Returns query for inserting collected values into temporary table
@@ -962,9 +936,9 @@ public class RecipientsStatisticDataSet extends BIRTDataSet {
 	 * @return
 	 */
 	private String getTempInsertQuery(int tempTableId) {
-		return new StringBuilder("INSERT INTO ").append(getTempReportTableName(tempTableId))
-			.append(" (mailinglist_id, category, category_index, targetgroup, targetgroup_id, targetgroup_index, value)")
-			.append(" VALUES (?, ?, ?, ?, ?, ?, ?)").toString();
+		return "INSERT INTO " + getTempReportTableName(tempTableId) +
+				" (mailinglist_id, mailinglist_name, category_name, category_index, targetgroup_name, targetgroup_id, targetgroup_index, value)" +
+				" VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 	}
 
 	private void updateNumberOfTargetGroups(int tempTableId, int numberOfTargetGroups) throws Exception {

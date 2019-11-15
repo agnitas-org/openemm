@@ -3848,7 +3848,7 @@ function getColorDefinition(styleName) {
                                     <text-data id="1428">
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Keydata", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.figures", reportContext.getLocale())</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>
@@ -4054,7 +4054,7 @@ function onCreateCell( cellInst, reportContext )
                                     <text-data id="1451">
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Keydata", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.figures", reportContext.getLocale())</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>

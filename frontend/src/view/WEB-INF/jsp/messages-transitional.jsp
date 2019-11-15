@@ -356,6 +356,14 @@
         <c:set var="showWarningMessages" value="true"/>
         ${affectedDependentWorkflowsTable}
     </c:if>
+
+    <c:if test="${not empty mediapoolAffectedEntities}">
+        <c:set var="showErrorMessages" value="true"/>
+        <jsp:include page="grid/mediapool/messages/mediapool-affected-list-message.jsp">
+            <jsp:param name="affectedEntitiesLimit" value="${AFFECTED_ENTITIES_LIMIT}"/>
+            <jsp:param name="affectedEntityNameMaxLength" value="${AFFECTED_ENTITY_NAME_MAX_LENGTH}"/>
+        </jsp:include>
+    </c:if>
 </c:set>
 
 <logic:equal name="showWarningMessages" value="true">

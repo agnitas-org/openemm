@@ -41,6 +41,8 @@ import org.agnitas.target.TargetError;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetNodeValidatorKit;
 import org.agnitas.target.TargetRepresentation;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -74,6 +76,11 @@ import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
 import com.agnitas.emm.core.target.exception.EqlFormatException;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
+
+import bsh.Interpreter;
+
+import static com.agnitas.beans.ComMailing.NONE_SPLIT_ID;
 
 /**
  * Implementation of {@link ComTargetService} interface.
@@ -81,7 +88,7 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 public class ComTargetServiceImpl implements ComTargetService {
 	
 	/**
-	 * The logger. 
+	 * The logger.
 	 */
 	private static final transient Logger logger = Logger.getLogger(ComTargetServiceImpl.class);
 	
@@ -119,6 +126,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private ProfileFieldService profileFieldService;
 
 	private ConfigService configService;
+	
+	private BeanShellInterpreterFactory beanShellInterpreterFactory;
 
 	// ---------------------------------------------------------------------------------------- Business Code
 
@@ -157,8 +166,9 @@ public class ComTargetServiceImpl implements ComTargetService {
             Collection<TargetError> singleResult = result.get( i);
             if ( singleResult != null && singleResult.size() > 0) {
                 hasErrors = true;
-                for( TargetError error : singleResult)
-                    errors.add( "targetrule." + i + ".errors", new ActionMessage( error.getErrorKey()));
+                for( TargetError error : singleResult) {
+					errors.add( "targetrule." + i + ".errors", new ActionMessage( error.getErrorKey()));
+				}
             }
         }
         return hasErrors;
@@ -167,8 +177,9 @@ public class ComTargetServiceImpl implements ComTargetService {
     @Override
     public boolean hasMailingDeletedTargetGroups(Mailing mailing) {
 
-		if ( logger.isInfoEnabled())
+		if ( logger.isInfoEnabled()) {
 			logger.info( "Checking mailing " + mailing.getId() + " for deleted target groups");
+		}
 		
     	Set<Integer> targetIds = getAllTargetIdsForMailing( mailing);
     	
@@ -192,8 +203,9 @@ public class ComTargetServiceImpl implements ComTargetService {
     		}
     	}
     	
-    	if ( logger.isInfoEnabled())
-    		logger.info( "Mailing " + mailing.getId() + " does not contain any deleted target groups");
+    	if ( logger.isInfoEnabled()) {
+			logger.info( "Mailing " + mailing.getId() + " does not contain any deleted target groups");
+		}
     	
     	return false;
     }
@@ -698,7 +710,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			throw new UnknownTargetGroupIdException(targetID);
 		}
 
-		return target.isWorkflowManagerListSplit();		
+		return target.isWorkflowManagerListSplit();
 	}
 
 	@Override
@@ -733,7 +745,32 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 		return Collections.emptyList();
 	}
+	
+	@Override
+	public int getTargetListSplitId(String splitBase, String splitPart, boolean isWmSplit) {
+		if (StringUtils.isEmpty(splitBase) || StringUtils.isEmpty(splitPart)) {
+            return ComMailing.NONE_SPLIT_ID;
+        }
 
+        switch (StringUtils.lowerCase(splitBase)) {
+            case ComMailing.NONE_SPLIT:
+                return ComMailing.NONE_SPLIT_ID;
+            case ComMailing.YES_SPLIT:
+                return ComMailing.YES_SPLIT_ID;
+            default:
+            	//nothing
+        }
+		
+		String prefix = isWmSplit ? TargetLight.LIST_SPLIT_CM_PREFIX : TargetLight.LIST_SPLIT_PREFIX;
+        int targetId = targetDao.getTargetSplitID(prefix + splitBase + "_" + splitPart);
+        return targetId > 0 ? targetId : NONE_SPLIT_ID;
+	}
+	
+	@Override
+	public String getTargetSplitName(int splitId) {
+		return targetDao.getTargetSplitName(splitId);
+	}
+	
 	private interface TargetSqlResolver {
 		String resolve(int targetId);
 	}
@@ -791,7 +828,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public String toViewUri(int targetId) {
-		return UriComponentsBuilder.fromHttpUrl(configService.getValue(ConfigValue.SystemUrl) + "/targetQB.do")
+		return UriComponentsBuilder.fromHttpUrl(configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl) + "/targetQB.do")
 				.queryParam("method", "show")
 				.queryParam("targetID", targetId)
 				.toUriString();
@@ -827,7 +864,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			final String eql = normalizeToEQL(targetGroup.getEql(), targetGroup.getRepresentation(), companyID);
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 			
-			this.eqlFacade.convertEqlToSql(eql, companyID, collector); 
+			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
 			
 			final String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, fieldNameOnDatabase);
 			
@@ -847,7 +884,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			final String eql = normalizeToEQL(targetGroup.getEql(), targetGroup.getRepresentation(), companyID);
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 			
-			this.eqlFacade.convertEqlToSql(eql, companyID, collector); 
+			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
 			
 			return collector.getReferencedReferenceTables().contains(tableName);
 		} catch(final TargetRepresentationToEqlConversionException |
@@ -864,7 +901,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			final String eql = normalizeToEQL(targetGroup.getEql(), targetGroup.getRepresentation(), companyID);
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 			
-			this.eqlFacade.convertEqlToSql(eql, companyID, collector); 
+			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
 			
 			final Optional<Boolean> result = collector.getReferencedRefTableColumns().stream().map(ref -> (ref.getTable().equals(tableName) && ref.getColumn().equals(columnName))).reduce((a,b) -> a || b);
 			return result.orElse(false).booleanValue();	// If empty stream -> return false (meaning no target group references column)
@@ -904,6 +941,23 @@ public class ComTargetServiceImpl implements ComTargetService {
 		}
 	}
 	
+	@Override
+	public final RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception {
+		final Interpreter beanShellInterpreter = this.beanShellInterpreterFactory.createBeanShellInterpreter(companyID, customerID);
+		
+		return new BeanShellRecipientTargetGroupMatcher(companyID, beanShellInterpreter, this.eqlFacade);
+	}
+	
+	@Override
+	public List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
+		return targetDao.getTargetLights(companyId, targetGroups, includeDeleted);
+	}
+	
+	@Override
+	public List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String splitType) {
+		return targetDao.getSplitTargetLights(companyId, splitType);
+	}
+	
 	/**
 	 * Sets the service handling profile fields.
 	 * 
@@ -915,8 +969,13 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
+	public final void setConfigService(final ConfigService configService) {
+		this.configService = Objects.requireNonNull(configService, "ConfigService is null");
+	}
+	
+	@Required
+	public final void setBeanShellInterpreterFactory(final BeanShellInterpreterFactory factory) {
+		this.beanShellInterpreterFactory = Objects.requireNonNull(factory, "BeanShellInterpreterFactory is null");
 	}
 
 	private int getMaxGenderValue(ComAdmin admin) {

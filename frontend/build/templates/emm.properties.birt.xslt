@@ -14,28 +14,11 @@ live.version=${isLiveServer}
 # Show beta-text in application logo
 beta.version=${isBetaServer}
 
-<xsl:if test="properties/server/ignoreDeletedMessages" >
-# Ignore deleted messages (Only Agnitas Beta server should do so)
-ignoreDeletedMessages=<xsl:value-of select="properties/server/ignoreDeletedMessages"/>
-</xsl:if>
-
-#######################################################
-# Database settings                                   #
-#######################################################
-# Name of the configured jndi database used by the application
-jdbc.emmDB.jndiName=emm_db
-# Settings for embedded DB
-jdbc.tmpDB.jndiName=embedded
-
 #######################################################
 # Birt Statistic                                      #
 #######################################################
 # Url of the birt statistic application
 birt.url=<xsl:value-of select="properties/reporting/birt/url"/>
-# Path of public key file for secured statistics calls (public-private-key method)
-birt.publickeyfile=<xsl:value-of select="properties/reporting/birt/publickeyfile"/>
-# Path of private key file for secured statistics calls (public-private-key method)
-birt.privatekeyfile=<xsl:value-of select="properties/reporting/birt/privatekeyfile"/>
 
 #######################################################
 # Extension System (Plugins)                          #

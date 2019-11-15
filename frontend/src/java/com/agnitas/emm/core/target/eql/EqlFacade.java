@@ -19,11 +19,13 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerator;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
-import com.agnitas.emm.core.target.eql.codegen.SqlCodeGeneratorCallbackFactory;
+import com.agnitas.emm.core.target.eql.codegen.beanshell.BeanShellCodeGeneratorCallback;
+import com.agnitas.emm.core.target.eql.codegen.beanshell.BeanShellCodeGeneratorCallbackFactory;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallback;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallbackFactory;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlDialect;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
@@ -56,17 +58,19 @@ public class EqlFacade {
 	/** SQL dialect used for code generation and conversion. */
 	private SqlDialect sqlDialect;
 	
-	private final SqlCodeGeneratorCallbackFactory callbackFactory;
+	private final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory;
+	private final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory;
 	
 	private final EqlToTargetRepresentationConverterFactory eqlToTargetRepresentationConverterFactory;
 	
 	/**
 	 * Creates a new EQL facade instance.
 	 */
-	public EqlFacade(final EqlParser eqlParser, final CodeGenerator codeGenerator, final SqlCodeGeneratorCallbackFactory callbackFactory, final EqlToTargetRepresentationConverterFactory eqlToTargetRepresentationConverterFactory) {
+	public EqlFacade(final EqlParser eqlParser, final CodeGenerator codeGenerator, final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory, final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory, final EqlToTargetRepresentationConverterFactory eqlToTargetRepresentationConverterFactory) {
 		this.eqlParser = Objects.requireNonNull(eqlParser, "EqlParser is null");
 		this.codeGenerator = Objects.requireNonNull(codeGenerator, "Code generator is null");
-		this.callbackFactory = Objects.requireNonNull(callbackFactory, "Code generator callback factory is null");
+		this.sqlCodeGeneratorCallbackFactory = Objects.requireNonNull(sqlCodeGeneratorCallbackFactory, "SQL code generator callback factory is null");
+		this.beanShellCodeGeneratorCallbackFactory = Objects.requireNonNull(beanShellCodeGeneratorCallbackFactory, "BeanShell code generator callback factory is null");
 		this.eqlToTargetRepresentationConverterFactory = Objects.requireNonNull(eqlToTargetRepresentationConverterFactory, "EQL to TargetRepresentation converter factory is null");
 	}
 	
@@ -179,10 +183,30 @@ public class EqlFacade {
 		
 		node.collectReferencedItems(referenceCollector);
 		
-		final SqlCodeGeneratorCallback callback = this.callbackFactory.newCodeGeneratorCallback(companyId);
+		final SqlCodeGeneratorCallback callback = this.sqlCodeGeneratorCallbackFactory.newCodeGeneratorCallback(companyId);
 		this.codeGenerator.generateCode(node, callback);
 
 		return callback.getSqlCode();
+	}
+	
+	/**
+	 * Converts the given EQL code to BeanShell.
+	 * 
+	 * @param target target group 
+	 * 
+	 * @return BeanShell code
+	 * 
+	 * @throws EqlParserException on errors parsing the EQL code
+	 * @throws CodeGeneratorException on errors generating BeanShell code
+	 * @throws ProfileFieldResolveException on errors resolving profile fields
+	 */
+	public final String convertEqlToBeanShellExpression(final ComTarget target) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
+		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(target.getEQL());
+		
+		final BeanShellCodeGeneratorCallback callback = this.beanShellCodeGeneratorCallbackFactory.newCodeGeneratorCallback(target.getCompanyID());
+		this.codeGenerator.generateCode(node, callback);
+
+		return callback.getBeanShellCode();
 	}
 	
 	// -------------------------------------------------------------------------------------------------------------------------------------- Dependency Injection

@@ -92,7 +92,7 @@ public class TAGCheckImpl implements TAGCheck {
 
 	@Override
 	public boolean checkContent (String content, StringBuffer report, List <String> failures) {
-		BlockData	bd = new BlockData (content, null, null, -1, -1, -1, null, true, true, false, false, false, false, -1, false);
+		BlockData	bd = new BlockData (content, null, null, -1, -1, -1, null, true, true, false, false, false, false);
 		boolean		rc = true;
 		String		tag;
 

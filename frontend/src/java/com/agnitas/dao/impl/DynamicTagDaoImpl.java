@@ -137,7 +137,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 		String sqlGetId = "SELECT dyn_name_id FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name = ?";
 		return selectInt(logger, sqlGetId, companyId, mailingId, dynTagName);
 	}
-
+	
 	@Override
 	public String getDynamicTagName(int companyId, int mailingId, int dynTagId) {
 		String sqlGetDynName = "SELECT dyn_name FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name_id = ?";
@@ -146,9 +146,9 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 		} else {
 			sqlGetDynName += " AND LIMIT 1";
 		}
-
+		
 		List<String> nameResults = select(logger, sqlGetDynName, new StringRowMapper(), companyId, mailingId, dynTagId);
-
+		
 		if (nameResults.size() > 0) {
 			return nameResults.get(0);
 		} else {

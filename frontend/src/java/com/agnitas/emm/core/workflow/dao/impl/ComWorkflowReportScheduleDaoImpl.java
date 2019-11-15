@@ -35,18 +35,20 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void scheduleWorkflowReport(int reportId, @VelocityCheck int companyId, Date sendTime) {
-		String sql = "INSERT INTO workflow_report_schedule_tbl (report_id, company_id, send_date) VALUES (?, ?, ?)";
-		update(logger, sql, reportId, companyId, sendTime);
+	public void scheduleWorkflowReport(int reportId, @VelocityCheck int companyId, int workflowId, Date sendTime) {
+		String sql = "INSERT INTO workflow_report_schedule_tbl (report_id, company_id, workflow_id, send_date) VALUES (?, ?, ?, ?)";
+		update(logger, sql, reportId, companyId, workflowId, sendTime);
 	}
 
 	@Override
+    @Deprecated
 	public List<Integer> getAllWorkflowReportsToSend() {
         String query = "SELECT report_id FROM workflow_report_schedule_tbl WHERE send_date < CURRENT_TIMESTAMP AND sent = 0";
         return select(logger, query, new IntegerRowMapper());
 	}
 
     @Override
+    @Deprecated
     public List<ComBirtReport> getAllWorkflowBirtReportsToSend() {
         String query = "SELECT report_id, company_id FROM workflow_report_schedule_tbl WHERE send_date < CURRENT_TIMESTAMP AND sent = 0";
         return select(logger, query, new ScheduledBirtReportRowMapper());

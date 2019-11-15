@@ -345,15 +345,6 @@
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
-	
-	<!-- Import/Export edit field content page -->
-    <definition name="recipient_bulk_change" extends="base">
-		<put name="body" value="/WEB-INF/jsp/recipient/recipient-bulk-change.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-bulk-change-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
 
 	<definition name="recipient_loading" extends="base">
 		<put name="body" value="/WEB-INF/jsp/recipient/recipient-loading.jsp" type="page"/>
@@ -372,12 +363,22 @@
 	</definition>
 
 	<definition name="recipient_reports" extends="base">
-		<put name="body" value="/WEB-INF/jsp/recipient/recipient-reports.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-reports-setup.jsp" type="page"/>
+		<put name="body" value="/WEB-INF/jsp/recipient/recipient-report-list.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-list-setup.jsp" type="page"/>
+	</definition>
+
+	<definition name="recipient_reports_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/recipient/recipient-report-list-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-list-setup.jsp" type="page"/>
 	</definition>
 
 	<definition name="recipient_report_view" extends="base">
 		<put name="body" value="/WEB-INF/jsp/recipient/recipient-report-view.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-view-setup.jsp" type="page"/>
+	</definition>
+
+	<definition name="recipient_report_view_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/recipient/recipient-report-view-new.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-view-setup.jsp" type="page"/>
 	</definition>
 
@@ -455,6 +456,14 @@
 	<definition name="stats_birt_recipient_stat" extends="base">
 		<put name="body" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="stats_birt_recipient_stat_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat-setup-new.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -718,6 +727,15 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<!-- Import/Export edit field content page -->
+    <definition name="recipient_bulk_change" extends="base">
+		<put name="body" value="/WEB-INF/jsp/recipient/recipient-bulk-change.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/recipient/recipient-bulk-change-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="importwizard_profile_view" extends="base">
 		<put name="body" value="/WEB-INF/jsp/importwizard/profile/importwizard-profile-view.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/importwizard/profile/importwizard-profile-view-setup.jsp" type="page"/>
@@ -972,72 +990,6 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="notification_list" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-list.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-list-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="notification_delete_ajax" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/push/notification-delete.jsp" type="page"/>
-		<put name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="notification_settings" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-view.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-view-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="notification_trigger" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-trigger.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-trigger-setup.jsp" type="page"/>
-	</definition>
-
-	<definition name="notification_send" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-send.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-send-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="notification_statistic" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-statistic.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-statistic-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="notifications_global_stat" extends="base">
-		<put name="body" value="/WEB-INF/jsp/push/notification-global-statistic.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/push/notification-global-statistic-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<!-- Deep tracking tiles-->
-	<definition name="settings_deep_tracking_view" extends="base">
-		<put name="body" value="/WEB-INF/jsp/settings/deeptracking_setup/settings-deep-tracking-view.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/settings/deeptracking_setup/settings-deep-tracking-view-setup.jsp" type="page"/>
-	</definition>
-
-	<definition name="settings_decode_url_view" extends="base">
-		<put name="body" value="/WEB-INF/jsp/settings/decode_url/settings-decode-url-view.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/settings/decode_url/settings-decode-url-view-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
 
 	<definition name="mailing_wizard_attachment" extends="base">
 		<put name="body" value="/WEB-INF/jsp/mailing/wizard/mailing-wizard-attachment.jsp" type="page"/>
@@ -1167,8 +1119,16 @@
 	</definition>
 
 	<definition name="mailing_predelivery_list" extends="base">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery_list.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-predelivery_list-setup.jsp" type="page"/>
+		<put name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery-list.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-predelivery-list-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_predelivery_upselling" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery-upselling.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-predelivery-upselling-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -1382,6 +1342,14 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="stats_birt_mailing_stat_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/stats/birt/mailing/stats-birt-mailing_stat-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing/stats-birt-mailing_stat-setup-new.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="stats_birt_mailing_plugin_list" path="/WEB-INF/jsp/template-birt-plugin-list.jsp">
 		<put name="head-tag" value="head_tag_default" type="definition"/>
 		<put name="body" value="/WEB-INF/jsp/stats/birt/stats-birt-mailing-plugin-list.jsp" type="page" />
@@ -1394,6 +1362,14 @@
 	<definition name="stats_mailing_stats" extends="base">
 		<put name="body" value="/WEB-INF/jsp/stats/stats-mailing_stats.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/stats/stats-mailing_stats-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="stats_mailing_stats_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing_stats-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing_stats-setup-new.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -1429,6 +1405,14 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="workflow_list_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-list-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-list-setup-new.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="workflow_view" extends="base">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-setup.jsp" type="page"/>
@@ -1438,8 +1422,26 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="workflow_view_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-setup-new.jsp" type="page"/>
+		<put name="head-tag" value="workflow_head_tag" type="definition"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="workflow_view_only_elements" path="/WEB-INF/jsp/workflow/workflow-view-only-elements.jsp">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view-only-elements.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-setup.jsp" type="page"/>
+		<put name="head-tag" value="workflow_head_tag" type="definition"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="workflow_view_only_elements_new" path="/WEB-INF/jsp/workflow/workflow-view-only-elements-new.jsp">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-new.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-setup.jsp" type="page"/>
 		<put name="head-tag" value="workflow_head_tag" type="definition"/>
 
@@ -1460,6 +1462,14 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="workflow_delete_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-delete-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-delete-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="workflow_bulkDeleteConfirm_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-setup.jsp" type="page"/>
@@ -1468,8 +1478,24 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="workflow_bulkDeleteConfirm_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="workflow_bulkDeactivateConfirm_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="workflow_bulkDeactivateConfirm_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-new.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
@@ -1668,16 +1694,6 @@
 	<definition name="webserviceuser_view" extends="base">
 		<put name="body" value="/WEB-INF/jsp/webserviceuser/webserviceuser-view.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/webserviceuser/webserviceuser-view-setup.jsp" type="page"/>
-	</definition>
-
-	<definition name="pushfeature_admin" extends="base">
-		<put name="body" value="/WEB-INF/jsp/pushfeature/pushfeature-admin.jsp" type="page" />
-		<put name="page-setup" value="/WEB-INF/jsp/pushfeature/pushfeature-admin-setup.jsp" type="page" />
-	</definition>
-
-	<definition name="pushsettings_view" extends="base">
-		<put name="body" value="/WEB-INF/jsp/pushsettings/pushsettings-view.jsp" type="page" />
-		<put name="page-setup" value="/WEB-INF/jsp/pushsettings/pushsettings-view-setup.jsp" type="page" />
 	</definition>
 
 	<definition name="messenger_upselling" extends="base">

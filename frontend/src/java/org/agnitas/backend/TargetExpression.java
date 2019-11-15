@@ -202,31 +202,40 @@ public class TargetExpression {
 		}
 
 		Target	rc = targets.get (tid);
-		String	reason = "invalid";
+		String	reason = "unspecified";
 
 		if (rc == null) {
 			String		sql = null;
 			boolean		databaseOnly = false;
-			int		deleted = 0;
 
 			try {
 				Map <String, Object>	row = data.dbase.querys (
-					"SELECT target_sql, component_hide, eql, deleted "+
+					"SELECT target_sql, component_hide, eql, deleted, invalid "+
 					"FROM dyn_target_tbl "+ 
 					"WHERE target_id = :targetID",
 					"targetID", tid
 				);
 				
 				if (row != null) {
-					deleted = data.dbase.asInt (row.get ("deleted"));
+					int	deleted = data.dbase.asInt (row.get ("deleted"));
+					int	invalid = data.dbase.asInt (row.get ("invalid"));
+					
 					if (deleted != 0) {
 						data.logging (Log.ERROR, "targets", "TargetID " + tid + " is marked as deleted");
 						sql = null;
 						reason = "deleted";
+					} else if (invalid > 0) {
+						data.logging (Log.ERROR, "targets", "TargetID " + tid + " is marked as invalid");
+						sql = null;
+						reason = "invalid";
 					} else {
 						sql = data.dbase.asString (row.get ("target_sql"), 3);
 						if (sql == null) {
 							reason = "empty";
+						} else if (sql.trim ().equals ("1=0")) {
+							data.logging (Log.ERROR, "target", "TargetID " + tid + " has invalid SQL expression \"" + sql + "\"");
+							sql = null;
+							reason = "invalid sql";
 						}
 						databaseOnly = (data.dbase.asInt (row.get ("component_hide")) == 1) && (data.dbase.asString (row.get ("eql")) != null);
 					}

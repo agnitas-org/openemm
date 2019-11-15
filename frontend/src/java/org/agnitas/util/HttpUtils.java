@@ -504,7 +504,14 @@ public class HttpUtils {
 	}
 
 	public static String originUri(HttpServletRequest request) {
-		return (String) request.getAttribute(OriginUriFilter.ORIGIN_URI_KEY);
+		String uri = (String) request.getAttribute(OriginUriFilter.ORIGIN_URI_KEY);
+		String queryString = (String) request.getAttribute(OriginUriFilter.ORIGIN_QUERY_STRING_KEY);
+
+		if (StringUtils.isNotEmpty(queryString)) {
+			return uri + "?" + queryString;
+		}
+
+		return uri;
 	}
 
 	public interface ResponseWriter {

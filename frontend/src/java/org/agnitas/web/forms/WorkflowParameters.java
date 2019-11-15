@@ -137,6 +137,10 @@ public class WorkflowParameters {
         this.paramsAsMap = paramsAsMap;
     }
     
+    public Map<String, String> getParamsAsMap() {
+        return paramsAsMap;
+    }
+    
     public boolean isEmpty() {
         return workflowId == 0 && nodeId == 0 && workflowForwardTargetItemId == 0 && !keepForward && StringUtils.isEmpty(workflowForwardParams);
     }

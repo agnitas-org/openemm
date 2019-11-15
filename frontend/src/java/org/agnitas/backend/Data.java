@@ -37,6 +37,7 @@ import org.agnitas.backend.dao.TitleDAO;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.preview.Page;
 import org.agnitas.util.Bit;
+import org.agnitas.util.Blacklist;
 import org.agnitas.util.Config;
 import org.agnitas.util.Const;
 import org.agnitas.util.DBConfig;
@@ -50,6 +51,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+
+import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 
 /** Class holding most of central configuration and global database
  * information
@@ -138,7 +141,9 @@ public class Data {
 	/** for preview mailings to create cachable image lings */
 	public boolean			previewCacheImages = true;
 	/** optional list of addresses to send bcc copy of mailing */
-	public List <String>		bcc = null;
+	private List <String>		bcc = null;
+	private int			bccBaseIndex = 0;
+	private boolean			bccBaseIsBlacklistChecked = false;
 	/** overwtite existing database fields */
 	public Map <String, String>	overwriteMap = null;
 	/** virtual database fields */
@@ -470,7 +475,7 @@ public class Data {
 	private void configuration (boolean checkRsc) throws Exception {
 		boolean		done;
 
-		cfg = new Config (log);
+		cfg = new Config (log, "mailout.");
 		done = false;
 		if (checkRsc) {
 			try {
@@ -535,11 +540,7 @@ public class Data {
 		dbTempTablespace = cfg.cget ("DB_TEMP_TABLESPACE");
 		if (dbID != null) {
 			DBConfig	dbcfg = new DBConfig ();
-			String		configPath = System.getenv ("DBCFG_PATH");
 
-			if (configPath != null) {
-				dbcfg.setConfigPath (configPath);
-			}
 			if (dbcfg.selectRecord (dbID)) {
 				dbMS = dbcfg.findInRecord ("dbms", dbMS);
 				dbLogin = dbcfg.findInRecord ("user", dbLogin);
@@ -657,6 +658,7 @@ public class Data {
 	private void setupMailingInformationsForPreview (String status) throws SQLException {
 		String[]	opts = status.split (",");
 
+		maildropStatus.id (0);
 		if (opts.length > 0) {
 			try {
 				mailing.id (Long.parseLong (opts[0]));
@@ -857,6 +859,17 @@ public class Data {
 						logging (Log.WARNING, "init", "Missing intelliAd ID string even if tracking for intelliAd is enabled");
 					}
 				}
+				
+				String	bcc_recv = findMediadata (tmp, "bcc");
+				
+				if (bcc_recv != null) {
+					for (String recv : bcc_recv.split (", *")) {
+						addBcc (recv);
+					}
+					if (bcc != null) {
+						bccBaseIndex = bcc.size ();
+					}
+				}
 				break;
 			}
 			if (tmp.stat == Media.STAT_ACTIVE)
@@ -890,7 +903,7 @@ public class Data {
 		mailing.setEncoding ();
 		mailing.setCharset ();
 	}
-
+	
 	private void retrieveURLsForMeasurement () throws Exception {
 		List <Map <String, Object>> rc;
 
@@ -1451,7 +1464,7 @@ public class Data {
 				if (alias != null) {
 					if (r.validName (alias)) {
 						logging (Log.DEBUG, "resolve-ref", "Rename reference table " + r.name () + " to " + alias);
-						r.setName (alias);
+						r.name (alias);
 						references.put (r.name (), r);
 					} else {
 						logging (Log.DEBUG, "resolve-ref", "Failed to rename reference table " + r.name () + " to " + alias + " due to invalid alias name");
@@ -1463,7 +1476,7 @@ public class Data {
 
 	public boolean fullfillReference (Reference r) {
 		boolean	rc;
-		
+
 		if (! r.isFullfilled ()) {
 			r.fullfill ();
 			try {
@@ -1687,7 +1700,7 @@ public class Data {
 	 * Sanity check for mismatch company_id and perhaps deleted
 	 * mailing
 	 */
-	public void sanityCheck () throws Exception {
+	public void sanityCheck (Blacklist blacklist) throws Exception {
 		if (! maildropStatus.isPreviewMailing ()) {
 			if (! mailing.exists ()) {
 				throw new Exception ("No entry for mailingID " + mailing.id () + " in mailing table found");
@@ -1702,6 +1715,25 @@ public class Data {
 					logging (Log.ERROR, "sanity", "Failed to set generation status: " + e.toString (), e);
 				}
 				throw new Exception ("Mailing " + mailing.id () + " marked as deleted");
+			}
+			if (bcc != null) {
+				int	size = bcc.size ();
+				
+				for (int n = bccBaseIsBlacklistChecked ? bccBaseIndex : 0; n < size; ) {
+					String	recv = bcc.get (n);
+					
+					if (blacklist.isBlackListed (recv) != null) {
+						logging (Log.ERROR, "bcc", "Address \"" + recv + "\" is on blacklist, do not use it");
+						bcc.remove (n);
+						--size;
+						if (n < bccBaseIndex) {
+							--bccBaseIndex;
+						}
+					} else {
+						++n;
+					}
+				}
+				bccBaseIsBlacklistChecked = true;
 			}
 		}
 	}
@@ -2023,14 +2055,19 @@ public class Data {
 				mailing.blockSize (obj2int (tmp, "block-size"));
 				logging (Log.DEBUG, "options2", "--> block-size = " + tmp);
 			}
-			if ((tmp = opts.get ("bcc")) != null) {
-				bcc = (List <String>) tmp;
-				if (bcc.size () == 0) {
-					bcc = null;
-				} else {
-					for (String email : bcc) {
-						logging (Log.DEBUG, "options2", "--> = " + email);
+			if (bcc != null) {
+				if (bccBaseIndex > 0) {
+					while (bcc.size () > bccBaseIndex) {
+						bcc.remove (bccBaseIndex);
 					}
+				} else {
+					bcc.clear ();
+				}
+			}
+			if ((tmp = opts.get ("bcc")) != null) {
+				for (String recv : (List <String>) tmp) {
+					addBcc (recv);
+					logging (Log.DEBUG, "options2", "--> = " + recv);
 				}
 			}
 			if ((overwriteMap = mormalizeReplacementMap ((Map <String, String>) opts.get ("overwrite"))) != null) {
@@ -2065,6 +2102,26 @@ public class Data {
 		return result;
 	}
 	
+	public List <String> bcc () {
+		return bcc;
+	}
+	
+	private void addBcc (String recv) {
+		if ((recv != null) &&
+		    (! maildropStatus.isAdminMailing ()) &&
+		    (! maildropStatus.isTestMailing ()) &&
+		    (! maildropStatus.isPreviewMailing ()) &&
+		    (! maildropStatus.isVerificationMailing ())) {
+			recv = recv.trim ();
+			if (recv.length () > 0) {
+				if (bcc == null) {
+					bcc = new ArrayList <> ();
+				}
+				bcc.add (recv);
+			}
+		}
+	}
+
 	public boolean useMultipleRecords () {
 		if (references != null) {
 			for (Reference r : references.values ()) {
@@ -2169,7 +2226,11 @@ public class Data {
 		boolean	nocache = maildropStatus.isPreviewMailing () && (! previewCacheImages);
 		Image	image = null;
 		String	template = null;
-		
+
+		if (name == null) {
+			return name;
+		}
+				
 		try {
 			name = URLEncoder.encode (name, "UTF-8");
 		} catch (java.io.UnsupportedEncodingException e) {
@@ -2210,7 +2271,7 @@ public class Data {
 	
 	public List <BlockData> getUsedMediapoolImages () throws SQLException {
 		setupImagepool ();
-		return imagepool.getMediapoolImagesUsed();
+		return imagepool.getMediapoolImagesUsed ();
 	}
 	
 	public Set <String> getUsedComponentImages () {
@@ -2459,7 +2520,11 @@ public class Data {
 	 */
 	public void setStandardFields (Set <String> predef, Map <String, EMMTag> tags) {
 		for (Media m : media) {
-			predef.add (m.profileField ());
+			String	profileField = m.profileField ();
+			
+			if (profileField != null) {
+				predef.add (profileField.toLowerCase ());
+			}
 		}
 		predef.add ("sys_tracking_veto");
 		targetExpression.requestFields (predef);
@@ -2483,6 +2548,7 @@ public class Data {
 		if (dkimActive) {
 			String	dkimColumn = company.info ("dkim-select-column");
 			if ((dkimColumn != null) && (columnByName (dkimColumn) != null)) {
+				dkimColumn = dkimColumn.toLowerCase ();
 				company.infoAdd ("_dkim_column", dkimColumn);
 				predef.add (dkimColumn);
 			}
@@ -2582,7 +2648,7 @@ public class Data {
 			ref = name.substring (0, n);
 			name = name.substring (n + 1);
 			
-			Reference	r = references.get (ref);
+			Reference	r = references.get (ref.toLowerCase ());
 			
 			if ((r == null) || (! fullfillReference (r))) {
 				return null;
@@ -2775,7 +2841,7 @@ public class Data {
 			long		timediff = rset.getLong (startIndex++);
 			String		usertype = cinfo.getUserType ();
 
-			if (((omgTimediff == null) || (timediff > omgTimediff)) && (usertype != null) && usertype.equals ("W")) {
+			if (((omgTimediff == null) || (timediff > omgTimediff)) && WORLD.getCodeString().equals (usertype)) {
 				forceNewBlock = true;
 				omgTimediff = timediff;
 			}
@@ -2851,7 +2917,7 @@ public class Data {
 			imagepool = new Imagepool (this);
 			if (blocks != null) {
 				for (int n = 0; n < blocks.blockCount (); ++n) {
-					imagepool.addImage (blocks.getBlock (n));
+					imagepool.addImage (blocks.getBlock (n), true);
 				}
 			}
 		}
@@ -2879,7 +2945,7 @@ public class Data {
 					rc = blocks.newImage (imageName, imageDump);
 					if (rc != null) {
 						blockTable.put (imageName, rc);
-						imagepool.addImage (rc);
+						imagepool.addImage (rc, true);
 					}
 				} catch (Exception e) {
 					logging (Log.ERROR, "rqimg", "Failed to create new image: " + e.toString (), e);
@@ -2987,5 +3053,4 @@ public class Data {
 		}
 		return swyn;
 	}
-	
 }

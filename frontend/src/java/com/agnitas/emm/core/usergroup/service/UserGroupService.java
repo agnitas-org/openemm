@@ -11,8 +11,10 @@
 package com.agnitas.emm.core.usergroup.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -21,20 +23,22 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 public interface UserGroupService {
-
+    
     PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber);
-
+    
     UserGroupDto getUserGroup(ComAdmin admin, int userGroupId);
-
+    
     int saveUserGroup(ComAdmin admin, UserGroupDto userGroupDto) throws Exception;
-
+    
     boolean isShortnameUnique(String shortname, int userGroupId, @VelocityCheck int companyId);
-
+    
     boolean isUserGroupPermissionChangeable(ComAdmin admin, Permission permission, Set<Permission> companyPermissions);
-
+    
     List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, ComAdmin admin);
-
+    
     List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId);
-
+    
     boolean deleteUserGroup(int userGroupId, ComAdmin admin);
+    
+    Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, int groupId, int groupCompanyId);
 }

@@ -3233,7 +3233,7 @@ return false;]]></method>
                                 <property name="content">
                                     <text-data id="686">
                                         <property name="fontWeight">bold</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Keydata", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.figures", reportContext.getLocale())</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>
@@ -4122,7 +4122,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     <text-data id="1182">
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">left</property>
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Keydata", reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.figures", reportContext.getLocale())</expression>
                                     </text-data>
                                 </property>
                                 <property name="style">table-head</property>

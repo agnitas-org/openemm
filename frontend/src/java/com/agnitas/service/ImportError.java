@@ -30,7 +30,8 @@ public class ImportError extends RuntimeException {
 		mappingMustContainKeyColumn("error.mappingMustContainKeyColumn"),
 		invalidMapping("error.invalidMapping"),
 		csvContainsInvalidColumn("error.csvContainsInvalidColumn"),
-		cannotReadImportFile("error.cannotReadImportFile");
+		cannotReadImportFile("error.cannotReadImportFile"),
+		emptyImportFile("error.emptyImportFile");
 		
 		/**
 		  * Instantiates a new error key.

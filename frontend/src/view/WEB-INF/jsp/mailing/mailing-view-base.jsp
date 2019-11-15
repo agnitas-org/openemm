@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.beans.*" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -18,18 +19,28 @@
 <c:set var="ACTION_PREVIEW_SELECT" value="<%= ComMailingSendAction.ACTION_PREVIEW_SELECT %>"/>
 <c:set var="ACTION_RECIPIENTS_CALCULATE" value="<%= ComMailingBaseAction.ACTION_RECIPIENTS_CALCULATE %>"/>
 
-<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponent.TYPE_THUMBNAIL_IMAGE %>"/>
+<c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>"/>
 
 <c:set var="WORKFLOW_ID" value="<%= ComWorkflowAction.WORKFLOW_ID %>" scope="page"/>
 <c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
 
-<c:set var="TYPE_FOLLOWUP" value="<%= Mailing.TYPE_FOLLOWUP %>"/>
-<c:set var="TYPE_INTERVAL" value="<%= Mailing.TYPE_INTERVAL %>"/>
+<c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
+<c:set var="TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
+<c:set var="TYPE_ACTIONBASED" value="<%= MailingTypes.ACTION_BASED.getCode() %>"/>
+<c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
 
 <c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
 <c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
 
 <c:set var="isMailingGrid" value="${mailingBaseForm.isMailingGrid}" scope="request"/>
+<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
+
+<c:set var="mailingFollowUpAllowed" value="${false}"/>
+<%@include file="mailing-view-base-follow.jspf" %>
+
+<c:set var="workflowParams" value="${emm:getWorkflowParams(pageContext.request)}" />
+<c:set var="isWorkflowDriven" value="${mailingBaseForm.workflowId gt 0 or not empty workflowParams and workflowParams.workflowId gt 0}"/>
+
 <c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
 
 <tiles:insert page="template.jsp">
@@ -65,14 +76,14 @@
 
         </tiles:add>
 
-            <tiles:add>
-                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit="" data-controls-group="save">
+        <tiles:add>
+            <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-form-submit="" data-controls-group="save">
                 <span class="text">
                     <bean:message key="button.Save"/>
                 </span>
-                        <%--<i class="icon icon-save"></i>--%>
-                </button>
-            </tiles:add>
+                    <%--<i class="icon icon-save"></i>--%>
+            </button>
+        </tiles:add>
     </tiles:putList>
 
     <tiles:put name="content" type="string">
@@ -88,12 +99,19 @@
                         "mailingId": ${mailingBaseForm.mailingID},
                         "TARGET_MODE_AND": ${TARGET_MODE_AND},
                         "TARGET_MODE_OR": ${TARGET_MODE_OR},
+                        "TYPE_FOLLOWUP": ${TYPE_FOLLOWUP},
+                        "TYPE_INTERVAL": ${TYPE_INTERVAL},
+                        "TYPE_ACTIONBASED": ${TYPE_ACTIONBASED},
+                        "TYPE_DATEBASED": ${TYPE_DATEBASED},
                         "urls": {
                             "MAILINGBASE": "<c:url value="/mailingbase.do"/>"
                         },
                         "actions": {
                             "ACTION_RECIPIENTS_CALCULATE": ${ACTION_RECIPIENTS_CALCULATE}
-                        }
+                        },
+                        "followUpAllowed": ${mailingFollowUpAllowed},
+                        "isWorkflowDriven": ${isWorkflowDriven},
+                        "mailingType": ${mailingBaseForm.mailingType}
                     }
                 </script>
 
@@ -164,6 +182,16 @@
                                                 </c:if>
 
                                                 <c:if test="${sessionScope[WORKFLOW_ID] ne null || mailingBaseForm.workflowId ne 0}">
+                                                    <%--todo: GWUA-4271: change after test sucessfully--%>
+                                                    <%--<c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">--%>
+                                                        <%--<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>--%>
+                                                    <%--</c:url>--%>
+
+                                                    <%--<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">--%>
+                                                        <%--<i class="icon icon-linkage-campaignmanager"></i>--%>
+                                                        <%--<strong><bean:message key="campaign.manager.icon"/></strong>--%>
+                                                    <%--</a>--%>
+
                                                     <agn:agnLink page="/workflow.do?method=view&workflowId=${workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                                         <i class="icon icon-linkage-campaignmanager"></i>
                                                         <strong><bean:message key="campaign.manager.icon"/></strong>
@@ -228,18 +256,3 @@
         </div>
     </tiles:put>
 </tiles:insert>
-
-<script type="text/javascript">
-    (function(){
-        AGN.Lib.Action.new({'change': '#settingsGeneralMailType'}, function() {
-			<%@include file="mailing-view-base-follow.jspf" %>
-            if ('${TYPE_INTERVAL}' == this.el.val()) {
-                jQuery('#mailingIntervalContainer').removeClass("hidden");
-            } else {
-                jQuery('#mailingIntervalContainer').addClass("hidden");
-            }
-        });
-
-        jQuery('#settingsGeneralMailType').trigger('change');
-    })();
-</script>

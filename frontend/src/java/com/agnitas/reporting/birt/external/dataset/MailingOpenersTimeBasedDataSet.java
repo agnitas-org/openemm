@@ -43,28 +43,28 @@ public class MailingOpenersTimeBasedDataSet extends BIRTDataSet {
 
 			SimpleDateFormat openTimeFormat;
 			if (hourly) {
-				openTimeFormat = new SimpleDateFormat("yyyy-MM-dd H");
+				openTimeFormat = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_BLANK_HOUR);
 			} else {
-				openTimeFormat = new SimpleDateFormat("yyyy-MM-dd");
+				openTimeFormat = new SimpleDateFormat(DATE_PARAMETER_FORMAT);
 			}
 			
 	        List<LightTarget> lightTargets = getTargets(selectedTargets, companyID);
 	        Map<Integer, LightTarget> targetGroups = new HashMap<>();
 	        Map<Integer, Integer> targetGroupIndexes = new HashMap<>();
 	        targetGroups.put(0, null);
-	        targetGroupIndexes.put(0, CommonKeys.ALL_SUBSCRIBERS_INDEX);
-	        if (lightTargets != null) {
-	        	int targetgroupIndex = 2;
-		        for (LightTarget target : lightTargets) {
-		        	targetGroups.put(target.getId(), target);
-		        	targetGroupIndexes.put(target.getId(), targetgroupIndex);
-		        	targetgroupIndex++;
+			int targetgroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
+			targetGroupIndexes.put(0, CommonKeys.ALL_SUBSCRIBERS_INDEX);
+			if (lightTargets != null) {
+				for (LightTarget target : lightTargets) {
+					targetgroupIndex++;
+					targetGroups.put(target.getId(), target);
+					targetGroupIndexes.put(target.getId(), targetgroupIndex);
 		        }
 	        }
 	        
 	        List<TimeBasedClickStatRow> returnList = new ArrayList<>();
 
-	        // Show all deviceClasses ("UNKOWN_"-deviceclasses are not included in ...log...-tables) 
+	        // Show all deviceClasses ("UNKOWN_"-deviceclasses are not included in ...log...-tables)
 	        List<DeviceClass> seviceClassesToShow = Arrays.stream(DeviceClass.values()).filter(deviceClassItem -> !deviceClassItem.getName().startsWith("UNKOWN_")).collect(Collectors.toList());
 	        seviceClassesToShow.add(null); // for Mixed deviceclasses
 	        for (DeviceClass deviceClass : seviceClassesToShow) {
@@ -137,13 +137,13 @@ public class MailingOpenersTimeBasedDataSet extends BIRTDataSet {
 		try {
             Calendar endDateCalendar = new GregorianCalendar();
             if (endDateString.contains(".") && StringUtils.countOccurrencesOf(endDateString, ":") > 1) {
-                endDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(endDateString);
+                endDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_SECOND).parse(endDateString);
                 endDateCalendar.setTime(endDate);
             } else if (endDateString.contains(":")) {
-                endDate = new SimpleDateFormat("yyyy-MM-dd:HH").parse(endDateString);
+                endDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_HOUR).parse(endDateString);
                 endDateCalendar.setTime(endDate);
             } else {
-                endDate = new SimpleDateFormat("yyyy-MM-dd").parse(endDateString);
+                endDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(endDateString);
                 endDateCalendar.setTime(endDate);
                 endDateCalendar.set(Calendar.HOUR_OF_DAY, 23);
             }
@@ -162,13 +162,13 @@ public class MailingOpenersTimeBasedDataSet extends BIRTDataSet {
 		try {
             Calendar startDateCalendar = new GregorianCalendar();
             if (startDateString.contains(".") && StringUtils.countOccurrencesOf(startDateString, ":") > 1) {
-                startDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(startDateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_SECOND).parse(startDateString);
                 startDateCalendar.setTime(startDate);
             } else if (startDateString.contains(":")) {
-                startDate = new SimpleDateFormat("yyyy-MM-dd:HH").parse(startDateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_HOUR).parse(startDateString);
                 startDateCalendar.setTime(startDate);
             } else {
-                startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(startDateString);
                 startDateCalendar.setTime(startDate);
                 startDateCalendar.set(Calendar.HOUR_OF_DAY, 0);
             }
@@ -198,7 +198,7 @@ public class MailingOpenersTimeBasedDataSet extends BIRTDataSet {
         }
         
         String positiveDeviceClassPart;
-		String negativeDeviceClassPart; 
+		String negativeDeviceClassPart;
         if (deviceClass == null) {
         	// Mixed deviceClass
         	positiveDeviceClassPart = " AND (SELECT COUNT(DISTINCT device_class_id) FROM onepixellog_device_" + companyID + "_tbl opl2 WHERE " + openTimeSqlPart + " = " + openTime2SqlPart + " AND opl.mailing_id = opl2.mailing_id AND opl.customer_id = opl2.customer_id) > 1";

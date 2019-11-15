@@ -12,7 +12,6 @@ package org.agnitas.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -188,7 +187,7 @@ public interface ImportWizardHelper {
 	 * Side effects:
 	 * -columnMapping will be initialized
 	 * -corresponding columns in dbAllColumns will be activated
-	 * -csvAllColumns will be updated too 
+	 * -csvAllColumns will be updated too
 	 */
 	public abstract void mapColumns(Map<String, String> mapParameters);
 
@@ -286,14 +285,14 @@ public interface ImportWizardHelper {
 
 //	/**
 //	 * Getter for property blacklist.
-//	 * 
+//	 *
 //	 * @return Value of property blacklist.
 //	 */
 //	public abstract HashSet getBlacklist();
 //
 //	/**
 //	 * Setter for property blacklist.
-//	 * 
+//	 *
 //	 * @param blacklist
 //	 *            New value of property blacklist.
 //	 */
@@ -334,14 +333,14 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property columnMapping.
 	 */
-	public abstract Hashtable<String, CsvColInfo> getColumnMapping();
+	public abstract Map<String, CsvColInfo> getColumnMapping();
 
 	/**
 	 * Setter for property columnMapping.
 	 * 
 	 * @param columnMapping   New value of property columnMapping.
 	 */
-	public abstract void setColumnMapping(Hashtable<String, CsvColInfo> columnMapping);
+	public abstract void setColumnMapping(Map<String, CsvColInfo> columnMapping);
 
 	public abstract String getErrorId();
 

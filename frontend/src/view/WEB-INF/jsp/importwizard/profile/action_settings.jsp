@@ -44,21 +44,7 @@
         </div>
 
         <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">
-                    <label for="import_null_values"><bean:message key="import.null_value_handling"/></label>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/NullValueHandling.xml" tabindex="-1" type="button"></button>
-                </label>
-            </div>
-            <div class="col-sm-8">
-                <html:select styleId="import_null_values" styleClass="form-control" property="profile.nullValuesAction">
-                    <c:forEach var="nullValuesAction" items="${importProfileForm.nullValuesActions}">
-                        <html:option value="${nullValuesAction.intValue}">
-                            <bean:message key="${nullValuesAction.messageKey}"/>
-                        </html:option>
-                    </c:forEach>
-                </html:select>
-            </div>
+        	<%@include file="/WEB-INF/jsp/importwizard/profile/action_settings-extended_nullvalue.jspf" %>
         </div>
 
         <div class="form-group">
@@ -86,25 +72,42 @@
             </div>
         </div>
 
-
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">
-                    <label for="import_doublecheking"><bean:message key="import.doublechecking"/></label>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/Doublechecking.xml" tabindex="-1" type="button"></button>
-                </label>
-            </div>
-            <div class="col-sm-8">
-                <html:select styleId="import_doublecheking" styleClass="form-control" property="profile.checkForDuplicates">
-                    <c:forEach var="checkForDuplicatesValue" items="${importProfileForm.checkForDuplicatesValues}">
-                        <html:option value="${checkForDuplicatesValue.intValue}">
-                            <bean:message key="${checkForDuplicatesValue.messageKey}"/>
-                        </html:option>
-                    </c:forEach>
-                </html:select>
-            </div>
-        </div>
-
+		<emm:ShowByPermission token="import.mode.doublechecking">
+	        <div class="form-group">
+	            <div class="col-sm-4">
+	                <label class="control-label">
+	                    <label for="import_doublecheking"><bean:message key="import.doublechecking"/></label>
+	                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/Doublechecking.xml" tabindex="-1" type="button"></button>
+	                </label>
+	            </div>
+	            <div class="col-sm-8">
+	                <html:select styleId="import_doublecheking" styleClass="form-control" property="profile.checkForDuplicates">
+	                    <c:forEach var="checkForDuplicatesValue" items="${importProfileForm.checkForDuplicatesValues}">
+	                        <html:option value="${checkForDuplicatesValue.intValue}">
+	                            <bean:message key="${checkForDuplicatesValue.messageKey}"/>
+	                        </html:option>
+	                    </c:forEach>
+	                </html:select>
+	            </div>
+	        </div>
+        </emm:ShowByPermission>
+        <emm:ShowByPermission token="import.mode.duplicates">
+	        <div class="form-group">
+	            <div class="col-sm-4">
+	                <label class="control-label">
+	                    <label for="import_duplicates"><bean:message key="import.profile.updateAllDuplicates" /></label>
+	                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/UpdateAllDuplicates.xml" tabindex="-1" type="button"></button>
+	                </label>
+	            </div>
+	            <div class="col-sm-8">
+	                <html:hidden property="__STRUTS_CHECKBOX_profile.updateAllDuplicates" value="false"/>
+	                <label data-form-change class="toggle">
+	                    <html:checkbox styleId="import_duplicates" property="profile.updateAllDuplicates" />
+	                    <div class="toggle-control"></div>
+	                </label>
+	            </div>
+	        </div>
+		</emm:ShowByPermission>
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label">
@@ -195,23 +198,6 @@
                 </logic:messagesPresent>
             </div>
         </div>
-
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">
-                    <label for="import_duplicates"><bean:message key="import.profile.updateAllDuplicates" /></label>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/UpdateAllDuplicates.xml" tabindex="-1" type="button"></button>
-                </label>
-            </div>
-            <div class="col-sm-8">
-                <html:hidden property="__STRUTS_CHECKBOX_profile.updateAllDuplicates" value="false"/>
-                <label data-form-change class="toggle">
-                    <html:checkbox styleId="import_duplicates" property="profile.updateAllDuplicates" />
-                    <div class="toggle-control"></div>
-                </label>
-            </div>
-        </div>
-
 
 		<%@include file="/WEB-INF/jsp/importwizard/profile/action_settings-extended_actions.jspf" %>
 

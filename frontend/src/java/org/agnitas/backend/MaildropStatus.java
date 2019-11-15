@@ -10,15 +10,23 @@
 
 package org.agnitas.backend;
 
-import	java.sql.SQLException;
-import	java.sql.Timestamp;
-import	java.util.Date;
-import	java.util.Map;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import	org.agnitas.backend.dao.MaildropStatusDAO;
-import	org.agnitas.util.Config;
-import	org.agnitas.util.Const;
-import	org.agnitas.util.Log;
+import org.agnitas.backend.dao.MaildropStatusDAO;
+import org.agnitas.util.Config;
+import org.agnitas.util.Const;
+import org.agnitas.util.Log;
+
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ACTION_BASED;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ADMIN;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.DATE_BASED;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ON_DEMAND;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.TEST;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 
 public class MaildropStatus {
 	/** refrence to global configuration				*/
@@ -99,16 +107,25 @@ public class MaildropStatus {
 	}
 	
 	public Date genericSendDate () {
-		return exists () ? maildrop.realSendDate () : new Date ();
+		try {
+			return (exists () ? maildrop : new MaildropStatusDAO (data.dbase, 0, data.mailing.id ())).realSendDate ();
+		} catch (SQLException e) {
+			data.logging (Log.ERROR, "senddate", "Failed to query real send date: " + e.toString ());
+			return new Date ();
+		}
 	}
 	
 	public String genericSendDate (String format) {
-		String	rc;
-		
-		rc = genericSendDateCache.get (format);
+		String	rc = null;
+
+		if (genericSendDateCache == null) {
+			genericSendDateCache = new HashMap <> ();
+		} else {
+			rc = genericSendDateCache.get (format);
+		}
 		if (rc == null) {
-			if (exists ()) try {
-				rc = maildrop.formatRealSenddate (data.dbase, format);
+			try {
+				rc = (exists () ? maildrop : new MaildropStatusDAO (data.dbase, 0, data.mailing.id ())).formatRealSenddate (data.dbase, format);
 			} catch (SQLException e) {
 				data.logging (Log.ERROR, "senddate", "Failed to query senddate for format \"" + format + "\": " + e.toString ());
 			}
@@ -180,21 +197,21 @@ public class MaildropStatus {
 	 * @return true, if admin mail
 	 */
 	public boolean isAdminMailing () {
-		return statusField.equals ("A");
+		return ADMIN.getCodeString().equals(statusField);
 	}
 
 	/** if this is a test mail
 	 * @return true, if test mail
 	 */
 	public boolean isTestMailing () {
-		return statusField.equals ("T");
+		return TEST.getCodeString().equals(statusField);
 	}
 
 	/** if this is a campaign mail
 	 * @return true, if campaign mail
 	 */
 	public boolean isCampaignMailing () {
-		return isVerificationMailing () || statusField.equals ("E");
+		return isVerificationMailing () || ACTION_BASED.getCodeString().equals(statusField);
 	}
 
 	/** if this is a date based mailing
@@ -202,7 +219,7 @@ public class MaildropStatus {
 	 */
 	public boolean isRuleMailing ()
 	{
-		return statusField.equals ("R");
+		return DATE_BASED.getCodeString().equals(statusField);
 	}
 
 	/** if this an on demand mailing
@@ -210,7 +227,7 @@ public class MaildropStatus {
 	 */
 	public boolean isOnDemandMailing ()
 	{
-		return statusField.equals ("D");
+		return ON_DEMAND.getCodeString().equals(statusField);
 	}
 
 
@@ -218,7 +235,7 @@ public class MaildropStatus {
 	 * @return true, if world mail
 	 */
 	public boolean isWorldMailing () {
-		return statusField.equals ("W");
+		return WORLD.getCodeString().equals(statusField);
 	}
 
 	/** if this is a preview

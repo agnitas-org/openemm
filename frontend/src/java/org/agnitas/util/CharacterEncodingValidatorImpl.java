@@ -108,6 +108,7 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
         }
 	}
 
+    @Override
 	public void validateContentMod(DynTagDto dynTag, String charset) throws CharacterEncodingValidationExceptionMod {
 		CharsetEncoder charsetEncoder = getCharsetEncoder(charset);
 
@@ -348,7 +349,7 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 		return unencodeableDynamicTags;
 	}
 
-    private Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder) {
+    public Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder) {
     	/*
     	 * We lost information about column of un-encodable character.
     	 * The old implementation did not respect codepoints (and therefore unicode characters with more then 2 bytes length).

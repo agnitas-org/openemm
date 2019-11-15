@@ -13,7 +13,7 @@
 <c:set var="agnHighlightKey" 		value="mailing.New_Mailing" scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 			scope="request" />
-<c:set var="agnHelpKey" 			value="Create_a_mailing"	scope="request" />
+<c:set var="agnHelpKey" 			value="newMailingNormal"	scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

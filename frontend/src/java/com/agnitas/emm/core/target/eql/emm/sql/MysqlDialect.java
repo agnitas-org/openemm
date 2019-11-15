@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.target.eql.emm.sql;
 
+import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat.DateFragment;
-import com.agnitas.emm.core.target.eql.codegen.sql.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlDialect;
 
 /**
@@ -41,7 +41,7 @@ public class MysqlDialect implements SqlDialect {
 		
 		buffer.append(operand.getCode());
 		buffer.append(" IS NULL");
-		if(operand.evaluatesToType(DataType.TEXT) || operand.evaluatesToType(DataType.DATE)) {
+		if(operand.evaluatesToType(DataType.TEXT)) {
 			buffer.append(" OR ");
 			buffer.append(operand.getCode());
 			buffer.append("=''");
@@ -66,17 +66,17 @@ public class MysqlDialect implements SqlDialect {
 	public String dateFormat(EqlDateFormat dateFormat) {
 		StringBuilder builder = new StringBuilder();
 
-		for(DateFragment fragment : dateFormat) {
-			switch(fragment) {
-			case DAY:
+		for (DateFragment fragment : dateFormat) {
+			switch (fragment) {
+				case DAY:
 					builder.append(MYSQL_DAY_SYMBOL);
-				break;
-				
-			case MONTH:
+					break;
+
+				case MONTH:
 					builder.append(MYSQL_MONTH_SYMBOL);
-				break;
-				
-			case YEAR:
+					break;
+
+				case YEAR:
 					builder.append(MYSQL_YEAR_SYMBOL);
 					break;
 
@@ -84,13 +84,13 @@ public class MysqlDialect implements SqlDialect {
 				case HYPHEN:
 				case UNDERSCORE:
 					builder.append(fragment.pattern());
-				break;
-				
-			default:
-				throw new IllegalArgumentException("Unhandled date fragment " + fragment);
+					break;
+
+				default:
+					throw new IllegalArgumentException("Unhandled date fragment " + fragment);
 			}
 		}
-		
+
 		return builder.toString();
 	}
 

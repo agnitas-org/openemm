@@ -1,0 +1,14 @@
+
+$initial-rule-color: #0071b9;
+
+.query-builder {
+
+  .rule-container {
+
+    &.initial-rule {
+      background-color: scale_color($initial-rule-color, $alpha: -80%);
+      border-color: transparent;
+      @include box-shadow(inset 0 0 1px 1px scale_color($initial-rule-color, $alpha: -20%));
+    }
+  }
+}

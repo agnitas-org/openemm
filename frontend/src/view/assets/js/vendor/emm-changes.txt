@@ -19,6 +19,7 @@
 - fixed tick culling algorithm to prevent titles cutting and provide more uniform titles distribution.
 
 6) toastr.custom.js
+- deeply customized before initial commit
 - replaced 'notification-top-right' with 'notification-below-header' container style in order to provide custom positioning
 
 7) bootstrap-modal-3.2.0.js
@@ -33,3 +34,7 @@
 
 10) query-builder.default.min.scss
 - updated QB styles version from 2.3.2 to 2.5.2
+
+11) dropzone.js
+- removed statement that applies extra CSS styles to <input type="file">
+- exposed Dropzone as window.Dropzone

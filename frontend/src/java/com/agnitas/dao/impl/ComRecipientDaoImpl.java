@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
@@ -54,6 +53,7 @@ import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.RecipientImpl;
+import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -244,85 +244,6 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	/**
-	 * Create a temporary import table for classic import
-	 */
-	@Override
-	public boolean createImportTables(@VelocityCheck int companyID, int datasourceID, CustomerImportStatus status) {
-		String prefix = "cust_" + companyID + "_tmp";
-		String tabName = prefix + datasourceID + "_tbl";
-		String keyIdx = prefix + datasourceID + "$KEYCOL$IDX";
-		String custIdx = prefix + datasourceID + "$CUSTID$IDX";
-		String sql = null;
-
-		try {
-			String optionalTablespacePart = "";
-			if (isOracleDB() && DbUtilities.checkOracleTablespaceExists(getDataSource(), "data_temp")) {
-				optionalTablespacePart = " TABLESPACE data_temp";
-			}
-		
-			sql = "CREATE TABLE " + tabName + optionalTablespacePart + " AS (SELECT * FROM " + getCustomerTableName(companyID) + " WHERE 1 = 0)";
-			update(logger, sql);
-
-			sql = "ALTER TABLE " + tabName + " DROP COLUMN " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD;
-			update(logger, sql);
-
-			if (isOracleDB()) {
-				sql = "ALTER TABLE " + tabName + " MODIFY timestamp DEFAULT NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY creation_date DEFAULT SYSDATE";
-				update(logger, sql);
-			} else {
-				sql = "ALTER TABLE " + tabName + " MODIFY `timestamp` DATETIME NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY `customer_id` INT NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY `gender` INT NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY `mailtype` INT NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY `datasource_id` INT NULL";
-				update(logger, sql);
-				sql = "ALTER TABLE " + tabName + " MODIFY `creation_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP";
-				update(logger, sql);
-			}
-
-			// Create Index on keycolumn
-			String uniqueOption = "";
-			if (status.getDoubleCheck() != 2) {
-				uniqueOption = "UNIQUE ";
-			}
-			sql = "CREATE " + uniqueOption + "INDEX " + keyIdx + " ON " + tabName + " (" + SafeString.getSafeDbColumnName(status.getKeycolumn()) + ")" + optionalTablespacePart;
-			update(logger, sql);
-
-			// Create additional index on customer_id if it's not the key column
-			// This index is not unique because customer_id contains lots of null values
-			if (!status.getKeycolumn().equalsIgnoreCase("customer_id")) {
-				sql = "CREATE INDEX " + custIdx + " ON " + tabName + " (customer_id)" + optionalTablespacePart;
-				update(logger, sql);
-			}
-			return true;
-		} catch (Exception e) {
-			logger.error("createTemporaryTables: " + e.getMessage() + "\nStatement: " + sql, e);
-			return false;
-		}
-	}
-
-	/**
-	 * Delete the temporary import table for classic import
-	 */
-	@Override
-	public boolean deleteImportTables(@VelocityCheck int companyID, int datasourceID) {
-		String tabName = "cust_" + companyID + "_tmp" + datasourceID + "_tbl";
-		try {
-			update(logger, "DROP TABLE " + tabName);
-			return true;
-		} catch (Exception e) {
-			logger.error("deleteTemporarytables (table: " + tabName + ")", e);
-			return false;
-		}
-	}
-
-	/**
 	 * gets all admin and test recipients (lite version) - id, first name, last name, email
 	 *
 	 * @param companyID
@@ -333,12 +254,16 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Override
 	public List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyID, int mailinglistID) {
 		if (companyID > 0) {
-			String sql = "SELECT bind.customer_id, cust.email, cust.firstname, cust.lastname"
-				+ " FROM " + getCustomerTableName(companyID) + " cust, " + getCustomerBindingTableName(companyID) + " bind"
-				+ " WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.user_status = 1 AND bind.mailinglist_id = ? AND bind.customer_id = cust.customer_id"
-				+ " ORDER BY bind.user_type, bind.customer_id";
-		
-			return select(logger, sql, new ComRecipientLite_RowMapper(), mailinglistID);
+			
+			List<String> userTypes = Arrays.asList(UserType.Admin.getTypeCode(), UserType.TestUser.getTypeCode(), UserType.TestVIP.getTypeCode());
+			
+			String builder = "SELECT cust.customer_id, cust.email, cust.firstname, cust.lastname " +
+					" FROM " + getCustomerTableName(companyID) + " cust WHERE cust.customer_id IN (" +
+					"	SELECT bind.customer_id FROM " + getCustomerBindingTableName(companyID) + " bind " +
+					"	WHERE " + makeBulkInClauseForString("bind.user_type", userTypes) +
+					"	AND bind.user_status = 1 AND bind.mailinglist_id = ? " +
+					") ORDER BY cust.customer_id";
+			return select(logger, builder, new ComRecipientLite_RowMapper(), mailinglistID);
 		} else {
 			return new ArrayList<>();
 		}
@@ -360,7 +285,22 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public boolean mayAdd(@VelocityCheck int companyID, int count) {
-		return true;
+		int allowedRecipientNumber = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
+		// Check global license maximum first
+		if (allowedRecipientNumber < 0) {
+			allowedRecipientNumber = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyID);
+		}
+		if (allowedRecipientNumber >= 0) {
+			int finalRecipientNumber = getAllRecipientsCount(companyID) + count;
+			if (finalRecipientNumber > allowedRecipientNumber) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			//allowed number of recipients is negative, means no limitation
+			return true;
+		}
 	}
 
 	@Override
@@ -1101,12 +1041,14 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public List<ComRecipientReaction> getRecipientReactionsHistory(int recipientID, @VelocityCheck int companyID) {
-		throw new UnsupportedOperationException("Get reciepint webtracking history is unsupported.");
+		logger.info("Get recipient web tracking history is unsupported.");
+		return new ArrayList<>();
 	}
 
 	@Override
 	public PaginatedListImpl<ComRecipientReaction> getRecipientReactionsHistory(int recipientID, int companyID, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending) {
-		throw new UnsupportedOperationException("Get recipient reactions history is unsupported.");
+		logger.info("Get recipient reactions history is unsupported.");
+		return new PaginatedListImpl<>();
 	}
 
 	/**
@@ -1753,6 +1695,27 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		if (companyID == 0) {
 			return 0;
 		}
+		
+		Object email = customer.getCustParameters().get("email");
+		Object gender = customer.getCustParameters().get("gender");
+		Object firstname = customer.getCustParameters().get("firstname");
+		Object lastname = customer.getCustParameters().get("lastname");
+		
+		if (!configService.getBooleanValue(ConfigValue.AllowEmptyEmail, customer.getCompanyID()) && StringUtils.isBlank((String) email)) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data is invalid: email is empty");
+		} else if (email != null && email instanceof String && StringUtils.isNotBlank((String) email) && !AgnUtils.isValidEmailAddresses((String) email)) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data is invalid: email is invalid");
+		} else if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
+		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:") || ((String) firstname).toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" contains http link data");
+		} else if (firstname != null && firstname instanceof String && (((String) firstname).length() > 100)) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" is to long (maximum 100) characters");
+		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:") || ((String) lastname).toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
+		} else if (lastname != null && lastname instanceof String && (((String) lastname).length() > 100)) {
+			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" is to long (maximum 100) characters");
+		}
 	
 		SqlPreparedInsertStatementManager insertStatementManager;
 		try {
@@ -1789,6 +1752,27 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public boolean updateInDB(Recipient customer, final boolean missingFieldsToNull) {
+		Object email = customer.getCustParameters().get("email");
+		Object gender = customer.getCustParameters().get("gender");
+		Object firstname = customer.getCustParameters().get("firstname");
+		Object lastname = customer.getCustParameters().get("lastname");
+
+		if (!configService.getBooleanValue(ConfigValue.AllowEmptyEmail, customer.getCompanyID()) && StringUtils.isBlank((String) email)) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data is invalid: email is empty");
+		} else if (email != null && email instanceof String && StringUtils.isNotBlank((String) email) && !AgnUtils.isValidEmailAddresses((String) email)) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data is invalid: email is invalid");
+		} else if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data is missing or invalid: gender is empty");
+		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:") || ((String) firstname).toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data field \"firstname\" contains http link data");
+		} else if (firstname != null && firstname instanceof String && (((String) firstname).length() > 100)) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data field \"firstname\" is to long (maximum 100) characters");
+		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:") || ((String) lastname).toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data field \"lastname\" contains http link data");
+		} else if (lastname != null && lastname instanceof String && (((String) lastname).length() > 100)) {
+			throw new ViciousFormDataException("Cannot update customer, because customer data field \"lastname\" is to long (maximum 100) characters");
+		}
+		
 		if (customer.getCustomerID() == 0) {
 			if (logger.isInfoEnabled()) {
 				logger.info("updateInDB: creating new customer");
@@ -2229,8 +2213,13 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			String firstName = (String) map.get("firstname");
 			String lastName = (String) map.get("lastname");
 
-            firstName = StringUtils.trimToEmpty(firstName);
-            lastName = StringUtils.trimToEmpty(lastName);
+			if (firstName == null) {
+				firstName = "";
+			}
+
+			if (lastName == null) {
+				lastName = "";
+			}
 
 			result.put(id, firstName + " " + lastName + " &lt;" + email + "&gt;");
 		}
@@ -2355,18 +2344,46 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	protected String createDateDefaultValueExpression(String defaultValue) {
-		if (defaultValue.toLowerCase().equals("now()") || defaultValue.toLowerCase().equals("current_timestamp") || defaultValue.toLowerCase().equals("sysdate") || defaultValue.toLowerCase().equals("sysdate()")) {
+		if (StringUtils.isBlank(defaultValue)) {
+			return "NULL";
+		}  else if (defaultValue.toLowerCase().equals("now()") || defaultValue.toLowerCase().equals("current_timestamp") || defaultValue.toLowerCase().equals("sysdate") || defaultValue.toLowerCase().equals("sysdate()")) {
 			return "CURRENT_TIMESTAMP";
 		} else {
 			if (isOracleDB()) {
-				return "TO_DATE('" + defaultValue + "', 'DD.MM.YYYY HH24:MI:SS')";
-			} else {
-				if ("0000-00-00 00:00:00".equals(defaultValue)) {
-					return "STR_TO_DATE('" + defaultValue + "', '%Y-%m-%d %H:%i:%s')";
-				} else if (defaultValue.length() <= 10) {
-					return "STR_TO_DATE('" + defaultValue + "', '%d-%m-%Y')";
+				if (defaultValue.length() <= 10) {
+					if (defaultValue.contains("-")) {
+						return "TO_DATE('" + defaultValue + "', 'DD-MM-YYYY')";
+					} else if (defaultValue.contains("/")) {
+						return "TO_DATE('" + defaultValue + "', 'MM/DD/YYYY')";
+					} else {
+						return "TO_DATE('" + defaultValue + "', 'DD.MM.YYYY')";
+					}
 				} else {
-					return "STR_TO_DATE('" + defaultValue + "', '%d.%m.%Y %H:%i:%s')";
+					if (defaultValue.contains("-")) {
+						return "TO_DATE('" + defaultValue + "', 'YYYY-MM-DD HH24:MI:SS')";
+					} else if (defaultValue.contains("/")) {
+						return "TO_DATE('" + defaultValue + "', 'MM/DD/YYYY HH24:MI:SS')";
+					} else {
+						return "TO_DATE('" + defaultValue + "', 'DD.MM.YYYY HH24:MI:SS')";
+					}
+				}
+			} else {
+				if (defaultValue.length() <= 10) {
+					if (defaultValue.contains("-")) {
+						return "STR_TO_DATE('" + defaultValue + "', '%d-%m-%Y')";
+					} else if (defaultValue.contains("/")) {
+						return "STR_TO_DATE('" + defaultValue + "', '%m/%d/%Y')";
+					} else {
+						return "STR_TO_DATE('" + defaultValue + "', '%d.%m.%Y')";
+					}
+				} else {
+					if (defaultValue.contains("-")) {
+						return "STR_TO_DATE('" + defaultValue + "', '%Y-%m-%d %H:%i:%s')";
+					} else if (defaultValue.contains("/")) {
+						return "STR_TO_DATE('" + defaultValue + "', '%m/%d/%Y %H:%i:%s')";
+					} else {
+						return "STR_TO_DATE('" + defaultValue + "', '%d.%m.%Y %H:%i:%s')";
+					}
 				}
 			}
 		}
@@ -2493,7 +2510,8 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public List<WebtrackingHistoryEntry> getRecipientWebtrackingHistory(@VelocityCheck int companyID, int customerID) {
-		throw new UnsupportedOperationException("Get reciepint webtracking history is unsupported.");
+		logger.info("Get recipient web tracking history is unsupported.");
+		return new ArrayList<>();
 	}
 
 	protected class WebtrackingHistoryEntry_RowMapper implements RowMapper<WebtrackingHistoryEntry> {

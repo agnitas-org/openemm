@@ -14,7 +14,6 @@ import java.util.Date;
 
 public class SendStatRow {
 	
-	
 	private String category = "";
 	private int categoryindex;	
 	private String targetgroup;
@@ -80,15 +79,13 @@ public class SendStatRow {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder("SendStatRow : \n");
-		builder.append("Category: " + getCategory()+ "\n" );
-		builder.append("CategoryIndex: " + getCategoryindex()+ "\n" );
-		builder.append("Targetgroup: " + getTargetgroup()+ "\n" );
-		builder.append("TargetgroupIndex: " + getTargetgroupindex()+ "\n" );
-		builder.append("Value: " + getCount()+"\n");
-		builder.append("Rate: " + getRate()+"\n");
-			
-		return  builder.toString();
+		
+		return "SendStatRow : \n" + "Category: " + getCategory() + "\n" +
+				"CategoryIndex: " + getCategoryindex() + "\n" +
+				"Targetgroup: " + getTargetgroup() + "\n" +
+				"TargetgroupIndex: " + getTargetgroupindex() + "\n" +
+				"Value: " + getCount() + "\n" +
+				"Rate: " + getRate() + "\n";
 	}
 	
 }

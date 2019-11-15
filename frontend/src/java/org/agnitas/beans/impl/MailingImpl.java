@@ -573,7 +573,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				content.replace(tag.getStartTagStart(), tag.getStartTagEnd(), value);
 			} else {
 				content.delete(tag.getEndTagStart(), tag.getEndTagEnd());
-				content.replace(tag.getValueTagStart(), tag.getValueTagEnd(), value);
+				if (tag.getValueTagStart() != tag.getValueTagEnd()) {
+					content.replace(tag.getValueTagStart(), tag.getValueTagEnd(), value);
+				}
 				content.delete(tag.getStartTagStart(), tag.getStartTagEnd());
 			}
 		}
@@ -1296,5 +1298,53 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			}
 			return value;
 		}
+
+
+	/* EMM-6543: New Code for new BeanShell implementation
+    	private final ApplicationContext context;
+		private final int companyId;
+
+		private final ComTargetDao targetDao;
+
+		private final Map<Integer, ComTarget> targetsCache = new HashMap<>();
+		private final RecipientTargetGroupMatcher matcher;
+
+		public TargetGroupMatcher(ApplicationContext context, int companyId, int customerId, boolean overwriteMailtype, int inputType) throws Exception {
+			this.context = context;
+			this.companyId = companyId;
+			this.matcher = createMatcher(context, customerId, companyId);
+
+			targetDao = context.getBean("TargetDao", ComTargetDao.class);
+
+			if (overwriteMailtype) {
+				matcher.setRecipientProperty("mailtype", new Integer(inputType));
+			}
+		}
+		
+		private static final RecipientTargetGroupMatcher createMatcher(final ApplicationContext context, final int customerID, final int companyID) throws Exception {
+			final ComTargetService targetService = context.getBean("TargetService", ComTargetService.class);
+			return targetService.createRecipientTargetGroupMatcher(customerID, companyID);
+		}
+
+    	public boolean matches(int targetId) {
+			if (targetId == 0) {
+				return true;
+			} else {
+				ComTarget target = targetsCache.computeIfAbsent(targetId, this::getTarget);
+
+				return this.matcher.isInTargetGroup(target);
+			}
+		}
+
+		private ComTarget getTarget(int targetId) {
+			ComTarget value = targetDao.getTarget(targetId, companyId);
+			if (value == null) {
+				value = (ComTarget) context.getBean("Target");
+				value.setCompanyID(companyId);
+				value.setId(targetId);
+			}
+			return value;
+		}
+	*/
 	}
 }

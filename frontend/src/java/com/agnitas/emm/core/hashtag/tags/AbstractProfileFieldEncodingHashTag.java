@@ -24,6 +24,7 @@ import com.agnitas.emm.core.commons.encoder.ByteArrayToStringEncoder;
 import com.agnitas.emm.core.commons.encoder.EncodingException;
 import com.agnitas.emm.core.commons.encoder.MD5Encoder;
 import com.agnitas.emm.core.commons.encoder.Sha1Encoder;
+import com.agnitas.emm.core.commons.encoder.Sha256Encoder;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.hashtag.AbstractColonHashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
@@ -50,6 +51,7 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 		 
 		 map.put("md5", new MD5Encoder());
 		 map.put("sha1", new Sha1Encoder());
+		 map.put("sha256",  new Sha256Encoder());
 		 map.put("sha512", new Sha512Encoder());
 		 
 		 return map;
@@ -66,7 +68,7 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 			final String[] encodingNames = Arrays.copyOfRange(parts, 1, parts.length);
 			
 			try {
-				return encodeProfileField(context, tagName, profileFieldName, encodingNames);
+				return postProcessResult(encodeProfileField(context, tagName, profileFieldName, encodingNames), tagName);
 			} catch(final Exception e) {
 				final String message = String.format("Error encoding profile field '%s' with hash tag '%s' (appendix is '%s')", parts[0], tagName, appendix);
 				
@@ -75,6 +77,10 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 				return "";
 			}
 		}
+	}
+	
+	protected String postProcessResult(final String string, final String tagName) {
+		return string;
 	}
 	
 	private final String encodeProfileField(final HashTagContext context, final String tagName, final String profileFieldName, final String[] encodingNames) throws EncodingException, HashTagException {

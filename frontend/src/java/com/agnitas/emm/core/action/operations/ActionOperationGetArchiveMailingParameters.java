@@ -10,7 +10,13 @@
 
 package com.agnitas.emm.core.action.operations;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import org.agnitas.util.DateUtilities;
+
 public class ActionOperationGetArchiveMailingParameters extends AbstractActionOperationParameters {
+	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DateUtilities.DD_MM_YYYY);
 	private int expireDay;
 	private int expireMonth;
 	private int expireYear;
@@ -41,5 +47,26 @@ public class ActionOperationGetArchiveMailingParameters extends AbstractActionOp
 
 	public void setExpireYear(int expireYear) {
 		this.expireYear = expireYear;
+	}
+
+	public String getExpireDate() {
+		if (expireDay == 0 && expireMonth == 0 && expireYear == 0) {
+			return null;
+		}
+
+		return FORMATTER.format(LocalDate.of(expireYear, expireMonth, expireDay));
+	}
+
+	public void setExpireDate(String dateString) {
+		LocalDate date = DateUtilities.parseDate(dateString, FORMATTER);
+		if (date == null) {
+			expireYear = 0;
+			expireMonth = 0;
+			expireDay = 0;
+		} else {
+			expireYear = date.getYear();
+			expireMonth = date.getMonthValue();
+			expireDay = date.getDayOfMonth();
+		}
 	}
 }
