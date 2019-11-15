@@ -50,7 +50,7 @@ read-only (ro) or read-write (rw):
 #
 # Imports, Constants and global Variables
 #{{{
-import	sys, os, errno, stat, signal, multiprocessing
+import	sys, os, errno, stat, signal, fcntl, multiprocessing
 import	time, re, socket, hashlib, json
 import	platform, traceback, pwd, functools, keyword, logging
 import	smtplib, urllib, httplib, xmlrpclib
@@ -207,7 +207,9 @@ file, if it is available. """
 			cmd += recipients
 		return cmd
 _syscfg = Systemconfig ()
-licence = _syscfg.iget ('licence', 0)
+licence = _syscfg.iget ('licence')
+if licence is None:
+	raise ValueError ('missing licence id')
 #
 system = platform.system ().lower ()
 fqdn = platform.node ()
@@ -612,7 +614,7 @@ def relink (source, target, pattern = None):
 				new_path = os.path.join (os.path.dirname (path), new_path)
 			path = os.path.realpath (new_path)
 		return os.access (path, os.F_OK)
-	#
+
 	(Stream (installed)
 		.map (lambda f: os.path.join (real_target, f))
 		.filter (lambda p: os.path.islink (p) and not resolvable (p))
@@ -639,9 +641,17 @@ with leading slash.
 """
 	absolute = opts.get ('absolute', False)
 	rc = os.path.sep.join (str (_p) for _p in parts)
-	if absolute and not rc.startswith (os.path.sep):
+	if absolute and not os.path.isabs (rc):
 		rc = os.path.sep + rc
 	return os.path.normpath (rc)
+
+def normalize_path (path):
+	"""normalize a relative path to be relative to home directory"""
+	if path is not None and not os.path.isabs (path):
+		path = os.path.expandvars (os.path.expanduser (path))
+		if not os.path.isabs (path):
+			path = mkpath (base, path, absolute = True)
+	return path
 
 def fingerprint (fname):
 	"""calculates a MD5 hashvalue (a fingerprint) of a given file."""
@@ -2601,9 +2611,7 @@ class Parallel (object):
 # 5.) mailing/httpclient
 #
 #{{{
-def mailsend (relay, sender, receivers, headers, body,
-	myself = fqdn
-):
+def mailsend (relay, sender, receivers, headers, body, myself = fqdn):
 	"""Send mail via SMTP
 	
 ``relay'' is used as the target SMTP server, ``sender'' must be a
@@ -3590,11 +3598,12 @@ but can produce lots of output in prdocutive use."""
 		return self
 
 	def __exit__ (self, exc_type, exc_value, traceback):
-		if exc_type is None:
-			self.commit ()
-		else:
-			self.rollback ()
-		self.close ()
+		if self.db is not None:
+			if exc_type is None:
+				self.commit ()
+			else:
+				self.rollback ()
+			self.close ()
 		return False
 	
 	def setup (self):
@@ -3807,6 +3816,7 @@ set to True, if the database does not support named placeholder."""
 		self.cacheVariables = {}
 		self.log = db.log
 		self.qreplace = {}
+		self.unify = lambda d: tuple (_d.encode ('UTF-8') if type (_d) is unicode else _d for _d in d) if d is not None else d
 
 	def __enter__ (self):
 		return self
@@ -4031,7 +4041,7 @@ not used in the query."""
 
 	def next (self):
 		try:
-			data = self.curs.fetchone ()
+			data = self.unify (self.curs.fetchone ())
 		except self.db.driver.Error as e:
 			self.error (e)
 			raise error ('query next failed: ' + self.lastError ())
@@ -4121,7 +4131,7 @@ This method return an iterable realizied by itself."""
 		"""See query, but returns a cached version of the query. Use with care on large result sets!"""
 		if self.query (req, parm, cleanup, rtype) == self:
 			try:
-				data = self.curs.fetchall ()
+				data = [self.unify (_d) for _d in self.curs.fetchall ()]
 				if self.querypost:
 					data = [self.querypost (_d) for _d in data]
 				return DBCache (data)
@@ -4325,6 +4335,7 @@ try:
 						# ORA-00060: deadlock detected while waiting for resource
 						if e.message.code not in (40, 50, 51, 60):
 							raise
+						log (LV_WARNING, 'exec', 'Failed to execute query %r %r due to %s' % (args, kws, e))
 					except AttributeError:
 						raise e
 			raise
@@ -4459,7 +4470,7 @@ the database. ``amount'' can be numeric value to restrict the check."""
 				except Exception:
 					return cls (s)
 
-		def __init__ (self, filename, layout = None, extendedTypes = False, extendedRows = False, textType = None, extendedFunctions = False):
+		def __init__ (self, filename, layout = None, extendedTypes = False, extendedRows = False, textType = None, extendedFunctions = False, lockDatabase = False, waitForLock = False):
 			DBCore.__init__ (self, 'sqlite', sqlite3, DBCursorSQLite3)
 			self.filename = filename
 			self.layout = layout
@@ -4490,6 +4501,9 @@ the database. ``amount'' can be numeric value to restrict the check."""
 						return args[n]
 					return None
 				self.createFunction ('decode', -1, __decode)
+			self.lockDatabase = lockDatabase
+			self.waitForLock = waitForLock
+			self.lockFD = None
 
 		def registerType (self, name, registerClass, adapt, convert, datatype):
 			"""registers a new type to be interpreted by this driver
@@ -4543,12 +4557,40 @@ the class must provide these attributes to be used (see registerType for the mea
 			'utf-8':	lambda s: unicode (s, 'UTF-8', 'replace') if type (s) is not unicode else s,
 			'unicode':	sqlite3.OptimizedUnicode
 		}
+		def close (self):
+			if self.lockDatabase and self.lockFD is not None:
+				try:
+					fcntl.flock (self.lockFD, fcntl.LOCK_UN)
+				except IOError as e:
+					log (LV_WARNING, 'dbsqlite3', '%s: failed to unlock: %s' % (self.filename, e))
+				try:
+					os.close (self.lockFD)
+				except OSError as e:
+					log (LV_WARNING, 'dbsqlite3', '%s: failed to close: %s' % (self.filename, e))
+				self.lockFD = None
+			return super (DBSQLite3, self).close ()
+			
 		def connect (self):
 			isNew = not os.path.isfile (self.filename)
 			if self.extendedTypes:
 				self.db = self.driver.connect (self.filename, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 			else:
 				self.db = self.driver.connect (self.filename)
+			if self.lockDatabase:
+				try:
+					self.lockFD = os.open (self.filename, os.O_NOATIME)
+					try:
+						fcntl.flock (self.lockFD, fcntl.LOCK_EX | (0 if self.waitForLock else fcntl.LOCK_NB))
+					except IOError as e:
+						log (LV_VERBOSE, 'dbsqlite3', '%s: failed to lock: %s' % (self.filename, e))
+						with Ignore (OSError):
+							os.close (self.lockFD)
+						self.lockFD = None
+				except OSError as e:
+					log (LV_WARNING, 'dbsqlite3', '%s: failed to open file: %s' % (self.filename, e))
+				if self.lockFD is None:
+					self.close ()
+					raise error ('%s: database locked' % self.filename)
 			if self.extendedRows:
 				self.db.row_factory = sqlite3.Row
 			if self.textType is not None and self.textType in self.textFactories:
@@ -4577,7 +4619,7 @@ class DBConfig (object):
 	"""Database configuration handler
 
 reads and stores configuration from a configuration file"""
-	configPath = '/home/openemm/etc/dbcfg'
+	configPath = os.environ.get ('DBCFG_PATH', '/opt/agnitas.com/etc/dbcfg')
 	def __init__ (self, path = None):
 		if path is None:
 			path = self.configPath
@@ -4671,7 +4713,7 @@ class DBDriver (object):
 
 in conjunction with DBConfig this class can select a database driver
 and create an instance for it."""
-	dbid = _syscfg.get ('dbid', 'openemm')
+	dbid = _syscfg.get ('dbid', 'emm')
 	dbcfg = None
 	Driver = collections.namedtuple ('Driver', ['driver', 'new'])
 	dbDrivers = {

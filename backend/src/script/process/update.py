@@ -158,8 +158,28 @@ class Log (object): #{{{
 					seq = max (seq, sq + 1)
 		return seq
 #}}}
+Field = collections.namedtuple ('Field', ['name', 'converter'])
+class Lineparser (object): #{{{
+	def __init__ (self, splitter, *fields):
+		self.splitter = splitter
+		self.target_class = collections.namedtuple ('Line', tuple (_f.name if type (_f) is Field else _f for _f in fields))
+		self.column_count = len (self.target_class._fields)
+		self.converter = (agn.Stream (fields)
+			.map (lambda f: f.converter if type (f) is Field else lambda a: a)
+			.list ()
+		)
+	
+	def __call__ (self, line):
+		elements = self.splitter (line)
+		if len (elements) != self.column_count:
+			raise agn.error ('%s: expected %d elements, got %d elements' % (line, self.column_count, len (elements)))
+		try:
+			return self.target_class (*tuple (_c (_e) for (_c, _e) in zip (self.converter, elements)))
+		except Exception as e:
+			raise agn.error ('%s: failed to parse: %s' % (line, e))
+#}}}
 class Update (object): #{{{
-	def __init__ (self, path, name):
+	def __init__ (self, path, name, check_for_duplicates = True):
 		self.path = path
 		self.name = name
 		self.base = os.path.basename (self.path)
@@ -181,7 +201,7 @@ class Update (object): #{{{
 		self.lineno = None
 		self.log = Log (directory if directory is not None else '.', name)
 		self.plugin = Plugin (manager = aps.LoggingManager)
-		self.duplicate = Duplicate (name = self.name, expiration = 7)
+		self.duplicate = Duplicate (name = self.name, expiration = 7) if check_for_duplicates else None
 		self.debug_enabled = False
 
 	def done (self):
@@ -249,7 +269,8 @@ class Update (object): #{{{
 		self.plugin ().start (self, inst)
 		rc = self.updateStart (inst)
 		if rc:
-			self.duplicate.open ()
+			if self.duplicate is not None:
+				self.duplicate.open ()
 			self.lineno = 0
 			for path in self.log:
 				if os.path.isfile (path):
@@ -261,7 +282,7 @@ class Update (object): #{{{
 							do_remove = True
 							for line in (_l.strip () for _l in fd):
 								self.lineno += 1
-								if line in self.duplicate:
+								if self.duplicate is not None and line in self.duplicate:
 									agn.log (agn.LV_DEBUG, 'update', 'Ignore duplicate line: %s' % line)
 								else:
 									if not self.updateLine (inst, line):
@@ -281,7 +302,8 @@ class Update (object): #{{{
 					agn.log (agn.LV_WARNING, 'update', '%s: File %s vanished' % (self.name, path))
 				if not rc or not is_active ():
 					break
-			self.duplicate.close ()
+			if self.duplicate is not None:
+				self.duplicate.close ()
 		if not self.updateEnd (inst):
 			rc = False
 		self.plugin ().end (self, inst, rc)
@@ -968,7 +990,10 @@ class UpdateAccount (Update): #{{{
 								track = gdbm.open (self.statusTrack, 'c')
 							mid = '%d' % minfo.mailingID
 							if not track is None and not track.has_key (mid):
-								self.__mailingSendStatus (inst, minfo)
+								try:
+									self.__mailingSendStatus (inst, minfo)
+								except Exception as e:
+									agn.logexc (agn.LV_ERROR, 'updAccount/minfo', 'Failed to send status for %s (%d): %s' % (minfo, minfo.mailingID, e))
 								track[mid] = '%d:sent to %s' % (int (time.time ()), minfo.mailReceiver)
 							minfo.mailSent = True
 					for r in inst.query ('SELECT sum(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = :mid AND status_field = \'W\'', { 'mid': minfo.mailingID }):

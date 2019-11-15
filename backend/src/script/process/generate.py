@@ -192,6 +192,16 @@ class Sending (Task): #{{{
 						if row.genstatus == 1:
 							if duration >= startup:
 								self.log (agn.LV_WARNING, '%s: startup time exceeded, respool entry' % entry.name)
+								if self.db.cursor.execute (
+									'DELETE FROM rulebased_sent_tbl WHERE mailing_id = :mailingID',
+									{
+										'mailingID': entry.mailingID
+									},
+									commit = True
+								) > 0:
+									self.log (agn.LV_INFO, '%s: entry from rulebased_sent_tbl had been removed' % entry.name)
+								else:
+									self.log (agn.LV_INFO, '%s: no entry for %s in rulebased_sent_tbl found to remove' % entry.name)
 								self.add_to_queue (entry)
 							else:
 								self.log (agn.LV_DEBUG, '%s: during startup since %s up to %s' % (entry.name, duration_format (duration), duration_format (startup)))
@@ -235,7 +245,7 @@ class Sending (Task): #{{{
 									break
 							else:
 								self.log (agn.LV_ERROR, '%s: failed to start' % entry.name)
-								if self.resume_entry (now, entry):
+								if self.resume_entry (entry):
 									self.add_to_queue (entry)
 					self.db.commit ()
 					self.title ()
@@ -267,7 +277,7 @@ class Rulebased (Sending): #{{{
 				'mailingID': entry.mailingID
 			}
 		)
-		if rq is None or rq.lastsent.toordinal () != now.toordinal ():
+		if rq is None or rq.lastsent is None or rq.lastsent.toordinal () != now.toordinal ():
 			new = rq is None
 			for state in 1, 2:
 				rq = self.db.cursor.querys (
@@ -314,7 +324,7 @@ class Rulebased (Sending): #{{{
 			self.log (agn.LV_WARNING, '%s: unexpected this mailing had been generated this day' % entry.name)
 		return ready
 
-	def resume_entry (self, now, entry):
+	def resume_entry (self, entry):
 		return True
 
 	def collect_entries_for_sending (self):
@@ -400,21 +410,22 @@ class Generate (Sending): #{{{
 		).map (lambda r: r[0]).first (no = None)
 		if entry.genChange is None:
 			self.log (agn.LV_ERROR, '%s: failed to query current gen change' % entry.name)
-			if not self.change_genstatus (entry.statusID, old_status = 1, new_status = 0):
-				self.log (agn.LV_FATAL, '%s: failed to revert status id from 1 to 0' % entry.name)
+			if not self.resume_entry (entry):
 				return False
 		self.db.commit ()
 		return True
 
-	def resume_entry (self, now, entry):
+	def resume_entry (self, entry):
 		if not self.change_genstatus (entry.statusID, old_status = 1, new_status = 0):
 			self.log (agn.LV_FATAL, '%s: failed to revert status id from 1 to 0' % entry.name)
 			return False
-		return True
+		else:
+			self.log (agn.LV_INFO, '%s: resumed setting genstatus from 1 to 0' % entry.name)
+			return True
 
 	def collect_entries_for_sending (self):
 		query = (
-			'SELECT md.status_id, md.status_field, md.senddate, md.gendate, md.genchange, md.company_id, '
+			'SELECT md.status_id, md.status_field, md.senddate, md.gendate, md.genchange, md.company_id, md.optimize_mail_generation, '
 			'       co.shortname AS company_name, co.status, mt.mailing_id, mt.shortname AS mailing_name, mt.deleted '
 			'FROM maildrop_status_tbl md INNER JOIN company_tbl co ON (co.company_id = md.company_id) INNER JOIN mailing_tbl mt ON (mt.mailing_id = md.mailing_id) '
 			'WHERE md.genstatus = 0 AND ( '
@@ -437,14 +448,24 @@ class Generate (Sending): #{{{
 				self.log (agn.LV_DEBUG, '%s: not in my list of allowed companies' % msg)
 				continue
 			startIt = False
+			keepIt = False
 			if row.status != 'active':
 				self.log (agn.LV_INFO, '%s: company is not active, but %s' % (msg, row.status))
 			elif row.deleted:
 				self.log (agn.LV_INFO, '%s: mailing is marked as deleted' % msg)
 			elif limit is not None and row.gendate is not None and row.gendate < limit:
-				self.log (agn.LV_INFO, '%s: mailing gendate is too old (%s, limit is %s), keep it' % (msg, str (row.gendate), str (limit)))
+				self.log (agn.LV_INFO, '%s: mailing gendate is too old (%s, limit is %s)' % (msg, str (row.gendate), str (limit)))
 			else:
-				startIt = True
+				if (
+					row.optimize_mail_generation is not None and
+					row.optimize_mail_generation == 'day' and
+					row.senddate is not None and
+					row.senddate.toordinal () > now.toordinal ()
+				):
+					self.log (agn.LV_INFO, '%s: day based optimized mailing will not be generate on a previous day, deferred' % msg)
+					keepIt = True
+				else:
+					startIt = True
 			if startIt:
 				if row.status_id in self.in_queue:
 					self.log (agn.LV_INFO, '%s: already queued' % msg)
@@ -455,10 +476,11 @@ class Generate (Sending): #{{{
 				if row.status_id in self.in_queue:
 					self.log (agn.LV_INFO, '%s: queued, remove it from queue' % msg)
 					self.remove_from_queue (row.status_id)
-				if self.invalidate_maildrop_entry (row.status_id, old_status = 0):
-					self.log (agn.LV_INFO, '%s: disabled' % msg)
-				else:
-					self.log (agn.LV_ERROR, '%s: failed to disable' % msg);
+				if not keepIt:
+					if self.invalidate_maildrop_entry (row.status_id, old_status = 0):
+						self.log (agn.LV_INFO, '%s: disabled' % msg)
+					else:
+						self.log (agn.LV_ERROR, '%s: failed to disable' % msg);
 		self.db.commit ()
 #}}}
 class Schedule (eagn.Schedule): #{{{

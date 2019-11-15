@@ -166,6 +166,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitParser ();
 	xmlInitializePredefinedEntities ();
 	xmlInitCharEncodingHandlers ();
+	json_set_escape_slashes (0);
 	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:o:L:h")) != -1)
 		switch (n) {
 		case 'V':

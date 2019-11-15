@@ -86,3 +86,8 @@ rblock_retrieve_content (rblock_t *r, buffer_t *content) /*{{{*/
 {
 	return copy (r, content -> buffer, content -> length);
 }/*}}}*/
+bool_t
+rblock_set_string_content (rblock_t *r, const char *content) /*{{{*/
+{
+	return content ? copy (r, (const byte_t *) content, strlen (content)) : false;
+}/*}}}*/

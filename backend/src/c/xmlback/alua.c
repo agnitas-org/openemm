@@ -37,7 +37,6 @@ static int		parse_pos[][6] = { /*{{{*/
 	{	3, 2, 1, 5, 6, 7	}
 	/*}}}*/
 };
-static bool_t		evp_init = false;
 
 static inline int
 digit (char ch) /*{{{*/
@@ -584,10 +583,6 @@ alua_date_setup (lua_State *lua) /*{{{*/
 				regcomp (parse_date + n, parse_pattern[n], REG_EXTENDED);
 		} else
 			parse_count = 0;
-	}
-	if (! evp_init) {
-		OpenSSL_add_all_digests ();
-		evp_init = true;
 	}
 }/*}}}*/
 

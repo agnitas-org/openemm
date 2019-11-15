@@ -79,7 +79,6 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> base_block = NULL;
 		r -> smap = NULL;
 		r -> slist = NULL;
-		r -> empty = false;
 		if ((! r -> message_id) || (! r -> rvdata) ||
 		    (! r -> encrypt)) {
 			r = receiver_free (r);
@@ -148,7 +147,6 @@ receiver_clear (receiver_t *r) /*{{{*/
 	dataset_clear (r -> rvdata);
 	r -> cache = dcache_free_all (r -> cache);
 	r -> base_block = NULL;
-	r -> empty = false;
 }/*}}}*/
 void
 receiver_set_data_l (receiver_t *rec, const char *key, long data) /*{{{*/
@@ -274,7 +272,7 @@ media_target_free_all (media_target_t *mt) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-const buffer_t *
+buffer_t *
 media_target_find (media_target_t *mt, const char *media) /*{{{*/
 {
 	for (; mt; mt = mt -> next)

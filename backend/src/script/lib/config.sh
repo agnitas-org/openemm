@@ -25,21 +25,25 @@ export BASE
 #
 
 export	SYSTEM_CONFIG='{
-	"trigger-port": 8450
-}'
-export  DBCFG_PATH="$BASE/etc/dbcfg"
-#
 
+	"trigger-port": 8450,
+	"licence": 0
+	,
+	"dbid": "openemm",
+	"merger-address": "127.0.0.1"
+	,
+	"filter-name": "localhost"
+	
+}'
+
+export	DBCFG_PATH="$BASE/etc/dbcfg"
+#
 verbose=1
 quiet=0
-licence="`$BASE/bin/config-query licence:0`"
+licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
 optbase="$BASE/opt"
-baselib=$BASE/lib
-if [ ! -d $baselib ]; then
-	mkdir $baselib
-fi
 # .. and for java ..
 LC_ALL=C
 NLS_LANG=american_america.UTF8
@@ -66,12 +70,6 @@ fi
 if [ "$JAVAHOME" ] ; then
 	PATH="$JAVAHOME/bin:$PATH"
 	export PATH JAVAHOME
-	for lib in $JAVAHOME/jre/lib/amd64/server/libjvm.so; do
-		dst=$baselib/`basename $lib`
-		if [ -f $lib ] && [ ! -f $dst ]; then
-			ln -s $lib $dst
-		fi
-	done
 fi
 if [ "$JBASE" ] && [ -d $JBASE ] ; then
 	cp="$JBASE"
@@ -174,7 +172,7 @@ if [ ! "$MTA" ]; then
 		esac
 	fi
 	if [ ! "$MTA" ]; then
-		systemctl="`which systemctl`"
+		systemctl="`which systemctl 2>/dev/null`"
 		if [ "$systemctl" ] && [ -x "$systemctl" ]; then
 			for mta in sendmail postfix; do
 				value="`$systemctl is-enabled ${mta}.service 2>/dev/null`"
@@ -336,6 +334,104 @@ def pathstrip (s):
 print (pathstrip (\"$1\"))
 "
 	fi
+}
+#
+setupVirtualEnviron() {
+	pyversion="`python3 -c \"import sys; print ('.'.join (str (_v) for _v in sys.version_info))\"`"
+	case "$pyversion" in
+	3*)
+		;;
+	*)
+		die "virtual enviroment not support for deprectaed python versions"
+		;;
+	esac
+	venv="$BASE/.venv.$pyversion"
+	if [ "$application" ]; then
+		venv="${venv}-${application}"
+	fi
+	if [ ! -d "$venv" ]; then
+		python3 -m venv --system-site-packages "$venv"
+	fi
+	if [ ! "$VIRTUAL_ENV" ] || [ ! "$VIRTUAL_ENV" = "$venv" ]; then
+		if [ -d "$venv" ]; then
+			source "$venv/bin/activate"
+		fi
+	fi
+	[ "$VIRTUAL_ENV" = "$venv" ]
+	return $?
+}
+updateVirtualEnviron() {
+	setupVirtualEnviron || return 1
+	python3 -m pip install -U pip
+	python3 -m pip install -U `python3 -m pip list --format=freeze | cut -d= -f1`
+}	
+moduleinstalled() {
+	python3 -c "
+import	sys
+try:
+	import $@
+	sys.exit (0)
+except ImportError:
+	sys.exit (1)
+"
+}
+require() {
+	if [ "$1" = "--update" ] || [ "$1" = "-U" ]; then
+		shift
+		__update="true"
+	else
+		__update="false"
+	fi
+	if [ $# -lt 1 ]; then
+		error "Usage: $0 [--update | -U] <module> [<module-filename>]"
+		return 1
+	fi
+	#
+	__module="$1"
+	__name="$2"
+	if [ ! "$__name" ]; then
+		__name="$__module"
+	fi
+	setupVirtualEnviron || return 1
+	moduleinstalled "$__module"
+	if [ $? -ne 0 ]; then
+		python3 -m pip install "$__name"
+		if [ $? -ne 0 ]; then
+			error "Failed to install $__name"
+			return 1
+		fi
+		moduleinstalled "$__module"
+		if [ $? -ne 0 ]; then
+			error "Module $__module not found, even after installation of $__name"
+			return 1
+		else
+			message "Installed module $__module from $__name"
+		fi
+	elif [ "$__update" = "true" ]; then
+		python3 -m pip install -U "$__module" || return 1
+	fi
+}
+requires() {
+	require "$@" || exit 1
+}
+py3available() {
+	[ "`which python3 2>/dev/null`" ] || return 1
+	python3 -c "import sys; sys.exit (0 if sys.version_info.major == 3 and sys.version_info.minor >= 7 else 1)" || return 1
+	setupVirtualEnviron || return 1
+	requires typing_extensions
+}
+py3required() {
+	py3available || die "Please install a python3 version 3.7 or later to /opt/agnitas.com/software/python3"
+}
+command=""
+commands=""
+py3select() {
+	if py3available && [ -x "$1" ]; then
+		command="$1"
+	else
+		command="$2"
+	fi
+	commands="$@"
 }
 #
 getproc() {
@@ -500,9 +596,9 @@ active() {
 }
 #
 if [ "$LD_LIBRARY_PATH" ] ; then
-	LD_LIBRARY_PATH="$baselib:$LD_LIBRARY_PATH"
+	LD_LIBRARY_PATH="$BASE/lib:$LD_LIBRARY_PATH"
 else
-	LD_LIBRARY_PATH="$baselib"
+	LD_LIBRARY_PATH="$BASE/lib"
 fi
 export LD_LIBRARY_PATH
 LD_LIBRARY_PATH="`pathstrip \"$LD_LIBRARY_PATH\"`"
@@ -528,9 +624,9 @@ if [ "$CLASSPATH" ] ; then
 fi
 #
 if [ "$PYTHONPATH" ] ; then
-	PYTHONPATH="$baselib:$PYTHONPATH"
+	PYTHONPATH="$BASE/lib:$PYTHONPATH"
 else
-	PYTHONPATH="$baselib"
+	PYTHONPATH="$BASE/lib"
 fi
 if [ -d "$BASE/plugins" ]; then
 	PYTHONPATH="$BASE/plugins:$PYTHONPATH"

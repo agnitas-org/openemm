@@ -279,18 +279,32 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 				while (len > 0) {
 					n = xmlCharLength (*ptr);
 					if (n == 1) {
-						--len;
-						if (*ptr == '=') {
-							*ptr++ = '\0';
+						if (isspace (*ptr) || (*ptr == '='))
 							break;
-						} else {
-							*ptr = tolower (*ptr);
-							++ptr;
-						}
+						*ptr = tolower (*ptr);
+						++ptr;
+						--len;
 					} else {
 						ptr += n;
 						len -= n;
 					}
+				}
+				if (len > 0) {
+					char	ch = *ptr;
+					
+					*ptr++ = '\0';
+					--len;
+					if ((xmlCharLength (*ptr) == 1) && isspace (ch)) {
+						while ((xmlCharLength (*ptr) == 1) && isspace (*ptr))
+							++ptr, --len;
+						if ((len == 0) || (*ptr != '=')) {
+							/* ignore attributes without value for now */
+							continue;
+						}
+						++ptr, --len;
+					}
+					while ((len > 0) && (xmlCharLength (*ptr) == 1) && isspace (*ptr))
+						++ptr, --len;
 				}
 				if (len > 0) {
 					if ((xmlCharLength (*ptr) == 1) && ((*ptr == '"') || (*ptr == '\''))) {

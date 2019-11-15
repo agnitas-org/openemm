@@ -900,7 +900,7 @@ be used as the directory to resolve relative pathnames"""
 				rc += st.st_size
 		return rc
 
-	def freeSpace (self, filesystem, files, multiply = 3.0):
+	def freeSpace (self, filesystem, files, multiply = 2.0):
 		"""Determinates if a ``filesystem'' has roughly enough room to handle cleanup of ``files'' asuming it will consum ``multiply'' times of space"""
 		try:
 			st = os.statvfs (filesystem)
@@ -1032,7 +1032,7 @@ to a valid value for pack() to use compression for packed files."""
 					self.log (agn.LV_VERBOSE, 'Removing "%s"' % cpath)
 					self.remove (cpath)
 			else:
-				self.log (agn.LV_WARNING, 'Skip %s, not enough free disk space available')
+				self.log (agn.LV_WARNING, 'Skip %s, not enough free disk space available' % cpath)
 	
 	def __cleanupFiletimeFiles (self, path, rules, recrusive):
 		toRemove = []
@@ -3555,7 +3555,11 @@ class EMail (IDs):
 				codecs.decode (value, 'ascii')
 				nheaders.append (header)
 			except UnicodeDecodeError:
-				nheaders.append ('%s: %s' % (name, str (Header (value, charset).encode ())))
+				try:
+					nheaders.append ('%s: %s' % (name, str (Header (value, charset).encode ())))
+				except UnicodeDecodeError as e:
+					agn.log (agn.LV_WARNING, 'header', 'Failed to encode "%s": %s' % (header, e))
+					nheaders.append (header)
 		return (nheaders, charset)
 	
 	def buildMail (self):
@@ -6505,6 +6509,10 @@ starting a mailing if a failure occurs."""
 			retries = 1
 		if id is None:
 			id = 'rpc'
+		elif type (id) is unicode:
+			id = id.encode ('UTF-8', errors = 'replace')
+		elif type (id) is not str:
+			id = str (id)
 		#
 		if timeout > 0:
 			otimeout = socket.getdefaulttimeout ()

@@ -10,7 +10,7 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	sys, os, getopt, time, stat
+import	sys, os, getopt, time, stat, re
 import	subprocess, fnmatch, tarfile
 from	collections import defaultdict
 
@@ -67,9 +67,10 @@ def toint (s):
 	return int (s)
 
 class Builder (object):
-	__slots__ = ['version', 'directory']
+	__slots__ = ['version', 'target', 'directory']
 	def __init__ (self):
 		self.version = None
+		self.target = None
 		self.directory = None
 
 	def run (self):
@@ -77,6 +78,8 @@ class Builder (object):
 		self.build_binaries ()
 		print ('Determinate version')
 		self.find_version ()
+		print ('Determinate target')
+		self.find_target ()
 		print ('Create package')
 		self.create_package ()
 	
@@ -99,11 +102,44 @@ class Builder (object):
 			self.fail ('failed to parse version response "%s" of %s' % (out, xmlback))
 		self.version = version_parts[-1]
 		self.directory = 'V%s' % self.version
+	
+	def find_target (self):
+		known_targets = 'suse'
+		known_aliases = {
+			'sles':	'suse'
+		}
+		self.target = ''
+		os_release_path = '/etc/os-release'
+		if os.path.isfile (os_release_path):
+			os_release = {}
+			pattern = re.compile ('^([^=]+)=(.*)$')
+			with open (os_release_path) as fd:
+				for line in fd:
+					match = pattern.match (line.strip ())
+					if match is not None:
+						(option, value) = match.groups ()
+						if len (value) > 1 and (value.startswith ('"') or value.startswith ('\'')) and value.endswith (value[0]):
+							value = value[1:-1]
+						os_release[option] = value
+			ids = []
+			if 'ID' in os_release:
+				ids.append (os_release['ID'])
+			if 'ID_LIKE' in os_release:
+				ids += [_i.strip () for _i in os_release['ID_LIKE'].split ()]
+			version = ''
+			if 'VERSION_ID' in os_release:
+				version = os_release['VERSION_ID'].split ('.')[0]
+			for id in ids:
+				if id in known_aliases:
+					id = known_aliases[id]
+				if id in known_targets:
+					self.target = '%s%s-' % (id, version)
+					break
 
 	def create_package (self):
 		(targets, target_options) = self.select_files ()
 		#
-		package = 'openemm-backend-%s.tar.gz' % self.version
+		package = 'openemm-backend-%s%s.tar.gz' % (self.target, self.version)
 		now = int (time.time ())
 		with tarfile.open (package, 'w:gz') as tf:
 			directories = sorted (targets.keys (), key = lambda p: (p.count ('/'), p))

@@ -20,7 +20,7 @@ use_block (block_t *block, links_t *links) /*{{{*/
 
 	rc = false;
 	if (block -> attachment) {
-			rc = true;
+		rc = true;
 	} else {
 		if (links && block -> cid) {
 			int	n;
@@ -367,6 +367,8 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	st = true;
 	m = NULL;
 	blockmail -> active = true;
+	blockmail -> reason = REASON_UNSPEC;
+	blockmail -> reason_detail = 0;
 	blockmail -> head -> length = 0;
 	blockmail -> body -> length = 0;
 	if (blockmail -> raw && blockmail -> rblocks)
@@ -396,8 +398,11 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 									st = false;
 									break;
 								}
-							} else
+							} else {
 								blockmail -> active = false;
+								blockmail -> reason = REASON_NO_MEDIA;
+								blockmail -> reason_detail = type;
+							}
 							break;
 						}
 				} else

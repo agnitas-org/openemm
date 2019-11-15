@@ -25,131 +25,86 @@ def handler (sig, stack):
 class Plugin (aps.Plugin):
 	pluginVersion = '1.0'
 
-class Scanner (object):
-	def __init__ (self, maillog, saveFile, bounceLog):
-		self.maillog = maillog
-		self.saveFile = saveFile
-		self.bounceLog = bounceLog
-		self.plugin = Plugin ()
-		self.timestampParser = agn.ParseTimestamp ()
-
-	def done (self):
-		pass
-
-	def writeBounce (self, dsn, licenceID, mailingID, customerID, timestamp, reason, relay):
-		try:
-			info = [
-				'timestamp=%s' % self.timestampParser.dump (timestamp),
-				'stat=%s' % reason, 
-				'relay=%s' % relay
-			]
-			self.plugin ().addBounceInfo (dsn, licenceID, mailingID, customerID, info)
-			with open (self.bounceLog, 'a') as fd:
-				fd.write ('%s;%d;%d;0;%d;%s\n' % (dsn, licenceID, mailingID, customerID, '\t'.join (info)))
-		except IOError as e:
-			agn.log (agn.LV_ERROR, 'scan', 'Unable to write %s: %s' % (self.bounceLog, str (e)))
-
-	def scan (self):
-		global	term
-
-		try:
-			fp = agn.Filepos (self.maillog, self.saveFile, checkpoint = 1000)
-		except agn.error as e:
-			agn.log (agn.LV_INFO, 'main', 'Unable to open %s: %s, try to gain access' % (self.maillog, e))
-			n = agn.call ([agn.mkpath (agn.base, 'bin', 'smctrl'), 'logaccess'])
-			if n != 0:
-				agn.log (agn.LV_ERROR, 'main', 'Failed to gain access to %s (%d)' % (self.maillog, n))
-			with agn.Ignore (OSError):
-				st = os.stat (self.saveFile)
-				if st.st_size == 0:
-					agn.log (agn.LV_ERROR, 'main', 'Remove corrupt empty file %s' % self.saveFile)
-					os.unlink (self.saveFile)
-			return
-		try:
-			for line in fp:
-				try:
-					if not self.parse (line):
-						agn.log (agn.LV_WARNING, 'scan', 'Unparsable line: %s' % line)
-				except Exception as e:
-					agn.logexc (agn.LV_ERROR, 'scan', 'Failed to parse line: %s: %s' % (line, e))
-				if term:
-					break
-		finally:
-			fp.close ()
+class SyslogParser (object):
+	Info = collections.namedtuple ('Info', ['timestamp', 'server', 'service', 'content', 'items', 'keywords'])
+	def __init__ (self):
+		self.parser = self.guess
+		self.tzcache = {}
 	
-	def parse (self, line):
-		raise agn.error ('Subclass must implement parse()')
+	def __call__ (self, line):
+		return self.parser (line)
 
-class ScannerSendmail (Scanner):
-	isstat = re.compile ('sendmail\\[[0-9]+\\]: *([0-9A-F]{6}[0-9A-Z]{3}[0-9A-F]{8})[G-Zg-z]?:.*stat=(.*)$')
-	parser = re.compile ('^([a-z]{3} +[0-9]+ [0-9]{2}:[0-9]{2}:[0-9]{2}) +([^ ]+) +sendmail\\[[0-9]+\\]: *[0-9A-F]{6}([0-9A-Z]{3})[0-9A-F]{8}[G-Z]?:(.*)$', re.IGNORECASE)
-	def __parseline (self, pline):
-		rc = {
-			'__line': pline
-		}
-		pmtch = self.parser.match (pline)
-		if not pmtch is None:
-			g = pmtch.groups ()
-			rc['__timestamp'] = g[0]
-			rc['__mailer'] = g[1]
-			rc['__licence'] = g[2]
-			parms = g[3].split (',')
-			for parm in parms:
-				p = parm.split ('=', 1)
-				if len (p) == 2:
-					rc[p[0].strip ()] = p[1].strip ()
+	def guess (self, line):
+		for parser in self.parse_rfc3164, self.parse_rfc5424:
+			rc = parser (line)
+			if rc is not None:
+				self.parser = parser
+				return rc
+		return None
+	
+	pattern_rfc3164 = re.compile ('^([A-Z][a-z]{2}) +([0-9]+) ([0-9]{2}):([0-9]{2}):([0-9]{2}) +([^ ]+) +([^] ]+)\\[[0-9]+\\]: *(.*)$')
+	def parse_rfc3164 (self, line):
+		m = self.pattern_rfc3164.match (line)
+		if m is not None:
+			with agn.Ignore (ValueError, KeyError):
+				(month_name, day, hour, minute, second, server, service, content) = m.groups ()
+				month = {
+					'Jan':  1, 'Feb':  2, 'Mar':  3, 'Apr':  4, 'May':  5, 'Jun':  6,
+					'Jul':  7, 'Aug':  8, 'Sep':  9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+				}[month_name]
+				now = datetime.datetime.now ()
+				year = now.year
+				if now.month < month:
+					year -= 1
+				return self.new_info (
+					timestamp = datetime.datetime (year, month, int (day), int (hour), int (minute), int (second)),
+					server = server,
+					service = service,
+					content = content
+				)
+		return None
+			
+	pattern_rfc5424 = re.compile ('^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(\\.[0-9]+)?(Z|[-+][0-9]{2}(:[0-9]{2})?)? +([^ ]+) +([^] ]+)\\[[0-9]+\\]: *(.*)$')
+	def parse_rfc5424 (self, line):
+		m = self.pattern_rfc5424.match (line)
+		if m is not None:
+			with agn.Ignore (ValueError):
+				(year, month, day, hour, minute, second, fraction, timezone, _, server, service, content) = m.groups ()
+				microseconds = int (float (fraction) * 1000 * 1000) if fraction else 0
+				return self.new_info (
+					timestamp = datetime.datetime (int (year), int (month), int (day), int (hour), int (minute), int (second), microseconds),
+					server = server,
+					service = service,
+					content = content
+				)
+		return None
+
+	def new_info (self, timestamp, server, service, content):
+		rc = self.Info (
+			timestamp = timestamp,
+			server = server,
+			service = service,
+			content = content,
+			items = {},
+			keywords = set ()
+		)
+		for p in content.split (', '):
+			try:
+				(var, val) = [_p.strip () for _p in p.split ('=', 1)]
+				vars = var.split ()
+				if len (vars) > 1:
+					var = vars.pop ()
+					for kw in vars:
+						rc.keywords.add (kw)
+				rc.items[var] = val
+			except ValueError:
+				rc.keywords.add (p.strip ())
 		return rc
-	
-	acceptable = re.compile ('|'.join (_s for _s in (
-		'(sendmail|sm-msp-queue)\\[[0-9]+\\]: starting daemon',
-		'sendmail\\[[0-9]+\\]: [0-9]*[a-z][0-9A-Za-z]+: (from|to)=',
-		'sendmail\\[[0-9]+\\]: STARTTLS',
-		'sendmail\\[[0-9]+\\]: ruleset=tls_server,',
-		'sendmail\\[[0-9]+\\]: (runqueue|grew WorkList for)',
-		'sendmail\\[[0-9]+\\]: [0-9A-Fa-f]+T[0-9A-Fa-f]+:',
-		'did not issue MAIL/EXPN/VRFY/ETRN during connection to MTA',
-		'timeout waiting for input from [^ ]+ during client',
-	)))
-	def __unparsable_as_expected (self, line):
-		return self.acceptable.search (line) is not None
-		
-	def parse (self, line):
-		mtch = self.isstat.search (line)
-		if mtch is None:
-			if self.__unparsable_as_expected (line):
-				return True
-			return False
-		#
-		(qid, stat) = mtch.groups ()
-		mailing = int (qid[:6], 16)
-		licence = int (qid[6:9], 16)
-		if len (qid) == 17:
-			customer = int (qid[9:], 16)
-		else:
-			customer = int (qid[10:], 16)
-		#
-		if customer >= 0xf0000000:
-			agn.log (agn.LV_VERBOSE, 'parse', 'Line leads to test customerID 0x%x: %s' % (customer, line))
-			return True
-		#
-		details = self.__parseline (line)
-		get = lambda k: details[k] if k in details else ''
-		timestamp = datetime.datetime.now ()
-		if details.has_key ('__timestamp'):
-			timestamp = self.timestampParser (details['__timestamp'], timestamp)
-		if details.has_key ('dsn'):
-			dsn = details['dsn']
-			if len (dsn) > 0:
-				self.writeBounce (dsn, licence, mailing, customer, timestamp, stat, get ('relay'))
-			else:
-				agn.log (agn.LV_WARNING, 'parse', 'Line has no valid DSN %r: %s' % (dsn, line))
-		else:
-			agn.log (agn.LV_WARNING, 'parse', 'Line has no DSN: %s' % line)
-		return True
-#
+
 class Tracker (object):
 	key_created = '@created'
 	key_updated = '@updated'
+	key_log= '@log'
 	def __init__ (self, filename):
 		self.filename = filename
 		self.db = None
@@ -192,7 +147,15 @@ class Tracker (object):
 		value[self.key_created] = old.get (self.key_created, now) if old else now
 		value[self.key_updated] = now
 		self.db[self.key (section, key)] = self.encode (value)
-	
+
+	def line (self, section, key, line):
+		record = self.get (section, key)
+		try:
+			record[self.key_log].append (line)
+		except KeyError:
+			record[self.key_log] = [line]
+		self.put (section, key, record)
+		
 	def update (self, section, key, **kws):
 		if kws:
 			self.open ()
@@ -251,31 +214,205 @@ class Tracker (object):
 			self.db.reorganize ()
 			agn.log (agn.LV_INFO, 'expire', 'Reorganization finished')
 			self.close ()
-	
-class ScannerPostfix (Scanner):
-	messageidLog = agn.mkpath (agn.base, 'log', 'messageid.log')
-	messageidTracker = agn.mkpath (agn.base, 'var', 'run', 'messageid.track')
-	SEC_MESSAGEID = 'message-id'
-	SEC_POSTFIXID = 'postfix-id'
-	
-	def __init__ (self, *args, **kws):
-		super (ScannerPostfix, self).__init__ (*args, **kws)
-		self.mtrack = None
+#
+#
+#
+class Scanner (object):
+	SEC_MTAID = 'mta-id'
+	def __init__ (self, maillog, saveFile, bounceLog, providerLog):
+		self.maillog = maillog
+		self.saveFile = saveFile
+		self.bounceLog = bounceLog
+		self.providerLog = providerLog
+		self.plugin = Plugin ()
+		self.mtrack = Tracker (self.trackerPath)
 		self.last = 0
 
 	def done (self):
-		if self.mtrack is not None:
+		self.mtrack.close ()
+
+	def writeBounce (self, dsn, licenceID, mailingID, customerID, timestamp, reason, relay, recipient):
+		try:
+			info = [
+				'timestamp=%04d-%02d-%02d %02d:%02d:%02d' % (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, timestamp.second),
+				'stat=%s' % reason, 
+				'relay=%s' % relay
+			]
+			self.plugin ().addBounceInfo (dsn, licenceID, mailingID, customerID, info)
+			with open (self.bounceLog, 'a') as fd:
+				fd.write ('%s;%d;%d;0;%d;%s\n' % (dsn, licenceID, mailingID, customerID, '\t'.join (info)))
+		except IOError as e:
+			agn.log (agn.LV_ERROR, 'scan', 'Unable to write %s: %s' % (self.bounceLog, str (e)))
+
+	def line (self, qid, line):
+		self.mtrack.line (self.SEC_MTAID, qid, line)
+
+	def scan (self):
+		global	term
+
+		self.expireTracker ()
+		try:
+			fp = agn.Filepos (self.maillog, self.saveFile, checkpoint = 1000)
+		except agn.error as e:
+			agn.log (agn.LV_INFO, 'main', 'Unable to open %s: %s, try to gain access' % (self.maillog, e))
+			n = agn.call ([agn.mkpath (agn.base, 'bin', 'smctrl'), 'logaccess'])
+			if n != 0:
+				agn.log (agn.LV_ERROR, 'main', 'Failed to gain access to %s (%d)' % (self.maillog, n))
+			with agn.Ignore (OSError):
+				st = os.stat (self.saveFile)
+				if st.st_size == 0:
+					agn.log (agn.LV_ERROR, 'main', 'Remove corrupt empty file %s' % self.saveFile)
+					os.unlink (self.saveFile)
+			return
+		self.mtrack.open ()
+		try:
+			sp = SyslogParser ()
+			for line in fp:
+				try:
+					info = sp (line)
+					if info is not None:
+						if not self.parse (info, line):
+							agn.log (agn.LV_WARNING, 'scan', 'Unparsable line: %s (%r)' % (line, info))
+					else:
+						agn.log (agn.LV_WARNING, 'scan', 'Unparsable format: %s' % line)
+				except Exception as e:
+					agn.logexc (agn.LV_ERROR, 'scan', 'Failed to parse line: %s: %s' % (line, e))
+				if term:
+					break
+		finally:
+			fp.close ()
 			self.mtrack.close ()
-			self.mtrack = None
-		super (ScannerPostfix, self).done ()
+		self.processCompleted ()
 	
-	def __expireTracker (self):
+	def expireTracker (self):
 		now = datetime.datetime.now ()
 		if self.last != now.day:
 			self.mtrack.close ()
 			eagn.Daemonic.call (self.mtrack.expire, '7d')
 			self.last = now.day
 
+	def processCompleted (self):
+		max_count = 25000		# max # of records to delete per batch
+		outdated = 24 * 60 * 60		# if record reached this value, the record is assumed to be done
+		to_remove = []
+		agn.log (agn.LV_DEBUG, 'proc', 'Start processing completed records')
+		for (section, key, value) in self.mtrack:
+			diff = int (time.time ()) - value[self.mtrack.key_created]
+			if diff < 3600:
+				diffstr = '%d:%02d' % (diff // 60, diff % 60)
+			else:
+				diffstr = '%d:%02d:%02d' % (diff // 3600, (diff // 60) % 60, diff % 60)
+			#
+			if section != self.SEC_MTAID:
+				agn.log (agn.LV_DEBUG, 'proc', 'Ignore non %s record: %s:%s' % (self.SEC_MTAID, section, key))
+				continue
+			#
+			if not value.get ('complete'):
+				if diff < outdated:
+					agn.log (agn.LV_DEBUG, 'proc/%s' % key, 'Ignore not (yet) completed record since %s' % diffstr)
+					continue
+				agn.log (agn.LV_INFO, 'proc/%s' % key, 'Found outdated incomplete record since %s' % diffstr)
+				value['outdated'] = True
+			#
+			self.completed (key, value, to_remove)
+			#
+			to_remove.append ((section, key))
+			if len (to_remove) >= max_count:
+				agn.log (agn.LV_INFO, 'proc', 'Reached limit of %s, defer further processing' % agn.numfmt (max_count))
+				break
+		#
+		if to_remove:
+			agn.log (agn.LV_VERBOSE, 'proc', 'Remove %s processed keys' % agn.numfmt (len (to_remove)))
+			for (section, key) in to_remove:
+				self.mtrack.delete (section, key)
+				agn.log (agn.LV_DEBUG, 'proc', 'Removed %s:%s' % (section, key))
+			agn.log (agn.LV_VERBOSE, 'proc', 'Removed processed keys done')
+				
+	def completed (self, key, value, to_remove):
+		pass
+		
+	def parse (self, info, line):
+		raise agn.error ('Subclass must implement parse()')
+
+class ScannerSendmail (Scanner):
+	trackerPath = agn.mkpath (agn.base, 'var', 'run', 'scanner-sendmail.track')
+	isstat = re.compile ('([0-9A-F]{6}[0-9A-Z]{3}[0-9A-F]{8})[G-Zg-z]?:.*stat=(.*)$')
+	acceptable = re.compile ('|'.join (_s for _s in (
+		'starting daemon',
+		'[0-9]*[a-z][0-9A-Za-z]+: (from|to)=',
+		'STARTTLS',
+		'ruleset=tls_server,',
+		'(runqueue|grew WorkList for)',
+		'[0-9A-Fa-f]+T[0-9A-Fa-f]+:',
+		'did not issue MAIL/EXPN/VRFY/ETRN during connection to MTA',
+		'timeout waiting for input from [^ ]+ during client',
+		'error connecting to filter',
+		'Milter .*: to error state',
+		'sender notify:',
+	)))
+	def __unparsable_as_expected (self, line):
+		return self.acceptable.search (line) is not None
+		
+	def parse (self, info, line):
+		if info.service not in ('sendmail', 'sm-msp-queue'):
+			agn.log (agn.LV_DEBUG, 'parse', 'Skip non sendmail line: %s' % line)
+			return True
+		mtch = self.isstat.search (info.content)
+		if mtch is None:
+			if self.__unparsable_as_expected (info.content):
+				return True
+			return False
+		#
+		(qid, stat) = mtch.groups ()
+		mailing = int (qid[:6], 16)
+		licence = int (qid[6:9], 16)
+		if len (qid) == 17:
+			customer = int (qid[9:], 16)
+		else:
+			customer = int (qid[10:], 16)
+		#
+		if customer >= 0xf0000000:
+			agn.log (agn.LV_VERBOSE, 'parse', 'Line leads to test customerID 0x%x: %s' % (customer, line))
+			return True
+		#
+		self.line (qid, line)
+		dsn = info.items.get ('dsn')
+		record = self.mtrack.get (self.SEC_MTAID, qid)
+		update = {
+			'timestamp': info.timestamp
+		}
+		if dsn is not None and (dsn.startswith ('2') or dsn.startswith ('5')):
+			update['complete'] = True
+		if 'envelopeFrom' not in record:
+			envelopeFrom = info.items.get ('ctladdr', '').strip ('<>')
+			if envelopeFrom:
+				update['envelopeFrom'] = envelopeFrom
+		if 'to' in info.items and 'envelopeTo' not in record:
+			update['envelopeTo'] = info.items['to'].strip ('<>')
+		for key in 'to', 'dsn', 'status', 'relay':
+			if key in info.items:
+				update[key] = info.items[key]
+		record.update (update)
+		self.mtrack.put (self.SEC_MTAID, qid, record)
+		if dsn:
+			self.writeBounce (dsn, licence, mailing, customer, info.timestamp, stat, info.items.get ('relay', ''), info.items.get ('to', ''))
+		else:
+			agn.log (agn.LV_WARNING, 'parse', 'Line has no DSN: %s' % line)
+		return True
+#
+class ScannerPostfix (Scanner):
+	messageidLog = agn.mkpath (agn.base, 'log', 'messageid.log')
+	trackerPath = agn.mkpath (agn.base, 'var', 'run', 'scanner-postfix.track')
+	SEC_MESSAGEID = 'message-id'
+	
+	def __init__ (self, *args, **kws):
+		super (ScannerPostfix, self).__init__ (*args, **kws)
+		self.uid = agn.UID ()
+
+	def processCompleted (self):
+		self.__handleMessageIDs ()
+		super (ScannerPostfix, self).processCompleted ()
+		
 	def __handleMessageIDs (self):
 		if os.path.isfile (self.messageidLog):
 			pfname = '%s.%d' % (self.messageidLog, int (time.time ()))
@@ -317,156 +454,120 @@ class ScannerPostfix (Scanner):
 			finally:
 				os.unlink (nfname)
 	
-	def __processCompleted (self):
-		max_count = 25000		# max # of records to delete per batch
-		to_remove = []
-		agn.log (agn.LV_DEBUG, 'proc', 'Start processing completed records')
-		for (section, key, value) in self.mtrack:
-			diff = int (time.time ()) - value[self.mtrack.key_created]
-			if diff < 3600:
-				diffstr = '%d:%02d' % (diff // 60, diff % 60)
-			else:
-				diffstr = '%d:%02d:%02d' % (diff // 3600, (diff // 60) % 60, diff % 60)
-			#
-			if section != self.SEC_POSTFIXID:
-				agn.log (agn.LV_DEBUG, 'proc', 'Ignore non %s record: %s:%s' % (self.SEC_POSTFIXID, section, key))
-				continue
-			#
-			if not value.get ('complete'):
-				agn.log (agn.LV_DEBUG, 'proc/%s' % key, 'Ignore not (yet) completed record since %s' % diffstr)
-				continue
-			#
-			if 'messageID' in value:
-				messageID = value['messageID']
-				if messageID:
+	def __writeBounce (self, id, record):
+		try:
+			messageID = record['messageID']
+			if messageID:
+				try:
 					midinfo = self.mtrack.get (self.SEC_MESSAGEID, messageID)
 					if midinfo:
-						try:
-							self.writeBounce (
-								value['dsn'],
-								midinfo['licenceID'],
-								midinfo['mailingID'],
-								midinfo['customerID'],
-								value.get ('timestamp', datetime.datetime.now ()),
-								value.get ('status', ''),
-								value.get ('relay', '')
-							)
-							to_remove.append ((self.SEC_MESSAGEID, messageID))
-						except KeyError as e:
-							agn.log (agn.LV_INFO, 'proc/%s' % key, 'Incomplete record found, missing: %s' % e)
+						licenceID, mailingID, customerID = midinfo['licenceID'], midinfo['mailingID'], midinfo['customerID']
 					else:
-						agn.log (agn.LV_VERBOSE, 'proc/%s' % key, 'No matching message-id (yet) available since %s, expire' % diffstr)
-				else:
-					agn.log (agn.LV_VERBOSE, 'proc/%s' % key, 'Discard record from mailer daemon')
+						self.uid.parseUID (messageID.split ('@')[0], None, doValidate = False)
+						licenceID, mailingID, customerID = self.uid.licenceID, self.uid.mailingID, self.uid.customerID
+						agn.log (agn.LV_DEBUG, 'proc/%s' % id, 'Extract recipient information from mailing-id')
+					self.writeBounce (
+						record['dsn'],
+						licenceID,
+						mailingID,
+						customerID,
+						record.get ('timestamp', datetime.datetime.now ()),
+						record.get ('status', ''),
+						record.get ('relay', ''),
+						record.get ('to', '')
+					)
+				except agn.error as e:
+					agn.log (agn.LV_DEBUG, 'proc/%s' % id, 'No mailing info found for message-id %s: %s' % (messageID, e))
 			else:
-				agn.log (agn.LV_WARNING, 'proc/%s' % key, 'Completed record without messageID found, remove')
-
-			to_remove.append ((section, key))
-			if len (to_remove) >= max_count:
-				agn.log (agn.LV_INFO, 'proc', 'Reached limit of %s, defer further processing' % agn.numfmt (max_count))
-				break
-		#
-		if to_remove:
-			agn.log (agn.LV_VERBOSE, 'proc', 'Remove %s processed keys' % agn.numfmt (len (to_remove)))
-			for (section, key) in to_remove:
-				self.mtrack.delete (section, key)
-				agn.log (agn.LV_DEBUG, 'proc', 'Removed %s:%s' % (section, key))
-			agn.log (agn.LV_VERBOSE, 'proc', 'Removed processed keys done')
-				
-	def scan (self):
-		try:
-			self.mtrack = Tracker (self.messageidTracker)
-			self.__expireTracker ()
-			super (ScannerPostfix, self).scan ()
-			self.__handleMessageIDs ()
-			self.__processCompleted ()
-		finally:
-			if self.mtrack is not None:
-				self.mtrack.close ()
-				self.mtrack = None
+				agn.log (agn.LV_DEBUG, 'proc/%s' % id, 'Discard record from mailer daemon')
+		except KeyError as e:
+			agn.log (agn.LV_DEBUG, 'proc/%s' % id, 'Ignore incomplete record: %s' % e)
+	
+	def completed (self, key, value, to_remove):
+		if 'messageID' in value:
+			messageID = value['messageID']
+			if messageID:
+				to_remove.append ((self.SEC_MESSAGEID, messageID))
+		else:
+			agn.log (agn.LV_WARNING, 'proc/%s' % key, 'Completed record without messageID found, remove')
 
 	ignoreID = set (['statistics', 'NOQUEUE'])
-	ignorePart = set (['postfix/smtpd', 'postfix/master'])
-	patternLine = re.compile ('^([a-z]{3} +[0-9]+ [0-9]+:[0-9]+:[0-9]+) +[^ ]+ +([a-z/]+)\\[[0-9]+\\]: +([^:]+): (.*)$', re.IGNORECASE)
-	patternLineOther = re.compile ('^[a-z]{3} +[0-9]+ [0-9]+:[0-9]+:[0-9]+ +[^ ]+ +([a-z/]+)\\[[0-9]+\\]: +(.*)$', re.IGNORECASE)
+	ignoreService = set (['postfix/smtpd', 'postfix/master'])
+	patternLine = re.compile ('([^:]+): (.*)$', re.IGNORECASE)
 	patternEnvelopeFrom = re.compile ('from=<([^>]*)>')
 	patternMessageID = re.compile ('message-id=<([^>]*)>')
-	def parse (self, line):
-		mtch = self.patternLine.match (line)
-		if mtch is None:
-			mtch = self.patternLineOther.match (line)
-			if mtch is not None:
-				(part, data) = mtch.groups ()
-				if part == 'postfix/smtpd':
-					if (
-						data.startswith ('connect from ') or
-						data.startswith ('disconnect from ') or
-						data.startswith ('lost connection ') or
-						data.startswith ('timeout after ') or
-						data == 'initializing the server-side TLS engine' or
-						data.startswith ('setting up TLS connection from ') or
-						data.startswith ('SSL_accept:')
-					):
-						return True
-				elif part == 'postfix/smtp':
-					if (
-						data.startswith ('connect to ') or
-						data.startswith ('SSL_connect error to ')
-					):
-						return True
-				elif part == 'postfix/postfix-script':
-					if data == 'starting the Postfix mail system':
-						return True
+	def parse (self, info, line):
+		match = self.patternLine.match (info.content)
+		if match is None:
+			if info.service == 'postfix/smtpd':
+				if (
+					info.content.startswith ('connect from ') or
+					info.content.startswith ('disconnect from ') or
+					info.content.startswith ('lost connection ') or
+					info.content.startswith ('timeout after ') or
+					info.content == 'initializing the server-side TLS engine' or
+					info.content.startswith ('setting up TLS connection from ') or
+					info.content.startswith ('SSL_accept:') or
+					info.content == 'SSL3 alert read:fatal:certificate unknown'
+				):
+					return True
+			elif info.service == 'postfix/smtp':
+				if (
+					info.content.startswith ('connect to ') or
+					info.content.startswith ('SSL_connect error to ')
+				):
+					return True
+			elif info.service == 'postfix/postfix-script':
+				if info.content == 'starting the Postfix mail system':
+					return True
 			return False
 		#
-		(date, part, id, data) = mtch.groups ()
-		if id in self.ignoreID or part in self.ignorePart:
+		(qid, data) = match.groups ()
+		if qid in self.ignoreID or info.service in self.ignoreService:
 			return True
 		#
-		if part == 'postfix/pickup':
+		self.line (qid, line)
+		if info.service == 'postfix/pickup':
 			mtch2 = self.patternEnvelopeFrom.search (data)
 			if mtch2 is not None:
 				envelopeFrom = mtch2.group (1)
-				self.mtrack.update (self.SEC_POSTFIXID, id, envelopeFrom = envelopeFrom)
-				agn.log (agn.LV_DEBUG, 'parse/%s' % id, 'Found envelopeFrom=%s' % envelopeFrom)
-		elif part == 'postfix/cleanup':
+				self.mtrack.update (self.SEC_MTAID, qid, envelopeFrom = envelopeFrom)
+				agn.log (agn.LV_DEBUG, 'parse/%s' % qid, 'Found envelopeFrom=%s' % envelopeFrom)
+		elif info.service == 'postfix/cleanup':
 			mtch2 = self.patternMessageID.search (data)
 			if mtch2 is not None:
 				messageID = mtch2.group (1)
-				self.mtrack.update (self.SEC_POSTFIXID, id, messageID = messageID)
-				agn.log (agn.LV_DEBUG, 'parse/%s' % id, 'Found messageID=%s' % messageID)
-		elif part == 'postfix/qmgr' and data == 'removed':
-			rec = self.mtrack.get (self.SEC_POSTFIXID, id)
+				self.mtrack.update (self.SEC_MTAID, qid, messageID = messageID)
+				agn.log (agn.LV_DEBUG, 'parse/%s' % qid, 'Found messageID=%s' % messageID)
+		elif info.service == 'postfix/qmgr' and data == 'removed':
+			rec = self.mtrack.get (self.SEC_MTAID, qid)
 			if rec is not None:
-				self.mtrack.update (self.SEC_POSTFIXID, id, complete = True)
-				agn.log (agn.LV_DEBUG, 'parse/%s' % id, 'postfix processing completed')
-		elif part in ('postfix/qmgr', 'postfix/smtp', 'postfix/error', 'postfix/local'):
-			parsed = {}
-			for p in data.split (', '):
-				with agn.Ignore (ValueError):
-					(var, val) = [_p.strip () for _p in p.split ('=', 1)]
-					parsed[var] = val
-			rec = self.mtrack.get (self.SEC_POSTFIXID, id)
-			update = {}
-			if date and 'timestamp' not in rec:
-				timestamp = self.timestampParser (date)
-				if timestamp is not None:
-					rec['timestamp'] = timestamp
-			if 'from' in parsed:
-				update['envelopeFrom'] = parsed['from']
-			if 'to' in parsed and 'envelopeTo' not in rec:
-				update['envelopeTo'] = parsed['to']
-			for key in 'dsn', 'status', 'relay':
-				if key in parsed:
-					update[key] = parsed[key]
+				self.mtrack.update (self.SEC_MTAID, qid, complete = True)
+				agn.log (agn.LV_DEBUG, 'parse/%s' % qid, 'postfix processing completed')
+		elif info.service in ('postfix/qmgr', 'postfix/smtp', 'postfix/error', 'postfix/local'):
+			rec = self.mtrack.get (self.SEC_MTAID, qid)
+			update = {
+				'timestamp': info.timestamp
+			}
+			if 'from' in info.items:
+				update['envelopeFrom'] = info.items['from']
+			if 'to' in info.items and 'envelopeTo' not in rec:
+				update['envelopeTo'] = info.items['to']
+			for key in 'to', 'dsn', 'status', 'relay':
+				if key in info.items:
+					update[key] = info.items[key]
 			if update:
 				rec.update (update)
-				self.mtrack.put (self.SEC_POSTFIXID, id, rec)
-				agn.log (agn.LV_DEBUG, 'parse/%s' % id, 'Update tracking entry: %s' % str (rec))
+				self.mtrack.put (self.SEC_MTAID, qid, rec)
+				agn.log (agn.LV_DEBUG, 'parse/%s' % qid, 'Update tracking entry: %s' % str (rec))
+				if 'dsn' in update:
+					self.__writeBounce (qid, rec)
 		else:
-			agn.log (agn.LV_INFO, 'parse/%s' % id, 'Not used: %s' % line)
+			agn.log (agn.LV_INFO, 'parse/%s' % qid, 'Not used: %s' % line)
 		#
 		return True
+#
+#
 #
 def main ():
 	global	term
@@ -474,7 +575,8 @@ def main ():
 	maillog = '/var/log/maillog'
 	saveFile = agn.mkpath (agn.base, 'var', 'run', 'slrtscn.save')
 	bounceLog = agn.mkpath (agn.base, 'log', 'extbounce.log')
-	(opts, param) = getopt.getopt (sys.argv[1:], 'vm:s:b:')
+	providerLog = agn.normalize_path (None)
+	(opts, param) = getopt.getopt (sys.argv[1:], 'vm:s:b:p:')
 	for opt in opts:
 		if opt[0] == '-v':
 			agn.outlevel = agn.LV_DEBUG
@@ -485,13 +587,15 @@ def main ():
 			saveFile = opt[1]
 		elif opt[0] == '-b':
 			bounceLog = opt[1]
+		elif opt[0] == '-p':
+			providerLog = opt[1]
 	scanners = {
 		None:		ScannerSendmail,
 		'sendmail':	ScannerSendmail,
 		'postfix':	ScannerPostfix
 	}
 	mta = agn.MTA ()
-	scanner = scanners.get (mta.mta, scanners[None]) (maillog, saveFile, bounceLog)
+	scanner = scanners.get (mta.mta, scanners[None]) (maillog, saveFile, bounceLog, providerLog)
 	#
 	signal.signal (signal.SIGINT, handler)
 	signal.signal (signal.SIGTERM, handler)

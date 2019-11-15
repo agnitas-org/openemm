@@ -19,15 +19,15 @@ OBJS1	= $(SRCS1:%.c=%.o)
 #
 all:	bav
 
-bav:	$(OBJS1) ../lib/libagn.a
+bav:	libmilter.a $(OBJS1) ../lib/libagn.a
 	$(CC) $(LDFLAGS) $(OBJS1) -o $@ $(LIBS) -lmilter
 	strip -s $@
 
 ../lib/libagn.a:
 	$(MAKE) -C ../lib `basename $@`
 
-libsa.a:	sa-1.2.6.tar.gz
-	tar xaf $< && ( cd sa-1.2.6; ./configure --disable-shared; make; mv .libs/libsa.a sa.h ..; cd ..; rm -rf sa-1.2.6 )
-	
+libmilter.a:	sendmail-8.13.8.tar.gz
+	tar xaf $< && ( cd sendmail-8.13.8/libmilter; sh Build; cd ..; cp -r obj.*/libmilter/libmilter.a include/libmilter ..; cd ..; rm -rf sendmail-8.13.8 )
+
 clean:
-	rm -f $(OBJS1) bav sa.h libsa.a
+	rm -rf $(OBJS1) bav libmilter.a libmilter

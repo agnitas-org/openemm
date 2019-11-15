@@ -297,7 +297,12 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	if (st && code_urls)
 		st = modify_urls (blockmail, rec, block, proot, ishtml, record);
 	protect_free_all (proot);
-	if ((level == 0) && (dyncount > 0) && (dynused == 0))
-		rec -> empty = true;
+	if ((level == 0) && (dyncount > 0) && (dynused == 0)) {
+		/* have hit one empty text block */
+		if (rec -> media && rec -> media -> empty) {
+			blockmail -> active = false;
+			blockmail -> reason = REASON_EMPTY_DOCUMENT;
+		}
+	}
 	return st;
 }/*}}}*/

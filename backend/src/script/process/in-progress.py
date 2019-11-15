@@ -18,7 +18,7 @@ def isActive (genStatus, genChange, statusField):
 	now = int (time.time ())
 	change = time.mktime ((genChange.year, genChange.month, genChange.day, genChange.hour, genChange.minute, genChange.second, 0, 0, -1))
 	if genStatus == 2:
-		if statusField == 'W':
+		if statusField in ('W', 'R', 'D'):
 			offset = 2 * 60 * 60
 		else:
 			offset = 15 * 60

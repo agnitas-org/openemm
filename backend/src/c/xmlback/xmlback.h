@@ -16,6 +16,7 @@
 # include	<libxml/parserInternals.h>
 # include	<libxml/xmlmemory.h>
 # include	<libxml/xmlerror.h>
+# include	<parson.h>
 # include	"agn.h"
 # include	"xml.h"
 
@@ -105,6 +106,11 @@
 /* evaluation spheres */
 # define	SP_DYNAMIC		0
 # define	SP_BLOCK		1
+
+/* possible reasons for inactive user */
+# define	REASON_UNSPEC		0
+# define	REASON_NO_MEDIA		1
+# define	REASON_EMPTY_DOCUMENT	2
 
 typedef enum { /*{{{*/
 	EncNone,
@@ -358,6 +364,7 @@ typedef struct rblock { /*{{{*/
 	/*}}}*/
 }	rblock_t;
 
+
 typedef struct track	track_t;
 struct track { /*{{{*/
 	char	*name;
@@ -373,7 +380,6 @@ typedef struct { /*{{{*/
 	xmlBufferPtr	scratch[2];
 	/*}}}*/
 }	tracker_t;
-
 struct blockmail { /*{{{*/
 	/* internal used only data */
 	const char	*fname;		/* current filename		*/
@@ -392,6 +398,8 @@ struct blockmail { /*{{{*/
 	void		*outputdata;	/* output related private data	*/
 	counter_t	*counter;	/* counter for created mails	*/
 	bool_t		active;		/* if user is active		*/
+	int		reason;		/* code, if user not active	*/
+	int		reason_detail;	/* specific reason, if available*/
 	buffer_t	*head;		/* the created head ..		*/
 	buffer_t	*body;		/* .. and body			*/
 	rblock_t	*rblocks;	/* the raw blocks		*/
@@ -571,7 +579,6 @@ struct receiver { /*{{{*/
 	block_t		*base_block;	/* on which block we are	*/
 	map_t		*smap;		/* for simple mappings		*/
 	gnode_t		**slist;	/* list of nodes		*/
-	bool_t		empty;		/* skip on empty content	*/
 	/*}}}*/
 };
 
@@ -667,6 +674,7 @@ extern rblock_t		*rblock_free_all (rblock_t *r);
 extern bool_t		rblock_set_name (rblock_t *r, const char *bname);
 extern bool_t		rblock_set_content (rblock_t *r, xmlBufferPtr content);
 extern bool_t		rblock_retrieve_content (rblock_t *r, buffer_t *content);
+extern bool_t		rblock_set_string_content (rblock_t *r, const char *content);
 extern blockmail_t	*blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg);
 extern blockmail_t	*blockmail_free (blockmail_t *b);
 extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes, int bcccount);
@@ -760,7 +768,7 @@ extern void		receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail);
 extern media_target_t	*media_target_alloc (const char *media, const xmlChar *value);
 extern media_target_t	*media_target_free (media_target_t *mt);
 extern media_target_t	*media_target_free_all (media_target_t *mt);
-extern const buffer_t	*media_target_find (media_target_t *mt, const char *media);
+extern buffer_t		*media_target_find (media_target_t *mt, const char *media);
 extern links_t		*links_alloc (void);
 extern links_t		*links_free (links_t *l);
 extern bool_t		links_expand (links_t *l);

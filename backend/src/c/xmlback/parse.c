@@ -653,7 +653,6 @@ parse_block (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr node, block_t *bl
 		xmlNodePtr	child;
 		int		start, end;
 		const xmlChar	*content;
-		char		*sptr;
 
 		st = true;
 		block -> bid = (int) bid;
@@ -1467,8 +1466,7 @@ parse_receivers (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 								if (st) {
 									log_idpush (blockmail -> lg, "write", "->");
 									if (! blockmail_insync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, bcccount)) {
-										if (blockmail -> active)
-											st = (*blockmail -> output -> owrite) (blockmail -> outputdata, blockmail, rec);
+										st = (*blockmail -> output -> owrite) (blockmail -> outputdata, blockmail, rec);
 										if (st)
 											st = blockmail_tosync (blockmail, rec -> customer_id, rec -> mid, rec -> mailtype, bcccount);
 									}

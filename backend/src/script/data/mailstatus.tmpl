@@ -9,18 +9,18 @@
 ##        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            ##
 ##                                                                                                                                                                                                                                                                  ##
 ######################################################################################################################################################################################################################################################################
-#property(subject='Status Report für Mailing ID $mailingID [$mailingName]')
-#property(charset='ISO-8859-1')
+#property(subject='Status Report fÃ¼r Mailing ID $mailingID [$mailingName]')
+#property(charset='UTF-8')
 Sehr geehrte Damen und Herren,
 
 #if(current < count)
 von Ihrem Mailing "$mailingName" (Mailing ID $mailingID) mit einer
-Gesamtauflage von ${format (count)} wurden bereits ${format (current)} Stück verschickt. Der
+Gesamtauflage von ${format (count)} wurden bereits ${format (current)} StÃ¼ck verschickt. Der
 Versand startete am ${'%d.%d.%d' % (start.day, start.month, start.year)} um ${'%02d:%02d' % (start.hour, start.minute)} Uhr. Die Gesamtauflage wird
-vermutlich am ${'%d.%d.%d' % (end.day, end.month, end.year)} um ${'%02d:%02d' % (end.hour, end.minute)} Uhr vollständig verschickt sein.
+vermutlich am ${'%d.%d.%d' % (end.day, end.month, end.year)} um ${'%02d:%02d' % (end.hour, end.minute)} Uhr vollstÃ¤ndig verschickt sein.
 #else
 Ihr Mailing "$mailingName" (Mailing ID $mailingID) mit einer
-Gesamtauflage von ${format (count)} wurde vollständig verschickt.
+Gesamtauflage von ${format (count)} wurde vollstÃ¤ndig verschickt.
 #end
 
 Ihr AGNITAS Support-Team

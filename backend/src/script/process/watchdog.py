@@ -21,11 +21,15 @@ class EWatchdog (eagn.EWatchdog):
 		super (EWatchdog, self).__init__ (cmd)
 		self.prior = None
 		if output:
-			self.output = agn.mkpath (agn.base, 'var', 'tmp', '%s-%06d.log' % (agn.logname, os.getpid ()))
-			if os.path.isfile (self.output):
-				os.unlink (self.output)
+			self.is_temp_output = (output == '-')
+			if self.is_temp_output:
+				self.output_path = agn.mkpath (agn.base, 'var', 'tmp', '%s-%06d.log' % (agn.logname, os.getpid ()))
+				if os.path.isfile (self.output_path):
+					os.unlink (self.output_path)
+			else:
+				self.output_path = output
 		else:
-			self.output = None
+			self.output_path = None
 		self.limit = None
 		
 	def setPrior (self, cmd):
@@ -35,26 +39,27 @@ class EWatchdog (eagn.EWatchdog):
 		self.limit = limit
 
 	def joining (self, job, ec):
-		if (ec.exitcode is None or ec.exitcode != self.EC_EXIT) and self.output is not None and os.path.isfile (self.output):
-			with open (self.output, 'r') as fd:
-				if self.limit:
-					st = os.fstat (fd.fileno ())
-					if st.st_size > self.limit * 1024:
-						fd.seek (-self.limit * 1024, 2)
-						truncated = True
+		if self.output_path is not None and self.is_temp_output and os.path.isfile (self.output_path):
+			if ec.exitcode is None or ec.exitcode != self.EC_EXIT:
+				with open (self.output_path, 'r') as fd:
+					if self.limit:
+						st = os.fstat (fd.fileno ())
+						if st.st_size > self.limit * 1024:
+							fd.seek (-self.limit * 1024, 2)
+							truncated = True
+						else:
+							truncated = False
+						lines = agn.Stream.of (fd).remain (self.limit + 1).list ()
+						if len (lines) > self.limit:
+							truncated = True
+						if truncated:
+							lines[0] = '[..]'
+						output = '\n'.join (lines) + '\n'
 					else:
-						truncated = False
-					lines = agn.Stream.of (fd).remain (self.limit + 1).list ()
-					if len (lines) > self.limit:
-						truncated = True
-					if truncated:
-						lines[0] = '[..]'
-					output = '\n'.join (lines) + '\n'
-				else:
-					output = fd.read ()
-			os.unlink (self.output)
-			if output:
-				agn.log (agn.LV_INFO, 'watchdog', 'Output of unexpected terminated process:\n%s' % output)
+						output = fd.read ()
+				if output:
+					agn.log (agn.LV_INFO, 'watchdog', 'Output of unexpected terminated process:\n%s' % output)
+			os.unlink (self.output_path)
 
 	def run (self):
 		if self.prior:
@@ -62,18 +67,18 @@ class EWatchdog (eagn.EWatchdog):
 				self.execute (self.prior)
 			pid = self.spawn (doit)
 			self.join (pid)
-		if self.output is not None:
-			self.redirect (None, self.output)
+		if self.output_path is not None:
+			self.redirect (None, self.output_path)
 		eagn.EWatchdog.run (self)
 
 def main ():
 	background = False
 	restartDelay = '60'
 	terminationDelay = '10'
-	output = False
+	output = None
 	prior = None
 	limit = 100
-	(opts, param) = getopt.getopt (sys.argv[1:], 'vi:br:t:op:l:')
+	(opts, param) = getopt.getopt (sys.argv[1:], 'vi:br:t:o:p:l:')
 	for opt in opts:
 		if opt[0] == '-v':
 			agn.outlevel = agn.LV_DEBUG
@@ -91,7 +96,7 @@ def main ():
 		elif opt[0] == '-t':
 			terminationDelay = opt[1]
 		elif opt[0] == '-o':
-			output = True
+			output = opt[1]
 		elif opt[0] == '-p':
 			prior = opt[1]
 		elif opt[0] == '-l':

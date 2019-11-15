@@ -102,7 +102,10 @@ write_file (const char *fname, const buffer_t *content, const char *nl, int nlle
 	
 	st = false;
 	if ((fd = open (fname, O_WRONLY | O_CREAT | O_TRUNC, 0644)) != -1) {
-		st = write_content (fd, content -> buffer, content -> length, nl, nllen);
+		if (nl)
+			st = write_content (fd, content -> buffer, content -> length, nl, nllen);
+		else
+			st = write (fd, content -> buffer, content -> length) == content -> length ? true : false;
 		if (close (fd) == -1)
 			st = false;
 	}
@@ -1555,7 +1558,8 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 				if (g -> tosyslog)
 					syslog (LOG_NOTICE, WHAT);
 				if (g -> acclog) {
-					len = snprintf (scratch, sizeof (scratch) - 1, 
+					len = snprintf (scratch, sizeof (scratch) - 1,
+							"id=%d\t"
 							"licence=%d\t"
 							"owner=%d\t"
 							"company=%d\t"
@@ -1571,7 +1575,7 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 							"bcc-count=%ld\t"
 							"bcc-bytes=%lld\t"
 							"mailer=%s\t"
-							"timestamp=%s\n",
+							"timestamp=%s\n", getpid (),
 							blockmail -> licence_id, blockmail -> owner_id,
 							blockmail -> company_id, blockmail -> mailinglist_id,
 							blockmail -> mailing_id, blockmail -> maildrop_status_id,
@@ -1633,8 +1637,11 @@ generate_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 		} else
 			log_out (blockmail -> lg, LV_ERROR, "Failed to write to %s: %m", g -> midlog);
 	}
-	if (rec -> empty && rec -> media && rec -> media -> empty) {
-		st = write_bounce_log (g, blockmail, rec, "1.0.0", "skip=empty document");
+	if (! blockmail -> active) {
+		char	dsn[32];
+		
+		snprintf (dsn, sizeof (dsn) - 1, "1.%d.%d", blockmail -> reason, blockmail -> reason_detail);
+		st = write_bounce_log (g, blockmail, rec, dsn, "skip=no document");
 	} else if ((! rec -> media) || (rec -> media -> type == Mediatype_EMail)) {
 		st = sendmail_owrite (g -> s, g, blockmail, rec);
 	} else {

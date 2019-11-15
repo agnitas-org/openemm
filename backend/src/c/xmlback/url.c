@@ -11,7 +11,6 @@
 /*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<ctype.h>
-# include	<parson.h>
 # include	"xmlback.h"
 
 

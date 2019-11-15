@@ -30,14 +30,14 @@ start)
 	inifile=-Dorg.agnitas.backend.ini_filename=${base}/Mailout.ini
 	xmlrpc=org.agnitas.backend.MailoutServerXMLRPC
 	logfile=${base}/org/agnitas/backend/BACKEND_`date +%Y%m%d`.LOG
-	touch $logfile
-	wd="$HOME/bin/watchdog.sh -imerger -r1800 -p$HOME/bin/recovery.sh"
+	if [ ! -f $logfile ]; then
+		touch $logfile
+	fi
+	wd="$HOME/bin/watchdog.sh -imerger -r1800 -bo$logfile -p$HOME/bin/recovery.sh"
 	#
 	#	2.) Start backend
 	echo -n "Starting backend .. "
-	( (
-		$wd -- $java $inifile $xmlrpc '*' &
-	) >> $logfile 2>&1 & )
+	$wd -- $java $inifile $xmlrpc '*'
 	echo "done."
 	slogfile=${HOME}/log/backend.log
 	rm -f $slogfile

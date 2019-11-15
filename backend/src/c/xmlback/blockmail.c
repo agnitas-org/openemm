@@ -87,6 +87,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> outputdata = NULL;
 		b -> counter = NULL;
 		b -> active = false;
+		b -> reason = REASON_UNSPEC;
+		b -> reason_detail = 0;
 		b -> head = NULL;
 		b -> body = NULL;
 		b -> rblocks = NULL;
@@ -316,6 +318,9 @@ bool_t
 blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes, int bcccount) /*{{{*/
 {
 	counter_t	*run, *prv;
+
+	if (bytes == 0)
+		return true;
 	
 	for (run = b -> counter, prv = NULL; run; run = run -> next)
 		if ((! strcmp (run -> mediatype, mediatype)) && (run -> subtype == subtype))
@@ -441,7 +446,7 @@ blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 	long	size;
 	
 	rc = true;
-	size = b -> head -> length + 2 + b -> body -> length;
+	size = b -> active ? b -> head -> length + 2 + b -> body -> length : 0;
 	if (b -> syfp) {
 		long	pos;
 		

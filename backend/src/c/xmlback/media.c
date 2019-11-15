@@ -178,7 +178,7 @@ media_postparse (media_t *m, blockmail_t *blockmail) /*{{{*/
 	char	*val;
 
 	if ((blockmail -> status_field != 'A') && (blockmail -> status_field != 'T')) {
-		if (val = find_value (m, "skip-empty")) {
+		if (val = find_value (m, "skipempty")) {
 			m -> empty = atob (val);
 			free (val);
 		}
