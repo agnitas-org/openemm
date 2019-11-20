@@ -2743,6 +2743,10 @@ this version keep waiting."""
 				rc = -1
 	return rc
 
+def silent_call (*args):
+	with open (os.devnull, 'r+') as fd:
+		return subprocess.call (args, stdin = fd, stdout = fd, stderr = fd)
+
 def fileAccess (path):
 	"""Check if a process access a file
 

@@ -29,6 +29,10 @@ def fileReader (fname):
 		rc = [line.rstrip ('\r\n') for line in fd if not line[0] in '\n#']
 	return rc
 
+def silentCall (*args):
+	with open (os.devnull, 'r+') as fd:
+		return subprocess.call (args, stdin = fd, stdout = fd, stderr = fd)
+
 class Autoresponder:
 	directory = agn.mkpath (agn.base, 'var', 'lib')
 	def __init__ (self, rid, timestamp, sender, subject, text, html, armid, arst):
@@ -242,7 +246,7 @@ class Data (object):
 			if relays.modified or transports.modified:
 				cmd = agn.which ('smctrl')
 				if cmd is not None:
-					n = subprocess.call ([cmd, 'service', 'reload'])
+					n = silentCall (cmd, 'service', 'reload')
 					if n == 0:
 						agn.log (agn.LV_INFO, 'data', 'Reloaded')
 					else:
@@ -563,9 +567,9 @@ class Data (object):
 						for domain in newDomains:
 							cmd.append (domain)
 						agn.log (agn.LV_INFO, 'db', 'Found new domains, add them using ' + `cmd`)
-						subprocess.call (cmd)
+						silentCall (*cmd)
 						agn.log (agn.LV_INFO, 'db', 'Restarting sendmail due to domain update')
-						subprocess.call ([self.restartSendmail])
+						silentCall (self.restartSendmail)
 						signal.signal (signal.SIGUSR1, chandler)
 					self.readMailertable (newDomains)
 			finally:

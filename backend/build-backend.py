@@ -127,8 +127,8 @@ class Builder (object):
 			if 'ID_LIKE' in os_release:
 				ids += [_i.strip () for _i in os_release['ID_LIKE'].split ()]
 			version = ''
-			if 'VERSION_ID' in os_release:
-				version = os_release['VERSION_ID'].split ('.')[0]
+##			if 'VERSION_ID' in os_release:
+##				version = os_release['VERSION_ID'].split ('.')[0]
 			for id in ids:
 				if id in known_aliases:
 					id = known_aliases[id]
