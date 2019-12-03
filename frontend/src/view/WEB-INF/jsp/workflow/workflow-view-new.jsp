@@ -213,7 +213,7 @@
             "emmLocal": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
             "isActivated": ${workflowForm.status == STATUS_ACTIVE || workflowForm.status == STATUS_TESTING},
             "workflowStatus": "${workflowForm.status}",
-            "pdfGenerationUrl": "<html:rewrite page="/workflow/generatePDF.action"/>",
+            "pdfGenerationUrl": "<c:url value="/workflow/{workflow-ID}/generatePDF.action?showStatistics={show-statistic}"/>",
             "allMailings":${emm:toJson(mailings)},
             "allMailingLists":${emm:toJson(mailingLists)},
             "allTargets":${emm:toJson(targets)},
@@ -405,11 +405,11 @@
     <input type="hidden" name="forwardName" id="forwardName" value=""/>
     <input type="hidden" name="forwardParams" id="forwardParams" value=""/>
     <input type="hidden" name="forwardTargetItemId" id="forwardTargetItemId" value=""/>
-        <mvc:hidden path="workflowUndoHistoryData" />
-        <mvc:hidden path="usingActivatedWorkflow"/>
-        <mvc:hidden path="usingActivatedWorkflowName"/>
-        <mvc:hidden path="partOfActivatedWorkflow"/>
-        <mvc:hidden path="partOfActivatedWorkflowName"/>
+    <mvc:hidden path="workflowUndoHistoryData" />
+    <mvc:hidden path="usingActivatedWorkflow"/>
+    <mvc:hidden path="usingActivatedWorkflowName"/>
+    <mvc:hidden path="partOfActivatedWorkflow"/>
+    <mvc:hidden path="partOfActivatedWorkflowName"/>
     <input type="hidden" name="appName" id="appNameId" value="${pageContext.request.contextPath}"/>
 
     <div class="tile">

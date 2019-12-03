@@ -439,6 +439,7 @@
                 <entry key="mailingcontent.change_order_top" value="mailing.content.show" />
                 <entry key="mailingcontent.change_order_bottom" value="mailing.content.show" />
                 <entry key="mailingcontent.generate_text_from_html" value="mailing.content.show" />
+                <entry key="mailing.content.save" value="mailing.content.show" />
 
                 <entry key="mcomponents.list" value="mailing.components.show" />
                 <entry key="mcomponents.save_components" value="mailing.components.change" />

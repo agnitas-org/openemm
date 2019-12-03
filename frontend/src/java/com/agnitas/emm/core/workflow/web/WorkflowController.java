@@ -37,7 +37,6 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
@@ -114,6 +113,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
@@ -146,11 +147,6 @@ public class WorkflowController {
     public static final String FORWARD_AUTOEXPORT_CREATE = "autoexport_create";
     public static final String FORWARD_AUTOEXPORT_EDIT = "autoexport_edit";
 
-    public static final String WORKFLOW_FORWARD_PARAMS = WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
-    public static final String WORKFLOW_ID = WorkflowParametersHelper.WORKFLOW_ID;
-    public static final String WORKFLOW_FORWARD_TARGET_ITEM_ID = WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
-    public static final String WORKFLOW_KEEP_FORWARD = WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
-    public static final String WORKFLOW_NODE_ID = WorkflowParametersHelper.WORKFLOW_NODE_ID;
     public static final String WORKFLOW_CUSTOM_CSS_STYLE = ".body{background-color: #fff;} #viewPort { display: inline-block !important; width: 100% !important;}";
 
     private ComWorkflowService workflowService;
@@ -219,7 +215,8 @@ public class WorkflowController {
     }
 
     @RequestMapping("/{id:\\d+}/view.action")
-    public String view(ComAdmin admin, @PathVariable int id, Model model) throws Exception {
+    public String view(ComAdmin admin, @PathVariable int id, Model model,
+                       @RequestParam(name = "forwardParams", required = false) String forwardParams) throws Exception {
         if(id == 0) {
             return "redirect:/workflow/create.action";
         }
@@ -243,6 +240,8 @@ public class WorkflowController {
 
         prepareViewPage(admin, model);
         model.addAttribute("workflowForm", form);
+        
+        model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
 
         return "workflow_view_new";
     }
@@ -378,12 +377,12 @@ public class WorkflowController {
     @PostMapping("/save.action")
     public String save(ComAdmin admin, @ModelAttribute("workflowForm") WorkflowForm workflowForm,
                        @RequestParam(value = "forwardName", required = false) String forwardName,
-                       @RequestParam(value = "forwardParam", required = false) String forwardParam,
+                       @RequestParam(value = "forwardParams", required = false) String forwardParams,
                        @RequestParam(value = "forwardTargetItemId", required = false) String forwardTargetItemId,
-                       Model model,
+                       RedirectAttributes redirectModel,
                        HttpSession session,
                        Popups popups) throws Exception {
-        List<Message> messages = new ArrayList<>();
+        List<Message> errors = new ArrayList<>();
         List<Message> warnings = new ArrayList<>();
 
         Workflow newWorkflow = getWorkflow(workflowForm, admin);
@@ -411,38 +410,42 @@ public class WorkflowController {
             }
 
             List<WorkflowIcon> icons = newWorkflow.getWorkflowIcons();
-            messages.addAll(validateWorkflow(admin, icons, newWorkflow.getWorkflowId(), newStatus, model));
-
             if (StringUtils.isNotEmpty(forwardName)) {
-                return getForward(forwardName, forwardParam, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, model);
+                return getForward(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
             }
+            
+            errors.addAll(validateWorkflow(admin, icons, newWorkflow.getWorkflowId(), newStatus));
+            checkAndSetDuplicateMailing(admin, redirectModel, icons, isActiveOrTesting);
 
-            setStatus(admin, newWorkflow, existingWorkflow, messages, warnings, messages.isEmpty() && !model.containsAttribute("affectedMailings"));
-            popups.success("default.changes_saved");
+            boolean isValid = errors.isEmpty() && !redirectModel.containsAttribute("affectedMailings");
+            setStatus(admin, newWorkflow, existingWorkflow, errors, warnings, isValid);
+            if (!isActiveOrTesting) {
+                popups.success("default.changes_saved");
+            }
 
             workflowForm.setWorkflowId(newWorkflow.getWorkflowId());
         } else {
             assert (existingWorkflow != null);
 
             if (StringUtils.isNotEmpty(forwardName)) {
-                return getForward(forwardName, forwardParam, forwardTargetItemId, existingWorkflow.getWorkflowId(),
-                        existingWorkflow.getWorkflowIcons(), model);
+                return getForward(forwardName, forwardParams, forwardTargetItemId, existingWorkflow.getWorkflowId(),
+                        existingWorkflow.getWorkflowIcons(), redirectModel);
             }
 
-            if (validateStatusTransition(existingStatus, newStatus, messages)) {
+            if (validateStatusTransition(existingStatus, newStatus, errors)) {
                 workflowService.changeWorkflowStatus(existingWorkflow.getWorkflowId(), existingWorkflow.getCompanyId(), newStatus);
             }
             writeWorkflowStatusChangeLog(newWorkflow, existingWorkflow, admin);
         }
 
         if (isActiveOrTesting) {
-            messages.forEach(popups::alert);
+            errors.forEach(popups::alert);
         } else {
-            messages.forEach(popups::warning);
+            errors.forEach(popups::warning);
         }
 
         warnings.forEach(popups::warning);
-        updateForwardParameters(session, forwardTargetItemId, workflowForm.getWorkflowId(), forwardParam);
+        updateForwardParameters(session, forwardTargetItemId, workflowForm.getWorkflowId(), forwardParams);
 
         return String.format("redirect:/workflow/%d/view.action", workflowForm.getWorkflowId());
     }
@@ -455,7 +458,7 @@ public class WorkflowController {
         // A workflowId = 0 value is reserved for a new workflow.
         if (type == null || workflowId < 0) {
             // Type parameter is missing or invalid.
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } else {
             WorkflowDependency dependency = null;
 
@@ -467,7 +470,7 @@ public class WorkflowController {
 
             if (dependency == null) {
                 // Either identifier or a name is required.
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             } else {
                 JSONObject data = new JSONObject();
                 data.element("valid", workflowService.validateDependency(admin.getCompanyID(), workflowId, dependency));
@@ -518,7 +521,7 @@ public class WorkflowController {
         int companyId = admin.getCompanyID();
 
         if (StringUtils.isEmpty(mailingTypes)) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } else {
             List<Integer> mailingTypeList = com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(mailingTypes);
             boolean takeMailsForPeriod = Boolean.parseBoolean(takeMailsForPeriodParam);
@@ -680,11 +683,10 @@ public class WorkflowController {
     }
 
 
-    @GetMapping("/generatePDF.action")
-    public ResponseEntity<byte[]> generatePDF(ComAdmin admin, HttpSession session,
-                                     @RequestParam int workflowId,
-                                     @RequestParam("showStatistics") String showStatistics) throws Exception {
-        String jsessionid = session.getId();
+    @GetMapping("/{workflowId:\\d+}/generatePDF.action")
+    public ResponseEntity<byte[]> generatePDF(ComAdmin admin, @PathVariable int workflowId,
+                                      @RequestParam("showStatistics") String showStatistics) throws Exception {
+        String jsessionid = RequestContextHolder.getRequestAttributes().getSessionId();
         String hostUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
         String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&showStatistics=" + showStatistics;
 
@@ -720,8 +722,8 @@ public class WorkflowController {
         return ResponseEntity.ok(componentId);
     }
 
-    private String getForward(String forwardName, String forwardParam, String forwardTargetItemId, int workflowId,
-                              List<WorkflowIcon> icons, Model model) {
+    private String getForward(String forwardName, String forwardParams, String forwardTargetItemId, int workflowId,
+                                    List<WorkflowIcon> icons, Model model) {
         
         String redirectUrl = getRedirectUrl(forwardName);
         
@@ -729,21 +731,19 @@ public class WorkflowController {
             return "redirect:/workflow/" + workflowId + "/view.action";
         }
 
-        Map<String, String> paramsMap = AgnUtils.getParamsMap(forwardParam);
+        Map<String, String> paramsMap = AgnUtils.getParamsMap(forwardParams);
 
         // Validate and normalize nodeId parameter.
-        int iconId = NumberUtils.toInt(paramsMap.get(WORKFLOW_NODE_ID));
+        int iconId = NumberUtils.toInt(paramsMap.get(WorkflowParametersHelper.WORKFLOW_NODE_ID));
         if (iconId > 0 && icons.stream().anyMatch(i -> i.getId() == iconId)) {
-            paramsMap.put(WORKFLOW_NODE_ID, Integer.toString(iconId));
+            paramsMap.put(WorkflowParametersHelper.WORKFLOW_NODE_ID, Integer.toString(iconId));
         } else {
-            paramsMap.put(WORKFLOW_NODE_ID, "");
+            paramsMap.put(WorkflowParametersHelper.WORKFLOW_NODE_ID, "");
         }
 
-        model.addAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS, AgnUtils.getParamsString(paramsMap));
-        model.addAttribute(ComWorkflowAction.WORKFLOW_ID, workflowId);
-
-        int targetItemId = NumberUtils.toInt(forwardTargetItemId);
-        model.addAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID, targetItemId);
+        model.addAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS, AgnUtils.getParamsString(paramsMap));
+        model.addAttribute(WorkflowParametersHelper.WORKFLOW_ID, workflowId);
+        model.addAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID, NumberUtils.toInt(forwardTargetItemId));
         
         return "redirect:" + redirectUrl;
     }
@@ -868,10 +868,10 @@ public class WorkflowController {
         model.addAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, companyId));
     }
 
-    private boolean validateStatusTransition(Workflow.WorkflowStatus currentStatus, Workflow.WorkflowStatus newStatus, List<Message> messages) {
+    private boolean validateStatusTransition(Workflow.WorkflowStatus currentStatus, Workflow.WorkflowStatus newStatus, List<Message> errors) {
         switch (currentStatus) {
             case STATUS_COMPLETE:
-                messages.add(Message.of("error.workflow.campaignStatusHasNotBeUpdatedAfterCompleted"));
+                errors.add(Message.of("error.workflow.campaignStatusHasNotBeUpdatedAfterCompleted"));
                 return false;
 
             case STATUS_ACTIVE:
@@ -879,7 +879,7 @@ public class WorkflowController {
                 if (newStatus == Workflow.WorkflowStatus.STATUS_OPEN || newStatus == Workflow.WorkflowStatus.STATUS_INACTIVE) {
                     return true;
                 }
-                messages.add(Message.of("error.workflow.SaveActivatedWorkflow"));
+                errors.add(Message.of("error.workflow.SaveActivatedWorkflow"));
                 return false;
 
             default:
@@ -1182,14 +1182,13 @@ public class WorkflowController {
         return isUpdated;
     }
 
-    private List<Message> validateWorkflow(ComAdmin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status, Model model) {
+    private List<Message> validateWorkflow(ComAdmin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status) {
         assert (admin != null);
         List<Message> messages = new ArrayList<>();
 
         final int companyId = admin.getCompanyID();
         final boolean isMailtrackingActive = companyDao.isMailtrackingActive(companyId);
         final TimeZone timezone = TimeZone.getTimeZone(admin.getAdminTimezone());
-        final boolean isActive = status == Workflow.WorkflowStatus.STATUS_ACTIVE;
         final boolean isTesting = status == Workflow.WorkflowStatus.STATUS_TESTING;
 
         if (!validationService.isAllIconsFilled(icons)) {
@@ -1287,7 +1286,6 @@ public class WorkflowController {
             messages.add(Message.of("error.workflow.containsDeletedContent"));
         }
 
-        checkAndSetDuplicateMailing(admin, model, icons, isActive || isTesting);
 
         int mailingTrackingDataExpirationPeriod = 0;
         if (isMailtrackingActive) {
@@ -1330,9 +1328,16 @@ public class WorkflowController {
     private void checkAndSetDuplicateMailing(ComAdmin admin, Model model, List<WorkflowIcon> icons, boolean isActiveOrTesting) {
         List<Mailing> duplicatedMailings = mailingService.getDuplicateMailing(icons, admin.getCompanyID());
         if (!duplicatedMailings.isEmpty()) {
-            model.addAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
-            model.addAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
-            model.addAttribute("affectedMailings", duplicatedMailings);
+            if (model instanceof RedirectAttributes) {
+                RedirectAttributes attributes = (RedirectAttributes) model;
+                attributes.addFlashAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
+                attributes.addFlashAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
+                attributes.addFlashAttribute("affectedMailings", duplicatedMailings);
+            } else {
+                model.addAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
+                model.addAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
+                model.addAttribute("affectedMailings", duplicatedMailings);
+            }
         }
     }
 
@@ -1408,19 +1413,19 @@ public class WorkflowController {
         return Message.of("Error");
     }
 
-    private void setStatus(ComAdmin admin, Workflow workflow, Workflow existingWorkflow, List<Message> messages, List<Message> warnings, boolean isValid) throws Exception {
+    private void setStatus(ComAdmin admin, Workflow workflow, Workflow existingWorkflow, List<Message> errors, List<Message> warnings, boolean isValid) throws Exception {
         Workflow.WorkflowStatus currentStatus = existingWorkflow != null ? existingWorkflow.getStatus() : Workflow.WorkflowStatus.STATUS_NONE;
         Workflow.WorkflowStatus newStatus = workflow.getStatus();
 
         final int workflowId = workflow.getWorkflowId();
 
-        if (isValid && validateStatusTransition(currentStatus, newStatus, messages)) {
+        if (isValid && validateStatusTransition(currentStatus, newStatus, errors)) {
             if (newStatus == Workflow.WorkflowStatus.STATUS_ACTIVE || newStatus == Workflow.WorkflowStatus.STATUS_TESTING) {
                 boolean testing = newStatus == Workflow.WorkflowStatus.STATUS_TESTING;
 
                 List<UserAction> userActions = new ArrayList<>();
                 workflowService.deleteWorkflowTargetConditions(admin.getCompanyID(), workflowId);
-                if (workflowActivationService.activateWorkflow(workflowId, admin, testing, warnings, messages, userActions)) {
+                if (workflowActivationService.activateWorkflow(workflowId, admin, testing, warnings, errors, userActions)) {
 
                     for (UserAction action : userActions) {
                         writeUserActivityLog(admin, action);

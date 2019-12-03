@@ -129,6 +129,10 @@ public class WorkflowParameters {
         this.workflowForwardTargetItemId = workflowForwardTargetItemId;
     }
     
+    public void setWorkflowForwardTargetItemId(String workflowForwardTargetItemId) {
+        this.workflowForwardTargetItemId = NumberUtils.toInt(workflowForwardTargetItemId);
+    }
+    
     public Integer getTargetItemId() {
         return workflowForwardTargetItemId;
     }

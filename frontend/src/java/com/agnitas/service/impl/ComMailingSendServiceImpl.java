@@ -294,9 +294,9 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     }
 
     @Override
-    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> messages, List<UserAction> userActions) {
+    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
         if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
-            messages.add(Message.of("global", new ActionMessage("error.company.mailings.sent.forbidden")));
+            errors.add(Message.of("error.company.mailings.sent.forbidden"));
             return;
         }
 
@@ -375,7 +375,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         if (activeRecipientsCount == 0) {
             warnings.add(Message.of("error.mailing.no_subscribers"));
         } else if (!world && activeRecipientsCount > maxAdminMails) {
-            messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.send.admin.maxMails", maxAdminMails)));
+            errors.add(Message.of("error.mailing.send.admin.maxMails", maxAdminMails));
             return;
         }
 
@@ -385,7 +385,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             // Check the text version of mailing.
             if (isContentBlank(mailing, mailing.getTextTemplate())) {
                 if (mailingService.isTextVersionRequired(companyId, mailingId)) {
-                    messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_text_version")));
+                    errors.add(Message.of("error.mailing.no_text_version"));
                     return;
                 } else {
                     warnings.add(Message.of("error.mailing.no_text_version"));
@@ -395,13 +395,13 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             // Check the HTML version unless mail format is "only text".
             if (param.getMailFormat() >= ComMailing.INPUT_TYPE_HTML) {
                 if (isContentBlank(mailing, mailing.getHtmlTemplate())) {
-                    messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_html_version")));
+                    errors.add(Message.of("error.mailing.no_html_version"));
                     return;
                 }
             }
 
             if (StringUtils.isBlank(param.getSubject())) {
-                messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.subject.too_short")));
+                errors.add(Message.of("error.mailing.subject.too_short"));
                 return;
             }
 
@@ -413,7 +413,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             }
 
             if (StringUtils.isBlank(senderAddress)) {
-                messages.add(Message.of(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.mailing.sender_adress")));
+                errors.add(Message.of("error.mailing.sender_adress"));
                 return;
             }
         }

@@ -160,7 +160,7 @@
             <c:set target="${itemActionsSettings}" property="3" value="${element3}"/>
 
             <c:set target="${element3}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element3}" property="extraAttributes" value="data-form-target='#workflowForm' data-form-set='method:save' data-action='workflowSaveBtn'"/>
+            <c:set target="${element3}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflowSaveBtn'"/>
             <c:set target="${element3}" property="iconBefore" value="icon-save"/>
             <c:set target="${element3}" property="name">
                 <bean:message key="button.Save"/>
