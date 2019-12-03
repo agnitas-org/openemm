@@ -11,13 +11,18 @@
 package org.agnitas.web.forms;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 
 public class WorkflowParametersHelper {
+    
+    private static final Logger logger = Logger.getLogger(WorkflowParametersHelper.class);
     
     public static final String WORKFLOW_FORWARD_PARAMS = "workflowForwardParams";
     public static final String WORKFLOW_ID = "workflowId";
@@ -48,11 +53,11 @@ public class WorkflowParametersHelper {
         WorkflowParameters parameters = (WorkflowParameters) map.get(WORKFLOW_PARAMS_FORM);
         
         if (parameters == null) {
-            Integer workflowId = (Integer) map.get(WORKFLOW_ID);
+            Integer workflowId = convertParamToIntOrNull(map.get(WORKFLOW_ID));
             String params = (String) map.get(WORKFLOW_FORWARD_PARAMS);
-            Integer targetItem = (Integer) map.get(WORKFLOW_FORWARD_TARGET_ITEM_ID);
-            Boolean keepForward = (Boolean) map.get(WORKFLOW_KEEP_FORWARD);
-            Integer nodeId = (Integer) map.get(WORKFLOW_NODE_ID);
+            Integer targetItem = convertParamToIntOrNull(map.get(WORKFLOW_FORWARD_TARGET_ITEM_ID));
+            Boolean keepForward = convertParamToBooleanOrNull(map.get(WORKFLOW_KEEP_FORWARD));
+            Integer nodeId = convertParamToIntOrNull(map.get(WORKFLOW_NODE_ID));
     
             parameters = from(workflowId, params, targetItem, keepForward, nodeId);
         }
@@ -63,7 +68,38 @@ public class WorkflowParametersHelper {
         
         return parameters;
     }
- 
+
+    private static Boolean convertParamToBooleanOrNull(Object value) {
+        return convertOrNull(value, Boolean.class,
+                () -> BooleanUtils.toBoolean((String) value));
+    }
+    
+    private static Integer convertParamToIntOrNull(Object value) {
+        return convertOrNull(value, Integer.class,
+                () -> NumberUtils.toInt((String) value));
+    }
+    
+    private static <T> T convertOrNull(Object value, Class<T> type, Callable<T> handleStringValue) {
+        if (value == null) {
+            return null;
+        }
+        
+        if (value instanceof String) {
+            try {
+                return handleStringValue.call();
+            } catch (Exception e) {
+                logger.error("Could not convert value to " + type.getName() + " type", e);
+                return null;
+            }
+        }
+        
+        if (type.isInstance(value)) {
+            return (T) value;
+        }
+        
+        return null;
+    }
+    
     private static WorkflowParameters get(HttpServletRequest request) {
         WorkflowParameters parameters = (WorkflowParameters) request.getAttribute(WORKFLOW_PARAMS_FORM);
         

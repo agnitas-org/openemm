@@ -341,7 +341,7 @@ public class ComWorkflowActivationService {
 		return activationErrors.isEmpty();
 	}
 
-	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> messages, List<UserAction> userActions) throws Exception {
+	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		init(admin.getCompanyID(), workflowId);
 
 		final boolean isMailTrackingAvailable = AgnUtils.isMailTrackingAvailable(admin);
@@ -349,7 +349,7 @@ public class ComWorkflowActivationService {
 		Date activationDate = new Date();
 		TimeZone adminTimeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
 
-		List<Message> messageList = new ArrayList<>();
+		List<Message> errorsList = new ArrayList<>();
 
 		// get icons and connections of current workflow
 		List<WorkflowIcon> workflowIcons = workflow.getWorkflowIcons();
@@ -524,16 +524,16 @@ public class ComWorkflowActivationService {
 			}
 
 			// send/schedule mailings and reports
-			sendMailings(mailingsSendDates, admin.getAdminID(), testing, messageList, warnings, userActions);
+			sendMailings(mailingsSendDates, admin.getAdminID(), testing, warnings, errorsList, userActions);
 			sendReports();
 
 			updateAutoImportActivationDate(companyId);
 			updateAutoExportActivationDate(companyId);
 		}
 
-		messages.addAll(messageList);
+		errors.addAll(errorsList);
 
-		return messageList.isEmpty();
+		return errorsList.isEmpty();
 	}
 
 	private int createTargetWithDeadlineRespect(WorkflowStart start, List<WorkflowIcon> deadlineIcons) {
@@ -665,7 +665,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private void sendMailings(Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> messages, List<UserAction> userActions) {
+	private void sendMailings(Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap();
 
 		for (Entry<Integer, Date> entry : mailingsSendDates.entrySet()) {
@@ -708,7 +708,7 @@ public class ComWorkflowActivationService {
 						.setDeliveryType(deliveryType)
 						.build();
 
-				mailingSendService.sendMailing(mailingId, companyId, options, warnings, messages, userActions);
+				mailingSendService.sendMailing(mailingId, companyId, options, warnings, errors, userActions);
 			} else {
 				// Send action-based or date-based mailing.
 				MailingSendOptions options = MailingSendOptions.builder()
@@ -718,7 +718,7 @@ public class ComWorkflowActivationService {
 						.setDeliveryType(deliveryType)
 						.build();
 
-				mailingSendService.sendMailing(mailingId, companyId, options, warnings, messages, userActions);
+				mailingSendService.sendMailing(mailingId, companyId, options, warnings, errors, userActions);
 				// Use "test" mailing status on workflow test run.
 				mailingDao.updateStatus(mailingId, testing ? "test" : "active");
 			}

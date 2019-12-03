@@ -3681,18 +3681,16 @@ AGN.Lib.Controller.new('workflow-view-new', function () {
     }
 
     function generatePDF() {
-        var newCampaign = true;
-
-        if (data.workflowId !== 0 && data.shotrName !== '') {
-            newCampaign = false;
-        }
+        var newCampaign = data.workflowId <= 0 || !data.shortName;
 
         var hasUnsavedChanges = campaignManager.canUndo();
         if (newCampaign || hasUnsavedChanges) {
             workflowSaveBeforePdfHandler.showDialog(newCampaign, hasUnsavedChanges);
         }
         else {
-            window.location.href = data.pdfGenerationUrl+'?workflowId=' + data.workflowId + '&showStatistics=' + WorkflowManagerStatisticsNew.statisticsVisible;
+            window.location.href = data.pdfGenerationUrl
+              .replace('{workflow-ID}', data.workflowId)
+              .replace('{show-statistic}', WorkflowManagerStatisticsNew.statisticsVisible);
             AGN.Lib.Loader.hide();
         }
     }
