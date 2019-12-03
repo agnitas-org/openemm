@@ -11,7 +11,7 @@
 #	-*- sh -*-
 #
 
-CFLAGS	= '-DVERSION="OpenEMM 19.10.000.118"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DVERSION="OpenEMM 19.10.000.128"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
 LIBS	= -lagn -lslang -lsqlite3 -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
