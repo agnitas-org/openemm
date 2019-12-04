@@ -314,26 +314,7 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:select property="charset" styleClass="form-control" styleId="recipient-export-format-charset">
-						<emm:ShowByPermission token="charset.use.iso_8859_15">
-							<html:option value="ISO-8859-15"><bean:message key="mailing.iso-8859-15" /></html:option>
-						</emm:ShowByPermission>
-						<emm:ShowByPermission token="charset.use.iso_8859_1">
-							<html:option value="ISO-8859-1"><bean:message key="mailing.iso-8859-1" /></html:option>
-						</emm:ShowByPermission>
-						<emm:ShowByPermission token="charset.use.gb2312">
-							<html:option value="GB2312"><bean:message key="mailing.gb2312" /></html:option>
-						</emm:ShowByPermission>
-						<emm:ShowByPermission token="charset.use.utf_8">
-							<html:option value="UTF-8"><bean:message key="mailing.utf-8" /></html:option>
-						</emm:ShowByPermission>
-						<emm:ShowByPermission token="charset.use.iso-2022-jp">
-							<html:option value="ISO-2022-JP"><bean:message key="mailing.iso-2022-jp" /></html:option>
-						</emm:ShowByPermission>
-						<emm:ShowByPermission token="charset.use.iso_8859_2">
-							<html:option value="ISO-8859-2"><bean:message key="mailing.iso-8859-2" /></html:option>
-						</emm:ShowByPermission>
-                    </html:select>
+                	<%@include file="exportwizard-charsets.jspf" %>
                 </div>
             </div>
         </div>
