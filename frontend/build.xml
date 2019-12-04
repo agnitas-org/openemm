@@ -135,10 +135,7 @@
 		</condition>
 
 		<condition property="isBetaServer" value="true" else="false">
-			<or>
-				<contains string="${deploytarget}" substring="openemm" casesensitive="false" />
-				<contains string="${deploytarget}" substring=".beta" casesensitive="false" />
-			</or>
+			<contains string="${deploytarget}" substring=".beta" casesensitive="false" />
 		</condition>
 
 		<condition property="isLiveServer" value="true" else="false">
