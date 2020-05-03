@@ -2,8 +2,8 @@
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page import="com.agnitas.beans.ComAdmin" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -15,8 +15,8 @@
 <c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_MAILING_EXPORT" value="<%= ComMailingBaseAction.ACTION_MAILING_EXPORT %>"/>
 
-<c:set var="SESSION_CONTEXT_WORKFLOW_ID" value="<%= ComWorkflowAction.WORKFLOW_ID %>"/>
-<c:set var="SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>"/>
+<c:set var="SESSION_CONTEXT_WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>"/>
+<c:set var="SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>"/>
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>"/>
 <c:set var="company" value="<%= ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany() %>"/>
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
@@ -74,16 +74,7 @@
             <emm:instantiate var="option" type="java.util.LinkedHashMap">
                 <c:set target="${dropDownItems}" property="0" value="${option}"/>
                 <c:set target="${option}" property="url">
-                    <%--todo: GWUA-4271: change after test sucessfully--%>
-                    <%--<c:url value="/workflow/${workflowId}/view.action">--%>
-                        <%--<c:if test="${not empty workflowForwardParams}">--%>
-                            <%--<c:param name="forwardParams" value="${workflowForwardParams};elementValue=${param.mailingId}"/>--%>
-                        <%--</c:if>--%>
-                    <%--</c:url>--%>
-
-                    <c:url value="/workflow.do">
-                        <c:param name="method" value="view"/>
-                        <c:param name="workflowId" value="${workflowId}"/>
+                    <c:url value="/workflow/${workflowId}/view.action">
                         <c:if test="${not empty workflowForwardParams}">
                             <c:param name="forwardParams" value="${workflowForwardParams};elementValue=${param.mailingId}"/>
                         </c:if>

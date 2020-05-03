@@ -88,7 +88,7 @@ Use `data-autorestore` attribute to enable an automatic (without prompt) restora
         function save() {
           // Exclude detached elements
           $targets = $targets.filter(function(index, e) {
-            return document.contains(e);
+            return document.body.contains(e);
           });
 
           if ($targets.length > 0) {

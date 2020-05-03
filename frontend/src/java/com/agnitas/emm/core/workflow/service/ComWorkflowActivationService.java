@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,7 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
@@ -87,8 +89,6 @@ import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
@@ -99,7 +99,7 @@ public class ComWorkflowActivationService {
     public static final int DEFAULT_STEPPING = 60;
 
 	public static final int TESTING_MODE_DEADLINE_DURATION = 15;  // minutes
-	public static final Deadline TESTING_MODE_DEADLINE = new Deadline(TimeUnit.MINUTES.toMillis(TESTING_MODE_DEADLINE_DURATION));
+	private static final Deadline TESTING_MODE_DEADLINE = new Deadline(TimeUnit.MINUTES.toMillis(TESTING_MODE_DEADLINE_DURATION));
 
 	public static final List<Integer> ALL_MAILING_TYPES = Arrays.asList(
 			WorkflowIconType.MAILING.getId(),
@@ -143,202 +143,6 @@ public class ComWorkflowActivationService {
 		processedNodes = new HashSet<>();
 		workflowGraph = null;
 		mailingsToUpdate = new HashMap<>();
-	}
-
-	// @todo: maybe it will make sense to put this in a separate Thread (not to block the input) as it can take quite a long time
-	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, ActionMessages messages, ActionErrors errors, List<UserAction> userActions) throws Exception {
-		init(admin.getCompanyID(), workflowId);
-
-		final boolean isMailTrackingAvailable = AgnUtils.isMailTrackingAvailable(admin);
-		Workflow workflow = workflowService.getWorkflow(workflowId, companyId);
-		Date activationDate = new Date();
-		TimeZone adminTimeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
-
-		ActionErrors activationErrors = new ActionErrors();
-
-		// get icons and connections of current workflow
-		List<WorkflowIcon> workflowIcons = workflow.getWorkflowIcons();
-		Map<Integer, MailingSendingProperties> mailingSendingPropertiesMap = null;
-
-		// create workflow graph
-		workflowGraph = new WorkflowGraph(workflowIcons);
-
-		if (!testing) {
-			mailingSendingPropertiesMap = workflowIcons.stream()
-				.filter(icon -> icon.getType() == WorkflowIconType.MAILING.getId())
-				.map(icon -> (MailingSendingProperties) icon)
-				.collect(Collectors.toMap(MailingSendingProperties::getMailingId, icon -> icon));
-		}
-
-		// handle followup mailings - set the appropriate base-mailing-id and decision criteria
-		handleFollowupMailings(workflowGraph.getAllNodesByType(WorkflowIconType.FOLLOWUP_MAILING.getId()));
-
-		// handle start icons
-		List<WorkflowNode> startNodes = workflowGraph.getAllNodesByType(WorkflowIconType.START.getId());
-		for (WorkflowNode startNode : startNodes) {
-			final WorkflowStart startIcon = (WorkflowStart) startNode.getNodeIcon();
-
-			Map<Integer, Date> mailingsSendDates = new HashMap<>();
-			optimizationsTestSendDates.clear();
-			reportsSendDates.clear();
-			importsActivationDates.clear();
-			exportsActivationDates.clear();
-
-			Map<Integer, Integer> ruleStartMailingTargets = new HashMap<>();
-			// Any start-icon has start-date so we need to process it to apply it to mailings in campaign (paying
-			// attention to deadline icons which we can meet).
-			processStartDate(mailingsSendDates, startIcon, activationDate, testing, adminTimeZone);
-
-			if (startIcon.getStartType() == WorkflowStartType.EVENT) {
-				switch (startIcon.getEvent()) {
-					// The action-based campaign.
-					case EVENT_REACTION:
-						// create trigger for reaction that will send action-based mailing(s) when reaction takes place
-						processActionBasedStart(startIcon, workflowId, activationDate, testing, adminTimeZone);
-						break;
-
-					// The rule-based (date-based) campaign.
-					case EVENT_DATE:
-						processRuleBasedStart(startIcon, ruleStartMailingTargets, testing);
-						break;
-				}
-			}
-
-			Map<Integer, List<WorkflowRecipient>> assignedRecipients = new HashMap<>();
-			// Collect target groups and mailings lists from recipient icons and associate with mailings.
-			processRecipientIcons(startIcon, assignedRecipients);
-			
-			assignedRecipients.forEach((mailingId, recipientIcons) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
-				mailing.setMailinglistID(recipientIcons.get(0).getMailinglistId());
-			});
-
-			Map<Integer, Integer> assignedArchives = new HashMap<>();
-			// Collect archives (campaigns) and associate with mailings.
-			processArchiveIcons(startIcon, assignedArchives);
-			
-			assignedArchives.forEach((mailingId, archiveId) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
-				mailing.setCampaignID(archiveId);
-			});
-
-			Map<Integer, ConditionGroup> workflowConditions = new HashMap<>();
-			// Collect workflow target groups (sequential mailings dependencies, decisions) and associate with mailings.
-			// Sequential mailings dependencies: ensures that every mailing wont be sent until previous mailings are sent (guarantees that
-			// a mailings order is kept and a new subscriber wont receive intermediate mailing).
-			processMailingTargets(startIcon, workflowConditions, isMailTrackingAvailable);
-			
-
-			// Attention: lazy calculation
-			Map<WorkflowRecipient, Set<Integer>> immediateRecipientsToMailings = new HashMap<>();
-
-			if (isMailTrackingAvailable) {
-				// For the following chain:
-				//		Recipient -> Mailing_A -> Deadline -> Mailing_B
-				// target expression of Mailing_B should not contain target groups from Recipient
-
-				workflowGraph.getAllNodesByType(WorkflowIconType.RECIPIENT.getId())
-						.stream()
-						.map(node -> (WorkflowRecipient) node.getNodeIcon())
-						.forEach(recipient -> {
-							Set<Integer> mailingIds = workflowGraph.getAllNextParallelIconsByType(recipient, ALL_MAILING_TYPES, new ArrayList<>(), false)
-									.stream()
-									.map(WorkflowUtils::getMailingId)
-									.collect(Collectors.toSet());
-							immediateRecipientsToMailings.put(recipient, mailingIds);
-						});
-			}
-
-			// Generate and assign target expressions for mailings
-			for (Entry<Integer, List<WorkflowRecipient>> entry : assignedRecipients.entrySet()) {
-				Integer mailingId = entry.getKey();
-				ConditionGroup conditions = new ConditionGroup(true);
-
-				// handle recipient icons
-				List<WorkflowRecipient> recipientIcons = entry.getValue();
-				if (CollectionUtils.isNotEmpty(recipientIcons)) {
-					// Assign target groups from a recipient icon to the following mailings
-
-					recipientIcons.stream()
-							.filter(recipient -> {
-								if (CollectionUtils.isEmpty(recipient.getTargets())) {
-									return false;
-								}
-
-								// When mailtracking is available then each mailing (except the very first one) should simply
-								// use mailtracking data of the previous mailing and ignore target groups supplied by recipient icon
-								return !isMailTrackingAvailable || immediateRecipientsToMailings.get(recipient).contains(mailingId);
-							})
-							.map(this::createConditionGroupFromRecipientIcon)
-							.forEach(conditions::add);
-				}
-
-				// handle target created for date based start
-				Integer dateStartTargetId = ruleStartMailingTargets.get(mailingId);
-				if (dateStartTargetId != null) {
-					conditions.add(new TargetCondition(dateStartTargetId));
-				}
-
-				Condition mailingTargetCondition = workflowConditions.get(mailingId);
-				if (mailingTargetCondition != null) {
-					mailingTargetCondition = mailingTargetCondition.reduce();
-					if (mailingTargetCondition != null) {
-						conditions.add(mailingTargetCondition);
-					}
-				}
-
-				Mailing mailing = getMailingToUpdate(mailingId);
-				mailing.setTargetExpression(Condition.toReducedTargetExpression(conditions));
-			}
-
-			Map<Integer, List<WorkflowParameter>> assignedParameters = new LinkedHashMap<>();
-			Map<WorkflowDecision, List<Integer>> optimizationMailings = new HashMap<>();
-			// Collect list-split parameters and auto-optimizations and associate with mailings and decisions.
-			processParameters(startIcon, assignedParameters, optimizationMailings);
-
-			// process mailings to be handled by auto-optimization
-			List<ComOptimization> optimizations = processAutoOptimizations(workflow, optimizationMailings, assignedParameters, testing);
-
-			// process mailings to assign needed list-split (for mailings not handled by auto-optimizations)
-			for (List<Integer> value : optimizationMailings.values()) {
-				// exclude mailings that are handled by auto-optimization
-				for (Integer mailingId : value) {
-					assignedParameters.put(mailingId, Collections.emptyList());
-					mailingsSendDates.remove(mailingId);
-				}
-			}
-
-			// Process mailings using list splits without auto-optimizations
-			applyListSplitsToMailings(assignedParameters, true);
-			
-			mailingsSendDates.forEach((mailingId, sendDate) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
-				mailing.setPlanDate(sendDate);
-			});
-
-			// Notice that updated mailings have to be saved before auto-optimizations/mailings scheduled
-			saveUpdatedMailings();
-
-			for (ComOptimization optimization : optimizations) {
-				try {
-					optimizationScheduleService.scheduleOptimization(optimization, mailingSendingPropertiesMap);
-				} catch (Exception e) {
-					// @todo: AO wasn't successfully scheduled, we need to inform the user and handle this situation
-					logger.error("Failed to schedule auto-optimization: " + e.getMessage(), e);
-				}
-			}
-
-			// send/schedule mailings and reports
-			sendMailings(mailingsSendDates, admin.getAdminID(), testing, messages, activationErrors, userActions);
-			sendReports();
-
-            updateAutoImportActivationDate(companyId);
-            updateAutoExportActivationDate(companyId);
-		}
-
-		errors.add(activationErrors);
-
-		return activationErrors.isEmpty();
 	}
 
 	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
@@ -601,66 +405,6 @@ public class ComWorkflowActivationService {
 			List<Integer> reports = reportIcon.getReports();
 			for (Integer reportId : reports) {
 				reportScheduleDao.scheduleWorkflowReport(reportId, companyId, workflowId, entry.getValue());
-			}
-		}
-	}
-
-	private void sendMailings(Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, ActionMessages messages, ActionErrors errors, List<UserAction> userActions) {
-    	Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap();
-
-		for (Entry<Integer, Date> entry : mailingsSendDates.entrySet()) {
-			int mailingId = entry.getKey();
-			Date sendDate = entry.getValue();
-
-			WorkflowMailingAware icon = mailingIconsMap.get(mailingId);
-
-			if (icon == null) {
-				logger.error("Missing required mailing icon for mailing #" + mailingId);
-				continue;
-			}
-
-			WorkflowIconType iconType = WorkflowIconType.fromId(icon.getType());
-			DeliveryType deliveryType;
-
-			if (iconType == WorkflowIconType.ACTION_BASED_MAILING) {
-				// Always use WORLD delivery type for action-based mailing (let the workflow manage its delivery).
-				deliveryType = DeliveryType.WORLD;
-			} else {
-				// Other mailing types could use TEST delivery type on workflow test run.
-				deliveryType = testing ? DeliveryType.TEST : DeliveryType.WORLD;
-			}
-
-			if (iconType == WorkflowIconType.MAILING || iconType == WorkflowIconType.FOLLOWUP_MAILING) {
-				WorkflowMailing mailing = (WorkflowMailing) icon;
-
-				// Send normal or follow-up mailing.
-				MailingSendOptions options = MailingSendOptions.builder()
-						.setDate(sendDate)
-						.setAdminId(adminId)
-						.setMaxRecipients(mailing.getMaxRecipients())
-						.setBlockSize(mailing.getBlocksize())
-						.setDefaultStepping(DEFAULT_STEPPING)
-						.setFollowupFor(getBaseMailingId(icon))
-						.setDoubleChecking(mailing.isDoubleCheck())
-						.setSkipEmpty(mailing.isSkipEmptyBlocks())
-						.setReportSendDayOffset(mailing.getAutoReport())
-						.setGenerateAtSendDate(true)
-						.setDeliveryType(deliveryType)
-						.build();
-
-				mailingSendService.sendMailing(mailingId, companyId, options, messages, errors, userActions);
-			} else {
-				// Send action-based or date-based mailing.
-				MailingSendOptions options = MailingSendOptions.builder()
-						.setDate(sendDate)
-						.setAdminId(adminId)
-						.setGenerateAtSendDate(true)
-						.setDeliveryType(deliveryType)
-						.build();
-
-				mailingSendService.sendMailing(mailingId, companyId, options, messages, errors, userActions);
-				// Use "test" mailing status on workflow test run.
-				mailingDao.updateStatus(mailingId, testing ? "test" : "active");
 			}
 		}
 	}
@@ -954,7 +698,7 @@ public class ComWorkflowActivationService {
 				emailParam.setFollowUpMethod(followUpMethod);
 				emailParam.setFollowupFor(String.valueOf(baseMailing));
 			}
-			followupMailing.setMailingType(Mailing.TYPE_FOLLOWUP);
+			followupMailing.setMailingType(MailingTypes.FOLLOW_UP.getCode());
 		}
 	}
 
@@ -1299,8 +1043,6 @@ public class ComWorkflowActivationService {
 		reaction.setAdminTimezone(timezone);
 		reaction.setReactionType(startIcon.getReaction());
 		reaction.setOnce(startIcon.isExecuteOnce());
-		reaction.setMailingsToSend(Collections.emptyList());
-
 		reaction.setMailinglistId(getMailingListId(startIcon));
 		reaction.setTriggerMailingId(startIcon.getMailingId());
 		reaction.setTriggerLinkId(startIcon.getLinkId());
@@ -1314,6 +1056,7 @@ public class ComWorkflowActivationService {
 		}
 
 		// Legacy mode should never be used for newly activated workflows.
+		reaction.setMailingsToSend(Collections.emptyList());
 		reaction.setLegacyMode(false);
 
         reactionDao.saveReaction(reaction);
@@ -1999,7 +1742,7 @@ public class ComWorkflowActivationService {
 
 				List<Condition> newConditions = conditions.stream()
 						.map(condition -> condition.reduce(isNewNegative))
-						.filter(condition -> condition != null)
+						.filter(Objects::nonNull)
 						.collect(Collectors.toList());
 
 				if (newConditions.size() > 0) {

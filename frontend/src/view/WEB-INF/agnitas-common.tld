@@ -416,6 +416,31 @@
         </attribute>
     </tag>
 
+    <tag>
+        <description>
+            Sets the absolute path to the variable.
+        </description>
+        <name>setAbsolutePath</name>
+        <tag-class>com.agnitas.taglib.AbsolutePathTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>
+                Name of the exported scoped variable to hold the value
+                of the absolute path.
+            </description>
+            <name>var</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
     <function>
         <description>
             Escape a string to make it suitable for use in a JS string literal

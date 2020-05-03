@@ -463,8 +463,8 @@ window.I18n = {
         endsWith: '<agn:agnMessage key="operator.ends_with"/>',
 
         // for date filter
-        from: '<agn:agnMessage key="From"/>',
-        till: '<agn:agnMessage key="To"/>',
+        from: '<agn:agnMessage key="operator.between"/>',
+        till: '<agn:agnMessage key="default.and"/>',
     },
     mailing: {
         default: {

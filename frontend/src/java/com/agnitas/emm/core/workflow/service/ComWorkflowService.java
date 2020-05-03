@@ -107,10 +107,6 @@ public interface ComWorkflowService {
 
     List<UserForm> getAllUserForms(int companyId);
 
-    LightweightMailing getMailing(int mailingId);
-
-    String getMailingName(int mailingId);
-
     ComMailing getMailing(int mailingId, int companyId);
 
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);

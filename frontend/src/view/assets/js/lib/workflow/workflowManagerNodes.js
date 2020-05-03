@@ -409,7 +409,7 @@
         }
         // add date event description
         else if (node.data.startType == constants.startTypeEvent && node.data.event == constants.startEventDate) {
-          var dateEvent = node.data.dateProfileField + " " + constants.operators[node.data.dateFieldOperator] +
+          var dateEvent = node.data.dateProfileField + " " + constants.operatorsMap[node.data.dateFieldOperator] +
             " " + (node.data.dateFieldValue == null ? "" : node.data.dateFieldValue);
           var dateEventMessage = t('workflow.start.start_event');
           node.elementJQ.append("<div class='icon-extra-info'>" + dateEventMessage + ":<br>" + dateEvent + "<br>(" + startStopDateStr + ")</div>");

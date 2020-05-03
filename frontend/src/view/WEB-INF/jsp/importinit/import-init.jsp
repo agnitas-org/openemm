@@ -3,22 +3,23 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="emmLayoutBase" type="org.agnitas.beans.EmmLayoutBase"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
+<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <div class="col-md-offset-3 col-md-6">
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline"><bean:message key="mailing.mode.select"/>:</h2>
         </div>
-
         <div class="tile-content">
             <ul class="link-list">
                 <li>
                     <html:link page="/newimportwizard.do?action=1" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_import_standard.png">
+                            <img alt="" class="media-object" src="${absoluteImagePath}/facelift/agn_import_standard.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">
@@ -34,7 +35,7 @@
                 <li>
                     <html:link page="/importwizard.do?action=1" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_mailing-new-assistant.png">
+                            <img alt="" class="media-object" src="${absoluteImagePath}/facelift/agn_mailing-new-assistant.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">

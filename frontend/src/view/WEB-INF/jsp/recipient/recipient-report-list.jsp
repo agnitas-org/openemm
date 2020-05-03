@@ -130,13 +130,13 @@
 					<ul class="dropdown-menu dropdown-menu-left dropdown-menu-top">
 						<li>
 							<p>
-								<label class="label"><bean:message key="From"/></label>
+								<label class="label"><bean:message key="operator.between"/></label>
 								<input type="text" name="filterDateStart" value="${recipientsReportForm.filterDateStart}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
 							</p>
 						</li>
 						<li>
 							<p>
-								<label class="label"><bean:message key="To"/></label>
+								<label class="label"><bean:message key="default.and"/></label>
 								<input type="text" name="filterDateFinish" value="${recipientsReportForm.filterDateFinish}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-left" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
 							</p>
 						</li>

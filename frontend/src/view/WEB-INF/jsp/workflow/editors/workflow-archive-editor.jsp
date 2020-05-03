@@ -1,5 +1,5 @@
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -7,7 +7,7 @@
 <%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="FORWARD_ARCHIVE_CREATE" value="<%=ComWorkflowAction.FORWARD_ARCHIVE_CREATE%>" scope="page"/>
+<c:set var="FORWARD_ARCHIVE_CREATE" value="<%= WorkflowController.FORWARD_ARCHIVE_CREATE%>" scope="page"/>
 
 
 <div id="archive-editor" data-initializer="archive-editor-initializer">

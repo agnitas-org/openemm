@@ -4,6 +4,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://ajaxanywhere.sourceforge.net/" prefix="aa" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 
 <script>
 
@@ -45,13 +46,14 @@
                 </tr>
                 <tr>
                     <td>
+                        <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
                         <logic:equal value="false" name="recipientForm" property="error">
                             <img border="0" width="44" height="48"
-                                 src="${emmLayoutBase.imagesURL}/wait.gif"/>
+                                 src="${absoluteImagePath}/wait.gif"/>
                         </logic:equal>
                         <logic:equal value="true" name="recipientForm" property="error">
                             <img border="0" width="29" height="30"
-                                 src="${emmLayoutBase.imagesURL}/warning.gif"/>
+                                 src="${absoluteImagePath}/warning.gif"/>
                         </logic:equal>
                     </td>
                 </tr>

@@ -19,10 +19,10 @@
 <c:set var="agnHelpKey" 			value="workflow" 			scope="request" />
 
 <emm:ShowByPermission token="workflow.edit">
-	<c:set var="createNewItemUrl" scope="request">
-    	<html:rewrite page='/workflow.do?method=create'/>
-	</c:set>
-	<c:set var="createNewItemLabel" scope="request">
-	    <bean:message key="workflow.new"/>
-	</c:set>
+    <c:set var="createNewItemUrl" scope="request">
+        <html:rewrite page='/workflow/create.action'/>
+    </c:set>
+    <c:set var="createNewItemLabel" scope="request">
+        <bean:message key="workflow.new"/>
+    </c:set>
 </emm:ShowByPermission>

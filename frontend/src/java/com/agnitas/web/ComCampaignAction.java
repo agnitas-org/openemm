@@ -11,16 +11,18 @@
 package com.agnitas.web;
 
 import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.CampaignAction;
 import org.agnitas.web.forms.MailingBaseForm;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -28,9 +30,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.ActionRedirect;
-
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
 
 
 public final class ComCampaignAction extends CampaignAction {
@@ -94,8 +93,8 @@ public final class ComCampaignAction extends CampaignAction {
                     break;
 
             	case CampaignAction.ACTION_VIEW:
-                    updateForwardParameters(req);
-                	aForm.reset(mapping, req);
+            	    WorkflowUtils.updateForwardParameters(req);
+            	    aForm.reset(mapping, req);
                     loadCampaign(aForm, req);
                     aForm.setAction(CampaignAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
@@ -115,20 +114,22 @@ public final class ComCampaignAction extends CampaignAction {
                     }
                     aForm.setAction(CampaignAction.ACTION_LIST);
                     destination = mapping.findForward("list");
-
-                    if (errors.size() == 0 && req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID) != null
-                            && (Integer) req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID) != 0
-                            ) {
-                        ActionRedirect redirect = new ActionRedirect(mapping.findForward("workflow_view"));
-                        redirect.addParameter("workflowId", req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID));
-                        redirect.addParameter("forwardParams", req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS).toString()
+                    if (errors.size() == 0 && req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID) != null
+                            && (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID) != 0) {
+                        Object workflowId = req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+                        
+                        destination = mapping.findForward("workflow_view");
+                        String path = destination.getPath().replace("{WORKFLOW_ID}", workflowId.toString());
+                        ActionRedirect redirect = new ActionRedirect(path);
+                        
+                        redirect.addParameter("forwardParams", req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS).toString()
                                 + ";elementValue=" + Integer.toString(aForm.getCampaignID()));
                         return redirect;
                     }
                     break;
 
                 case CampaignAction.ACTION_NEW:
-                    updateForwardParameters(req);
+                    WorkflowUtils.updateForwardParameters(req);
                     aForm.reset(mapping, req);
                     aForm.setAction(CampaignAction.ACTION_SAVE);
                     aForm.setCampaignID(0);
@@ -201,23 +202,6 @@ public final class ComCampaignAction extends CampaignAction {
         }
         
         return destination;
-    }
-
-    private void updateForwardParameters(HttpServletRequest req) {
-        String forwardTargetItemId = req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
-        if (forwardTargetItemId == null || "".equals(forwardTargetItemId)) {
-            forwardTargetItemId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID, Integer.valueOf(forwardTargetItemId));
-
-        String workflowId = req.getParameter(ComWorkflowAction.WORKFLOW_ID);
-        if (workflowId == null || "".equals(workflowId)) {
-            workflowId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_ID, Integer.valueOf(workflowId));
-
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS,
-                req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
     }
 
     public void loadMailing(int mailingID, HttpServletRequest req){

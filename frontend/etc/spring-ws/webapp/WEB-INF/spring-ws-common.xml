@@ -38,13 +38,7 @@
         </property>
     </bean>
     
-    <bean id="usageInterceptor" class="com.agnitas.emm.springws.usage.UsageInterceptor">
-    	<property name="usageLogger">
-    		<bean class="com.agnitas.emm.springws.usage.DatabaseBasedUsageLogger">
-    			<property name="dataSource" ref="dataSource" />
-    		</bean>
-    	</property>
-    </bean>
+
     
     <bean id="permissionInterceptor" class="com.agnitas.emm.springws.permissions.PermissionCheckingEndpointInterceptor" />
  
@@ -58,7 +52,7 @@
         <property name="javaMailService" ref="JavaMailService"/>
         <property name="configService" ref="ConfigService" />
 	</bean>
-	
+
     
 
 

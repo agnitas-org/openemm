@@ -12,18 +12,19 @@ package com.agnitas.emm.core.mailtracking.service;
 
 import java.util.Objects;
 
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
-import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl;
-import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
+import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl;
+import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 /**
  * Implementation of {@link OpenTrackingService} interface.
@@ -64,7 +65,6 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 			logger.warn("No UID", new Exception("No UID"));
 		} else {
 			final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, this.configService, this.mailingContentTypeCache);
-			final int customerID = (trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID(); 
 			
 			if(trackingLevel == TrackingLevel.ANONYMOUS) {
 				if(logger.isInfoEnabled()) {
@@ -72,7 +72,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 				}
 			}
 			
-			final boolean result = onepixelDao.writePixel(uid.getCompanyID(), customerID, uid.getMailingID(), remoteAddr, deviceClass, deviceID, clientID);
+			final boolean result = onepixelDao.writePixel(uid.getCompanyID(), ((trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID()), uid.getMailingID(), ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddr), deviceClass, deviceID, clientID);
 			
 			if(!result) {
 				logger.warn(String.format("Could not track opening of mailing %d for customer %d (company ID %d)", uid.getMailingID(), uid.getCustomerID(), uid.getCompanyID()));
@@ -91,7 +91,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	}
 	
 	/**
-	 * Sets the service accessing configuration data. 
+	 * Sets the service accessing configuration data.
 	 * 
 	 * @param service service accessing configuration data
 	 */

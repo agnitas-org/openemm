@@ -28,11 +28,11 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
@@ -60,7 +60,6 @@ import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
 import com.agnitas.messages.Message;
-import com.agnitas.web.mvc.Popups;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -78,10 +77,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
-
 import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
 import static org.agnitas.target.TargetNode.OPERATOR_EQ;
 import static org.agnitas.target.TargetNode.OPERATOR_GT;
@@ -177,7 +173,7 @@ public class ComWorkflowValidationService {
         private String mailingName;
 
         public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId) {
-            this(errorType, mailingId, ComMailing.TYPE_NORMAL);
+            this(errorType, mailingId, MailingTypes.NORMAL.getCode());
         }
 
         public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId, int mailingType) {
@@ -324,44 +320,6 @@ public class ComWorkflowValidationService {
         }
 
         return iconIds.containsAll(connectionIds);
-    }
-
-    public ActionMessages validateStartTrigger(List<WorkflowIcon> icons, @VelocityCheck int companyId, String errorsType) {
-        ActionMessages errors = new ActionMessages();
-
-        for (WorkflowIcon icon : icons) {
-            if (icon.getType() == WorkflowIconType.START.getId() && icon.isFilled()) {
-                WorkflowStart start = (WorkflowStart) icon;
-
-                switch (StartType.of(start)) {
-                    case REACTION:
-                        int mailingListId = getMailingListId(icons);
-
-                        if (WorkflowReactionType.CHANGE_OF_PROFILE == start.getReaction() && mailingListId > 0) {
-                            for (Workflow workflow : getActiveWorkflowsDrivenByProfileChange(companyId, mailingListId, start)) {
-                                String name = StringEscapeUtils.escapeHtml(workflow.getShortname());
-                                errors.add(errorsType, new ActionMessage("error.workflow.reaction.trigger.unique", name));
-                            }
-                        }
-                        break;
-                    case RULE:
-                        String rule = start.getDateFieldValue();
-
-                        if (rule != null && !validateStartRuleExpression(rule)) {
-                            errors.add(errorsType, new ActionMessage("error.workflow.rule.invalid"));
-                        }
-                        break;
-					case REGULAR:
-						break;
-					case UNKNOWN:
-						break;
-					default:
-						break;
-                }
-            }
-        }
-
-        return errors;
     }
 
     public List<Message> validateStartTrigger(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
@@ -1633,57 +1591,6 @@ public class ComWorkflowValidationService {
         return columns.stream()
                 .filter(column -> !profileFieldDao.exists(column, companyId))
                 .collect(Collectors.toList());
-    }
-
-    public ActionMessages validateDecisionRules(String errorsType, WorkflowDecision decision, int companyId) {
-        ActionMessages errors = new ActionMessages();
-
-        // checking is field exist in recipient table
-        DbColumnType columnType = profileFieldDao.getColumnType(companyId, decision.getProfileField());
-
-        if (columnType == null) {
-            errors.add(errorsType, new ActionMessage("error.workflow.field.missing", decision.getProfileField()));
-            return errors;
-        }
-
-        SimpleDataType simpleColumnType = columnType.getSimpleDataType();
-
-        for (WorkflowRule rule : decision.getRules()) {
-            final int operatorCode = rule.getPrimaryOperator();
-            TargetOperator operator = TargetNode.getOperatorByCode(operatorCode);
-            String operatorReadableName = Objects.nonNull(operator) ? operator.getOperatorSymbol() : operatorCode + " code";
-
-            // checking if special handling operator
-            if (operator == OPERATOR_YES || operator == OPERATOR_NO) {
-                // stop validation for special handling
-                continue;
-            }
-
-            if (isOperatorApplicable(simpleColumnType, operator)) {
-                String value = rule.getPrimaryValue();
-
-                if (operator == OPERATOR_IS) {
-                    if (!NULL_VALUE.equalsIgnoreCase(value) && !NOT_NULL_VALUE.equalsIgnoreCase(value)) {
-                        errors.add(errorsType, new ActionMessage("error.workflow.value.operator", value, operatorReadableName));
-                    }
-                } else {
-                    if (simpleColumnType == SimpleDataType.Numeric) {
-                        if (!AgnUtils.isDouble(value)) {
-                            errors.add(errorsType, new ActionMessage("error.workflow.value.type", value, simpleColumnType));
-                        }
-                    } else if (simpleColumnType == SimpleDataType.Date) {
-                        String dateFormat = ALLOWED_DATE_FORMATS.get(StringUtils.lowerCase(decision.getDateFormat()));
-                        if (!validateDateRuleExpression(value, dateFormat)) {
-                            errors.add(errorsType, new ActionMessage("error.workflow.value.type", value, simpleColumnType));
-                        }
-                    }
-                }
-            } else {
-                errors.add(errorsType, new ActionMessage("error.workflow.operator", operatorReadableName, simpleColumnType));
-            }
-        }
-
-        return errors;
     }
 
     public List<Message> validateDecisionRules(WorkflowDecision decision, int companyId) {

@@ -1058,10 +1058,8 @@
             var $badge = $(createBadge({
               optimizationId: d.campaignID,
               shortname: d.shortname,
-              action: getOptimizationActionName(d),
-              idParamName: getOptimizationParameterIdName(d),
-              idParamValue: getOptimizationIdValue(d),
-              status: d.autoOptimizationStatus,
+              linkUrl: getOptimizationLinkUrl(d),
+              status: d.autoOptimizationStatus
             }));
             $('#day-' + d.sendDate).append($badge);
           });
@@ -1070,16 +1068,12 @@
       }).always(stopProgress);
     }
 
-    function getOptimizationActionName(data) {
-      return data.workflowId == 0 ? "optimize.do" : "workflow.do";
-    }
-
-    function getOptimizationParameterIdName(data) {
-      return data.workflowId == 0 ? "optimizationID" : "workflowId";
-    }
-
-    function getOptimizationIdValue(data) {
-      return data.workflowId == 0 ? data.id : data.workflowId;
+    function getOptimizationLinkUrl(data) {
+      if (data.workflowId == 0) {
+        return "optimize.do?method=view&optimizationID=" + data.id
+      } else {
+        return "workflow/" + data.workflowId + "/view.action";
+      }
     }
 
     function getComments(startDate, endDate) {

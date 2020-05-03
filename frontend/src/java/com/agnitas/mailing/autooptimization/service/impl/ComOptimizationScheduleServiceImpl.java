@@ -10,22 +10,10 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
-import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.mailing.MailingAllReadySentException;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Tuple;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
@@ -37,10 +25,22 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationScheduleService;
 import com.agnitas.mailing.autooptimization.service.OptimizationIsFinishedException;
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.emm.core.mailing.MailingAllReadySentException;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Tuple;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
+
+import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
 
 public class ComOptimizationScheduleServiceImpl implements ComOptimizationScheduleService {
 	/** DAO accessing mailings. */
@@ -94,7 +94,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 			// check if mailingtype is 'normal' and mailing has not been sent as
 			// a 'world-mailing' yet,
 			// if it has been sent throw an Exception
-			if (testMailing.getMailingType() != Mailing.TYPE_NORMAL
+			if (testMailing.getMailingType() != MailingTypes.NORMAL.getCode()
 					|| this.maildropService.isActiveMailing(testMailing.getId(), testMailing.getCompanyID())) {
 				throw new MailingAllReadySentException(
 						"Mailing has allready been sent ! Mailing-ID: "

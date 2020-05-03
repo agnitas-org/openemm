@@ -291,9 +291,9 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
-		String curDateString = isOracleDB() ? "sysdate" : "current_timestamp";
-		String sql = "INSERT INTO rdirlog_" + link.getCompanyID() + "_tbl (customer_id, url_id, company_id, timestamp, ip_adr, mailing_id, device_class_id, device_id, client_id) VALUES (?, ?, ?, " + curDateString + ", ?, ?, ?, ?, ?)";
-
+		String sql = "INSERT INTO rdirlog_" + link.getCompanyID() + "_tbl "
+				+ "(customer_id, url_id, company_id, timestamp, ip_adr, mailing_id, device_class_id, device_id, client_id) "
+				+ "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)";
 		try {
 			update(logger, sql, customerID, link.getId(), link.getCompanyID(), remoteAddr, link.getMailingID(), deviceClass.getId(), deviceID, clientID);
 

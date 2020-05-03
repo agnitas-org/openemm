@@ -139,7 +139,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>PdfViewFilter</filter-name>
-		<url-pattern>/workflow.do</url-pattern>
+		<url-pattern>/workflow/viewOnlyElements.action</url-pattern>
 	</filter-mapping>
 
 	<!-- EMM Listeners -->

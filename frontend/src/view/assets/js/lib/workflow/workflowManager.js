@@ -336,13 +336,15 @@
          * Private members
          ******************************************************************************************************************/
 
-        // closure-safe "this" reference
+            // closure-safe "this" reference
         var self = this;
         this.workflowId = data.workflowId;
         this.pageContextSessionId = data.pageContextSessionId;
         this.isActivated = data.isActivated;
 
         this.isPdf = data.isPdfGenerating;
+        this.historyWasOverloaded = false;
+        this.ignoreChangesThisTime = false;
 
         // setup viewport variables
         var viewPortDOMId = "viewPort";
@@ -1754,6 +1756,7 @@
         this.saveSnapshot = function () {
             if (undoHistory.length == campaignManagerSettings.MAX_UNDO_HISTORY) {
                 undoHistory.shift();
+                self.historyWasOverloaded = true;
             }
 
             undoHistory.push({
@@ -2169,6 +2172,19 @@
         this.getDraggedElements = function() {
             return draggedElements;
         };
+
+        this.activateIgnoreChangesThisTime = function() {
+            self.ignoreChangesThisTime = true;
+        };
+
+        this.hasUnsavedChanges = function() {
+            if(self.ignoreChangesThisTime){
+                self.ignoreChangesThisTime = false;
+                return false;
+            }
+            return self.canUndo() || self.historyWasOverloaded;
+        };
+
 
         /*******************************************************************************************************************
          * Main routine
@@ -2628,7 +2644,4 @@
     };
 
     AGN.Lib.WM.CampaignManager = CampaignManager;
-
-
-
 })();

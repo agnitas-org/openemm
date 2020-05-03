@@ -537,13 +537,13 @@
                     <ul class="dropdown-menu">
                         <li>
                             <p>
-                                <label class="label"><bean:message key="From"/></label>
+                                <label class="label"><bean:message key="operator.between"/></label>
                                 <input type="text" name="filterSendDateBegin" value="${mailingBaseForm.filterSendDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
                             </p>
                         </li>
                         <li>
                             <p>
-                                <label class="label"><bean:message key="To"/></label>
+                                <label class="label"><bean:message key="default.and"/></label>
                                 <input type="text" name="filterSendDateEnd" value="${mailingBaseForm.filterSendDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
                             </p>
                         </li>
@@ -573,13 +573,13 @@
                     <ul class="dropdown-menu">
                         <li>
                             <p>
-                                <label class="label"><bean:message key="From"/></label>
+                                <label class="label"><bean:message key="operator.between"/></label>
                                 <input type="text" name="filterCreationDateBegin" value="${mailingBaseForm.filterCreationDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
                             </p>
                         </li>
                         <li>
                             <p>
-                                <label class="label"><bean:message key="To"/></label>
+                                <label class="label"><bean:message key="default.and"/></label>
                                 <input type="text" name="filterCreationDateEnd" value="${mailingBaseForm.filterCreationDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
                             </p>
                         </li>

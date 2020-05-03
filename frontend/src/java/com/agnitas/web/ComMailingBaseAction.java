@@ -33,12 +33,43 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.impl.ComMailingImpl;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.IntervalType;
+import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
+import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
+import com.agnitas.service.ComMailingLightVO;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.forms.ComMailingBaseForm;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
@@ -89,41 +120,7 @@ import org.apache.struts.action.ActionRedirect;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.convert.ConversionService;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.ComMailingImpl;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.IntervalType;
-import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
-import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
-import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
-import com.agnitas.service.ComMailingLightVO;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.forms.ComMailingBaseForm;
-
-import net.sf.json.JSONObject;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
@@ -308,7 +305,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
                     destination = mapping.findForward("mailing_templates");
 
-                    ComWorkflowAction.updateForwardParameters(request);
+                    WorkflowUtils.updateForwardParameters(request, true);
                     setMailingWorkflowParameters(request, mailingBaseForm);
 				    break;
 
@@ -320,7 +317,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                         mailingBaseForm.clearData();
 
                         //populate mailing data with info from workflow
-                        ComWorkflowAction.updateForwardParameters(request);
+                        updateForwardParameters(request, true);
 
                         mailingBaseForm.setMailingID(0);
                         mailingBaseForm.setGridTemplateId(0);
@@ -370,7 +367,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     break;
 
                 case ACTION_SAVE_MAILING_GRID:
-                    ComWorkflowAction.updateForwardParameters(request);
+                    updateForwardParameters(request, true);
 
                     cloneForwardParams = mailingBaseForm.getWorkflowForwardParams();
                     if (saveGridMailing(mailingBaseForm, request, errors, messages)) {
@@ -392,10 +389,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     break;
 
 				case ACTION_CREATE_FOLLOW_UP:
-                    ComWorkflowAction.updateForwardParameters(request);
+                    updateForwardParameters(request, true);
 
                     cloneForwardParams = mailingBaseForm.getWorkflowForwardParams();
-                    forwardTargetItemId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+                    forwardTargetItemId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                     if (forwardTargetItemId != null && forwardTargetItemId != 0) {
                     	mailingBaseForm.setMailingID(forwardTargetItemId);
                     }
@@ -573,10 +570,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     return null;
 
 				case ACTION_CLONE_AS_MAILING:
-                    ComWorkflowAction.updateForwardParameters(request);
+                    updateForwardParameters(request, true);
 
                     cloneForwardParams = mailingBaseForm.getWorkflowForwardParams();
-                    forwardTargetItemId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+                    forwardTargetItemId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                     if (forwardTargetItemId != null && forwardTargetItemId != 0) {
                         mailingBaseForm.setMailingID(forwardTargetItemId);
                     }
@@ -594,7 +591,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     break;
 
                 case ACTION_LIST:
-                    ComWorkflowAction.updateForwardParameters(request);
+                    updateForwardParameters(request, true);
                     destination = super.execute(mapping, form, request, response);
                     writeUserActivityLog(AgnUtils.getAdmin(request), "mailings list", "active tab - overview");
                     break;
@@ -757,8 +754,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 		mailingBaseForm.setUndoAvailable(mailingBaseService.checkUndoAvailable(mailingBaseForm.getMailingID()));
 
-        if (session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS) == null) {
-            session.setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS, mailingBaseForm.getWorkflowForwardParams());
+        if (session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS) == null) {
+            session.setAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS, mailingBaseForm.getWorkflowForwardParams());
         }
         
         if (destination != null && ("view".equals(destination.getName()) || "grid_base".equals(destination.getName()))) {
@@ -797,8 +794,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
     
 	protected void prepareMailingView(HttpServletRequest req, ComMailingBaseForm mailingBaseForm, HttpSession session, boolean showTagWarnings, ActionMessages errors) throws Exception {
 		Integer forwardTargetItemId;
-		ComWorkflowAction.updateForwardParameters(req);
-		forwardTargetItemId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+		updateForwardParameters(req, true);
+		forwardTargetItemId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
 		if (forwardTargetItemId != null && forwardTargetItemId != 0) {
 		    mailingBaseForm.setMailingID(forwardTargetItemId);
 		}
@@ -815,13 +812,13 @@ public class ComMailingBaseAction extends MailingBaseAction {
         loadMailing(mailingBaseForm, req, true, showTagWarnings, errors);
 
 		if (mailingBaseForm.getWorkflowId() == 0) {
-		    Integer workflowId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_ID);
+		    Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 		    if (workflowId != null) {
 		        mailingBaseForm.setWorkflowId(workflowId);
 		    }
 		}
 		mailingBaseForm.setWorkflowForwardParams(workflowForwardParams);
-		Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
+		Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS));
 		processAdditionalForwardParams(mailingBaseForm, forwardParams);
 		
 		req.setAttribute("limitedRecipientOverview",
@@ -1011,7 +1008,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         }
 
         // Check if a user came from a workflow manger in order to use this mailing there
-        workflowId = (Integer) req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID);
+        workflowId = (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 
         return workflowId != null && workflowId > 0;
     }
@@ -2181,8 +2178,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	protected void copyTemplateSettingsToMailingForm(ComMailing template, MailingBaseForm mailingBaseForm, HttpServletRequest req, boolean regularTemplate) {
 	    ComMailingBaseForm form = (ComMailingBaseForm) mailingBaseForm;
         MailingComponent tmpComp;
-
-        Integer workflowId = (Integer) req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID);
+        Integer workflowId = (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 		// If we already have a campaign we don't have to override settings inherited from it
 		boolean overrideInherited = (workflowId == null || workflowId == 0 || !regularTemplate);
 

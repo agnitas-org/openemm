@@ -10,7 +10,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <emm:CheckLogon/>
-
+<emm:setAbsolutePath var="absoluteCssPath" path="${emmLayoutBase.cssURL}"/>
 <emm:Permission token="mailing.components.show"/>
 
 <%--@elvariable id="emmLayoutBase" type="org.agnitas.beans.impl.EmmLayoutBaseImpl"--%>
@@ -22,9 +22,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-    <link type="text/css" rel="stylesheet" href="../${emmLayoutBase.cssURL}/style.css">
-    <link type="text/css" rel="stylesheet" href="../${emmLayoutBase.cssURL}/structure.css">
-    <link type="text/css" rel="stylesheet" href="../${emmLayoutBase.cssURL}/displaytag.css">
+    <link type="text/css" rel="stylesheet" href="${absoluteCssPath}/style.css">
+    <link type="text/css" rel="stylesheet" href="${absoluteCssPath}/structure.css">
+    <link type="text/css" rel="stylesheet" href="${absoluteCssPath}/displaytag.css">
 </head>
 
 <script type="text/javascript">

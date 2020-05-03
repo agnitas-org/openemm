@@ -9,18 +9,36 @@
     no_add_rule: true,
     no_add_group: true
   };
+  var WORKFLOW_URLS;
 
   AGN.Initializers.TargetGroupQueryBuilder = function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
 
-    var jSessionId = $('#jSessionId').val();
     var qbSelector = '#targetgroup-querybuilder';
-    var isIE10 = navigator.userAgent.match('MSIE 10.0;');
-    var isTargetGroupLocked = $('[name="locked"]').val();
+    var queryBuilders = $scope.find(qbSelector);
 
-    _.each($scope.find(qbSelector), function(el) {
+    var config = {
+      jSessionId: "",
+      isTargetGroupLocked: false,
+      WORKFLOW_URLS: {}
+    };
+
+    if (queryBuilders.exists()) {
+      if ($scope.find("script#target-group-query-builder").exists()) {
+        config = $scope.find("script#target-group-query-builder").json();
+        WORKFLOW_URLS = config.WORKFLOW_URLS;
+      }
+
+    }
+
+    var jSessionId = config.jSessionId;
+    var isTargetGroupLocked = config.isTargetGroupLocked;
+
+    var isIE10 = navigator.userAgent.match('MSIE 10.0;');
+
+    _.each(queryBuilders, function(el) {
       var $el = $(el);
       var operator_groups = buildOperatorGroups();
       var qbFilters = readFiltersFromJson($el, "#queryBuilderFilters");
@@ -361,9 +379,8 @@
 
       return $.ajax({
         type: 'POST',
-        url: 'workflow.do;jsessionid=' + jSessionId,
+        url: WORKFLOW_URLS.getAllMailingSorted,
         data: {
-          method: 'getAllMailingSorted',
           sortField: 'date',
           sortDirection: 'desc'
         },
@@ -404,9 +421,8 @@
     function requestMailingLinks(mailingId, success) {
       $.ajax({
         type: 'POST',
-        url: 'workflow.do;jsessionid=' + jSessionId,
+        url: WORKFLOW_URLS.getMailingLinks,
         data: {
-          method: 'getMailingLinks',
           mailingId: mailingId
         },
         success: success

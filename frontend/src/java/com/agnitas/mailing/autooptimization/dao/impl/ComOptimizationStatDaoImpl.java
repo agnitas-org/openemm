@@ -12,15 +12,14 @@ package com.agnitas.mailing.autooptimization.dao.impl;
 
 import java.util.Map;
 
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
+import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailing;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
-
-import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
-import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 
 public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimizationStatDao {
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationStatDaoImpl.class);
@@ -153,9 +152,9 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
                 .append("   and (' x.status_field = 'A' or x.status_field = 'T')");
         } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
             queryBuilder
-                .append("   and ((m.mailing_type = ").append(Mailing.TYPE_DATEBASED).append(" and x.status_field = 'R') or (x.status_field = 'W')) ");
+                .append("   and ((m.mailing_type = ").append(MailingTypes.DATE_BASED.getCode()).append(" and x.status_field = 'R') or (x.status_field = 'W')) ");
         }
-        return select(logger, queryBuilder.toString(), Integer.class, mailingId, Mailing.TYPE_ACTIONBASED, Mailing.TYPE_ACTIONBASED);
+        return select(logger, queryBuilder.toString(), Integer.class, mailingId, MailingTypes.ACTION_BASED.getCode(), MailingTypes.ACTION_BASED.getCode());
     }
 
     @Override

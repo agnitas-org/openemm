@@ -39,14 +39,11 @@ public class WorkflowParametersHelper {
     public static WorkflowParameters find(HttpServletRequest request) {
         WorkflowParameters form = get(request);
         
-        if (form == null || form.isEmpty()) {
+        if (WorkflowParametersHelper.isEmpty(form)) {
             form = fromParams(request);
         }
         
-        if (form != null && form.isEmpty()) {
-            return null;
-        }
-        return form;
+        return WorkflowParametersHelper.isEmpty(form) ? null : form;
     }
     
     public static WorkflowParameters get(Map<String, Object> map) {
@@ -62,11 +59,7 @@ public class WorkflowParametersHelper {
             parameters = from(workflowId, params, targetItem, keepForward, nodeId);
         }
         
-         if (parameters!= null && parameters.isEmpty()) {
-            return null;
-        }
-        
-        return parameters;
+        return WorkflowParametersHelper.isEmpty(parameters) ? null : parameters;
     }
 
     private static Boolean convertParamToBooleanOrNull(Object value) {
@@ -170,7 +163,7 @@ public class WorkflowParametersHelper {
             return;
         }
         
-        if (params == null || params.isEmpty()) {
+        if (isEmpty(params)) {
             session.removeAttribute(WORKFLOW_ID);
             session.removeAttribute(WORKFLOW_FORWARD_TARGET_ITEM_ID);
             session.removeAttribute(WORKFLOW_FORWARD_PARAMS);
@@ -186,7 +179,7 @@ public class WorkflowParametersHelper {
     }
     
     public static void put(HttpServletRequest request, WorkflowParameters params) {
-        if (params == null || params.isEmpty()) {
+        if (isEmpty(params)) {
             request.removeAttribute(WORKFLOW_PARAMS_FORM);
             request.removeAttribute(WORKFLOW_ID);
             request.removeAttribute(WORKFLOW_FORWARD_TARGET_ITEM_ID);
@@ -241,5 +234,13 @@ public class WorkflowParametersHelper {
         }
         
         return forwardParams;
+    }
+    
+    public static boolean isEmpty(WorkflowParameters workflowParameters) {
+        return workflowParameters == null || workflowParameters.isEmpty();
+    }
+    
+    public static boolean isNotEmpty(WorkflowParameters workflowParameters) {
+        return !isEmpty(workflowParameters);
     }
 }

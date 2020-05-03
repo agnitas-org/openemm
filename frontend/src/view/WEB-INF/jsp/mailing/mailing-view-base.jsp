@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.beans.*" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -21,8 +21,8 @@
 
 <c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>"/>
 
-<c:set var="WORKFLOW_ID" value="<%= ComWorkflowAction.WORKFLOW_ID %>" scope="page"/>
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
+<c:set var="WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="page"/>
+<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
 
 <c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
 <c:set var="TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
@@ -182,20 +182,14 @@
                                                 </c:if>
 
                                                 <c:if test="${sessionScope[WORKFLOW_ID] ne null || mailingBaseForm.workflowId ne 0}">
-                                                    <%--todo: GWUA-4271: change after test sucessfully--%>
-                                                    <%--<c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">--%>
-                                                        <%--<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>--%>
-                                                    <%--</c:url>--%>
+                                                    <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
+                                                        <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
+                                                    </c:url>
 
-                                                    <%--<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">--%>
-                                                        <%--<i class="icon icon-linkage-campaignmanager"></i>--%>
-                                                        <%--<strong><bean:message key="campaign.manager.icon"/></strong>--%>
-                                                    <%--</a>--%>
-
-                                                    <agn:agnLink page="/workflow.do?method=view&workflowId=${workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
+                                                    <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                                         <i class="icon icon-linkage-campaignmanager"></i>
                                                         <strong><bean:message key="campaign.manager.icon"/></strong>
-                                                    </agn:agnLink>
+                                                    </a>
                                                 </c:if>
                                             </div>
                                         </div>
@@ -240,7 +234,7 @@
                     <emm:ShowByPermission token="mailing.parameter.show">
                         <jsp:include page="/WEB-INF/jsp/mailing/parameter/parameter.jsp"/>
                     </emm:ShowByPermission>
-					
+
                     <jsp:include page="/WEB-INF/jsp/mailing/interval.jsp"/>
                 </agn:agnForm>
             </div>

@@ -26,11 +26,7 @@ import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
+import javax.servlet.http.HttpServletRequest;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
@@ -44,6 +40,18 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetOperator;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.web.forms.WorkflowParameters;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
 
 public class WorkflowUtils {
 	public static final int GCD_ACCURACY = 10;
@@ -295,6 +303,31 @@ public class WorkflowUtils {
 
 	private static Deadline asDeadline(Date date, int hours, int minutes, TimeZone timezone) {
 		return new Deadline(WorkflowUtils.mergeIconDateAndTime(date, hours, minutes, timezone));
+	}
+	
+	public static void updateForwardParameters(HttpServletRequest request) {
+		updateForwardParameters(request, false);
+	}
+	
+	public static void updateForwardParameters(HttpServletRequest request, boolean checkKeepForward) {
+		WorkflowParameters workflowParameters = new WorkflowParameters();
+  
+		if (checkKeepForward) {
+			if (Boolean.valueOf(request.getParameter(WORKFLOW_KEEP_FORWARD))) {
+				return;
+			}
+		}
+		
+		String targetItemId = request.getParameter(WORKFLOW_FORWARD_TARGET_ITEM_ID);
+        workflowParameters.setWorkflowForwardTargetItemId(NumberUtils.toInt(targetItemId));
+
+        String workflowId = request.getParameter(WORKFLOW_ID);
+        workflowParameters.setWorkflowId(NumberUtils.toInt(workflowId));
+
+        String forwardParams = request.getParameter(WORKFLOW_FORWARD_PARAMS);
+        workflowParameters.setWorkflowForwardParams(StringUtils.trimToEmpty(forwardParams));
+		
+		AgnUtils.saveWorkflowForwardParamsToSession(request, workflowParameters, true);
 	}
 
 	public static final class Deadline {

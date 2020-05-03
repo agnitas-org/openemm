@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mailtracking.service;
 
 import java.util.Objects;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.log4j.Logger;
@@ -22,6 +21,7 @@ import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 /**
  * Implementation of {@link ClickTrackingService} interface.
@@ -49,7 +49,6 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 
 			if(link != null) {
 				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, this.configService, this.mailingContentTypeCache);
-				final int customerID = (trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID(); 
 				
 				if(trackingLevel == TrackingLevel.ANONYMOUS) {
 					if(logger.isInfoEnabled()) {
@@ -57,7 +56,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 					}
 				}
 				
-				final boolean result = trackableLinkDao.logClickInDB(link, customerID, remoteAddress, deviceClass, deviceID, clientID);
+				final boolean result = trackableLinkDao.logClickInDB(link, ((trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID()), ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress), deviceClass, deviceID, clientID);
 					
 				if(!result) {
 					logger.warn(String.format("Could not track click on link %d for customer %d (company ID %d)", uid.getUrlID(), uid.getCustomerID(), uid.getCompanyID()));
@@ -69,7 +68,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	}
 	
 	/**
-	 * Sets the DAO handling trackable links. 
+	 * Sets the DAO handling trackable links.
 	 * 
 	 * @param dao DAO handling trackable links
 	 */

@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
@@ -12,9 +12,9 @@
 <c:set var="BASE_ACTION_VIEW" 					value="<%= MailingBaseAction.ACTION_VIEW %>"						scope="request" />
 <c:set var="BASE_ACTION_CONFIRM_DELETE" 		value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" 				scope="request" />
 <c:set var="BASE_ACTION_CLONE_AS_MAILING" 		value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"			scope="request" />
-<c:set var="WORKFLOW_ID" 						value="<%= ComWorkflowAction.WORKFLOW_ID %>" 						scope="request" />
-<c:set var="WORKFLOW_FORWARD_PARAMS" 			value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>"			scope="request" />
-<c:set var="WORKFLOW_FORWARD_TARGET_ITEM_ID" 	value="<%= ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID %>"	scope="request" />
+<c:set var="WORKFLOW_ID"                        value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="request" />
+<c:set var="WORKFLOW_FORWARD_PARAMS" 			value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>"			scope="request" />
+<c:set var="WORKFLOW_FORWARD_TARGET_ITEM_ID" 	value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID %>"	scope="request" />
 
 <emm:CheckLogon/>
 <emm:Permission token="stats.mailing"/>

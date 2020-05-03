@@ -1,5 +1,5 @@
-<%@page import="org.agnitas.util.AgnUtils"%>
-<%@ page language="java" import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.target.*" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@page import="com.agnitas.web.ComTargetAction"%>
+<%@ page language="java" import="org.agnitas.target.TargetNode, org.agnitas.util.AgnUtils, org.agnitas.web.TargetForm" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
@@ -61,6 +61,19 @@
 	<html:hidden property="workflowForwardParams" />
 	<html:hidden property="workflowId" />
 	<html:hidden property="locked" />
+
+
+	<script id="target-group-query-builder" type="application/json">
+		{
+			"jSessionId": "${pageContext.session.id}",
+			"helpLanguage": "${helplanguage}",
+			"isTargetGroupLocked": "${editTargetForm.locked}",
+			"WORKFLOW_URLS": {
+				"getAllMailingSorted": "<c:url value='/workflow/getAllMailingSorted.action'/>",
+				"getMailingLinks": "<c:url value='/workflow/getMailingLinks.action'/>"
+			}
+		}
+	</script>
 
 
 	<div class="tile">
@@ -133,8 +146,6 @@
 									<div id="targetgroup-querybuilder">
 										<html:hidden property="queryBuilderRules" styleId="queryBuilderRules"/>
 										<html:hidden property="queryBuilderFilters" styleId="queryBuilderFilters"/>
-										<input type="hidden" value="${pageContext.session.id}" id="jSessionId">
-										<input type="hidden" value="${helplanguage}" id="helpLanguage">
 									</div>
 								</div>
 							</div>

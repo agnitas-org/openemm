@@ -48,7 +48,7 @@ import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingClickedOnSpecificLink;
 import com.agnitas.emm.core.target.nodes.TargetNodeMailingRevenue;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.forms.ComTargetForm;
 import org.agnitas.dao.TrackableLinkDao;
@@ -78,6 +78,7 @@ import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.TargetForm;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -312,7 +313,7 @@ public class ComTargetAction extends StrutsActionBase {
         			req.getSession().removeAttribute(SAVED_TARGET_STRUCTURE_DATA_SESSION_ATTRIBUTE_NAME);
 
         			updateWorkflowForwardParameters(req);
-        			Integer forwardTargetItemId = (Integer) req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+        			Integer forwardTargetItemId = (Integer) req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
         			if (forwardTargetItemId != null && forwardTargetItemId != 0) {
         				targetForm.setTargetID(forwardTargetItemId);
         			}
@@ -412,12 +413,14 @@ public class ComTargetAction extends StrutsActionBase {
                 if ("success".equals(destination.getName()) && !ruleAdded && !ruleRemoved) {
 					HttpSession session = req.getSession();
 
-					Integer workflowId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_ID);
-					String forwardParams = (String) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS);
+					Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+					String forwardParams = (String) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS);
 
 					if (workflowId != null && workflowId != 0) {
-						ActionRedirect redirect = new ActionRedirect(mapping.findForward("workflow_view"));
-						redirect.addParameter("workflowId", workflowId);
+						destination = mapping.findForward("workflow_view");
+						String path = destination.getPath().replace("{WORKFLOW_ID}", workflowId.toString());
+						ActionRedirect redirect = new ActionRedirect(path);
+						
 						redirect.addParameter("forwardParams", forwardParams + ";elementValue=" + targetForm.getTargetID());
 						return redirect;
 					}
@@ -956,20 +959,7 @@ public class ComTargetAction extends StrutsActionBase {
 	}
 
     private void updateWorkflowForwardParameters(HttpServletRequest req) {
-        String forwardTargetItemId = req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
-        if (forwardTargetItemId == null || "".equals(forwardTargetItemId)) {
-            forwardTargetItemId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID, Integer.valueOf(forwardTargetItemId));
-
-        String workflowId = req.getParameter(ComWorkflowAction.WORKFLOW_ID);
-        if (workflowId == null || "".equals(workflowId)) {
-            workflowId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_ID, Integer.valueOf(workflowId));
-
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS,
-                req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
+		WorkflowUtils.updateForwardParameters(req);
     }
 
     private void loadAdditionalData(ComTargetForm targetForm, HttpServletRequest req) {

@@ -1,3 +1,4 @@
+
 var constants;
 
 AGN.Lib.Controller.new('workflow-view', function () {
@@ -5,7 +6,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         Template = AGN.Lib.Template,
         Confirm = AGN.Lib.Confirm;
 
-    var workflowManagerStatistics;
+    var WorkflowManagerStatistics;
     var nodeFactory = AGN.Lib.WM.NodeFactory;
 
     var GENDER_PROFILE_FIELD = 'gender';
@@ -52,7 +53,6 @@ AGN.Lib.Controller.new('workflow-view', function () {
     var editorsHelper;
     var workflowSaveBeforePdfHandler;
     var isActivated;
-    var workflowNewStatus;
     var workflowStatus;
     var allUsedEntity;
     var iconCommentEditor;
@@ -85,26 +85,26 @@ AGN.Lib.Controller.new('workflow-view', function () {
     }
 
     function arrayAsOptionsHtml(options) {
-      var html = '';
+        var html = '';
 
-      options.forEach(function(option) {
-        var attributes = 'value="' + option.id + '"';
+        options.forEach(function(option) {
+            var attributes = 'value="' + option.id + '"';
 
-        var extras = option.data;
-        if (extras) {
-          Object.keys(extras).forEach(function(k) {
-            attributes += ' data-' + k + '="' + extras[k].replace('"', '&quot;') + '"';
-          });
-        }
+            var extras = option.data;
+            if (extras) {
+                Object.keys(extras).forEach(function(k) {
+                    attributes += ' data-' + k + '="' + extras[k].replace('"', '&quot;') + '"';
+                });
+            }
 
-        var text = option.text
-          .replace('<', '&lt;')
-          .replace('>', '&gt;');
+            var text = option.text
+                .replace('<', '&lt;')
+                .replace('>', '&gt;');
 
-        html += '<option ' + attributes + '>' + text + '</option>';
-      });
+            html += '<option ' + attributes + '>' + text + '</option>';
+        });
 
-      return html;
+        return html;
     }
 
     function getConfigData($e) {
@@ -162,7 +162,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
     this.addDomInitializer('workflow-pdf-initialize', function () {
         var data = this.config,
-            workflowManagerStatistics,
+            WorkflowManagerStatistics,
             campaignManagerScale,
             sessionId = data.sessionId,
             locale = data.locale;
@@ -179,8 +179,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
             campaignManagerScale: campaignManagerScale,
             campaignManagerSettings: campaignManagerSettings,
             restoreSpaceFields: ["name", "workflow_description"],
-            editorPositionLeft: data.editorPositionLeft,
-            editorPositionTop: data.editorPositionTop,
+            editorPositionLeft: parseInt(data.editorPositionLeft),
+            editorPositionTop: parseInt(data.editorPositionTop),
             localeDateNTimePattern: data.localeDateNTimePattern,
             noContextMenu: data.noContextMenu,
             pageContextSessionId: sessionId,
@@ -190,7 +190,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
             componentURL: constants.componentURL
         });
         editorsHelper = campaignManager.getEditorsHelper();
-        workflowManagerStatistics = new AGN.Lib.WM.WorkflowManagerStatistics(campaignManager);
+        WorkflowManagerStatistics = new AGN.Lib.WM.WorkflowManagerStatistics(campaignManager);
 
         $.datepicker.setDefaults($.datepicker.regional[locale]);
 
@@ -198,7 +198,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         campaignManager.updateWorkflowForPdf();
 
         if (data.showStatistics) {
-            workflowManagerStatistics.toggleStatistics(data.workflowId);
+            WorkflowManagerStatistics.toggleStatistics(data.workflowId);
         }
     });
 
@@ -207,7 +207,6 @@ AGN.Lib.Controller.new('workflow-view', function () {
         data = this.config;
         isActivated = data.isActivated;
         workflowStatus = data.workflowStatus;
-        workflowNewStatus = data.workflowNewStatus;
         allUsedEntity = setAllEntity(data);
 
         AGN.Lib.CampaignManagerService = {
@@ -223,8 +222,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
             workflowId: data.workflowId,
             isActivated: data.isActivated,
             restoreSpaceFields: ["name", "workflow_description"],
-            editorPositionLeft: data.editorPositionLeft,
-            editorPositionTop: data.editorPositionTop,
+            editorPositionLeft: parseInt(data.editorPositionLeft),
+            editorPositionTop: parseInt(data.editorPositionTop),
             localeDateNTimePattern: data.localeDateNTimePattern,
             pageContextSessionId: data.pageContextSessionId,
             campaignManagerScale: campaignManagerScale,
@@ -236,12 +235,12 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
         editorsHelper = campaignManager.getEditorsHelper();
 
-        workflowManagerStatistics = new AGN.Lib.WM.WorkflowManagerStatistics(campaignManager);
+        WorkflowManagerStatistics = new AGN.Lib.WM.WorkflowManagerStatistics(campaignManager);
 
         // set localization for datepickers
         jQuery.datepicker.setDefaults(jQuery.datepicker.regional[data.emmLocal]);
 
-        if (data.newStatus === data.pageContextSessionId) {
+        if (data.newStatus === constants.statusActive) {
             campaignManager.setWorkflowManagerStateChangedCallback(function () {
                 $('#workflow_active').prop('disabled', !campaignManager.isNodesFilled());
             });
@@ -256,7 +255,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
         //update UI elements according to the state of undo history stack
         campaignManager.setHistoryStackChangedCallback(function (isHistoryNotEmpty) {
-          AGN.Lib.WM.CampaignManagerToolbar.setUndoAvailable(isHistoryNotEmpty);
+            AGN.Lib.WM.CampaignManagerToolbar.setUndoAvailable(isHistoryNotEmpty);
         });
 
         campaignManager.setConnectionNotAllowedCallback(function () {
@@ -298,6 +297,20 @@ AGN.Lib.Controller.new('workflow-view', function () {
             handleResizeCampaignEditor();
         });
 
+        window.onbeforeunload = function(e) {
+          if (campaignManager && campaignManager.hasUnsavedChanges()) {
+            var message = t('grid.layout.leaveQuestion');
+            e = e || window.event;
+            if (e) {
+              e.returnValue = message;
+            }
+
+            // For Safari
+            return message;
+          }
+          AGN.Lib.Loader.show();
+        };
+
     });
 
     this.addDomInitializer('start-editor-initializer', function ($e) {
@@ -326,12 +339,12 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 var picker = null;
                 if (this.isStartEditor) {
                     switch (data.startType) {
-                      case constants.startTypeDate:
-                          picker = $form.find('#startDate').pickadate('picker');
-                          break;
-                      case constants.startTypeEvent:
-                          picker = $form.find('#executionDate').pickadate('picker');
-                          break;
+                        case constants.startTypeDate:
+                            picker = $form.find('#startDate').pickadate('picker');
+                            break;
+                        case constants.startTypeEvent:
+                            picker = $form.find('#executionDate').pickadate('picker');
+                            break;
                     }
                 } else if (data.endType == constants.endTypeDate) {
                     picker = $form.find('#startDate').pickadate('picker');
@@ -348,13 +361,13 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
 
             generateReminderComment: function() {
-              var name = $("#workflowForm input[name='workflow.shortname']").val();
-              var dateString = AGN.Lib.WM.DateTimeUtils.getDateStr(this.getStartStopDate(), startData.localeDatePattern);
+                var name = $("#workflowForm input[name='workflow.shortname']").val();
+                var dateString = AGN.Lib.WM.DateTimeUtils.getDateStr(this.getStartStopDate(), startData.localeDatePattern);
 
-              return (this.isStartEditor ? t('workflow.start.reminder_text') : t('workflow.stop.reminder_text'))
-                .replace(/:campaignName/g, name)
-                .replace(/:startDate/g, dateString)
-                .replace(/:endDate/g, dateString);
+                return (this.isStartEditor ? t('workflow.start.reminder_text') : t('workflow.stop.reminder_text'))
+                    .replace(/:campaignName/g, name)
+                    .replace(/:startDate/g, dateString)
+                    .replace(/:endDate/g, dateString);
             },
 
             fillEditor: function (node) {
@@ -369,7 +382,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                     $(this).remove();
                 });
                 editorForm.find('#remindCalendarDateTitle')
-                  .text(this.isStartEditor ? t('workflow.start.start_date') : t('workflow.stop.end_date'));
+                    .text(this.isStartEditor ? t('workflow.start.start_date') : t('workflow.stop.end_date'));
 
                 if (data.rules != undefined) {
                     for (var i = 0; i < data.rules.length; i++) {
@@ -487,10 +500,10 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 if (data.userType == 2) {
                     data.remindAdminId = 0;
                     data.recipients = $.trim(data.recipients)
-                      .toLowerCase()
-                      .split(/[,;\s\n\r]+/)
-                      .filter(function(address) { return !!address; })
-                      .join(', ');
+                        .toLowerCase()
+                        .split(/[,;\s\n\r]+/)
+                        .filter(function(address) { return !!address; })
+                        .join(', ');
                 } else {
                     data.recipients = "";
                 }
@@ -611,8 +624,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
                 function validateReminderRecipients() {
                     var emails = $.trim(editorForm.find('textarea[name="recipients"]').val())
-                      .split(/[,;\s\n\r]+/)
-                      .filter(function(address) { return !!address });
+                        .split(/[,;\s\n\r]+/)
+                        .filter(function(address) { return !!address });
 
                     if (!emails.length) {
                         if (showErrors) {
@@ -637,11 +650,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
             setCurrentTime: function () {
                 var self = this;
                 jQuery.ajax({
-                    type: "POST",
-                    url: constants.workflowURL,
-                    data: {
-                        method: "getCurrentAdminTime"
-                    },
+                    type: "GET",
+                    url: AGN.url('/workflow/getCurrentAdminTime.action'),
                     success: function (data) {
                         jQuery("form[name='startForm'] #startTime").val(self.formatTime(data.hour, data.minute));
                         jQuery("form[name='startForm'] #remindTime").val(self.formatTime(data.remindHour, data.remindMinute));
@@ -929,13 +939,13 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
             addRuleProperties: function ($element, ruleIndex) {
                 $element.filter('select, input')
-                  .attr('name', 'rules[' + ruleIndex + '].primaryValue')
-                  .addClass('rule-field');
+                    .attr('name', 'rules[' + ruleIndex + '].primaryValue')
+                    .addClass('rule-field');
             },
 
             addNewRuleProperties: function ($element) {
-              $element.filter('select, input')
-                .attr("id", "newRule_primaryValue");
+                $element.filter('select, input')
+                    .attr("id", "newRule_primaryValue");
             },
 
             onExecutionChanged: function () {
@@ -981,8 +991,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
             onReminderChanged: function () {
                 if ($("input[name='sendReminder']:checked").val()) {
                     $('form[name="startForm"]')
-                      .find('#reminderComment')
-                      .val(this.generateReminderComment());
+                        .find('#reminderComment')
+                        .val(this.generateReminderComment());
 
                     this.showDiv("reminderDetails");
                 } else {
@@ -1009,9 +1019,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                     $linkSelect.attr("readonly", "readonly");
                     $.ajax({
                         type: "POST",
-                        url: constants.workflowURL,
+                        url: AGN.url('/workflow/getMailingLinks.action'),
                         data: {
-                            method: "getMailingLinks",
                             mailingId: mailingId
                         },
                         success: function (data) {
@@ -1280,9 +1289,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                     $linkSelect.attr("readonly", "readonly");
                     $.ajax({
                         type: "POST",
-                        url: constants.workflowURL,
+                        url: AGN.url('/workflow/getMailingLinks.action'),
                         data: {
-                            method: "getMailingLinks",
                             mailingId: mailingId
                         },
                         success: function (data) {
@@ -1407,32 +1415,32 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
 
             updateOperatorsAvailability: function () {
-              var profileField = $('form[name="decisionForm"] select[name="profileField"]').val();
-              var fieldType = decisionProfileFieldsTypes[profileField];
+                var profileField = $('form[name="decisionForm"] select[name="profileField"]').val();
+                var fieldType = decisionProfileFieldsTypes[profileField];
 
-              $('form[name="decisionForm"] select.decision-rule-operator').each(function() {
-                  var $select = $(this);
+                $('form[name="decisionForm"] select.decision-rule-operator').each(function() {
+                    var $select = $(this);
 
-                  $select.children('option').prop('disabled', function() {
-                      var types = $(this).data('types');
+                    $select.children('option').prop('disabled', function() {
+                        var types = $(this).data('types');
 
-                      if(profileField == GENDER_PROFILE_FIELD) {
-                          return this.text != '=' && this.text != '!=';
-                      }
+                        if(profileField == GENDER_PROFILE_FIELD) {
+                            return this.text != '=' && this.text != '!=';
+                        }
 
-                      if (types == '*' || !types) {
-                          return false;
-                      }
+                        if (types == '*' || !types) {
+                            return false;
+                        }
 
-                      return types.split(/[\s,]+/).indexOf(fieldType) == -1;
-                  });
+                        return types.split(/[\s,]+/).indexOf(fieldType) == -1;
+                    });
 
-                  AGN.Initializers.Select($select);
+                    AGN.Initializers.Select($select);
 
-                  if ($select.val() == null) {
-                      editorsHelper.initSelectWithFirstValue($select);
-                  }
-              });
+                    if ($select.val() == null) {
+                        editorsHelper.initSelectWithFirstValue($select);
+                    }
+                });
             },
 
             onRulesChanged: function () {
@@ -1593,19 +1601,19 @@ AGN.Lib.Controller.new('workflow-view', function () {
                         var localShowDecisionFormDiv = this.showDecisionFormDiv;
                         //check if mailing icon exists
                         campaignManager.getIncomingChainsForIcon()
-                          .forEach(function(nodes) {
-                            for (var i = nodes.length - 1; i >= 0; i--) {
-                              if (nodes[i].type == nodeFactory.NODE_TYPE_MAILING
-                                || nodes[i].type == nodeFactory.NODE_TYPE_ACTION_BASED_MAILING
-                                || nodes[i].type == nodeFactory.NODE_TYPE_DATE_BASED_MAILING
-                                || nodes[i].type == nodeFactory.NODE_TYPE_FOLLOWUP_MAILING
-                              ) {
-                                // Memorizes mailing ID to be set as decisions mailingId.
-                                profileFieldMailingId = nodes[i].data.mailingId;
-                                localShowDecisionFormDiv("ruleMailingReceivedWrapper");
-                              }
-                            }
-                          });
+                            .forEach(function(nodes) {
+                                for (var i = nodes.length - 1; i >= 0; i--) {
+                                    if (nodes[i].type == nodeFactory.NODE_TYPE_MAILING
+                                        || nodes[i].type == nodeFactory.NODE_TYPE_ACTION_BASED_MAILING
+                                        || nodes[i].type == nodeFactory.NODE_TYPE_DATE_BASED_MAILING
+                                        || nodes[i].type == nodeFactory.NODE_TYPE_FOLLOWUP_MAILING
+                                    ) {
+                                        // Memorizes mailing ID to be set as decisions mailingId.
+                                        profileFieldMailingId = nodes[i].data.mailingId;
+                                        localShowDecisionFormDiv("ruleMailingReceivedWrapper");
+                                    }
+                                }
+                            });
                     }
                 }
             },
@@ -2035,9 +2043,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 if (autoExportSelector.val() > 0) {
                     $.ajax({
                         type: 'POST',
-                        url: constants.workflowURL,
+                        url: AGN.url('/workflow/validateDependency.action'),
                         data: {
-                            method: 'validateDependency',
                             workflowId: campaignManager.workflowId || 0,
                             type: DEPENDENCY_TYPE_AUTO_EXPORT,
                             entityId: autoExportSelector.val()
@@ -2080,10 +2087,10 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
 
             isSetFilledAllowed: function () {
-              var $select = $("form[name='" + this.formName + "'] select[name=importexportId]");
-              var $option = $select.find(':selected');
+                var $select = $("form[name='" + this.formName + "'] select[name=importexportId]");
+                var $option = $select.find(':selected');
 
-              return !($select.val() == 0 || $option.data('is-available') != true);
+                return !($select.val() == 0 || $option.data('is-available') != true);
             }
         };
 
@@ -2095,10 +2102,10 @@ AGN.Lib.Controller.new('workflow-view', function () {
         editorsHelper.editors["deadline"] = {
             panelIds: ['fixedDeadlinePanel', 'delayDeadlinePanel'],
             timeUnitIds: ['deadlineTimeUnitMinute',
-                        'deadlineTimeUnitHour',
-                        'deadlineTimeUnitDay',
-                        'deadlineTimeUnitWeek',
-                        'deadlineTimeUnitMonth'],
+                'deadlineTimeUnitHour',
+                'deadlineTimeUnitDay',
+                'deadlineTimeUnitWeek',
+                'deadlineTimeUnitMonth'],
             formName: "deadlineForm",
 
             getDefaultDelayData: function(type){
@@ -2301,11 +2308,11 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
 
             checkPrecededByImportIcon: function(node) {
-              var campaignManagerNodes = campaignManager.getCMNodes();
-              return campaignManager.getNodeIncomingConnections(node).some(function(connection) {
-                var node = campaignManagerNodes.getNodeById(connection.source);
-                return node && node.type == nodeFactory.NODE_TYPE_IMPORT;
-              });
+                var campaignManagerNodes = campaignManager.getCMNodes();
+                return campaignManager.getNodeIncomingConnections(node).some(function(connection) {
+                    var node = campaignManagerNodes.getNodeById(connection.source);
+                    return node && node.type == nodeFactory.NODE_TYPE_IMPORT;
+                });
             }
         };
 
@@ -2355,9 +2362,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 if (autoImportSelector.val() > 0) {
                     $.ajax({
                         type: 'POST',
-                        url: constants.workflowURL,
+                        url: AGN.url('/workflow/validateDependency.action'),
                         data: {
-                            method: 'validateDependency',
                             workflowId: campaignManager.workflowId || 0,
                             type: DEPENDENCY_TYPE_AUTO_IMPORT,
                             entityId: autoImportSelector.val()
@@ -2400,10 +2406,10 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
 
             isSetFilledAllowed: function () {
-              var $select = $("form[name='" + this.formName + "'] select[name=importexportId]");
-              var $option = $select.find(':selected');
+                var $select = $("form[name='" + this.formName + "'] select[name=importexportId]");
+                var $option = $select.find(':selected');
 
-              return !($select.val() == 0 || $option.data('is-available') != true);
+                return !($select.val() == 0 || $option.data('is-available') != true);
             }
         };
 
@@ -2587,9 +2593,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
             jQuery.ajax({
                 type: "POST",
-                url: constants.workflowURL,
+                url: AGN.url('/workflow/getMailingsByWorkStatus.action'),
                 data: {
-                    method: "getMailingsByWorkStatus",
                     mailingTypes: this.mailingTypesForLoading.join(','),
                     status: status,
                     sort: sort,
@@ -2722,13 +2727,13 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 // Check if mailing is selected.
                 if (parseInt(baseEditor.mailingId, 10) > 0) {
                     if (parseInt(followupEditor.mailingId, 10) > 0) {
-                      baseEditor.node.iconTitle = baseEditor.getSelectedMailingOption().html() + ":/" +
-                        followupEditor.getSelectedMailingOption().html();
+                        baseEditor.node.iconTitle = baseEditor.getSelectedMailingOption().html() + ":/" +
+                            followupEditor.getSelectedMailingOption().html();
                     } else {
-                      baseEditor.node.iconTitle = baseEditor.getSelectedMailingOption().html();
+                        baseEditor.node.iconTitle = baseEditor.getSelectedMailingOption().html();
                     }
                 } else {
-                  baseEditor.node.iconTitle = " : " + followupEditor.getSelectedMailingOption().html();
+                    baseEditor.node.iconTitle = " : " + followupEditor.getSelectedMailingOption().html();
                 }
             }
 
@@ -2749,7 +2754,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
             },
             workflowCopyDialogResponse: function (result) {
                 jQuery('#workflow-copy-dialog').dialog('close');
-                window.location = copyData.url + '&workflowId=' + this.workflowId
+                window.location = copyData.url + '?workflowId=' + this.workflowId
                     + '&isWithContent=' + (result ? "true" : "false");
                 return false;
             },
@@ -2842,36 +2847,36 @@ AGN.Lib.Controller.new('workflow-view', function () {
         var configString = $elem.data('config');
         var config = AGN.Lib.Helpers.objFromString(configString);
 
-            var callback = function () {
-            };
+        var callback = function () {
+        };
 
-            workflowTestingDialogHandler = {
-                showDialog: function (positiveCallback) {
-                    if (positiveCallback instanceof Function) {
-                        callback = positiveCallback;
-                    }
-
-                    jQuery('#workflow-testing-dialog').dialog({
-                        title: '<span class="dialog-fat-title">' + t('workflow.single') + ':&nbsp;' + config.shortname + '</span>',
-                        dialogClass: "no-close",
-                        width: 650,
-                        modal: true,
-                        resizable: false
-                    });
-                },
-
-                closeDialog: function () {
-                    $('#workflow-testing-dialog').dialog('close');
-                    return false;
-                },
-
-                acceptDialog: function () {
-                    $('#workflow-testing-dialog').dialog('close');
-                    callback(workflowTestingDialogHandler);
+        workflowTestingDialogHandler = {
+            showDialog: function (positiveCallback) {
+                if (positiveCallback instanceof Function) {
+                    callback = positiveCallback;
                 }
-            };
 
-            data.workflowTestingDialogHandler = workflowTestingDialogHandler;
+                jQuery('#workflow-testing-dialog').dialog({
+                    title: '<span class="dialog-fat-title">' + t('workflow.single') + ':&nbsp;' + config.shortname + '</span>',
+                    dialogClass: "no-close",
+                    width: 650,
+                    modal: true,
+                    resizable: false
+                });
+            },
+
+            closeDialog: function () {
+                $('#workflow-testing-dialog').dialog('close');
+                return false;
+            },
+
+            acceptDialog: function () {
+                $('#workflow-testing-dialog').dialog('close');
+                callback(workflowTestingDialogHandler);
+            }
+        };
+
+        data.workflowTestingDialogHandler = workflowTestingDialogHandler;
 
     });
 
@@ -3651,7 +3656,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
             deferred.reject();
         } else {
             if (campaignManager.checkMailingTypesConvertingRequired()) {
-              return Confirm.create(Template.text('mailing-types-replace-modal'));
+                return Confirm.create(Template.text('mailing-types-replace-modal'));
             } else {
                 deferred.resolve();
             }
@@ -3664,17 +3669,18 @@ AGN.Lib.Controller.new('workflow-view', function () {
         var save = function() {
             var form = AGN.Lib.Form.get($("form#workflowForm"));
 
-            form.setValueOnce("schema", campaignManager.getIconsForSubmissionJson());
-            form.setValueOnce("editorPositionLeft", campaignManager.getLeftPosition());
-            form.setValueOnce("editorPositionTop", campaignManager.getTopPosition());
+            form.setValueOnce("workflowSchema", campaignManager.getIconsForSubmissionJson());
+            form.setValueOnce("editorPositionLeft", parseInt(campaignManager.getLeftPosition()));
+            form.setValueOnce("editorPositionTop", parseInt(campaignManager.getTopPosition()));
             form.setValueOnce("workflowUndoHistoryData", campaignManager.getUndoHistoryDataForSubmission());
 
+            campaignManager.activateIgnoreChangesThisTime();
             form.submit('static');
         };
 
         if (validateNeeded) {
             validateWorkflowBaseData()
-              .done(save);
+                .done(save);
         } else {
             save();
         }
@@ -3684,7 +3690,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         if (data.isStatusOpen === 'true') {
             workflownoStatisticsDialogHandler.showDialog();
         } else {
-            workflowManagerStatistics.toggleStatistics(workflowId);
+            WorkflowManagerStatistics.toggleStatistics(workflowId);
             updateStatisticsButtonLabel($element);
         }
     }
@@ -3692,11 +3698,14 @@ AGN.Lib.Controller.new('workflow-view', function () {
     function generatePDF() {
         var newCampaign = data.workflowId <= 0 || !data.shortName;
 
-        var hasUnsavedChanges = campaignManager.canUndo();
+        var hasUnsavedChanges = campaignManager.hasUnsavedChanges();
         if (newCampaign || hasUnsavedChanges) {
             workflowSaveBeforePdfHandler.showDialog(newCampaign, hasUnsavedChanges);
-        } else {
-            window.location.href = data.pdfGenerationUrl+'&workflowId=' + data.workflowId + '&showStatistics=' + workflowManagerStatistics.statisticsVisible;
+        }
+        else {
+            window.location.href = data.pdfGenerationUrl
+              .replace('{workflow-ID}', data.workflowId)
+              .replace('{show-statistic}', WorkflowManagerStatistics.statisticsVisible);
             AGN.Lib.Loader.hide();
         }
     }
@@ -3707,7 +3716,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
         var buttonLabel = $element.html();
 
-        if (workflowManagerStatistics.statisticsVisible) {
+        if (WorkflowManagerStatistics.statisticsVisible) {
             buttonLabel = buttonLabel.replace(showStatistics, hideStatistics);
         } else {
             buttonLabel = buttonLabel.replace(hideStatistics, showStatistics);
@@ -3727,7 +3736,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         if (inactivating || !campaignManager.checkWorkflowBeforeSave()) {
             //prepare data to show confirm dialog before workflow activation
             if (activating) {
-                $("input[name='workflow.statusString']").val(constants.statusActive);
+                $("input[name='status']").val(constants.statusActive);
                 var mailings = campaignManager.getMailingNames();
                 $('#activating-campaign-mailings').html(mailings);
                 $('#activating-campaign-dialog').css('visibility', 'visible');

@@ -5,19 +5,20 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 
 <%--@elvariable id="errorReport" type="java.util.List<java.lang.String[]>"--%>
 
 <c:set var="TEMPLATE" value="<%= MailingSendAction.TEMPLATE %>" scope="page"/>
 <c:set var="FROM" value="<%= MailingSendAction.FROM %>" scope="page"/>
 <c:set var="SUBJECT" value="<%= MailingSendAction.SUBJECT %>" scope="page"/>
-
+<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-    <link type="text/css" rel="stylesheet" href="${emmLayoutBase.imagesURL}/stylesheet.css">
+    <link type="text/css" rel="stylesheet" href="${absoluteImagePath}/stylesheet.css">
     <link type="text/css" rel="stylesheet" href="styles/displaytag.css">
     <link type="text/css" rel="stylesheet" href="styles/tooltiphelp.css">
     <link type="text/css" rel="stylesheet" href="styles/reportstyles.css">

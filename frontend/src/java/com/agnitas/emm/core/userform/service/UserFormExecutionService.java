@@ -16,7 +16,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 public interface UserFormExecutionService {
 	
-	public static final String FORM_MIMETYPE_PARAM_NAME = "formMimetype";
+	String FORM_MIMETYPE_PARAM_NAME = "formMimetype";
 
 	UserFormExecutionResult executeForm(final int companyID, final String formName, final HttpServletRequest request, CaseInsensitiveMap<String, Object> params, final boolean useSession) throws Exception;
 }

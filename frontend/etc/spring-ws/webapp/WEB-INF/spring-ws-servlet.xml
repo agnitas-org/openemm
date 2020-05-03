@@ -49,7 +49,7 @@
         		<ref bean="wsSecurityInterceptor"/>
         		<ref bean="permissionInterceptor" />
         		<ref bean="throttlingInterceptor"/>
-        		<ref bean="usageInterceptor" />
+
         	</list>
     	</property>
 	</bean>

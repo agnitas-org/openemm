@@ -10,7 +10,7 @@
         this.timeoutId = undefined;
         this.isPdf = campaignManager.isPdf;
         this.commentCounter = 1;
-        this.workflowURL = data.workflowURL;
+        this.mailingThumbnailURL = data.mailingThumbnailURL;
         this.componentURL = data.componentURL;
     };
 
@@ -18,7 +18,7 @@
         var template = '<div class="popover popover-wide" role="tooltip" >' +
             '<div class="arrow"></div>' +
             '<div class="popover-content" style="width: auto; height: auto; max-width: 300px; max-height: 350px; overflow: auto;"></div>' +
-         '</div>';
+            '</div>';
 
         return {
             trigger: 'manual',
@@ -37,29 +37,28 @@
         if (MAILING_TYPES.includes(node.type)) {
             mailingId = node.data.mailingId;
 
-            var mailingImg = mailingId > 0 ? this.getMailingThumbnail(this.manager.pageContextSessionId, mailingId) : '';
-            if(mailingImg != '') {
+            var mailingImg = mailingId > 0 ? this.getMailingThumbnail(mailingId) : '';
+            if (mailingImg != '') {
                 content = "<img src='" + mailingImg.src + "' style='width: 100%; height: 100%;'/>";
             }
         }
 
         var comment = node.data.iconComment;
-        if(comment != null && comment.trim() != '') {
+        if (comment != null && comment.trim() != '') {
             content += "<div>" + comment + "</div>";
         }
 
         return content;
     };
 
-    CommentControls.prototype.getMailingThumbnail = function(sessionId, mailingId) {
+    CommentControls.prototype.getMailingThumbnail = _.memoize(function(mailingId) {
         var self = this;
         var img = '';
         jQuery.ajax({
             type: "POST",
-            url: self.workflowURL,
+            url: self.mailingThumbnailURL,
             async: false,
             data: {
-                method: "getMailingThumbnail",
                 mailingId: mailingId
             },
             success: function (componentId) {
@@ -70,7 +69,7 @@
             }
         });
         return img;
-    };
+    });
 
     CommentControls.prototype.showCommentPopover = function(node) {
         var comment = node.data.iconComment;
@@ -83,11 +82,11 @@
         var draggedElements = this.manager.getDraggedElements();
         if (draggedElements) {
             for(var i = 0; i < draggedElements.length; i++) {
-              if (draggedElements[i].DOMElement == $element[0]) {
-                return;
-              }
+                if (draggedElements[i].DOMElement == $element[0]) {
+                    return;
+                }
             }
-          }
+        }
 
         this.updateComments(node);
         this.showPopover();
@@ -102,24 +101,24 @@
             this.commentPopover.destroy();
         }
 
-        var commentControls = this;
-        this.commentPopover = Popover.new(node.elementJQ, CommentControls.popoverOptions(commentControls, node));
+        var commentControlsNew = this;
+        this.commentPopover = Popover.new(node.elementJQ, CommentControls.popoverOptions(commentControlsNew, node));
 
         var $tip = this.commentPopover.tip();
 
         $tip.on('mouseenter', function() {
-          commentControls.showPopover(node);
+             commentControlsNew.showPopover(node);
         });
 
         $tip.on('mouseleave', function() {
-          commentControls.hidePopover(true);
+            commentControlsNew.hidePopover(true);
         });
     };
 
     CommentControls.prototype.stopHiding = function() {
         if (this.timeoutId) {
-          clearTimeout(this.timeoutId);
-          this.timeoutId = undefined;
+            clearTimeout(this.timeoutId);
+            this.timeoutId = undefined;
         }
     };
 
@@ -148,7 +147,7 @@
             .getNodeById(AGN.Lib.WM.CampaignManagerSelection.getSelected()[0]);
 
         if (!this.manager.checkActivation()) {
-          this.manager.getEditorsHelper().showIconCommentDialog(node);
+            this.manager.getEditorsHelper().showIconCommentDialog(node);
         }
     };
 

@@ -55,16 +55,9 @@
 <c:set var="tmpMailingID" value="${mailingSendForm.mailingID}" />
 
 <c:if test="${isWorkflowDriven}">
-	<%--todo: GWUA-4271: change after test sucessfully--%>
-	<%--<c:url var="WORKFLOW_LINK" value="/workflow/${workflowParameters.workflowId}/view.action">--%>
-		<%--<c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>--%>
-	<%--</c:url>--%>
-
-	<c:url var="WORKFLOW_LINK" value="/workflow.do">
-		<c:param name="method" value="view"/>
-		<c:param name="workflowId" value="${workflowParameters.workflowId}"/>
-		<c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
-	</c:url>
+    <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParameters.workflowId}/view.action">
+        <c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
+    </c:url>
 </c:if>
 
 <c:set var="tileHeaderActions" scope="page">
@@ -902,7 +895,7 @@
 		<td>{{= email }}</td>
 		<td class="table-actions">
 			<input type="hidden" name="{{= _.uniqueId('statusmailRecipient_') }}" value="{{= email }}" />
-			<a href="#" class="btn btn-regular btn-alert" data-action="recipients-row-remove" data-form-target="#statusMailRecipientsForm" data-from-submit>
+			<a href="#" class="btn btn-regular btn-alert" data-action="recipients-row-remove" data-form-target="#statusMailRecipientsForm" data-from-submit data-tooltip="<bean:message key='button.Delete'/>">
 				<i class="icon icon-trash-o"></i>
 			</a>
 		</td>

@@ -2,6 +2,8 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div class="modal">
     <div class="modal-dialog">
@@ -12,13 +14,11 @@
                     <bean:message key="${param.headerMessageKey}"/>
                 </h4>
             </div>
-
-            <html:form action="/workflow">
-                <input type="hidden" name="method" value="${param.bulkOperation}"/>
-
-                <logic:iterate id="workflowId" name="workflowForm" property="bulkIds">
-                    <input type="hidden" name="bulkID[${workflowId}]" value="on"/>
-                </logic:iterate>
+            <c:set var="action" value="/workflow/${param.bulkOperation}"/>
+            <mvc:form servletRelativeAction="${action}" method="POST">
+                <c:forEach var="workflowlistId" items="${bulkForm.bulkIds}">
+                    <input type="hidden" name="bulkIds" value="${workflowlistId}"/>
+                </c:forEach>
 
                 <div class="modal-body">
                     <bean:message key="${param.bulkActionQuestion}"/>
@@ -36,7 +36,7 @@
                         </button>
                     </div>
                 </div>
-            </html:form>
+            </mvc:form>
 
         </div>
     </div>

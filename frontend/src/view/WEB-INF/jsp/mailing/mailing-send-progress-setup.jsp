@@ -1,8 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
@@ -20,8 +20,8 @@
 <c:set var="ACTION_CONFIRM_DELETE" 		value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" 		scope="page" />
 <c:set var="ACTION_CLONE_AS_MAILING" 	value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"  	scope="page" />
 <c:set var="ACTION_CREATE_FOLLOW_UP" 	value="<%= ComMailingBaseAction.ACTION_CREATE_FOLLOW_UP %>" scope="page" />
-<c:set var="WORKFLOW_ID" 				value="<%= ComWorkflowAction.WORKFLOW_ID %>" 				scope="page" />
-<c:set var="WORKFLOW_FORWARD_PARAMS"	value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>" 	scope="page" />
+<c:set var="WORKFLOW_ID"                value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="page" />
+<c:set var="WORKFLOW_FORWARD_PARAMS"	value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" 	scope="page" />
 
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}" scope="page"/>
 
