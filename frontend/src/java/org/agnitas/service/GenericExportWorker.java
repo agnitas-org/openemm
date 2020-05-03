@@ -403,11 +403,14 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 							
 							// Scan headers
 							List<String> columnNames = new ArrayList<>();
+							List<String> columnLabels = new ArrayList<>();
 							List<String> columnTypes = new ArrayList<>();
 							for (int i = 1; i <= metaData.getColumnCount(); i++) {
 								String columnName = metaData.getColumnName(i);
+								String columnLabel = metaData.getColumnLabel(i);
 								if (excludedColumnsSet == null || !excludedColumnsSet.contains(columnName)) {
 									columnNames.add(columnName);
+									columnLabels.add(columnLabel);
 									columnTypes.add(metaData.getColumnTypeName(i));
 								}
 							}
@@ -417,7 +420,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 					    		if (csvFileHeaders.size() > 0) {
 					    			csvWriter.writeValues(csvFileHeaders);
 						    	} else {
-						    		csvFileHeaders = columnNames;
+						    		csvFileHeaders = columnLabels;
 						    		csvWriter.writeValues(csvFileHeaders);
 						    	}
 					    	}

@@ -13,6 +13,7 @@
 <c:set var="ACTION_NEW" 				value="<%= ComMailingBaseAction.ACTION_NEW %>"/>
 <c:set var="ACTION_MAILING_TEMPLATES" 	value="<%= ComMailingBaseAction.ACTION_MAILING_TEMPLATES %>"/>
 <c:set var="ACTION_MAILING_IMPORT" 		value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>" />
+<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <div class="col-md-offset-3 col-md-6">
     <div class="tile">
@@ -25,7 +26,7 @@
                 <li>
                     <html:link page="/mailingbase.do?action=${ACTION_MAILING_TEMPLATES}&mailingID=0&isTemplate=false&keepForward=${workflowId > 0}" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_mailing-new-standard.png">
+                            <img alt="" class="media-object" src="${absoluteImagePath}/facelift/agn_mailing-new-standard.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">
@@ -44,7 +45,7 @@
                 <li>
                     <html:link page="/mwStart.do?action=${ACTION_START}&keepForward=${workflowId > 0}" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt=""  class="media-object" src="${emmLayoutBase.imagesURL}/facelift/agn_mailing-new-assistant.png">
+                            <img alt=""  class="media-object" src="${absoluteImagePath}/facelift/agn_mailing-new-assistant.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">
@@ -61,7 +62,7 @@
                     <li>
 	                    <html:link page="/mailingbase.do?action=${ACTION_MAILING_IMPORT}" styleClass="link-list-item">
                         <div class="thumbnail">
-                            <img alt="" class="media-object" src="${emmLayoutBase.imagesURL}/file-download.png">
+                            <img alt="" class="media-object" src="${absoluteImagePath}/file-download.png">
                         </div>
                         <div class="media-body">
                             <p class="headline">

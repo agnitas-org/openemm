@@ -1,9 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
 <%@ page import="com.agnitas.web.ComMailingSendAction" %>
 <%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -18,7 +18,7 @@
 <%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
 
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
+<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
 <c:set var="ACTION_CONFIRM_SEND_WORLD" value="<%= ComMailingSendAction.ACTION_CONFIRM_SEND_WORLD %>" scope="page"/>
 <c:set var="ACTION_VIEW_SEND" value="<%= MailingSendAction.ACTION_VIEW_SEND %>" scope="page"/>
 
@@ -86,7 +86,7 @@
             <div class="tile-content-forms">
                 </c:when>
                 <c:otherwise>
-            <div class="tile">
+            <div class="tile" data-sizing="container">
                 <div class="tile-header">
                     <h2 class="headline"><bean:message key="MailingSend"/></h2>
                 </div>
@@ -215,19 +215,13 @@
                                         <button type="button" class="btn btn-regular" tabindex="-1" data-help="help_${helplanguage}/mailing/view_base/WorkflowEditorMsg.xml">
                                             <i class="icon icon-help"></i>
                                         </button>
-                                        <%--todo: GWUA-4271: change after test sucessfully--%>
-                                        <%--<c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">--%>
-                                            <%--<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}"/>--%>
-                                        <%--</c:url>--%>
-                                        <%--<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">--%>
-                                            <%--<i class="icon icon-linkage-campaignmanager"></i>--%>
-                                            <%--<strong><bean:message key="campaign.manager.icon"/></strong>--%>
-                                        <%--</a>--%>
-
-                                        <agn:agnLink page="/workflow.do?method=view&workflowId=${mailingSendForm.workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
+                                        <c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">
+                                            <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}"/>
+                                        </c:url>
+                                        <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                             <i class="icon icon-linkage-campaignmanager"></i>
                                             <strong><bean:message key="campaign.manager.icon"/></strong>
-                                        </agn:agnLink>
+                                        </a>
                                     </div>
                                 </c:if>
                             </div>
@@ -239,16 +233,19 @@
                                     <input type="text" name="sendTime" value="${currentHour}:${currentMinutes}" data-value="${currentHour}:${currentMinutes}" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" data-field-split="sendHour, sendMinute" data-field-split-rule=":">
                                 </div>
                                 <div class="input-group-addon">
-                            <span class="addon">
-                                <i class="icon icon-clock-o"></i>
-                            </span>
+                                    <span class="addon">
+                                        <i class="icon icon-clock-o"></i>
+                                    </span>
                                 </div>
                                 <c:if test="${mailingSendForm.workflowId ne 0}">
                                     <div class="input-group-btn">
-                                        <agn:agnLink page="/workflow.do?method=view&workflowId=${mailingSendForm.workflowId}&forwardParams=${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
+                                        <c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">
+                                            <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}"/>
+                                        </c:url>
+                                        <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                             <i class="icon icon-linkage-campaignmanager"></i>
                                             <strong><bean:message key="campaign.manager.icon"/></strong>
-                                        </agn:agnLink>
+                                        </a>
                                     </div>
                                 </c:if>
                             </div>
@@ -365,28 +362,26 @@
 	                     </div>
                     </emm:ShowByPermission>
                     <%@ include file="mailing-send2-optimized-mailing-generation-close.jspf" %>
-            <c:if test="${not mailingSendForm.isMailingGrid}">
-                    <div class="form-group">
-                        <div class="col-sm-offset-4 col-sm-8">
-                            <div class="btn-group">
-                                <agn:agnLink class="btn btn-large" tabindex="-1"
-                                             page='/mailingsend.do?action=${ACTION_VIEW_SEND}&mailingID=${tmpMailingID}'>
-                                    <i class="icon icon-reply"></i>
-                                    <span class="text"><bean:message key="button.Cancel"/></span>
-                                </agn:agnLink>
+                    <c:if test="${not mailingSendForm.isMailingGrid}">
+                        <div class="form-group">
+                            <div class="col-sm-offset-4 col-sm-8">
+                                <div class="btn-group">
+                                    <agn:agnLink class="btn btn-large" tabindex="-1"
+                                                 page='/mailingsend.do?action=${ACTION_VIEW_SEND}&mailingID=${tmpMailingID}'>
+                                        <i class="icon icon-reply"></i>
+                                        <span class="text"><bean:message key="button.Cancel"/></span>
+                                    </agn:agnLink>
 
-                                <c:if test="${mailingSendForm.workflowId eq 0}">
-                                    <button type="button" class="btn btn-large btn-primary" data-form-set="send: send" data-form-confirm="${ACTION_CONFIRM_SEND_WORLD}">
-                                        <i class="icon icon-send-o"></i>
-                                        <span class="text"><bean:message key="button.Send"/></span>
-                                    </button>
-                                </c:if>
+                                    <c:if test="${mailingSendForm.workflowId eq 0}">
+                                        <button type="button" class="btn btn-large btn-primary pull-right" data-form-set="send: send" data-form-confirm="${ACTION_CONFIRM_SEND_WORLD}">
+                                            <i class="icon icon-send-o"></i>
+                                            <span class="text"><bean:message key="button.Send"/></span>
+                                        </button>
+                                    </c:if>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </c:if>
-            </div>
+                    </c:if>
         </tiles:put>
     </tiles:insert>
 

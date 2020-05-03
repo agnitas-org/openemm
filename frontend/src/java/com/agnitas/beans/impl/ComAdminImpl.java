@@ -433,7 +433,7 @@ public class ComAdminImpl implements ComAdmin {
 	@Override
 	public SimpleDateFormat getDateTimeFormatWithSeconds() {
 		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, getLocale());
-		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy"));
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
 		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;
@@ -442,7 +442,7 @@ public class ComAdminImpl implements ComAdmin {
 	@Override
 	public SimpleDateFormat getDateTimeFormat() {
 		SimpleDateFormat dateTimeFormat = (SimpleDateFormat) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, getLocale());
-		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy"));
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(getAdminTimezone()));
 		dateTimeFormat.setLenient(false);
 		return dateTimeFormat;

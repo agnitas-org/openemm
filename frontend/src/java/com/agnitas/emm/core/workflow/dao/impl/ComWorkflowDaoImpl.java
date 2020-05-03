@@ -321,7 +321,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
     @Override
     public int countCustomers(@VelocityCheck int companyId, int mailinglistId, String targetSQL) {
-        int result = 0;
+        int result;
         StringBuilder query = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) count FROM customer_" + companyId + "_tbl cust ");
         if (StringUtils.isBlank(targetSQL)) {
             query.append("INNER JOIN customer_").append(companyId).append("_binding_tbl bind ON cust.customer_id = bind.customer_id WHERE bind.mailinglist_id = ?");

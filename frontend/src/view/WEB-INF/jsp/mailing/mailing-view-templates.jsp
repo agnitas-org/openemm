@@ -6,7 +6,9 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <c:set var="ACTION_NEW" value="<%= ComMailingBaseAction.ACTION_NEW %>"/>
+<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <agn:agnForm action="/mailingbase.do?action=${ACTION_NEW}&mailingID=0&isTemplate=false" method="GET" data-form="resource">
     <html:hidden property="keepForward" value="${not empty workflowId and workflowId gt 0 ? true : false}"/>
@@ -60,7 +62,7 @@
                             <a href="#" class="card old-cards" data-form-submit data-action="select-layout" data-form-set="templateID: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
                                 <c:choose>
                                     <c:when test="${template.previewComponentId eq 0}">
-                                        <img class="card-image" src="${emmLayoutBase.imagesURL}/facelift/no_preview.png"/>
+                                        <img class="card-image" src="${absoluteImagePath}/facelift/no_preview.png"/>
                                     </c:when>
                                     <c:otherwise>
                                         <img class="card-image" src="<html:rewrite page="/sc?compID=${template.previewComponentId}" />"/>

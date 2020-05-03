@@ -401,7 +401,7 @@
 
     <script id="calendar-auto-optimization" type="text/x-mustache-template">
         <div class="calendar-mail-label" optimization-id="{{= optimizationId }}" data-status="{{= status }}" data-tooltip="{{= shortname }}">
-            <a href="<c:url value='/{{= action }}?method=view&{{= idParamName }}={{= idParamValue}}'/>">
+            <a href="<c:url value='/{{- linkUrl }}'/>">
                 <span class="calendar-badge calendar-optimization-{{= status.toLowerCase().replace('_', '') }}">{{= shortname }}</span>
             </a>
         </div>

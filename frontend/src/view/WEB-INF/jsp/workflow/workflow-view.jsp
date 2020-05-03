@@ -1,14 +1,14 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
+<%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="org.agnitas.target.TargetNode" %>
+<%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -17,8 +17,9 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
+<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
@@ -36,8 +37,8 @@
 <c:set var="CHAIN_OPERATOR_OR" value="<%= TargetNode.CHAIN_OPERATOR_OR %>"/>
 <c:set var="OPERATOR_IS" value="<%= TargetNode.OPERATOR_IS.getOperatorCode() %>"/>
 
-<c:set var="FORWARD_TARGETGROUP_CREATE" value="<%=ComWorkflowAction.FORWARD_TARGETGROUP_CREATE_QB%>"/>
-<c:set var="FORWARD_TARGETGROUP_EDIT" value="<%=ComWorkflowAction.FORWARD_TARGETGROUP_EDIT_QB%>"/>
+<c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
+<c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
 
 <emm:instantiate var="mailingLists" type="java.util.LinkedHashMap">
     <c:forEach var="mailingList" items="${allMailinglists}">
@@ -137,18 +138,18 @@
             "operatorIs": "${OPERATOR_IS}",
             "forwardTargetGroupCreate": "${FORWARD_TARGETGROUP_CREATE}",
             "forwardTargetGroupEdit": "${FORWARD_TARGETGROUP_EDIT}",
-            "forwardMailingCreate": "<%=ComWorkflowAction.FORWARD_MAILING_CREATE%>",
-            "forwardMailingEdit": "<%=ComWorkflowAction.FORWARD_MAILING_EDIT%>",
-            "forwardMailingCopy": "<%=ComWorkflowAction.FORWARD_MAILING_COPY%>",
-            "forwardUserFormCreate": "<%=ComWorkflowAction.FORWARD_USERFORM_CREATE%>",
-            "forwardUserFormEdit": "<%=ComWorkflowAction.FORWARD_USERFORM_EDIT%>",
-            "forwardReportCreate": "<%=ComWorkflowAction.FORWARD_REPORT_CREATE%>",
-            "forwardReportEdit": "<%=ComWorkflowAction.FORWARD_REPORT_EDIT%>",
-            "forwardAutoExportCreate": "<%=ComWorkflowAction.FORWARD_AUTOEXPORT_CREATE%>",
-            "forwardAutoExportEdit": "<%=ComWorkflowAction.FORWARD_AUTOEXPORT_EDIT%>",
-            "forwardAutoImportCreate": "<%=ComWorkflowAction.FORWARD_AUTOIMPORT_CREATE%>",
-            "forwardAutoImportEdit": "<%=ComWorkflowAction.FORWARD_AUTOIMPORT_EDIT%>",
-            "forwardArchiveCreate": "<%=ComWorkflowAction.FORWARD_ARCHIVE_CREATE%>",
+            "forwardMailingCreate": "<%= WorkflowController.FORWARD_MAILING_CREATE%>",
+            "forwardMailingEdit": "<%= WorkflowController.FORWARD_MAILING_EDIT%>",
+            "forwardMailingCopy": "<%= WorkflowController.FORWARD_MAILING_COPY%>",
+            "forwardUserFormCreate": "<%= WorkflowController.FORWARD_USERFORM_CREATE%>",
+            "forwardUserFormEdit": "<%= WorkflowController.FORWARD_USERFORM_EDIT%>",
+            "forwardReportCreate": "<%= WorkflowController.FORWARD_REPORT_CREATE%>",
+            "forwardReportEdit": "<%= WorkflowController.FORWARD_REPORT_EDIT%>",
+            "forwardAutoExportCreate": "<%= WorkflowController.FORWARD_AUTOEXPORT_CREATE%>",
+            "forwardAutoExportEdit": "<%= WorkflowController.FORWARD_AUTOEXPORT_EDIT%>",
+            "forwardAutoImportCreate": "<%= WorkflowController.FORWARD_AUTOIMPORT_CREATE%>",
+            "forwardAutoImportEdit": "<%= WorkflowController.FORWARD_AUTOIMPORT_EDIT%>",
+            "forwardArchiveCreate": "<%= WorkflowController.FORWARD_ARCHIVE_CREATE%>",
             "statusInactive":"${STATUS_INACTIVE}",
             "statusActive": "${STATUS_ACTIVE}",
             "genderOptions": {
@@ -161,15 +162,15 @@
                 "<%= TargetNode.CHAIN_OPERATOR_OR %>": "<bean:message key="default.or"/>"
             },
             "operators": [
-                <c:forEach items="${operators}"  var="operator" varStatus="index">
+                 <c:forEach items="${operators}"  var="operator" varStatus="index">
                     <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                    {
-                        "id": "${operator.operatorCode}",
-                        "text": "${operator.operatorSymbol}",
-                        "data": {
-                            "types": "${empty types ? '' : types}"
-                        }
-                    }${!index.last ? ',':''}
+                {
+                    "id": "${operator.operatorCode}",
+                    "text": "${operator.operatorSymbol}",
+                    "data": {
+                        "types": "${empty types ? '' : types}"
+                    }
+                }${!index.last ? ',':''}
                 </c:forEach>
             ],
             "operatorsMap": {
@@ -177,31 +178,33 @@
                   "${operator.operatorCode}": "${operator.operatorSymbol}"${!index.last ? ',':''}
                 </c:forEach>
             },
-            "workflowURL" : "<c:url value='/workflow.do'/>",
+            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",
             "componentURL" : "<c:url value='/sc?compID={component-id}'/>"
         }
     </script>
 
+    <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
+    <!--XYZ: ${absoluteImagePath}-->
+
     <script data-initializer="campaign-manager-init" type="application/json">
         {
-            "icons":${workflowForm.schema},
+            "icons":${workflowForm.workflowSchema},
             "editorPositionLeft": "${workflowForm.editorPositionLeft}",
             "editorPositionTop": "${workflowForm.editorPositionTop}",
             "resizeTimeoutId": "false",
             "localeDateNTimePattern": "${localeDateNTimePattern}",
             "pageContextSessionId": "${pageContext.session.id}",
-            "newStatus": "${workflowForm.newStatus}",
+            "newStatus": "${workflowForm.statusMaybeChangedTo}",
             "workflowId": "${workflowForm.workflowId}",
             "workflowUndoHistoryData":${workflowForm.workflowUndoHistoryData},
-            "imageUrl": "${emmLayoutBase.imagesURL}",
+            "imageUrl": "${absoluteImagePath}",
             "enabledToggleButton": "${workflowToggleTestingButtonEnabled}",
-            "isStatusOpen": "${workflowForm.workflow.status == STATUS_OPEN}",
-            "shortName": "${workflowForm.workflow.shortname}",
+            "isStatusOpen": "${workflowForm.status == STATUS_OPEN}",
+            "shortName": "${workflowForm.shortname}",
             "emmLocal": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
-            "isActivated": ${workflowForm.workflow.status == STATUS_ACTIVE || workflowForm.workflow.status == STATUS_TESTING},
-            "workflowNewStatus": "${workflowForm.newStatus}",
-            "workflowStatus": "${workflowForm.workflow.status}",
-            "pdfGenerationUrl": "<html:rewrite page="/workflow.do?method=generatePDF"/>",
+            "isActivated": ${workflowForm.status == STATUS_ACTIVE || workflowForm.status == STATUS_TESTING},
+            "workflowStatus": "${workflowForm.status}",
+            "pdfGenerationUrl": "<c:url value='/workflow/{workflow-ID}/generatePDF.action?showStatistics={show-statistic}'/>",
             "allMailings":${emm:toJson(mailings)},
             "allMailingLists":${emm:toJson(mailingLists)},
             "allTargets":${emm:toJson(targets)},
@@ -314,7 +317,7 @@
 
 <div id="invisible">
     <div id="connectRapidButton">
-        <img src="${emmLayoutBase.imagesURL}/campaignManager/icon_arrow_rapid.png" alt="arrow">
+        <img src="${absoluteImagePath}/campaignManager/icon_arrow_rapid.png" alt="arrow">
     </div>
     <jsp:include page="editors/workflow-start-editor.jsp">
         <jsp:param name="adminTimezone" value="${adminTimezone}"/>
@@ -383,7 +386,7 @@
         </c:if>
     </div>
 
-    <html:form action="/workflow" styleClass="form-vertical" styleId="workflowForm">
+    <mvc:form servletRelativeAction="/workflow/save.action" cssClass="form-vertical" id="workflowForm"  modelAttribute="workflowForm" data-form="resource">
     <input type="hidden" name="method" value="save" id="action_method"/>
     <input type="hidden" name="workflowId" value="${workflowForm.workflowId}"/>
     <input type="hidden" name="schema" id="schema" value=""/>
@@ -392,11 +395,11 @@
     <input type="hidden" name="forwardName" id="forwardName" value=""/>
     <input type="hidden" name="forwardParams" id="forwardParams" value=""/>
     <input type="hidden" name="forwardTargetItemId" id="forwardTargetItemId" value=""/>
-    <html:hidden property="workflowUndoHistoryData" styleId="workflowUndoHistoryData"/>
-    <html:hidden property="usingActivatedWorkflow" styleId="usingActivatedWorkflow"/>
-    <html:hidden property="usingActivatedWorkflowName" styleId="usingActivatedWorkflowName"/>
-    <html:hidden property="partOfActivatedWorkflow" styleId="partOfActivatedWorkflow"/>
-    <html:hidden property="partOfActivatedWorkflowName" styleId="partOfActivatedWorkflowName"/>
+    <mvc:hidden path="workflowUndoHistoryData" />
+    <mvc:hidden path="usingActivatedWorkflow"/>
+    <mvc:hidden path="usingActivatedWorkflowName"/>
+    <mvc:hidden path="partOfActivatedWorkflow"/>
+    <mvc:hidden path="partOfActivatedWorkflowName"/>
     <input type="hidden" name="appName" id="appNameId" value="${pageContext.request.contextPath}"/>
 
     <div class="tile">
@@ -413,84 +416,47 @@
                         <label for="name" class="form-label">
                             <bean:message key="workflow.view.shortname"/>
                         </label>
-                        <html:text styleId="name" property="workflow.shortname" maxlength="99" size="50"
-                                   styleClass="form-control"/>
+                        <mvc:text path="shortname" cssClass="form-control" id="name"/>
                     </div>
                 </div>
-
                 <div class="col-sm-5 col-lg-4">
                     <div class="form-group">
                         <label for="workflow_description" class="form-label">
                             <bean:message key="default.description"/>
                         </label>
-                        <html:text styleId="workflow_description" property="workflow.description"
-                                   styleClass="form-control"/>
+                        <mvc:text path="description" cssClass="form-control" id="workflow_description"/>
                     </div>
                 </div>
 
-               <div class="col-sm-2">
-                   <div class="form-group">
-                       <label class="form-label block">
-                           <bean:message key="workflow.status"/>
-                       </label>
-                       <b class="form-badge">
-                           <c:if test="${workflowForm.workflow.status == STATUS_OPEN}">
-                               <bean:message key="workflow.view.status.open"/>
-                           </c:if>
-                           <c:if test="${workflowForm.workflow.status == STATUS_ACTIVE}">
-                               <bean:message key="default.status.active"/>
-                           </c:if>
-                           <c:if test="${workflowForm.workflow.status == STATUS_INACTIVE}">
-                               <bean:message key="workflow.view.status.inActive"/>
-                           </c:if>
-                           <c:if test="${workflowForm.workflow.status == STATUS_COMPLETE}">
-                               <bean:message key="workflow.view.status.complete"/>
-                           </c:if>
-                           <c:if test="${workflowForm.workflow.status == STATUS_TESTING}">
-                               <bean:message key="workflow.view.status.testing"/>
-                           </c:if>
-                           <c:if test="${workflowForm.workflow.status == STATUS_TESTED}">
-                               <bean:message key="workflow.view.status.tested"/>
-                           </c:if>
-                       </b>
-                   </div>
-               </div>
+                <div class="col-sm-2">
+                    <div class="form-group">
+                        <label class="form-label block">
+                            <bean:message key="workflow.status"/>
+                        </label>
+                        <b class="form-badge campaign.status.background.${workflowForm.status.name}">
+                            <bean:message key="${workflowForm.status.messageKey}"/>
+                        </b>
+                    </div>
+                </div>
 
                 <div class="clearfix hidden-lg"></div>
 
                 <emm:ShowByPermission token="workflow.activate">
                     <div class="col-sm-4 col-lg-2">
                         <div class="form-group">
-                            <c:if test="${workflowForm.newStatus ne STATUS_NONE.name()}">
+                            <c:if test="${workflowForm.statusMaybeChangedTo ne STATUS_NONE}">
                                 <label for="workflow_active" class="form-label block">
                                     <bean:message key="workflow.view.setStatusTo"/>
                                     <b>
-                                        <c:if test="${workflowForm.newStatus == STATUS_OPEN.name()}">
-                                            <bean:message key="workflow.view.status.open"/>
-                                        </c:if>
-                                        <c:if test="${workflowForm.newStatus == STATUS_ACTIVE.name()}">
-                                            <bean:message key="default.status.active"/>
-                                        </c:if>
-                                        <c:if test="${workflowForm.newStatus == STATUS_INACTIVE.name()}">
-                                            <bean:message key="workflow.view.status.inActive"/>
-                                        </c:if>
-                                        <c:if test="${workflowForm.newStatus == STATUS_COMPLETE.name()}">
-                                            <bean:message key="workflow.view.status.complete"/>
-                                        </c:if>
-                                        <c:if test="${workflowForm.newStatus == STATUS_TESTING.name()}">
-                                            <bean:message key="workflow.view.status.testing"/>
-                                        </c:if>
-                                        <c:if test="${workflowForm.newStatus == STATUS_TESTED.name()}">
-                                            <bean:message key="workflow.view.status.tested"/>
-                                        </c:if>
+                                        <bean:message key="${workflowForm.statusMaybeChangedTo.messageKey}"/>
                                     </b>
                                 </label>
                                 <label class="toggle">
-                                    <input id="workflow_active" data-action="workflow-view-change-status" name="workflow.statusString" value="${workflowForm.workflow.status}" ${workflowForm.workflow.status == STATUS_ACTIVE.name() ? 'checked="checked"':''}  type="checkbox"/>
+                                    <input id="workflow_active" data-action="workflow-view-change-status" name="status" value="${workflowForm.status}" ${workflowForm.status == STATUS_ACTIVE.name() ? 'checked="checked"':''}  type="checkbox"/>
                                     <div class="toggle-control"></div>
                                 </label>
                             </c:if>
-                            <input id="workflow-status" type="hidden" name="__STRUTS_CHECKBOX_workflow.statusString" value="${workflowForm.workflow.status}"/>
+                            <input id="workflow-status" type="hidden" name="__STRUTS_CHECKBOX_workflow.statusString" value="${workflowForm.status}"/>
                         </div>
                     </div>
                 </emm:ShowByPermission>
@@ -509,11 +475,11 @@
             </div>
             <!-- Row END -->
 
-       </div>
-       <!-- Tile Content END -->
+        </div>
+        <!-- Tile Content END -->
 
-   </div>
-   <!-- Tile END -->
+    </div>
+    <!-- Tile END -->
 
 
     <div class="tile">
@@ -602,14 +568,14 @@
                         <div id="datebasedMailingButton" class="toolbarButton draggableButton" type="datebased_mailing" title="<bean:message key="mailing.Rulebased_Mailing"/>"></div>
 
                         <%@include file="fragments/workflow-view-followup-button.jspf" %>
-                   </div>
+                    </div>
 
                     <div class="actionPanel">
                         <div class="actionPanelTool">
                             <div class="actionPanelTitle">
-                           		<bean:message key="workflow.autoLayout"/>:
-                       		</div>
-                       		<div id="autoLayout" class="toolbarButton toolbarButtonLeft" title="<bean:message key='workflow.doAutoLayout'/>"></div>
+                                <bean:message key="workflow.autoLayout"/>:
+                            </div>
+                            <div id="autoLayout" class="toolbarButton toolbarButtonLeft" title="<bean:message key='workflow.doAutoLayout'/>"></div>
                         </div>
 
                         <div id="zoomTool" class="actionPanelTool">
@@ -632,12 +598,12 @@
                             </div>
                         </div>
 
-						<emm:ShowByPermission token="workflow.edit">
-                       		<div class="actionPanelTool">
-                           		<div class="actionPanelTitle"><bean:message key="button.Delete"/></div>
-                           		<div id="deleteButton" class="toolbarButton"></div>
-                       		</div>
-						</emm:ShowByPermission>
+                        <emm:ShowByPermission token="workflow.edit">
+                            <div class="actionPanelTool">
+                                <div class="actionPanelTitle"><bean:message key="button.Delete"/></div>
+                                <div id="deleteButton" class="toolbarButton"></div>
+                            </div>
+                        </emm:ShowByPermission>
                     </div>
 
                     <div class="actionPanelOpenButton">
@@ -682,7 +648,7 @@
 
                                 <emm:ShowByPermission token="workflow.edit">
                                     <li>
-                                        <%-- Disabled by default — initially no icon is selected --%>
+                                            <%-- Disabled by default — initially no icon is selected --%>
                                         <button type="button" id="deleteItem" disabled="disabled">
                                             <i class="icon icon-trash-o"></i>
                                             <bean:message key="button.Delete"/>
@@ -725,26 +691,26 @@
                 "elementValue": "${elementValue}"
             }
         </script>
-   </div>
-   <!-- Tile END -->
+    </div>
+    <!-- Tile END -->
 
     <c:if test="${not isMailtrackingActive}">
-        <div class="tile">
-            <div class="tile-notification tile-notification-info">
-                <span><bean:message key="workflow.info.noMailtracking"/></span>
-            </div>
+    <div class="tile">
+        <div class="tile-notification tile-notification-info">
+            <span><bean:message key="workflow.info.noMailtracking"/></span>
         </div>
+    </div>
     </c:if>
 
-   <script type="text/javascript">
-       <%--//fix problem with not expected behavior of JSON.stringify() for arrays--%>
-       if (window.Prototype) {
-           delete Array.prototype.toJSON;
-       }
+    <script type="text/javascript">
+        <%--//fix problem with not expected behavior of JSON.stringify() for arrays--%>
+        if (window.Prototype) {
+            delete Array.prototype.toJSON;
+        }
 
-   </script>
-</html:form>
+    </script>
+    </mvc:form>
 
-<div id="icon-label-popup-holder"></div>
+    <div id="icon-label-popup-holder"></div>
 
 <%@include file="fragments/workflow-view-modal-editor-template.jspf" %>

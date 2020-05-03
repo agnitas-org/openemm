@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
+<%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -12,8 +12,8 @@
 <%--@elvariable id="allMailinglists" type="java.util.List"--%>
 <%--@elvariable id="allTargets" type="java.util.List"--%>
 
-<c:set var="FORWARD_TARGETGROUP_CREATE" value="<%=ComWorkflowAction.FORWARD_TARGETGROUP_CREATE_QB%>"/>
-<c:set var="FORWARD_TARGETGROUP_EDIT" value="<%=ComWorkflowAction.FORWARD_TARGETGROUP_EDIT_QB%>"/>
+<c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
+<c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
 <c:set var="ALL_TARGETS_REQUIRED" value="<%= WorkflowTargetOption.ALL_TARGETS_REQUIRED %>"/>
 <c:set var="NOT_IN_TARGETS" value="<%= WorkflowTargetOption.NOT_IN_TARGETS %>"/>
 <c:set var="ONE_TARGET_REQUIRED" value="<%= WorkflowTargetOption.ONE_TARGET_REQUIRED %>"/>

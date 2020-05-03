@@ -168,14 +168,14 @@ public class GenerationPDFService {
 				        byte[] logoData = IOUtils.toByteArray(logoStream);
 				        Image image = Image.getInstance(logoData);
 				        image.scalePercent(14.0f);
-				        float topLineStartX = 0;
-				        float topLineStartY = 0;
-				        float topLineEndX = 0;
-				        float topLineEndY = 0;
-				        float bottomLineStartX = 0;
-				        float bottomLineStartY = 0;
-				        float bottomLineEndX = 0;
-				        float bottomLineEndY = 0;
+				        float topLineStartX;
+				        float topLineStartY;
+				        float topLineEndX;
+				        float topLineEndY;
+				        float bottomLineStartX;
+				        float bottomLineStartY;
+				        float bottomLineEndX;
+				        float bottomLineEndY;
 				        if ("Portrait".equals(orientation)) {
 				            image.setAbsolutePosition(PageSize.A4.width() - image.scaledWidth() - borderGap, PageSize.A4.height() - image.scaledHeight() - borderGap);
 				            topLineStartX = borderGap;

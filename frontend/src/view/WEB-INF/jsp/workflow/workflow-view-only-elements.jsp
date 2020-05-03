@@ -1,4 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
@@ -7,18 +8,19 @@
 <%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="org.agnitas.target.TargetNode" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+
 <%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
+<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <emm:instantiate var="mailingLists" type="java.util.LinkedHashMap">
     <c:forEach var="mailingList" items="${allMailinglists}">
@@ -78,83 +80,83 @@
 
 <tiles:insert attribute="head-tag"/>
 <body style="background-color: #fff">
-    <div class="emm-container" data-controller="workflow-view">
-        <script data-initializer="workflow-view-constants" type="application/json">
-            {
-                "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
-                "startTypeDate": "<%= WorkflowStart.WorkflowStartType.DATE %>",
-                "startTypeEvent": "<%= WorkflowStart.WorkflowStartType.EVENT %>",
-                "endTypeAutomatic": "<%= WorkflowStop.WorkflowEndType.AUTOMATIC %>",
-                "endTypeDate": "<%= WorkflowStop.WorkflowEndType.DATE %>",
-                "startEventReaction": "<%= WorkflowStart.WorkflowStartEventType.EVENT_REACTION %>",
-                "startEventDate": "<%= WorkflowStart.WorkflowStartEventType.EVENT_DATE %>",
-                "deadlineTypeDelay": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_DELAY %>",
-                "deadlineTypeFixedDeadline": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_FIXED_DEADLINE %>",
-                "deadlineTimeUnitMinute": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE %>",
-                "deadlineTimeUnitHour": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_HOUR %>",
-                "deadlineTimeUnitDay": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY %>",
-                "deadlineTimeUnitWeek": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_WEEK %>",
-                "deadlineTimeUnitMonth": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MONTH %>",
-                "defaultImportDelayLimit" : "<%=WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT%>",
-                "reactionOpened": "<%=  WorkflowReactionType.OPENED %>",
-                "reactionNotOpened": "<%=  WorkflowReactionType.NOT_OPENED %>",
-                "reactionClicked": "<%=  WorkflowReactionType.CLICKED %>",
-                "reactionNotClicked": "<%=  WorkflowReactionType.NOT_CLICKED %>",
-                "reactionBought": "<%=  WorkflowReactionType.BOUGHT %>",
-                "reactionNotBought": "<%=  WorkflowReactionType.NOT_BOUGHT %>",
-                "reactionDownload": "<%=  WorkflowReactionType.DOWNLOAD %>",
-                "reactionChangeOfProfile": "<%=  WorkflowReactionType.CHANGE_OF_PROFILE %>",
-                "reactionWaitingForConfirm": "<%=  WorkflowReactionType.WAITING_FOR_CONFIRM %>",
-                "reactionOptIn": "<%=  WorkflowReactionType.OPT_IN %>",
-                "reactionOptOut": "<%=  WorkflowReactionType.OPT_OUT %>",
-                "reactionClickedLink": "<%=  WorkflowReactionType.CLICKED_LINK %>",
-                "reactionOpenedAndClicked": "<%=  WorkflowReactionType.OPENED_AND_CLICKED %>",
-                "reactionOpenedOrClicked": "<%=  WorkflowReactionType.OPENED_OR_CLICKED %>",
-                "reactionConfirmedOptIn": "<%=  WorkflowReactionType.CONFIRMED_OPT_IN %>",
-                "decisionTypeDecision": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_DECISION %>",
-                "decisionTypeAutoOptimization": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION %>",
-                "decisionReaction": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION %>",
-                "decisionProfileField": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD %>",
-                "decisionAOCriteriaClickRate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE %>",
-                "decisionAOCriteriaOpenrate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE %>",
-                "decisionAOCriteriaTurnover": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE %>",
-                "genderOptions": {
-                    "<%= Recipient.GENDER_MALE %>": "Male",
-                    "<%= Recipient.GENDER_FEMALE %>": "Female",
-                    "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
-                },
-                "chainOperatorOptions": {
-                    "<%= TargetNode.CHAIN_OPERATOR_AND %>": "<bean:message key="default.and"/>",
-                    "<%= TargetNode.CHAIN_OPERATOR_OR %>": "<bean:message key="default.or"/>"
-                },
-                "operators": [
-                    <c:forEach items="${operators}"  var="operator" varStatus="index">
-                        <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
-                        {
-                            "id": "${operator.operatorCode}",
-                            "text": "${operator.operatorSymbol}",
-                            "data": {
-                                "types": "${empty types ? '' : types}"
-                            }
-                        }${!index.last ? ',':''}
-                    </c:forEach>
-                ],
-                "operatorsMap": {
-                    <c:forEach items="${operators}"  var="operator" varStatus="index">
-                      "${operator.operatorCode}": "${operator.operatorSymbol}"${!index.last ? ',':''}
-                    </c:forEach>
-                },
-                "workflowURL" : "<c:url value='/workflow.do'/>",
-                "componentURL" : "<c:url value='/sc?compID={component-id}'/>"
-            }
-        </script>
+<div class="emm-container" data-controller="workflow-view">
+    <script data-initializer="workflow-view-constants" type="application/json">
+        {
+            "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
+            "startTypeDate": "<%= WorkflowStart.WorkflowStartType.DATE %>",
+            "startTypeEvent": "<%= WorkflowStart.WorkflowStartType.EVENT %>",
+            "endTypeAutomatic": "<%= WorkflowStop.WorkflowEndType.AUTOMATIC %>",
+            "endTypeDate": "<%= WorkflowStop.WorkflowEndType.DATE %>",
+            "startEventReaction": "<%= WorkflowStart.WorkflowStartEventType.EVENT_REACTION %>",
+            "startEventDate": "<%= WorkflowStart.WorkflowStartEventType.EVENT_DATE %>",
+            "deadlineTypeDelay": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_DELAY %>",
+            "deadlineTypeFixedDeadline": "<%= WorkflowDeadline.WorkflowDeadlineType.TYPE_FIXED_DEADLINE %>",
+            "deadlineTimeUnitMinute": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE %>",
+            "deadlineTimeUnitHour": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_HOUR %>",
+            "deadlineTimeUnitDay": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_DAY %>",
+            "deadlineTimeUnitWeek": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_WEEK %>",
+            "deadlineTimeUnitMonth": "<%= WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MONTH %>",
+            "defaultImportDelayLimit" : "<%=WorkflowDeadlineImpl.DEFAULT_AUTOIMPORT_DELAY_LIMIT%>",
+            "reactionOpened": "<%=  WorkflowReactionType.OPENED %>",
+            "reactionNotOpened": "<%=  WorkflowReactionType.NOT_OPENED %>",
+            "reactionClicked": "<%=  WorkflowReactionType.CLICKED %>",
+            "reactionNotClicked": "<%=  WorkflowReactionType.NOT_CLICKED %>",
+            "reactionBought": "<%=  WorkflowReactionType.BOUGHT %>",
+            "reactionNotBought": "<%=  WorkflowReactionType.NOT_BOUGHT %>",
+            "reactionDownload": "<%=  WorkflowReactionType.DOWNLOAD %>",
+            "reactionChangeOfProfile": "<%=  WorkflowReactionType.CHANGE_OF_PROFILE %>",
+            "reactionWaitingForConfirm": "<%=  WorkflowReactionType.WAITING_FOR_CONFIRM %>",
+            "reactionOptIn": "<%=  WorkflowReactionType.OPT_IN %>",
+            "reactionOptOut": "<%=  WorkflowReactionType.OPT_OUT %>",
+            "reactionClickedLink": "<%=  WorkflowReactionType.CLICKED_LINK %>",
+            "reactionOpenedAndClicked": "<%=  WorkflowReactionType.OPENED_AND_CLICKED %>",
+            "reactionOpenedOrClicked": "<%=  WorkflowReactionType.OPENED_OR_CLICKED %>",
+            "reactionConfirmedOptIn": "<%=  WorkflowReactionType.CONFIRMED_OPT_IN %>",
+            "decisionTypeDecision": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_DECISION %>",
+            "decisionTypeAutoOptimization": "<%= WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION %>",
+            "decisionReaction": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION %>",
+            "decisionProfileField": "<%= WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD %>",
+            "decisionAOCriteriaClickRate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE %>",
+            "decisionAOCriteriaOpenrate": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE %>",
+            "decisionAOCriteriaTurnover": "<%= WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE %>",
+            "genderOptions": {
+                "<%= Recipient.GENDER_MALE %>": "Male",
+                "<%= Recipient.GENDER_FEMALE %>": "Female",
+                "<%= Recipient.GENDER_UNKNOWN %>": "Unknown"
+            },
+            "chainOperatorOptions": {
+                "<%= TargetNode.CHAIN_OPERATOR_AND %>": "<bean:message key="default.and"/>",
+                "<%= TargetNode.CHAIN_OPERATOR_OR %>": "<bean:message key="default.or"/>"
+            },
+            "operators": [
+                <c:forEach items="${operators}" var="operator" varStatus="index">
+                    <c:set var="types" value="${operatorsTypeSupportMap[operator]}"/>
+                {
+                    "id": "${operator.operatorCode}",
+                    "text": "${operator.operatorSymbol}",
+                    "data": {
+                        "types": "${empty types ? '' : types}"
+                    }
+                }${!index.last ? ',':''}
+                </c:forEach>
+            ],
+            "operatorsMap": {
+                <c:forEach  items="${operators}" var="operator" varStatus="index">
+                  "${operator.operatorCode}": "${operator.operatorSymbol}"${!index.last ? ',':''}
+                </c:forEach>
+            },
+            "mailingThumbnailURL" : "<c:url value='/workflow/getMailingThumbnail.action'/>",
+            "componentURL" : "<c:url value='/sc?compID={component-id}'/>"
+        }
+    </script>
 
         <script type="application/json" data-initializer="workflow-pdf-initialize">
             {
                 "sessionId": "${pageContext.session.id}",
-                "imageUrl": "${emmLayoutBase.imagesURL}",
+                "imageUrl": "${absoluteImagePath}",
                 "locale": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
-                "icons": ${workflowForm.schema},
+                "icons": ${workflowForm.workflowSchema},
                 "editorPositionLeft": "${workflowForm.editorPositionLeft}",
                 "editorPositionTop": "${workflowForm.editorPositionTop}",
                 "localeDateNTimePattern": "${localeDateNTimePattern}",
@@ -185,7 +187,7 @@
 
         <div id="invisible">
             <div id="connectRapidButton">
-                <img src="${emmLayoutBase.imagesURL}/campaignManager/icon_arrow_rapid.png" alt="arrow">
+                <img src="${absoluteImagePath}/campaignManager/icon_arrow_rapid.png" alt="arrow">
             </div>
             <jsp:include page="editors/workflow-start-editor.jsp"/>
             <jsp:include page="editors/workflow-decision-editor.jsp"/>

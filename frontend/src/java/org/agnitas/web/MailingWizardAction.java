@@ -18,14 +18,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.service.AgnTagService;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -43,6 +53,7 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -56,18 +67,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComCampaignDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.service.AgnTagService;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
 /**
  * Action that handles creation of mailing using mailing wizard.
@@ -162,7 +162,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		if (!AgnUtils.isUserLoggedIn(req)) {
 			return mapping.findForward("logon");
 		}
-		ComWorkflowAction.updateForwardParameters(req);
+		updateForwardParameters(req, true);
 		return mapping.getInputForward();
 	}
 
@@ -214,7 +214,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 
 		//populate mailing data with info from workflow
-		ComWorkflowAction.updateForwardParameters(request);
+		updateForwardParameters(request, true);
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
 		ComMailing mailing = mailingFactory.newMailing();
@@ -239,9 +239,9 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	private void setMailingWorkflowParameters(HttpServletRequest req, ComMailing mailing) {
 		HttpSession session = req.getSession();
 
-		Integer workflowId = (Integer) session.getAttribute(ComWorkflowAction.WORKFLOW_ID);
+		Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 		if (workflowId != null && workflowId > 0) {
-			Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
+			Map<String, String> forwardParams = AgnUtils.getParamsMap((String) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS));
 			int mailingIconId = NumberUtils.toInt(forwardParams.get("nodeId"));
 
 			workflowService.assignWorkflowDrivenSettings(AgnUtils.getAdmin(req), mailing, workflowId, mailingIconId);
@@ -1091,7 +1091,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		MailingWizardForm aForm = (MailingWizardForm) form;
 		mailingDao.saveMailing(aForm.getMailing(), false);
 
-		ComWorkflowAction.updateForwardParameters(req);
+		updateForwardParameters(req, true);
 		return mapping.findForward("finish");
 	}
 

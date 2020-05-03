@@ -146,7 +146,7 @@ public class ComWorkflowStatisticsService {
 		for (WorkflowNode parameterNode : parameterNodes) {
 			WorkflowParameter parameterIcon = (WorkflowParameter) parameterNode.getNodeIcon();
 			WorkflowMailingAware mailingIcon = (WorkflowMailingAware) workflowGraph.getNextIconByType(parameterIcon,
-					mailingTypes, Arrays.asList(WorkflowIconType.PARAMETER.getId()), false);
+					mailingTypes, Collections.singletonList(WorkflowIconType.PARAMETER.getId()), false);
 			if (mailingIcon != null) {
 				int mailingId = WorkflowUtils.getMailingId(mailingIcon);
 				int sent = 0;

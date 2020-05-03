@@ -257,7 +257,6 @@ public class Permission {
 
 	// temporary MVC migration permissions
 	public static final Permission RECIPIENTS_REPORT_MIGRATION = new Permission("recipientsreport.migration", false, true);
-	public static final Permission WORKFLOW_MIGRATION = new Permission("workflow.migration", false, true);
 	public static final Permission STATS_RECIPIENT_MIGRATION = new Permission("stats.recipient.migration",  false, true);
 
 

@@ -198,6 +198,22 @@
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-actions-openemm.xml" />
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-permissions-basic.xml" />
 
+		<xmltask
+				source="${emmSourcePath}/../etc/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
+				dest="${deploydir}${appname}/WEB-INF/spring-ws-common.xml"
+				preserveType="true">
+			<insert path="/:beans/:bean[last()]" position="after">
+				<![CDATA[
+					<bean id="WebserviceSubscriptionRejectionService" class="com.agnitas.emm.springws.subscriptionrejection.service.NullSubscriptionRejectionServiceImpl" />
+				]]>
+			</insert>
+		</xmltask>
+
+		<replace file="${deploydir}${appname}/WEB-INF/spring-ws-common.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
+		
 		<echo message="...applicationContext.xml done" />
 	</target>
 

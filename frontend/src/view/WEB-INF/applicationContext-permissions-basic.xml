@@ -87,7 +87,7 @@
                 <entry key="userform.save_activeness" value="forms.change" />
                 <entry key="userform.import" value="forms.import" />
                 <entry key="userform.export" value="forms.export" />
-                
+
                 <entry key="action.bulk_confirm_delete" value="actions.delete" />
                 <entry key="action.bulk_delete" value="actions.delete" />
                 <entry key="action.clone" value="actions.change" />
@@ -255,7 +255,7 @@
                 <entry key="mailing_stat_new.list" value="stats.mailing.migration" />
                 <entry key="mailing_stat_new.view" value="stats.mailing.migration" />
                 <entry key="mailing_stat_new.unspecified" value="stats.mailing.migration" />
-                
+
                 <entry key="mailing_compare.list" value="stats.mailing" />
                 <entry key="mailing_compare.compare" value="stats.mailing" />
                 <entry key="mailing_compare.unspecified" value="stats.mailing" />
@@ -311,7 +311,7 @@
                 <entry key="mailingbase.mailing_templates" value="mailing.show" />
                 <entry key="mailingbase.is_advertising_content_type" value="mailing.show" />
                 <entry key="mailingbase.mailing_import" value="mailing.import" />
-                
+
                 <entry key="mailingParameter.newParameter" value="mailing.parameter.change" />
                 <entry key="mailingParameter.save" value="mailing.parameter.change" />
                 <entry key="mailingParameter.delete" value="mailing.parameter.change" />
@@ -352,56 +352,31 @@
                 <entry key="mwStart.next" value="mailing.change" />
                 <entry key="mwStart.skip" value="mailing.change" />
 
-                <entry key="workflow.unspecified" value="workflow.show" />
-                <entry key="workflow.list" value="workflow.show" />
-                <entry key="workflow.create" value="workflow.edit" />
-                <entry key="workflow.save" value="workflow.edit" />
-                <entry key="workflow.view" value="workflow.show" />
-                <entry key="workflow.viewOnlyElements" value="workflow.show" />
-                <entry key="workflow.generatePDF" value="workflow.show" />
-                <entry key="workflow.delete" value="workflow.delete" />
-                <entry key="workflow.deleteconfirm" value="workflow.delete" />
-                <entry key="workflow.bulkDeleteConfirm" value="workflow.delete" />
-                <entry key="workflow.bulkDelete" value="workflow.delete" />
-                <entry key="workflow.bulkDeactivateConfirm" value="workflow.activate" />
-                <entry key="workflow.bulkDeactivate" value="workflow.activate" />
-                <entry key="workflow.getMailingLinks" value="workflow.show" />
-                <entry key="workflow.getMailingsByWorkStatus" value="workflow.show" />
-                <entry key="workflow.getAllMailingSorted" value="workflow.show" />
-                <entry key="workflow.getWorkflowContent" value="workflow.show" />
-                <entry key="workflow.getSampleWorkflowContent" value="workflow.show" />
-                <entry key="workflow.loadStatistics" value="workflow.show" />
-                <entry key="workflow.getCurrentAdminTime" value="workflow.show" />
-                <entry key="workflow.getMailingContent" value="workflow.show" />
-                <entry key="workflow.copy" value="workflow.edit" />
-                <entry key="workflow.validateDependency" value="workflow.show" />
-                <entry key="workflow.getMailingThumbnail" value="workflow.show" />
+                <!-- workflow permissions-->
+				<entry key="workflow.list" value="workflow.show"/>
+				<entry key="workflow.view" value="workflow.show"/>
+				<entry key="workflow.viewOnlyElements" value="workflow.show"/>
+				<entry key="workflow.generatePDF" value="workflow.show"/>
+				<entry key="workflow.getMailingLinks" value="workflow.show"/>
+				<entry key="workflow.getMailingsByWorkStatus" value="workflow.show"/>
+				<entry key="workflow.getAllMailingSorted" value="workflow.show"/>
+				<entry key="workflow.getWorkflowContent" value="workflow.show"/>
+				<entry key="workflow.getSampleWorkflowContent" value="workflow.show"/>
+				<entry key="workflow.loadStatistics" value="workflow.show"/>
+				<entry key="workflow.getCurrentAdminTime" value="workflow.show"/>
+				<entry key="workflow.getMailingContent" value="workflow.show"/>
+				<entry key="workflow.validateDependency" value="workflow.show"/>
+				<entry key="workflow.getMailingThumbnail" value="workflow.show"/>
+				<entry key="workflow.save" value="workflow.edit"/>
+				<entry key="workflow.create" value="workflow.edit"/>
+				<entry key="workflow.copy" value="workflow.edit"/>
+				<entry key="workflow.delete" value="workflow.delete"/>
+				<entry key="workflow.confirmDelete" value="workflow.delete"/>
+				<entry key="workflow.bulkDelete" value="workflow.delete"/>
+				<entry key="workflow.confirmBulkDelete" value="workflow.delete"/>
+				<entry key="workflow.bulkDeactivate" value="workflow.activate"/>
+				<entry key="workflow.confirmBulkDeactivate" value="workflow.activate"/>
 
-                <!--WORKFLOW MIGRATION-->
-                <entry key="workflow_new.confirmDelete" value="temp.beta"/>
-                <entry key="workflow_new.delete" value="temp.beta"/>
-                <entry key="workflow_new.confirmBulkDelete" value="temp.beta"/>
-                <entry key="workflow_new.bulkDelete" value="temp.beta"/>
-                <entry key="workflow_new.confirmBulkDeactivate" value="temp.beta" />
-                <entry key="workflow_new.bulkDeactivate" value="temp.beta" />
-                <entry key="workflow_new.create" value="temp.beta" />
-                <entry key="workflow_new.view" value="temp.beta" />
-                <entry key="workflow_new.list" value="temp.beta" />
-                <entry key="workflow_new.save" value="temp.beta" />
-                <entry key="workflow_new.validateDependency" value="temp.beta" />
-                <entry key="workflow_new.getCurrentAdminTime" value="temp.beta" />
-                <entry key="workflow_new.getMailingContent" value="temp.beta" />
-                <entry key="workflow_new.getMailingLinks" value="temp.beta" />
-                <entry key="workflow_new.getMailingsByWorkStatus" value="temp.beta" />
-                <entry key="workflow_new.copy" value="temp.beta" />
-                <entry key="workflow_new.getAllMailingSorted" value="temp.beta" />
-                <entry key="workflow_new.loadStatistics" value="temp.beta" />
-                <entry key="workflow_new.viewOnlyElements" value="temp.beta" />
-                <entry key="workflow_new.generatePDF" value="temp.beta" />
-                <entry key="workflow_new.getAllMailingSorted" value="temp.beta" />
-                <entry key="workflow_new.getWorkflowContent" value="temp.beta" />
-                <entry key="workflow_new.getSampleWorkflowContent" value="temp.beta" />
-                <entry key="workflow_new.getMailingThumbnail" value="temp.beta" />
 
                 <entry key="importwizard.start" value="wizard.importclassic" />
                 <entry key="importwizard.mode" value="wizard.importclassic" />
@@ -451,7 +426,7 @@
                 <entry key="mcomponents.unspecified" value="mailing.components.show" />
                 <entry key="mcomponents.confirm_delete" value="mailing.components.change" />
                 <entry key="mcomponents.update_image" value="mailing.components.change" />
-                
+
                 <entry key="mailingattachments.list" value="mailing.attachments.show" />
                 <entry key="mailingattachments.save" value="mailing.attachments.show" />
                 <entry key="mailingattachments.confirm_delete" value="mailing.attachments.show" />

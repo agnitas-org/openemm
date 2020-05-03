@@ -143,12 +143,14 @@ public class RecipientExportWorker extends GenericExportWorker {
 					if (exportProfile.getUserStatus() == UserStatus.Bounce.getStatusCode()) {
 						//show bounces only if user checked checkbox with bounces and Recipient status of the export is "Bounced"
 						selectBounces = true;
-						if (isFirstColumn) {
-							isFirstColumn = false;
-						} else {
-							customerTableSql.append(", ");
+						if (mailingListIds.size() == 0) {
+							if (isFirstColumn) {
+								isFirstColumn = false;
+							} else {
+								customerTableSql.append(", ");
+							}
+							customerTableSql.append("bounce.mailing_id mailing_id, bounce.mailinglist_id mailinglist_id, bounce.detail bounce_detail");
 						}
-						customerTableSql.append("bounce.mailing_id mailing_id, bounce.detail bounce_detail");
 					}
 				} else {
 					if (isFirstColumn) {
@@ -164,12 +166,16 @@ public class RecipientExportWorker extends GenericExportWorker {
 				customerTableSql.append(", m" + selectedMailinglistID + ".user_status Userstate_Mailinglist_" + selectedMailinglistID);
 				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp Mailinglist_" + selectedMailinglistID + "_Timestamp");
 				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark Mailinglist_" + selectedMailinglistID + "_UserRemark");
+				if (selectBounces) {
+					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id Mailinglist_" + selectedMailinglistID + "_ExitMailingID");
+					customerTableSql.append(", 510 Mailinglist_" + selectedMailinglistID + "_Detail");
+				}
 			}
 
 			customerTableSql.append(" FROM customer_").append(companyID).append("_tbl cust");
-			if (selectBounces) {
+			if (selectBounces && mailingListIds.size() == 0) {
 				customerTableSql.append(" LEFT OUTER JOIN ("
-					+ "SELECT customer_id, exit_mailing_id AS mailing_id, 510 AS detail"
+					+ "SELECT customer_id, mailinglist_id AS Mailinglist, exit_mailing_id AS ExitMailingID, 510 AS detail"
 					+ " FROM customer_" + companyID + "_binding_tbl"
 					+ " WHERE user_status = " + UserStatus.Bounce.getStatusCode()
 					+ ") bounce ON cust.customer_id = bounce.customer_id");

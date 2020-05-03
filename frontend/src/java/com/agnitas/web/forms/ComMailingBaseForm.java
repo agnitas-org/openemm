@@ -25,7 +25,6 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingLightVO;
 import com.agnitas.web.ComMailingBaseAction;
@@ -38,6 +37,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.MailingBaseAction;
 import org.agnitas.web.forms.MailingBaseForm;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -417,7 +417,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 				actionErrors.add("description", new ActionMessage("error.description.too.long"));
 			}
 
-            Integer workflowId = (Integer) request.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID);
+            Integer workflowId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 			if (mailinglistID == 0) {
 				if (workflowId == null || workflowId == 0) {
 					actionErrors.add("global", new ActionMessage("error.mailing.noMailinglist"));

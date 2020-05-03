@@ -1,10 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction, org.agnitas.beans.Mailing, com.agnitas.web.ComTargetAction" %>
 <%@ page import="com.agnitas.beans.ComAdminPreferences" %>
 <%@ page import="com.agnitas.beans.TargetLight" %>
+<%@ page import="com.agnitas.web.ComMailingBaseAction" %> <%-- ComMailingBaseAction Required for view_base_settings-follow3.jspf --%>
+<%@ page import="com.agnitas.web.ComTargetAction" %>
+<%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
-<%@ page import="com.agnitas.beans.ComMailing" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -21,17 +22,17 @@
 <c:set var="ACTION_VIEW" value="<%= ComTargetAction.ACTION_VIEW %>" scope="request" />
 <c:set var="ACTION_REMOVE_TARGET" value="<%= MailingBaseAction.ACTION_REMOVE_TARGET%>" scope="page"/>
 
-<c:set var="WORKFLOW_ID" value="<%= ComWorkflowAction.WORKFLOW_ID %>" scope="page"/>
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
+<c:set var="WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="page"/>
+<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
 
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>
 <c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>
 
-<c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
-<c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
+<c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
+<c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
 
-<c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
-<c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
+<c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
+<c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
 
 <c:set var="LIST_SPLIT_PREFIX" value="<%= TargetLight.LIST_SPLIT_PREFIX %>"/>
 <c:set var="LIST_SPLIT_CM_PREFIX" value="<%= TargetLight.LIST_SPLIT_CM_PREFIX %>"/>
@@ -48,7 +49,7 @@
 <c:set var="FOLLOWUP_TYPE_NON_CLICKER" value="<%= Mailing.TYPE_FOLLOWUP_NON_CLICKER %>"/>
 
 <c:set var="allSubscribersMessage"><bean:message key="statistic.all_subscribers"/></c:set>
-<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
+<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key="mailing.EditWithCampaignManager"/></c:set>
 
 <c:if test="${mailingBaseForm.isTemplate}">
     <c:set target="${mailingBaseForm}" property="showTemplate" value="${true}"/>
@@ -78,15 +79,10 @@
 
 <c:set var="isMailinglistEditable" value="${mailingBaseForm.canChangeMailinglist}"/>
 
-<%--todo: GWUA-4271: change after test sucessfully--%>
-<%--<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowParameters.workflowId}/view.action">--%>
-    <%--<c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>--%>
-<%--</c:url>--%>
+<c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
 
-<c:url var="editWithCampaignManagerLink" value="/workflow.do">
-    <c:param name="method" value="view"/>
-    <c:param name="workflowId" value="${workflowId}"/>
-    <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
+<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowParameters.workflowId}/view.action">
+    <c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
 </c:url>
 
 <script type="text/javascript">
@@ -317,7 +313,7 @@
                                     <c:param name="method" value="show"/>
                                     <c:param name="targetID" value="${target.id}"/>
                                 </c:url>
-                                
+
                                 <agn:agnOption value="${target.id}" data-url="${targetLink}">${target.targetName} (${target.id})</agn:agnOption>
                             </logic:iterate>
                         </agn:agnSelect>
@@ -338,7 +334,7 @@
 
                         <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds" styleClass="form-control js-select" multiple="true" data-placeholder="${allSubscribersMessage}" disabled="${mailingBaseForm.worldMailingSend}" data-action="selectTargetGroups">
                             <logic:iterate id="target" name="mailingBaseForm" property="targets">
-                            
+
                             	<%-- Build link to target group editor --%>
                                 <c:url var="targetLink" value="/targetQB.do">
                                     <c:param name="method" value="show"/>

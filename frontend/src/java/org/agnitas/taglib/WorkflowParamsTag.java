@@ -46,6 +46,7 @@ public class WorkflowParamsTag extends TagSupport {
 		
         	JspWriter jspWriter = pageContext.getOut();
 			if (isTagActive(workflowParameters)) {
+			    assert workflowParameters != null;
 				writeFieldInput(jspWriter, WorkflowParametersHelper.WORKFLOW_ID, workflowParameters.getWorkflowId());
 				writeFieldInput(jspWriter, WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS, workflowParameters.getParams());
 				writeFieldInput(jspWriter, WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID, workflowParameters.getTargetItemId());
@@ -74,6 +75,6 @@ public class WorkflowParamsTag extends TagSupport {
 	}
 	
 	private boolean isTagActive(WorkflowParameters workflowParameters) {
-		return !this.disabled && workflowParameters != null && !workflowParameters.isEmpty();
+		return !this.disabled && WorkflowParametersHelper.isNotEmpty(workflowParameters);
 	}
 }

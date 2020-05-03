@@ -400,7 +400,7 @@ if (typeof jQuery === "undefined") { throw new Error("Bootstrap's JavaScript req
   }
 
   Tooltip.prototype.validate = function () {
-    if (!document.contains(this.$element[0])) {
+    if (!document.body.contains(this.$element[0])) {
       this.hide()
       this.$element = null
       this.options  = null

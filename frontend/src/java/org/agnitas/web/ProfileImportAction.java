@@ -40,7 +40,6 @@ import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
 import com.agnitas.messages.I18nString;
 import com.agnitas.util.FutureHolderMap;
 import com.agnitas.web.forms.ComNewImportWizardForm;
@@ -85,6 +84,8 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
+
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
 /**
  * Profileimport Action
@@ -317,7 +318,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				break;
 
             case ACTION_INIT:
-                ComWorkflowAction.updateForwardParameters(request);
+                updateForwardParameters(request, true);
                 boolean hasAccessToStandardImport = (admin.permissionAllowed(Permission.WIZARD_IMPORT));
                 boolean hasAccessToWizardImport = admin.permissionAllowed(Permission.WIZARD_IMPORTCLASSIC);
 

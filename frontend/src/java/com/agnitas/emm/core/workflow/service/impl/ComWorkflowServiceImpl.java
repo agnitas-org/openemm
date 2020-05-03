@@ -55,6 +55,7 @@ import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.reminder.service.ComReminderService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.eql.EqlFacade;
@@ -149,6 +150,11 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
+import static java.util.stream.Collectors.toList;
+
 public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     //how many hours we will wait
@@ -163,7 +169,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private AutoExportService autoExportService;
 
     private ComProfileFieldDao profileFieldDao;
-	private ComWorkflowDao workflowDao;
+	protected ComWorkflowDao workflowDao;
 	private ComMailingDao mailingDao;
 	private ComTrackableLinkDao linkDao;
 	private ComAdminDao adminDao;
@@ -638,22 +644,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
 	@Override
-    public LightweightMailing getMailing(int mailingId) {
-        return mailingDao.getLightweightMailing(mailingId);
-    }
-
-    @Override
-    public String getMailingName(int mailingId) {
-        LightweightMailing mailing = mailingDao.getLightweightMailing(mailingId);
-
-        if (mailing == null) {
-            return null;
-        }
-
-        return mailing.getShortname();
-    }
-
-	@Override
     public ComMailing getMailing(int mailingId, int companyId) {
         return (ComMailing) mailingDao.getMailing(mailingId, companyId);
     }
@@ -793,16 +783,16 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private int getMailingType(WorkflowMailingAware mailingIcon, int defaultType) {
         switch (mailingIcon.getType()) {
             case WorkflowIconType.Constants.MAILING_ID:
-                return ComMailing.TYPE_NORMAL;
+                return MailingTypes.NORMAL.getCode();
 
             case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID:
-                return ComMailing.TYPE_FOLLOWUP;
+                return MailingTypes.FOLLOW_UP.getCode();
 
             case WorkflowIconType.Constants.DATE_BASED_MAILING_ID:
-                return ComMailing.TYPE_DATEBASED;
+                return MailingTypes.DATE_BASED.getCode();
 
             case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
-                return ComMailing.TYPE_ACTIONBASED;
+                return MailingTypes.ACTION_BASED.getCode();
         }
 
         return defaultType;

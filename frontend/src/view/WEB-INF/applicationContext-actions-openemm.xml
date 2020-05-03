@@ -98,25 +98,6 @@
 		<property name="recipientExportWorkerFactory" ref="RecipientExportWorkerFactory" />
 	</bean>
 
-	<bean name="/workflow" class="com.agnitas.emm.core.workflow.web.ComWorkflowAction">
-		<property name="workflowService" ref="WorkflowService" />
-		<property name="workflowDataParser" ref="WorkflowDataParser" />
-		<property name="campaignDao" ref="CampaignDao" />
-		<property name="workflowActivationService" ref="WorkflowActivationService" />
-		<property name="workflowStatisticsService" ref="WorkflowStatisticsService" />
-		<property name="validationService" ref="WorkflowValidationService" />
-		<property name="componentDao" ref="MailingComponentDao" />
-		<property name="generationPDFService" ref="GenerationPDFService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="deliveryStatService" ref="mailingDeliveryStatService"/>
-		<property name="mailingService" ref="MailingService"/>
-		<property name="webStorage" ref="WebStorage"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-	</bean>
-
 	<bean name="/recipient" class="com.agnitas.web.ComRecipientAction">
 		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="mailingDao" ref="MailingDao" />

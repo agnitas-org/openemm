@@ -12,13 +12,10 @@ package com.agnitas.service;
 
 import java.util.List;
 
+import com.agnitas.beans.MailingSendOptions;
 import com.agnitas.messages.Message;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.beans.MailingSendOptions;
 
 public interface ComMailingSendService {
 	enum DeliveryType {
@@ -34,13 +31,11 @@ public interface ComMailingSendService {
 	 * @param mailingId an identifier of a mailing to be scheduled.
 	 * @param companyId an identifier of a company that the referenced mailing belongs to.
 	 * @param options a bundle of delivery options.
-	 * @param messages a bundle to store messages/warnings (if any).
+	 * @param warnings a bundle to store warnings (if any).
 	 * @param errors a bundle to store errors (if any).
 	 * @param userActions a list of user actions to store one if succeeded (for UAL).
 	 */
-	void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, ActionMessages messages, ActionErrors errors, List<UserAction> userActions);
-
-	void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> messages, List<UserAction> userActions);
+    void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions);
 
 	void deactivateMailing(int mailingId, int companyId);
 }

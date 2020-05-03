@@ -41,7 +41,7 @@
     </div>
     <script id="copy-editor-data" type="application/json">
         {
-            "url":"<html:rewrite page="/workflow.do?method=copy"/>"
+            "url":"<html:rewrite page="/workflow/copy.action"/>"
         }
     </script>
 </div>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
-<!DOCTYPE tiles-definitions PUBLIC  "-//Apache Software Foundation//DTD Tiles Configuration 1.3//EN" "http://struts.apache.org/dtds/tiles-config_1_3.dtd">
+<!DOCTYPE tiles-definitions PUBLIC  "-//Apache Software Foundation//DTD Tiles Configuration 1.3//EN" "src/view/WEB-INF/tiles-config_1_3.dtd">
 <tiles-definitions>
 	<definition name="base" path="/WEB-INF/jsp/template.jsp">
 		<put name="head-tag" value="head_tag_default" type="definition"/>
@@ -1405,26 +1405,9 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="workflow_list_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-list-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-list-setup-new.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
 	<definition name="workflow_view" extends="base">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-setup.jsp" type="page"/>
-		<put name="head-tag" value="workflow_head_tag" type="definition"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="workflow_view_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-setup-new.jsp" type="page"/>
 		<put name="head-tag" value="workflow_head_tag" type="definition"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
@@ -1440,15 +1423,6 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="workflow_view_only_elements_new" path="/WEB-INF/jsp/workflow/workflow-view-only-elements-new.jsp">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-setup.jsp" type="page"/>
-		<put name="head-tag" value="workflow_head_tag" type="definition"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
 	<definition name="workflow_head_tag" extends="head_tag_base">
 		<put name="head-extra-links" value="/WEB-INF/jsp/workflow/workflow-head-extra-links.jsp" type="page"/>
 		<put name="head-extra-meta-tags" value="" type="string"/>
@@ -1456,15 +1430,7 @@
 
 	<definition name="workflow_delete_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-delete.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-delete-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="workflow_delete_ajax_new" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-delete-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-delete-setup.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -1472,15 +1438,7 @@
 
 	<definition name="workflow_bulkDeleteConfirm_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="workflow_bulkDeleteConfirm_ajax_new" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm-setup.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -1488,15 +1446,7 @@
 
 	<definition name="workflow_bulkDeactivateConfirm_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="workflow_bulkDeactivateConfirm_ajax_new" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm-setup.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>

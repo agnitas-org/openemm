@@ -1,16 +1,17 @@
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
-<%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 
-<c:set var="FORWARD_MAILING_CREATE" value="<%=ComWorkflowAction.FORWARD_MAILING_CREATE%>" scope="page"/>
-<c:set var="FORWARD_MAILING_EDIT" value="<%=ComWorkflowAction.FORWARD_MAILING_EDIT%>" scope="page"/>
-<c:set var="FORWARD_MAILING_COPY" value="<%=ComWorkflowAction.FORWARD_MAILING_COPY%>" scope="page"/>
-<c:set var="MAILING_TYPE_DATEBASED" value="<%=Mailing.TYPE_DATEBASED%>" scope="page"/>
+<c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
+<c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
+<c:set var="FORWARD_MAILING_COPY" value="<%= WorkflowController.FORWARD_MAILING_COPY%>" scope="page"/>
+<c:set var="MAILING_TYPE_DATEBASED" value="<%=MailingTypes.DATE_BASED.getCode()%>" scope="page"/>
 
 <div id="datebased_mailing-editor" data-initializer="date-mailing-initializer">
 

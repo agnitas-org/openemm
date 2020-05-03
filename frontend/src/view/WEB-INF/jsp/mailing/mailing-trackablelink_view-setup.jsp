@@ -1,14 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.StrutsActionBase" %>
-<%@ page import="com.agnitas.emm.core.workflow.web.ComWorkflowAction" %>
+<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS" value="<%= ComWorkflowAction.WORKFLOW_FORWARD_PARAMS %>"/>
+<c:set var="SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>"/>
 <c:set var="workflowForwardParams" value="${sessionScope[SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS]}"/>
 
 <c:set var="ACTION_LIST" value="<%= StrutsActionBase.ACTION_LIST %>"/>

@@ -38,6 +38,7 @@ import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -53,7 +54,6 @@ import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowStatisticsService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
 import com.agnitas.emm.core.workflow.service.GenerationPDFService;
-import com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm;
 import com.agnitas.emm.core.workflow.web.forms.WorkflowDependencyValidationForm;
 import com.agnitas.emm.core.workflow.web.forms.WorkflowForm;
 import com.agnitas.messages.Message;
@@ -115,6 +115,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
@@ -122,7 +123,7 @@ import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatu
 
 @Controller
 @RequestMapping("/workflow")
-@PermissionMapping("workflow_new")
+@PermissionMapping("workflow")
 public class WorkflowController {
     private static final Logger logger = Logger.getLogger(WorkflowController.class);
 
@@ -211,7 +212,7 @@ public class WorkflowController {
 
         model.addAttribute("workflowForm", workflowForm);
 
-        return "workflow_view_new";
+        return "workflow_view";
     }
 
     @RequestMapping("/{id:\\d+}/view.action")
@@ -235,7 +236,7 @@ public class WorkflowController {
         if(form == null) {
             form = new WorkflowForm();
         } else {
-            userActivityLogService.writeUserActivityLog(admin, "mailing list view", getWorkflowDescription(form));
+            writeUserActivityLog(admin, "mailing list view", getWorkflowDescription(form));
         }
 
         prepareViewPage(admin, model);
@@ -243,7 +244,7 @@ public class WorkflowController {
         
         model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
 
-        return "workflow_view_new";
+        return "workflow_view";
     }
 
     @GetMapping("/list.action")
@@ -263,7 +264,7 @@ public class WorkflowController {
         SimpleDateFormat dateTimeFormatWithSeconds = admin.getDateTimeFormatWithSeconds();
         model.addAttribute("adminDateTimeFormatWithSeconds", dateTimeFormatWithSeconds.toPattern());
 
-        return "workflow_list_new";
+        return "workflow_list";
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
@@ -275,7 +276,7 @@ public class WorkflowController {
             workflowForm.setWorkflowId(workflow.getWorkflowId());
             workflowForm.setShortname(workflow.getShortname());
         }
-        return "workflow_delete_ajax_new";
+        return "workflow_delete_ajax";
     }
 
     @RequestMapping("/{id:\\d+}/delete.action")
@@ -298,7 +299,7 @@ public class WorkflowController {
             popups.alert("bulkAction.nothing.workflow");
         }
 
-        return "workflow_bulkDeleteConfirm_ajax_new";
+        return "workflow_bulkDeleteConfirm_ajax";
     }
 
     @PostMapping("/bulkDelete.action")
@@ -334,7 +335,7 @@ public class WorkflowController {
             popups.alert("bulkAction.nothing.workflow");
         }
 
-        return "workflow_bulkDeactivateConfirm_ajax_new";
+        return "workflow_bulkDeactivateConfirm_ajax";
     }
 
     @PostMapping("/bulkDeactivate.action")
@@ -392,7 +393,7 @@ public class WorkflowController {
         Workflow.WorkflowStatus newStatus = newWorkflow.getStatus() != Workflow.WorkflowStatus.STATUS_NONE ? newWorkflow.getStatus() : Workflow.WorkflowStatus.STATUS_OPEN;
         boolean isActiveOrTesting = newStatus == Workflow.WorkflowStatus.STATUS_ACTIVE || newStatus == Workflow.WorkflowStatus.STATUS_TESTING;
 
-        if (StringUtils.isNotEmpty(forwardName) && StringUtils.length(newWorkflow.getShortname()) < ComWorkflowForm.SHORTNAME_MIN_LENGTH) {
+        if (StringUtils.isNotEmpty(forwardName) && StringUtils.length(newWorkflow.getShortname()) < 3) {
             newWorkflow.setShortname(INCOMPLETE_WORKFLOW_NAME);
         }
 
@@ -404,7 +405,7 @@ public class WorkflowController {
             newWorkflow.setStatus(newStatus);
 
             if (existingWorkflow == null) {
-                writeWorkflowCreationLog(admin, newWorkflow);
+                writeUserActivityLog(admin, "create campaign", getWorkflowDescription(newWorkflow));
             } else {
                 writeWorkflowChangeLog(admin, existingWorkflow, newWorkflow);
             }
@@ -419,7 +420,8 @@ public class WorkflowController {
 
             boolean isValid = errors.isEmpty() && !redirectModel.containsAttribute("affectedMailings");
             setStatus(admin, newWorkflow, existingWorkflow, errors, warnings, isValid);
-            if (!isActiveOrTesting) {
+            
+            if (errors.isEmpty()) {
                 popups.success("default.changes_saved");
             }
 
@@ -679,15 +681,15 @@ public class WorkflowController {
         loadWorkflow(form, admin, popups);
         writeUserActivityLog(admin, "view campaign", getWorkflowDescription(form));
 
-        return "workflow_view_only_elements_new";
+        return "workflow_view_only_elements";
     }
 
 
     @GetMapping("/{workflowId:\\d+}/generatePDF.action")
     public ResponseEntity<byte[]> generatePDF(ComAdmin admin, @PathVariable int workflowId,
-                                      @RequestParam("showStatistics") String showStatistics) throws Exception {
+                                              @RequestParam("showStatistics") String showStatistics) throws Exception {
         String jsessionid = RequestContextHolder.getRequestAttributes().getSessionId();
-        String hostUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
+        String hostUrl = configService.getValue(ConfigValue.SystemUrl);
         String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&showStatistics=" + showStatistics;
 
         String workflowName = workflowService.getWorkflow(workflowId, admin.getCompanyID()).getShortname();
@@ -899,31 +901,19 @@ public class WorkflowController {
     private SimpleDateFormat getLocaleDateNTimeFormat(ComAdmin admin) {
         return (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, admin.getLocale());
     }
-
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description, Logger callerLog)  {
-        try {
-            if (userActivityLogService != null) {
-                userActivityLogService.writeUserActivityLog(admin, action, description);
-            } else {
-                callerLog.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-                callerLog.info("Userlog: " + admin.getUsername() + " " + action + " " +  description);
-            }
-        } catch (Exception e) {
-            callerLog.error("Error writing ActivityLog: " + e.getMessage(), e);
-            callerLog.info("Userlog: " + admin.getUsername() + " " + action + " " +  description);
-        }
-    }
-
+    
     protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
-        writeUserActivityLog(admin, action, description, logger);
+        writeUserActivityLog(admin, new UserAction(action, description));
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, UserAction action)  {
-        writeUserActivityLog(admin, action.getAction(), action.getDescription());
-    }
-
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
-        writeUserActivityLog(admin, action, Integer.toString(description));
+    protected void writeUserActivityLog(ComAdmin admin, UserAction userAction)  {
+        if (Objects.nonNull(userActivityLogService)) {
+            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
+        } else {
+            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
+            logger.info(String.format("Userlog: %s %s %s", admin.getUsername(), userAction.getAction(),
+                    userAction.getDescription()));
+        }
     }
 
     private String getWorkflowDescription(WorkflowForm workflowForm) {
@@ -932,10 +922,6 @@ public class WorkflowController {
 
     private String getWorkflowDescription(Workflow workflow) {
         return workflow.getShortname() + " (" + workflow.getWorkflowId() + ")";
-    }
-
-    private void writeWorkflowCreationLog(ComAdmin admin, Workflow workflow) {
-        writeUserActivityLog(admin, "create campaign", getWorkflowDescription(workflow));
     }
 
     private List<WorkflowIcon> getIcons(WorkflowForm form) {
@@ -1387,11 +1373,11 @@ public class WorkflowController {
     }
 
     private Message translateToActionMessage(ComWorkflowValidationService.MailingTrackingUsageError error, int trackingDays) {
-        int mailingType = error.getMailingType();
+        MailingTypes mailingType = MailingTypes.getByCode(error.getMailingType());
         switch (error.getErrorType()) {
             case BASE_MAILING_NOT_FOUND:
             case DECISION_MAILING_INVALID:
-                if (mailingType == ComMailing.TYPE_ACTIONBASED || mailingType == ComMailing.TYPE_DATEBASED) {
+                if (mailingType == MailingTypes.ACTION_BASED || mailingType == MailingTypes.DATE_BASED) {
                     return Message.of("error.workflow.baseMailingNeedActivated", error.getMailingName());
                 } else {
                     return Message.of("error.workflow.baseMailingNeedsSent", error.getMailingName());
@@ -1408,9 +1394,10 @@ public class WorkflowController {
 
             case EXPIRATION_PERIOD_EXCEEDED:
                 return Message.of("error.workflow.trackingtime", trackingDays);
+                
+			default:
+				return Message.of("Error");
         }
-
-        return Message.of("Error");
     }
 
     private void setStatus(ComAdmin admin, Workflow workflow, Workflow existingWorkflow, List<Message> errors, List<Message> warnings, boolean isValid) throws Exception {

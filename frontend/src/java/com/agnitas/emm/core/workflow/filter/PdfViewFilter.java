@@ -10,11 +10,9 @@
 
 package com.agnitas.emm.core.workflow.filter;
 
-import static java.util.Objects.nonNull;
-
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -22,30 +20,21 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.lang.StringUtils;
 
 public class PdfViewFilter implements Filter {
 
     private static final long DELAY = 20000l;
-//    private FilterConfig filterConfig;
-    private AtomicInteger reqCount;
+    private static AtomicInteger reqCount = new AtomicInteger();
 
     @Override
     public void init(FilterConfig filterConfig) {
-//        this.filterConfig = filterConfig;
-        reqCount = new AtomicInteger();
+        //Do nothing.
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
-        HttpSession session = httpReq.getSession(false);
-        String method = httpReq.getParameter("method");
-        boolean isCorrectMethod = StringUtils.isNotBlank(method) && method.equals("viewOnlyElements");
-
-        if (nonNull(session) && isCorrectMethod) {
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        if (Objects.nonNull(request.getSession(false))) {
             executeDelay();
         }
 
@@ -54,7 +43,7 @@ public class PdfViewFilter implements Filter {
 
     private void executeDelay() {
         if (reqCount.incrementAndGet() > 1) {
-            reqCount = new AtomicInteger();
+            reqCount.set(0);
             try {
                 Thread.sleep(DELAY);
             } catch (InterruptedException e) {
@@ -65,6 +54,6 @@ public class PdfViewFilter implements Filter {
 
     @Override
     public void destroy() {
-    	// do nothing
+        //Do nothing.
     }
 }

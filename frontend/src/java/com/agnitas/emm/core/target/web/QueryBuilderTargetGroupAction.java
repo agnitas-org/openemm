@@ -30,9 +30,8 @@ import com.agnitas.emm.core.target.service.TargetCopyService;
 import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
 import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
 import com.agnitas.emm.core.target.web.util.FormHelper;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.target.impl.TargetRepresentationImpl;
@@ -40,8 +39,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.DispatchBaseAction;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -113,8 +112,8 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
 		
-		updateWorkflowForwardParameters(request);
-		final Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+		WorkflowUtils.updateForwardParameters(request);
+		final Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
 		if (forwardTargetItemId != null && forwardTargetItemId != 0) {
 			form.setTargetID(forwardTargetItemId);
 		}
@@ -154,17 +153,6 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			
 			return mapping.findForward("list");
 		}
-	}
-
-	private void updateWorkflowForwardParameters(HttpServletRequest req) {
-		int forwardTargetItemId = NumberUtils.toInt(req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID), 0);
-		req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID, forwardTargetItemId);
-
-		int workflowId = NumberUtils.toInt(req.getParameter(ComWorkflowAction.WORKFLOW_ID), 0);
-		req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_ID, workflowId);
-
-		req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS,
-				req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
 	}
 
 	public ActionForward lock(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {

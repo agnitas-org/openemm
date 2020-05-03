@@ -22,10 +22,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.LinkService.LinkScanResult;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.userform.bean.impl.UserFormImpl;
+import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
+import com.agnitas.web.forms.ComUserFormEditForm;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
@@ -38,6 +52,7 @@ import org.agnitas.util.GuiConstants;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.UserFormEditAction;
 import org.agnitas.web.UserFormEditForm;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -50,22 +65,6 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.ActionRedirect;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.LinkService.LinkScanResult;
-import com.agnitas.emm.core.workflow.web.ComWorkflowAction;
-import com.agnitas.messages.I18nString;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.bean.impl.UserFormImpl;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
-import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
-import com.agnitas.web.forms.ComUserFormEditForm;
 
 /**
  * Extended Action class for UserFormEditAction
@@ -164,8 +163,12 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 if (!errors.isEmpty()) {
                     saveErrors(request, errors);
                 } else {
-                    if (userFormEditForm.getWorkflowId() != 0) {
-                        return createWorkflowForwardRedirect(request, mapping, userFormEditForm.getFormID());
+                    Integer workflowId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+                    if (workflowId == null || workflowId == 0) {
+                        workflowId = userFormEditForm.getWorkflowId();
+                    }
+                    if (workflowId > 0) {
+                        return createWorkflowForwardRedirect(request, mapping, userFormEditForm.getFormID(), workflowId);
                     }
                 }
                 return mapping.findForward("success");
@@ -191,8 +194,8 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 return super.execute(mapping, form, request, response);
             	
             case ACTION_VIEW:
-                updateForwardParameters(request);
-                Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+                WorkflowUtils.updateForwardParameters(request);
+                Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                 if (forwardTargetItemId != null && forwardTargetItemId != 0) {
                     userFormEditForm.setFormID(forwardTargetItemId);
                 }
@@ -201,8 +204,8 @@ public class ComUserFormEditAction extends UserFormEditAction {
             	return super.execute(mapping, userFormEditForm, request, response);
             	
             case ACTION_NEW:
-                updateForwardParameters(request);
-                Integer forwardTargetItemIdNew = (Integer) request.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
+                WorkflowUtils.updateForwardParameters(request);
+                Integer forwardTargetItemIdNew = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                 if (forwardTargetItemIdNew != null && forwardTargetItemIdNew != 0) {
                     userFormEditForm.setFormID(forwardTargetItemIdNew);
                 }
@@ -524,29 +527,14 @@ public class ComUserFormEditAction extends UserFormEditAction {
 		aForm.setFormUrl(formUrl);
 	}
 
-    private ActionRedirect createWorkflowForwardRedirect(HttpServletRequest req, ActionMapping mapping, int formId){
-        ActionRedirect redirect = new ActionRedirect(mapping.findForward("workflow_view"));
-        redirect.addParameter("workflowId", req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_ID));
-        redirect.addParameter("forwardParams", req.getSession().getAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS).toString()
+    private ActionRedirect createWorkflowForwardRedirect(HttpServletRequest req, ActionMapping mapping, int formId, int workflowId){
+        ActionForward destination = mapping.findForward("workflow_view");
+        String path = destination.getPath().replace("{WORKFLOW_ID}", Integer.toString(workflowId));
+        ActionRedirect redirect = new ActionRedirect(path);
+        
+        redirect.addParameter("forwardParams", req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS).toString()
                 + ";elementValue=" + Integer.toString(formId));
         return redirect;
-    }
-
-    private void updateForwardParameters(HttpServletRequest req) {
-        String forwardTargetItemId = req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID);
-        if (forwardTargetItemId == null || "".equals(forwardTargetItemId)) {
-            forwardTargetItemId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_TARGET_ITEM_ID, Integer.valueOf(forwardTargetItemId));
-
-        String workflowId = req.getParameter(ComWorkflowAction.WORKFLOW_ID);
-        if (workflowId == null || "".equals(workflowId)) {
-            workflowId = "0";
-        }
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_ID, Integer.valueOf(workflowId));
-
-        req.getSession().setAttribute(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS,
-                req.getParameter(ComWorkflowAction.WORKFLOW_FORWARD_PARAMS));
     }
 
 	@Required

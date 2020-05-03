@@ -16,8 +16,6 @@
 
 		<form-bean name="recipientsReportForm" type="com.agnitas.emm.core.recipientsreport.web.RecipientsReportForm"/>
 
-		<form-bean name="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm" />
-
 		<form-bean name="salutationForm" type="org.agnitas.web.SalutationForm" />
 
 		<form-bean name="adminForm" type="com.agnitas.web.ComAdminForm" />
@@ -152,7 +150,7 @@
 			<forward name="loading" path="mailing_loading" />
 			<forward name="undo_confirm" path="mailing_undo_confirm_ajax" />
 			<forward name="bulk_delete_confirm" path="mailing_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow.do?method=view" />
+			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
 			<forward name="mailing_templates" path="mailing_view_templates"/>
 			<forward name="importMailing" path="mailing_import"/>
 			<forward name="importTemplate" path="template_import"/>
@@ -292,7 +290,7 @@
 			<forward name="list" path="campaign_list" />
 			<forward name="view" path="campaign_view" />
 			<forward name="delete" path="campaign_delete_ajax" />
-			<forward name="workflow_view" path="/workflow.do?method=view" />
+			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
 			<forward name="mailing_create" path="/mailingbase.do?action=4" />
 		</action>
 
@@ -300,34 +298,6 @@
 			<forward name="view" path="mailingParameter_view" />
 			<forward name="list" path="mailingParameter_list" />
             <forward name="delete" path="mailingParameter_delete_ajax" />
-		</action>
-
-
-		<!-- Process workflow -->
-		<action path="/workflow" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="workflowForm" scope="session" input="workflow_view" parameter="method">
-			<forward name="list" path="workflow_list" />
-			<forward name="view" path="workflow_view" />
-			<forward name="delete" path="workflow_delete_ajax" />
-			<forward name="userform_create" path="/userform.do?action=2" />
-			<forward name="userform_edit" path="/userform.do?action=2" />
-			<forward name="report_create" path="/statistics/report/new.action" />
-			<forward name="report_edit" path="/statistics/report/0/view.action" />
-			<forward name="targetgroup_create" path="/target.do?action=2" />
-			<forward name="targetgroup_create_qb" path="/targetQB.do?method=create"/>
-			<forward name="targetgroup_edit" path="/target.do?action=2" />
-			<forward name="targetgroup_edit_qb" path="/targetQB.do?method=show"/>
-			<forward name="archive_create" path="/campaign.do?action=4" />
-			<forward name="mailing_create" path="/mwStart.do?action=init" />
-			<forward name="mailing_edit" path="/mailingbase.do?action=2&amp;isTemplate=false" />
-			<forward name="mailing_copy" path="/mailingbase.do?action=10" />
-			<forward name="autoimport_create" path="/autoimport.do?method=create" />
-			<forward name="autoimport_edit" path="/autoimport.do?method=view" />
-			<forward name="autoexport_create" path="/autoexport.do?method=create" />
-			<forward name="autoexport_edit" path="/autoexport.do?method=view" />
-			<forward name="view_only_elements" path="workflow_view_only_elements" />
-			<forward name="bulkDeleteConfirm" path="workflow_bulkDeleteConfirm_ajax" />
-			<forward name="bulkDeactivateConfirm" path="workflow_bulkDeactivateConfirm_ajax" />
-			<forward name="messages" path="messages" />
 		</action>
 
 		<!-- Process recipients -->
@@ -448,7 +418,7 @@
 			<!--<forward name="back_mailingwizard" path="mailing_wizard_target"/> -->
 			<forward name="back_mailingwizard" path="/mwSubject.do?action=subject" />
 			<forward name="bulk_delete_confirm" path="targets_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow.do?method=view" />
+			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
 			<forward name="view_mailings" path="targets_querybuilder_view_mailings" />
             <forward name="messages" path="messages" />
 		</action>
@@ -470,7 +440,7 @@
 			<forward name="delete" path="userform_delete_ajax" />
 			<forward name="success" path="userform_view" />
 			<forward name="bulk_delete_confirm" path="userform_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow.do?method=view" />
+			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
 			<forward name="import" path="userform_import" />
 		</action>
 
