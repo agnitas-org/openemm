@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	"xmlback.h"
 
 # include	"entity-mapping.h"
@@ -33,6 +32,30 @@ entity_mapping (unsigned long coded, int *len) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
+static inline int
+min (int a, int b) /*{{{*/
+{
+	return a < b ? a : b;
+}/*}}}*/
+static inline unsigned long
+entity_rev_mapping (const xmlChar *entity, int len) /*{{{*/
+{
+	int	low, high, diff, cur;
+	
+	for (low = 0, high = mapsize; low <= high; ) {
+		cur = (low + high) >> 1;
+		diff = memcmp (entity_revmap[cur].entity, entity, min (entity_revmap[cur].len, len));
+		if (diff == 0) {
+			return entity_revmap[cur].code;
+		} else if (diff > 0)
+			high = cur - 1;
+		else
+			low = cur + 1;
+	}
+	return 0;
+}/*}}}*/
+
+
 void
 entity_replace (xmlBufferPtr in, xmlBufferPtr out, bool_t all) /*{{{*/
 {
@@ -79,4 +102,44 @@ entity_replace (xmlBufferPtr in, xmlBufferPtr out, bool_t all) /*{{{*/
 		ptr += clen;
 		pos += clen;
 	}
+}/*}}}*/
+void
+entity_resolve (xmlChar *source) /*{{{*/
+{
+	xmlChar		*ptr, *writer, *end;
+	int		n, elen;
+	unsigned long	code;
+	xmlChar		store[6];
+	xmlChar		*coder;
+	int		limit, count;
+	
+	for (ptr = writer = source; *ptr; )
+		if ((n = xmlCharLength (*ptr)) > 1) {
+			while (n-- > 0)
+				if (*ptr)
+					*writer++ = *ptr++;
+		} else if (*ptr != '&') {
+			*writer++ = *ptr++;
+		} else {
+			for (end = ptr; *end && (*end != ';'); ++end)
+				;
+			if (*end && (code = entity_rev_mapping (ptr, end - ptr + 1))) {
+				elen = ++end - ptr;
+				limit = end - writer;
+				coder = store + sizeof (store);
+				count = 0;
+				while ((code > 0) && (limit-- > 0) && (coder > store)) {
+					*(--coder) = code & 0xff;
+					code >>= 8;
+					++count;
+				}
+				while (count-- > 0)
+					*writer++ = *coder++;
+				ptr += elen;
+			} else {
+				while (ptr != end)
+					*writer++ = *ptr++;
+			}
+		}
+	*writer = 0;
 }/*}}}*/

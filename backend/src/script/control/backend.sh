@@ -9,13 +9,9 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 exec $HOME/bin/service.sh -C '#
 [once(_stdstart)]
-#
-[crontab]
-cmd-start = $HOME/bin/crontab.sh
 #
 [mlprepare]
 cmd-start = $HOME/bin/mlcontrol.sh setup

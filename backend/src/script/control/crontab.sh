@@ -9,9 +9,9 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 active crontab
 #
-exec $HOME/scripts/crontab.py "$@"
+py3select $HOME/scripts/crontab3.py $HOME/scripts/crontab.py
+exec $command "$@"

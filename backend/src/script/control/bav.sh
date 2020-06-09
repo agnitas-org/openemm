@@ -15,10 +15,11 @@
 case "$1" in
 start)
 	active bav
-	starter $HOME/bin/watchdog.sh -bo- -- $HOME/bin/bav -L DEBUG 
+	shift
+	starter $HOME/bin/watchdog.sh -bo- -- $HOME/bin/bav -L DEBUG  "$@"
 	;;
 stop)
-	softterm "$HOME/scripts/watchdog.py -bo- -- $HOME/bin/bav"
+	softterm "$HOME/scripts/watchdog.py -bo- -- $HOME/bin/bav" "$HOME/scripts/watchdog3.py -bo- -- $HOME/bin/bav"
 	;;
 status)
 	patternstatus 2 "$HOME/bin/bav -L"

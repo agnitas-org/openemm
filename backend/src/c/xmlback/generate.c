@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<stdarg.h>
 # include	<ctype.h>
@@ -21,7 +20,6 @@
 # include	<dirent.h>
 # include	<sys/wait.h>
 # include	<sqlite3.h>
-# include	<syslog.h>
 # include	<sysexits.h>
 # include	"xmlback.h"
 
@@ -29,10 +27,10 @@ typedef struct sendmail	sendmail_t;
 
 typedef struct { /*{{{*/
 	bool_t		istemp;		/* temp. filenames		*/
-	bool_t		tosyslog;	/* output accounting info	*/
 	char		*acclog;	/* optional accounting log	*/
 	char		*bnclog;	/* optional bounce log		*/
 	char		*midlog;	/* optional message-id log	*/
+	char		*tracklog;	/* optional mailtracking log	*/
 	sendmail_t	*s;		/* output generating for mails	*/
 	/*}}}*/
 }	gen_t;
@@ -740,7 +738,7 @@ mfrom_store (blockmail_t *blockmail, const char *path) /*{{{*/
 				} else if (envp = sqlite3_column_text (stmt, 0))
 					envelope = strdup ((const char *) envp);
 			}
-		} else
+		} else if (ec != SQLITE_ERROR)
 			error_log (blockmail, db, "querying mailing");
 		if (stmt)
 			sqlite3_finalize (stmt);
@@ -751,7 +749,7 @@ mfrom_store (blockmail_t *blockmail, const char *path) /*{{{*/
 				if ((ec = sqlite3_prepare_v2 (db, dblayout, sizeof (dblayout), & stmt, NULL)) == SQLITE_OK) {
 					ec = sqlite3_step (stmt);
 				}
-				if ((ec != SQLITE_OK) && (ec != SQLITE_ROW))
+				if ((ec != SQLITE_OK) && (ec != SQLITE_ROW) && (ec != SQLITE_DONE))
 					error_log (blockmail, db, "create table");
 				if (stmt)
 					sqlite3_finalize (stmt);
@@ -1216,8 +1214,6 @@ sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver
 			sprintf (prefix, "%06X%03X", blockmail -> mailing_id, blockmail -> licence_id);
 			if (s -> flush)
 				qflush_set_idpattern (s -> flush, prefix);
-			if (s -> mfrom)
-				mfrom_store (blockmail, s -> mfrom);
 			spool_addprefix (s -> spool, prefix);
 			if (s -> bad)
 				spool_addprefix (s -> bad -> spool, prefix);
@@ -1441,6 +1437,20 @@ sendmail_owrite (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *re
 		nl = "\r\n";
 		nllen = 2;
 	}
+	if ((s -> nr == 0) && blockmail -> mfrom) {
+		fsdb_t	*fsdb;
+		char	key[256];
+
+		if ((snprintf (key, sizeof (key) - 1, "envelope:%d:%d", blockmail -> licence_id, blockmail -> mailing_id) != -1) && (fsdb = fsdb_alloc (NULL))) {
+			if (fsdb_put (fsdb, key, blockmail -> mfrom, strlen (blockmail -> mfrom)))
+				log_out (blockmail -> lg, LV_DEBUG, "Put \"%s\" to \"%s\"", blockmail -> mfrom, key);
+			else
+				log_out (blockmail -> lg, LV_ERROR, "Failed to put \"%s\" to \"%s\"", blockmail -> mfrom, key);
+			fsdb_free (fsdb);
+		}		
+		if (s -> mfrom)
+			mfrom_store (blockmail, s -> mfrom);
+	}
 	if (s -> spool)
 		return sendmail_owrite_spool (s, g, blockmail, rec, nl, nllen);
 	else
@@ -1455,10 +1465,10 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 	
 	if (g = (gen_t *) malloc (sizeof (gen_t))) {
 		g -> istemp = false;
-		g -> tosyslog = false;
 		g -> acclog = NULL;
 		g -> bnclog = NULL;
 		g -> midlog = NULL;
+		g -> tracklog = NULL;
 		g -> s = sendmail_alloc ();
 		if (g -> s)
 		{
@@ -1476,14 +1486,14 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 					}
 				} else if (var_partial_imatch (tmp, "temporary")) {
 					g -> istemp = boolean (tmp -> val);
-				} else if (var_partial_imatch (tmp, "syslog")) {
-					g -> tosyslog = boolean (tmp -> val);
 				} else if (var_partial_imatch (tmp, "account-logfile")) {
 					st = struse (& g -> acclog, tmp -> val);
 				} else if (var_partial_imatch (tmp, "bounce-logfile")) {
 					st = struse (& g -> bnclog, tmp -> val);
 				} else if (var_partial_imatch (tmp, "messageid-logfile")) {
 					st = struse (& g -> midlog, tmp -> val);
+				} else if (var_partial_imatch (tmp, "mailtrack-logfile")) {
+					st = struse (& g -> tracklog, tmp -> val);
 				} else {
 					switch (media) {
 					default:
@@ -1537,26 +1547,22 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 				else
 					ts[0] = '\0';
 			}
-			if (g -> tosyslog)
-				openlog ("xmlback", LOG_PID, LOG_MAIL);
 			log_suspend_push (blockmail -> lg, ~LS_LOGFILE, false);
 			for (crun = blockmail -> counter; crun; crun = crun -> next) {
-				if (! crun -> unitcount)
+				if ((! crun -> unitcount) && (! crun -> unitskip))
 					continue;
 
-# define	FORMAT(s1,s2)	s1 "%d;%d;%d;%d;%d;%c;%d;%s;%d;%ld;%lld;%ld;%lld" s2,		\
+# define	FORMAT(s1,s2)	s1 "%d;%d;%d;%d;%d;%c;%d;%s;%d;%ld;%ld;%lld;%ld;%lld" s2,	\
 				blockmail -> licence_id,					\
 				blockmail -> company_id, blockmail -> mailinglist_id,		\
 				blockmail -> mailing_id, blockmail -> maildrop_status_id,	\
 				blockmail -> status_field, blockmail -> blocknr, 		\
 				crun -> mediatype, crun -> subtype, 				\
-				crun -> unitcount, crun -> bytecount,				\
+				crun -> unitcount, crun -> unitskip, crun -> bytecount,		\
 				crun -> bccunitcount, crun -> bccbytecount
 # define	WHAT		FORMAT ("mail creation: ", "")
 
 				log_out (blockmail -> lg, LV_NOTICE, WHAT);
-				if (g -> tosyslog)
-					syslog (LOG_NOTICE, WHAT);
 				if (g -> acclog) {
 					len = snprintf (scratch, sizeof (scratch) - 1,
 							"id=%d\t"
@@ -1571,6 +1577,7 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 							"mediatype=%s\t"
 							"subtype=%d\t"
 							"count=%ld\t"
+							"skip=%ld\t"
 							"bytes=%lld\t"
 							"bcc-count=%ld\t"
 							"bcc-bytes=%lld\t"
@@ -1581,7 +1588,7 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 							blockmail -> mailing_id, blockmail -> maildrop_status_id,
 							blockmail -> status_field, blockmail -> blocknr,
 							crun -> mediatype, crun -> subtype,
-							crun -> unitcount, crun -> bytecount,
+							crun -> unitcount, crun -> unitskip, crun -> bytecount,
 							crun -> bccunitcount, crun -> bccbytecount,
 							blockmail -> nodename, ts);
 					if ((fd = open (g -> acclog, O_WRONLY | O_APPEND | O_CREAT, 0644)) == -1) {
@@ -1599,8 +1606,22 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 # undef		FORMAT
 			}
 			log_suspend_pop (blockmail -> lg);
-			if (g -> tosyslog)
-				closelog ();
+		}
+		if (st && success && blockmail -> mailtrack && g -> tracklog) {
+			if (blockmail -> mailtrack -> count > 0) {
+				buffer_t	*mt = blockmail -> mailtrack -> content;
+				int		fd;
+			
+				buffer_appendch (mt, '\n');
+				if ((fd = open (g -> tracklog, O_WRONLY | O_APPEND | O_CREAT, 0644)) == -1) {
+					log_out (blockmail -> lg, LV_ERROR, "Unable to open separate mailtrack logfile %s (%m)", g -> tracklog);
+				} else {
+					if (write (fd, buffer_content (mt), buffer_length (mt)) != buffer_length (mt))
+						log_out (blockmail -> lg, LV_ERROR, "Unable to write to separate mailtrack logfile %s (%m)", g -> tracklog);
+					if (close (fd) == -1)
+						log_out (blockmail -> lg, LV_ERROR, "Failed to close separate mailtrack logfile %s (%m)", g -> tracklog);
+				}
+			}
 		}
 		if (g -> acclog)
 			free (g -> acclog);
@@ -1608,6 +1629,8 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 			free (g -> bnclog);
 		if (g -> midlog)
 			free (g -> midlog);
+		if (g -> tracklog)
+			free (g -> tracklog);
 		if (g -> s)
 			sendmail_free (g -> s);
 		free (g);

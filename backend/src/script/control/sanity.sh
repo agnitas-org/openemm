@@ -9,9 +9,9 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 active sanity
 #
-exec $HOME/scripts/sanity.py "$@"
+py3select $HOME/scripts/sanity3.py $HOME/scripts/sanity.py
+exec $command "$@"

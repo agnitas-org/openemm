@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdio.h>
 # include	<stdlib.h>
 # include	<unistd.h>
@@ -31,9 +30,10 @@ static output_t	output_table[] = { /*{{{*/
 		"\t\tmedia=<media>      following parameter are bound to this <media>\n"
 		"\t\t                   available media: email\n"
 		"\t\ttemporary=<flags>  true to write unique queue-ids, for test and admin mailings\n"
-		"\t\tsyslog=<flags>     true to send accounting information to syslog\n"
-		"\t\taccount-logfile=<path>  path to file to write accounting information to\n"
-		"\t\tbounce-logfile=<path>   path to write bounce information to\n"
+		"\t\taccount-logfile=<path>    path to file to write accounting information to\n"
+		"\t\tbounce-logfile=<path>     path to write bounce information to\n"
+		"\t\tmessageid-logfile=<path>  path to write message-id mappings to\n"
+		"\t\tmailtrack-logfile=<path>  path to write mailtrack information to\n"
 		"\t\tpath=<path>        path to queue directory to write spool files to\n"
 		"\tOptions specific for email:\n"
 		"\t\taction=<cmd>       command to execute after mail generation\n"
@@ -148,7 +148,7 @@ main (int argc, char **argv) /*{{{*/
 	FILE		*errfp;
 	FILE		*devnull;
 	bool_t		st, dst;
-
+	
 	quiet = false;
 	error_file = NULL;
 	usecrlf = true;
@@ -167,7 +167,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitializePredefinedEntities ();
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
-	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:o:L:h")) != -1)
+	while ((n = getopt (argc, argv, "VpqE:lru:as:egd:t:o:L:h")) != -1)
 		switch (n) {
 		case 'V':
 # ifdef		VERSION			
@@ -208,6 +208,8 @@ main (int argc, char **argv) /*{{{*/
 			if (fqdn)
 				free (fqdn);
 			fqdn = strdup (optarg);
+			break;
+		case 't':
 			break;
 		case 'o':
 			if (ptr = strchr (optarg, ':')) {

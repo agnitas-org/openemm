@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdio.h>
 # include	<stdlib.h>
 # include	<unistd.h>
@@ -645,10 +644,14 @@ main (int argc, char **argv) /*{{{*/
 					int		nlen;
 				}		use[] = {
 					{	"active",	6	},
+					/*
 					{	"deferred",	8	},
 					{	"hold",		4	},
-					{	"incoming",	8	},
-					{	"maildrop",	8	}
+					 */
+					{	"incoming",	8	}
+					/*
+					,{	"maildrop",	8	}
+					 */
 				};
 
 				strncpy (path, spool, sizeof (path) - 1);

@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 /** @file var.c
  * Handling for variable/value pairs.
  * This modules adds support for linked list of variable/value

@@ -9,7 +9,6 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 # Global configuration file for shell scripts on all production
 # machines, including also several utility functions
@@ -27,6 +26,10 @@ export BASE
 export	SYSTEM_CONFIG='{
 
 	"trigger-port": 8450,
+	"direct-path-incoming": "/home/openemm/var/spool/DIRECT",
+	"direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
+	"direct-path-recover": "/home/openemm/var/spool/RECOVER",
+	"direct-path-queues": "/home/openemm/var/spool/QUEUE",
 	"licence": 0
 	,
 	"dbid": "openemm",
@@ -44,6 +47,7 @@ licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
 optbase="$BASE/opt"
+softwarebase="$optbase"
 # .. and for java ..
 LC_ALL=C
 NLS_LANG=american_america.UTF8
@@ -52,7 +56,7 @@ if [ ! "$JBASE" ] ; then
 	JBASE="$BASE/JAVA"
 fi
 if [ ! "$JAVAHOME" ] ; then
-	for java in "$optbase/software/java"; do
+	for java in "$softwarebase/java"; do
 		if [ -d $java ] ; then
 			for sdk in $java/*sdk* ; do
 				if [ -d $sdk ] ; then
@@ -87,17 +91,22 @@ fi
 # .. and for oracle ..
 if [ ! "$ORACLE_HOME" ] || [ ! -d "$ORACLE_HOME" ]; then
 	for path in "/usr/lib/oracle/11.2/client64" \
-		    "$optbase/software/oracle/product/11.2.0/client_1" \
-		    "$optbase/software/oracle/product/10.2.0/client" \
-		    "$optbase/software/oracle/software" \
-		    "$optbase/software/oracle"
+		    "$softwarebase/oracle/product/11.2.0/client_1" \
+		    "$softwarebase/oracle/product/10.2.0/client" \
+		    "$softwarebase/oracle/software" \
+		    "$softwarebase/oracle" \
+		    "$softwarebase/oracle-instantclient"
 	do
-		if [ -d $path ] && [ -d $path/lib ]; then
+		if [ -d $path ]; then
 			ORACLE_HOME=$path
 			export ORACLE_HOME
-			for lpath in lib network/lib; do
-				ldpath=$path/$lpath
-				if [ -d $ldpath ]; then
+			for lpath in . lib network/lib; do
+				if [ "$lpath" = "." ]; then
+					ldpath=$path
+				else
+					ldpath=$path/$lpath
+				fi
+				if [ -d $ldpath ] && [ ! "`echo $ldpath/*`" = "$ldpath/*" ]; then
 					if [ "$LD_LIBRARY_PATH" ] ; then
 						LD_LIBRARY_PATH="$ldpath:$LD_LIBRARY_PATH"
 					else
@@ -120,7 +129,7 @@ if [ "$ORACLE_HOME" ] && [ ! "$TNS_ADMIN" ]; then
 fi
 # .. and for others ..
 for other in python python2 python3 perl sqlite ; do
-	path="$optbase/software/$other"
+	path="$softwarebase/$other"
 	if [ -d $path/bin ] ; then
 		PATH="$path/bin:$PATH"
 	fi
@@ -327,10 +336,10 @@ pathstrip() {
 		python -c "
 def pathstrip (s):
 	rc = []
-	for e in s.split (':'):
+	for e in reversed (s.split (':')):
 		if not e in rc:
 			rc.append (e)
-	return ':'.join (rc)
+	return ':'.join (reversed (rc))
 print (pathstrip (\"$1\"))
 "
 	fi
@@ -416,12 +425,11 @@ requires() {
 }
 py3available() {
 	[ "`which python3 2>/dev/null`" ] || return 1
-	python3 -c "import sys; sys.exit (0 if sys.version_info.major == 3 and sys.version_info.minor >= 7 else 1)" || return 1
+	python3 -c "import sys; sys.exit (0 if sys.version_info.major == 3 and sys.version_info.minor >= 8 else 1)" || return 1
 	setupVirtualEnviron || return 1
-	requires typing_extensions
 }
 py3required() {
-	py3available || die "Please install a python3 version 3.7 or later to /opt/agnitas.com/software/python3"
+	py3available || die "Please install a python3 version 3.8 or later to ${softwarebase}/python3"
 }
 command=""
 commands=""
@@ -594,6 +602,9 @@ active() {
 	verbose=$__verbose
 	quiet=$__quiet
 }
+#
+
+py3required
 #
 if [ "$LD_LIBRARY_PATH" ] ; then
 	LD_LIBRARY_PATH="$BASE/lib:$LD_LIBRARY_PATH"

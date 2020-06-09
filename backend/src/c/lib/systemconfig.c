@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<ctype.h>
 # include	<unistd.h>
@@ -109,6 +108,11 @@ systemconfig_alloc (const char *fname) /*{{{*/
 				fname = getenv (PATH_CONFIG_ENV);
 				if (! fname) {
 					fname = PATH_CONFIG;
+# ifdef		PATH_LEGACY					
+					if (access (fname, R_OK) == -1) {
+						fname = PATH_LEGACY;
+					}
+# endif
 				}
 			}
 			if ((fd = open (fname ? fname : PATH_CONFIG, O_RDONLY)) != -1) {

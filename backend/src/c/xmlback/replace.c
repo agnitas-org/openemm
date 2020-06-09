@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	"xmlback.h"
 
 static bool_t
@@ -159,7 +158,8 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 				} else
 					sp = tp;
 				if (sp && IS_DYNAMIC (sp -> type) && sp -> tname) {
-					for (dyn = find_dynamic (blockmail, rec, sp -> tname), root = dyn; dyn; dyn = dyn -> sibling)
+					root = find_dynamic (blockmail, rec, sp -> tname);
+					for (dyn = root; dyn; dyn = dyn -> sibling)
 						if (dyn_match (dyn, blockmail -> eval, rec))
 							break;
 					if (dyn && dyn_match_selector (root, selector)) {

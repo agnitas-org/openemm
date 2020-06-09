@@ -11,18 +11,20 @@
 ####################################################################################################################################################################################################################################################################
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/update3.py $HOME/scripts/update.py
 case "$1" in
 start)
 	active update
+	shift
 
-	starter $HOME/scripts/update.py account bounce
+	starter $command "$@" account mailtrack bounce deliver
 	;;
 stop)
-	softterm $HOME/scripts/update.py
+	softterm $commands
 	;;
 status)
 
-	patternstatus 3 "$HOME/scripts/update.py"
+	patternstatus 4 $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

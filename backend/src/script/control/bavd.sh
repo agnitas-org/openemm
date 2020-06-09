@@ -9,19 +9,24 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/bavd3.py $HOME/scripts/bavd.py
 case "$1" in
 start)
 	active bavd
-	starter $HOME/scripts/bavd.py
+	shift
+	if py3available; then
+		starter $command -bw "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	softterm $HOME/scripts/bavd.py
+	softterm $commands
 	;;
 status)
-	patternstatus "$HOME/scripts/bavd.py"
+	patternstatus $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

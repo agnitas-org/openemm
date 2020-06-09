@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<ctype.h>
 # include	<regex.h>
 # include	"xmlback.h"
@@ -469,6 +468,7 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 	lua_setfield (il -> lua, -2, "senddate");
 	setbfield (il -> blockmail -> anon, "anon");
 	setsfield (il -> blockmail -> selector, "selector");
+	setbfield (il -> blockmail -> rdir_content_links, "rdir_content_links");
 	setxfield (il -> blockmail -> auto_url, "auto_url");
 	setxfield (il -> blockmail -> anon_url, "anon_url");
 	setifield (il -> blockmail -> blocknr, "blocknr");

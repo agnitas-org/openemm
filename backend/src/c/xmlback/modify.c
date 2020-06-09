@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<ctype.h>
 # include	"xmlback.h"
 
@@ -17,15 +16,55 @@
 # define	ST_END_FOUND		(-2)
 # define	SWAP(bbb)		do { xmlBufferPtr __temp = (bbb) -> in; (bbb) -> in = (bbb) -> out; (bbb) -> out = __temp; } while (0)
 
+static bool_t
+transcode_url_for_content (blockmail_t *blockmail, xmlBufferPtr url, const char *uid) /*{{{*/
+{
+	bool_t		rc = false;
+	const xmlChar	*ptr = xmlBufferContent (url);
+	int		size = xmlBufferLength (url);
+	int		state = 0;
+	xmlChar		ch;
+	
+	buffer_clear (blockmail -> link_maker);
+	while (size > 0) {
+		ch = *ptr++;
+		--size;
+		if (state < 3) {
+			if (ch == '/')
+				++state;
+		} else if (state == 3) {
+			if (isalpha (ch)) {
+				buffer_appendch (blockmail -> link_maker, ch);
+				buffer_appendch (blockmail -> link_maker, '/');
+				buffer_appends (blockmail -> link_maker, uid);
+				buffer_appendch (blockmail -> link_maker, '/');
+				rc = true;
+			}
+			++state;
+		} else if ((ch == '?') || (ch == '&'))
+			break;
+		buffer_appendch (blockmail -> link_maker, ch);
+	}
+	return rc;
+}/*}}}*/
 static void
 mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, record_t *record) /*{{{*/
 {
 	char	*uid;
 
 	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> auto_url_prefix, rec, url -> url_id))) {
-		xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
-		xmlBufferCCat (block -> out, "uid=");
-		xmlBufferCCat (block -> out, uid);
+		char	parameter_separator[2];
+
+		parameter_separator[1] = '\0';
+		if (blockmail -> rdir_content_links && transcode_url_for_content (blockmail, blockmail -> auto_url, uid)) {
+			xmlBufferAdd (block -> out, buffer_content (blockmail -> link_maker), buffer_length (blockmail -> link_maker));
+			parameter_separator[0] = '?';
+		} else {
+			xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
+			xmlBufferCCat (block -> out, "uid=");
+			xmlBufferCCat (block -> out, uid);
+			parameter_separator[0] = '&';
+		}
 		free (uid);
 		if (record -> ids) {
 			var_t		*temp;
@@ -43,8 +82,10 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 				encrypt_build_add (rec -> encrypt, temp -> val, strlen (temp -> val));
 			}
 			if (ref = encrypt_build_do (rec -> encrypt, rec, 0)) {
-				xmlBufferCCat (block -> out, "&ref=");
+				xmlBufferCCat (block -> out, parameter_separator);
+				xmlBufferCCat (block -> out, "ref=");
 				xmlBufferCCat (block -> out, ref);
+				parameter_separator[0] = '&';
 			}
 		}
 	} else
@@ -55,14 +96,14 @@ mkonepixellogurl (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
 	char	*uid;
 	
-	if (blockmail -> onepixel_url &&
-	    (blockmail -> opxmaker || (blockmail -> opxmaker = buffer_alloc (1024))) &&
-	    (uid = create_uid (blockmail, NULL, rec, 0))) {
-		buffer_set (blockmail -> opxmaker, xmlBufferContent (blockmail -> onepixel_url), xmlBufferLength (blockmail -> onepixel_url));
-		buffer_appends (blockmail -> opxmaker, "uid=");
-		buffer_appends (blockmail -> opxmaker, uid);
+	if (blockmail -> onepixel_url && (uid = create_uid (blockmail, NULL, rec, 0))) {
+		if ((! blockmail -> rdir_content_links) || (! transcode_url_for_content (blockmail, blockmail -> onepixel_url, uid))) {
+			buffer_set (blockmail -> link_maker, xmlBufferContent (blockmail -> onepixel_url), xmlBufferLength (blockmail -> onepixel_url));
+			buffer_appends (blockmail -> link_maker, "uid=");
+			buffer_appends (blockmail -> link_maker, uid);
+		}
 		free (uid);
-		return buffer_length (blockmail -> opxmaker) ? buffer_string (blockmail -> opxmaker) : NULL;
+		return buffer_length (blockmail -> link_maker) ? buffer_string (blockmail -> link_maker) : NULL;
 	}
 	return NULL;
 }/*}}}*/

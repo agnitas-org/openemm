@@ -9,7 +9,6 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 #
@@ -25,7 +24,7 @@ case "$1" in
 start)
 	active mailout
 
-	$HOME/scripts/jsync.py
+	$HOME/bin/jsync.sh
 	base=${HOME}/JAVA
 	inifile=-Dorg.agnitas.backend.ini_filename=${base}/Mailout.ini
 	xmlrpc=org.agnitas.backend.MailoutServerXMLRPC
@@ -46,7 +45,7 @@ start)
 stop)
 	first="true"
 	while true ; do
-		$HOME/scripts/in-progress.py
+		$HOME/bin/in-progress.sh
 		if [ $? -ne 0 ]; then
 			if [ "$first" ]; then
 				echo "Looks like at least one mailing is currently in progress,"
@@ -56,7 +55,7 @@ stop)
 			fi
 			sleep 5
 		else
-			softterm "$HOME/scripts/watchdog.py -imerger -r1800"
+			softterm "$HOME/scripts/watchdog.py -imerger -r1800" "$HOME/scripts/watchdog3.py -imerger -r1800"
 			break
 		fi
 	done

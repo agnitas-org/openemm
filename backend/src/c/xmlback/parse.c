@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<ctype.h>
 # include	<string.h>
@@ -393,10 +392,6 @@ parse_general (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 				st = extract_content (& blockmail -> email.subject, doc, node);
 			else if (! xmlstrcmp (node -> name, "from_email"))
 				st = extract_content (& blockmail -> email.from, doc, node);
-			else if (! xmlstrcmp (node -> name, "profile_url"))
-				st = extract_content (& blockmail -> profile_url, doc, node);
-			else if (! xmlstrcmp (node -> name, "unsubscribe_url"))
-				st = extract_content (& blockmail -> unsubscribe_url, doc, node);
 			else if (! xmlstrcmp (node -> name, "auto_url")) {
 				st = extract_content (& blockmail -> auto_url, doc, node);
 				if (st) {
@@ -427,7 +422,17 @@ parse_general (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 			}
 			else if (! xmlstrcmp (node -> name, "total_subscribers"))
 				st = extract_numeric_content (blockmail, & blockmail -> total_subscribers, doc, node);
-			else
+			else if (! xmlstrcmp (node -> name, "mailtracking")) {
+				char	*value = extract_simple_content (blockmail, doc, node);
+				
+				if (value) {
+					if (! strcmp (value, "extended")) {
+						blockmail -> mailtrack = mailtrack_alloc (blockmail -> licence_id, blockmail -> company_id, blockmail -> mailing_id, blockmail -> maildrop_status_id);
+					}
+					free (value);
+				} else
+					st = false;
+			} else
 				unknown (blockmail, node);
 			if (! st)
 				invalid (blockmail, node);
@@ -1581,6 +1586,7 @@ parse_blockmail (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 			else if (! xmlstrcmp (node -> name, "urls"))
 				st = parse_urls (blockmail, doc, node -> children);
 			else if (! xmlstrcmp (node -> name, "receivers")) {
+				blockmail_setup_company_configuration (blockmail);
 				blockmail_setup_mfrom (blockmail);
 				blockmail_setup_vip_block (blockmail);
 				blockmail_setup_onepixel_template (blockmail);

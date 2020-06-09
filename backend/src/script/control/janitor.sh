@@ -13,12 +13,5 @@
 . $HOME/scripts/config.sh
 active janitor
 #
-logf="/var/tmp/janitor.$$"
-(
-	$HOME/scripts/janitor.py "$@"
-) > $logf 2>&1
-#
-if [ -s $logf ]; then
-	log "INFO: janitor.py has unexpected output: `cat $logf`"
-fi
-rm -f $logf
+py3select $HOME/scripts/janitor3.py $HOME/scripts/janitor.py
+exec $command "$@"

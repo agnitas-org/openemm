@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # ifndef	__XMLBACK_H
 # define	__XMLBACK_H		1
 # include	<stdio.h>
@@ -350,6 +349,7 @@ typedef struct counter { /*{{{*/
 	char		*mediatype;	/* the mediatype		*/
 	int		subtype;	/* subtype, e.g. the mailtype	*/
 	long		unitcount;	/* # of units deliviered	*/
+	long		unitskip;	/* # of skiped units		*/
 	long long	bytecount;	/* # of bytes delivered		*/
 	long		bccunitcount;	/* dito for bcc addresses	*/
 	long long	bccbytecount;	/* - " -			*/
@@ -363,6 +363,11 @@ typedef struct rblock { /*{{{*/
 	struct rblock	*next;
 	/*}}}*/
 }	rblock_t;
+typedef struct { /*{{{*/
+	buffer_t	*content;	/* to collect the content	*/
+	int		count;		/* # of added recipients	*/
+	/*}}}*/
+}	mailtrack_t;
 
 
 typedef struct track	track_t;
@@ -420,9 +425,8 @@ struct blockmail { /*{{{*/
 	int		maildrop_status_id;
 	char		status_field;
 	int		*senddate;
+	bool_t		rdir_content_links;
 	/* general part */
-	xmlBufferPtr	profile_url;
-	xmlBufferPtr	unsubscribe_url;
 	xmlBufferPtr	auto_url;
 	bool_t		auto_url_is_dynamic;
 	char		*auto_url_prefix;
@@ -430,7 +434,7 @@ struct blockmail { /*{{{*/
 	char		*selector;
 	bool_t		convert_to_entities;
 	xmlBufferPtr	onepixel_url;
-	buffer_t	*opxmaker;
+	buffer_t	*link_maker;
 	xmlBufferPtr	anon_url;
 	xmlBufferPtr	secret_key;
 	long long	secret_timestamp;
@@ -440,6 +444,7 @@ struct blockmail { /*{{{*/
 	buffer_t	*secret_sig;
 	long		total_subscribers;
 	char		*domain;
+	mailtrack_t	*mailtrack;
 	struct {
 		xmlBufferPtr	subject;
 		xmlBufferPtr	from;
@@ -675,6 +680,9 @@ extern bool_t		rblock_set_name (rblock_t *r, const char *bname);
 extern bool_t		rblock_set_content (rblock_t *r, xmlBufferPtr content);
 extern bool_t		rblock_retrieve_content (rblock_t *r, buffer_t *content);
 extern bool_t		rblock_set_string_content (rblock_t *r, const char *content);
+extern mailtrack_t	*mailtrack_alloc (int licence_id, int company_id, int mailing_id, int maildrop_status_id);
+extern mailtrack_t	*mailtrack_free (mailtrack_t *m);
+extern void		mailtrack_add (mailtrack_t *m, int customer_id);
 extern blockmail_t	*blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg);
 extern blockmail_t	*blockmail_free (blockmail_t *b);
 extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes, int bcccount);
@@ -684,6 +692,7 @@ extern bool_t		blockmail_insync (blockmail_t *b, int cid, const char *mediatype,
 extern bool_t		blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int bcccount);
 extern bool_t		blockmail_extract_mediatypes (blockmail_t *b);
 extern void		blockmail_setup_senddate (blockmail_t *b, const char *date);
+extern void		blockmail_setup_company_configuration (blockmail_t *b);
 extern void		blockmail_setup_mfrom (blockmail_t *b);
 extern void		blockmail_setup_vip_block (blockmail_t *b);
 extern void		blockmail_setup_onepixel_template (blockmail_t *b);
@@ -841,6 +850,7 @@ extern gnode_t		*string_map_addsi (map_t *map, const char *key, long data);
 extern void		string_map_done (map_t *map);
 
 extern void		entity_replace (xmlBufferPtr in, xmlBufferPtr out, bool_t all);
+extern void		entity_resolve (xmlChar *source);
 
 extern eval_t		*eval_alloc (blockmail_t *blockmail);
 extern eval_t		*eval_free (eval_t *e);

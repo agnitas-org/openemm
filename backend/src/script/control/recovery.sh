@@ -9,9 +9,9 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 active recovery
 #
-starter $HOME/scripts/recovery.py "$@"
+py3select $HOME/scripts/recovery3.py $HOME/scripts/recovery.py
+starter $command "$@"

@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<string.h>
 # include	"xmlback.h"
@@ -22,6 +21,7 @@ counter_alloc (const char *mediatype, int subtype) /*{{{*/
 		c -> mediatype = strdup (mediatype);
 		c -> subtype = subtype;
 		c -> unitcount = 0;
+		c -> unitskip = 0;
 		c -> bytecount = 0;
 		c -> bccunitcount = 0;
 		c -> bccbytecount = 0;

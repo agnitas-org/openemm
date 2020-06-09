@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<openssl/conf.h>
 # include	<openssl/evp.h>
@@ -58,7 +57,7 @@ encrypt_init (void) /*{{{*/
 	if (! isinit) {
 		ERR_load_crypto_strings ();
 		OpenSSL_add_all_algorithms ();
-		OPENSSL_config (NULL);
+		OPENSSL_no_config ();
 		isinit = true;
 	}
 }/*}}}*/

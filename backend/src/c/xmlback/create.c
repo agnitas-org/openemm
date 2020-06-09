@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<ctype.h>
 # include	<string.h>
 # include	"xmlback.h"
@@ -37,7 +36,11 @@ use_block (block_t *block, links_t *links) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-
+static bool_t
+match_block (blockmail_t *blockmail, block_t *block, receiver_t *rec) /*{{{*/
+{
+	return block_match (block, blockmail -> eval, rec);
+}/*}}}*/
 static int
 is_end_of_line (blockmail_t *blockmail, int pos) /*{{{*/
 {
@@ -154,10 +157,11 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 			if (changed)
 				eval_change_data (blockmail -> eval, blockmail -> mtbuf[idx], false, blockmail -> mailtype_index);
 		}
-		if ((block -> mediatype != Mediatype_Unspec) && (block -> mediatype != Mediatype_EMail))
+		if ((block -> mediatype != Mediatype_Unspec) && (block -> mediatype != Mediatype_EMail)) {
 			block -> inuse = false;
-		else
-			block -> inuse = block_match (block, blockmail -> eval, rec);
+		} else {
+			block -> inuse = match_block (blockmail, block, rec);
+		}
 		
 		if (block -> inuse) {
 			if ((block -> tid != TID_EMail_Head) &&

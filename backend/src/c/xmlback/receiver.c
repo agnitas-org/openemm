@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	"xmlback.h"
 
@@ -221,13 +220,20 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 			m -> nr = 0;
 			m -> prefix[m -> plen] = '\0';
 		}
-		if (uid = create_uid (blockmail, m -> prefix, rec, 0)) {
-			xmlBufferEmpty (rec -> message_id);
+		xmlBufferEmpty (rec -> message_id);
+		if ((blockmail -> status_field == 'A') || (blockmail -> status_field == 'T')) {
+			char	scratch[64];
+			
+			xmlBufferCCat (rec -> message_id, m -> prefix);
+			xmlBufferAdd (rec -> message_id, (xmlChar *) & blockmail -> status_field, 1);
+			snprintf (scratch, sizeof (scratch) - 1, "%d", rec -> customer_id);
+			xmlBufferCCat (rec -> message_id, scratch);
+		} else if (uid = create_uid (blockmail, m -> prefix, rec, 0)) {
 			xmlBufferCCat (rec -> message_id, uid);
-			xmlBufferCCat (rec -> message_id, "@");
-			xmlBufferCCat (rec -> message_id, blockmail -> domain ? blockmail -> domain : blockmail -> fqdn);
 			free (uid);
 		}
+		xmlBufferCCat (rec -> message_id, "@");
+		xmlBufferCCat (rec -> message_id, blockmail -> domain ? blockmail -> domain : blockmail -> fqdn);
 	}
 }/*}}}*/
 

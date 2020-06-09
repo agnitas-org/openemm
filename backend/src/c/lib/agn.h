@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 /** @file agn.h
  * Header file for the Agnitas C Library
  * All usable datatypes and functions are defined or declared
@@ -235,6 +234,16 @@ typedef struct { /*{{{*/
 }	fcache_t;
 
 /**
+ * Handle and result type for file system based database
+ */
+typedef struct fsdb	fsdb_t;
+typedef struct { /*{{{*/
+	void	*value;			/* the value itself					*/
+	int	vlen;			/* the size of the value				*/
+	/*}}}*/
+}	fsdb_result_t;
+	
+/**
  * Keeps track of signal handling
  */
 typedef struct { /*{{{*/
@@ -429,6 +438,15 @@ extern fcache_t		*fcache_alloc (const char *path);
 extern int		fcache_find (fcache_t *fc, const char *name, int timeout);
 extern bool_t		fcache_save (fcache_t *fc, const char *name, int fd);
 extern bool_t		fcache_expire (fcache_t *fc, int expire);
+
+extern fsdb_result_t	*fsdb_result_alloc (int size);
+extern fsdb_result_t	*fsdb_result_free (fsdb_result_t *r);
+extern fsdb_t		*fsdb_alloc (const char *base_path);
+extern fsdb_t		*fsdb_free (fsdb_t *f);
+extern bool_t		fsdb_exists (fsdb_t *f, const char *key);
+extern fsdb_result_t	*fsdb_get (fsdb_t *f, const char *key);
+extern bool_t		fsdb_put (fsdb_t *f, const char *key, const void *value, int vlen);
+extern bool_t		fsdb_remove (fsdb_t *f, const char *key);
 
 extern csig_t		*csig_alloc (int signr, ...);
 extern csig_t		*csig_free (csig_t *c);

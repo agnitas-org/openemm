@@ -9,24 +9,29 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/trigger3.py $HOME/scripts/trigger.py
 cd $HOME
 case "$1" in
 start)
 	active trigger
-	starter $HOME/scripts/trigger.py
+	shift
+	if py3available ; then
+		starter $command -bw "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	terminator $HOME/scripts/trigger.py
+	softterm $commands
 	;;
 status)
-	patternstatus 2 "$HOME/scripts/trigger.py"
+	patternstatus 2 $command
 	;;
 *)
-	echo "Usage: $0 [ start | stop ]"
+	echo "Usage: $0 [ start | stop | status ]"
 	exit 1
 	;;
 esac

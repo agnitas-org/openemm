@@ -12,20 +12,26 @@
 #
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/pickdist3.py $HOME/scripts/pickdist.py
 cd $HOME
 case "$1" in
 start)
-	starter $HOME/scripts/pickdist.py
+	active pickdist
+	shift
+	if py3available ; then
+		starter $command -bw "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	softterm scripts/pickdist
+	softterm $commands
 	;;
 status)
-	patternstatus 2 "$HOME/scripts/pickdist.py"
+	patternstatus $command
 	;;
-	
 *)
-	echo "Usage: $0 [ start | stop ]"
+	echo "Usage: $0 [ start | stop | status ]"
 	exit 1
 	;;
 esac

@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<ctype.h>
 # include	<stdio.h>
@@ -197,24 +196,39 @@ static struct quote { /*{{{*/
 	int		olen;
 	const char	*close;
 	int		clen;
+	bool_t		multi_char;
 	/*}}}*/
 }	quotes[] = { /*{{{*/
 	{	"\x80\x9e",	2,
-		"\xde\x80\x9c",	3
+		"\xde\x80\x9c",	3,
+		false
 	}, {	"\xe2\x80\x9d",	3,
-		"\xe2\x80\x9d",	3
+		"\xe2\x80\x9d",	3,
+		false
 	}, {	"\xe2\x80\x9e", 3,
-		"\xe2\x80\x9c", 3
+		"\xe2\x80\x9c", 3,
+		false
 	}, {	"\xe2\x80\x9a", 3,
-		"\xe2\x80\x98", 3
+		"\xe2\x80\x98", 3,
+		false
 	}, {	"\xe2\x80\x9c", 3,
-		"\xe2\x80\x9d", 3
+		"\xe2\x80\x9d", 3,
+		false
 	}, {	"\xe2\x80\x98", 3,
-		"\xe2\x80\x99", 3
+		"\xe2\x80\x99", 3,
+		false
 	}, {	"\xc2\xab", 2,
-		"\xc2\xbb", 2
+		"\xc2\xbb", 2,
+		false
 	}, {	"\xe2\x80\xb9", 3,
-		"\xe2\x80\xba", 3
+		"\xe2\x80\xba", 3,
+		false
+	}, {	"&quot;",	6,
+		"&quot;",	6,
+		true
+	}, {	"&apos;",	6,
+		"&apos;",	6,
+		true
 	}
 	/*}}}*/
 };
@@ -324,16 +338,20 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 							}
 						}
 					} else if (quo = find_quote (ptr, len)) {
-						len += quo -> olen;
+						len -= quo -> olen;
 						ptr += quo -> olen;
 						val = ptr;
 						while (len >= quo -> clen) {
 							n = xmlCharLength (*ptr);
-							if ((n == quo -> clen) && (! memcmp (ptr, quo -> close, quo -> clen))) {
+							if ((((! quo -> multi_char) && (n == quo -> clen)) || (quo -> multi_char && (len >= quo -> clen))) &&
+							    (! memcmp (ptr, quo -> close, quo -> clen))) {
 								*ptr = '\0';
 								ptr += quo -> clen;
 								len -= quo -> clen;
 								xmlSkip (& ptr, & len);
+								if (quo -> multi_char) {
+									entity_resolve (val);
+								}
 								break;
 							} else {
 								ptr += n;

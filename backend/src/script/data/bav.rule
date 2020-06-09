@@ -1,4 +1,3 @@
-#	-*- no -*-
 ######################################################################################################################################################################################################################################################################
 ##                                                                                                                                                                                                                                                                  ##
 ##                                                                                                                                                                                                                                                                  ##
@@ -16,7 +15,7 @@
 ^Return-Path:.*<>
 ^Precedence: bulk
 ^Return-Path:.*<(MAILER-DA?EMON.*|(mailgun|mailout)@(.*\.)?agnitas\.de)>
-^Subject: unsubscribe:[A-Za-z0-9]+(\.[A-Za-z0-9]+)+
+^Subject:.*unsubscribe:[A-Za-z0-9]+(\.[A-Za-z0-9]+)+
 #
 #
 #	Every mail that matches this filter won't be forwarded and will be

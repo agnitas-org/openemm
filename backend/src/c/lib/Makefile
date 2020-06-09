@@ -8,7 +8,6 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 
 CFLAGS	= -I.
@@ -18,7 +17,7 @@ SRCS	= buffer.c var.c log.c node.c map.c csig.c \
 	  tzdiff.c atob.c str.c net.c hash.c path.c \
 	  set.c skip.c lock.c xml.c daemon.c cache.c \
 	  unhex.c which.c timeout.c url.c systemconfig.c \
-	  plugin.c \
+	  plugin.c fsdb.c \
 	  parson.c
 OBJS	= $(SRCS:%.c=%.o)
 LIB	= libagn.a

@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<stdarg.h>
 # include	<string.h>
@@ -113,12 +112,12 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> maildrop_status_id = -1;
 		b -> status_field = '\0';
 		b -> senddate = NULL;
+		b -> rdir_content_links = false;
 		b -> domain = NULL;
+		b -> mailtrack = NULL;
 		
 		b -> email.subject = NULL;
 		b -> email.from = NULL;
-		b -> profile_url = NULL;
-		b -> unsubscribe_url = NULL;
 		b -> auto_url = NULL;
 		b -> auto_url_is_dynamic = false;
 		b -> auto_url_prefix = NULL;
@@ -126,7 +125,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> selector = NULL;
 		b -> convert_to_entities = false;
 		b -> onepixel_url = NULL;
-		b -> opxmaker = NULL;
+		b -> link_maker = NULL;
 		b -> anon_url = NULL;
 		b -> secret_key = NULL;
 		b -> secret_timestamp = 0;
@@ -187,6 +186,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		    (! (b -> eval = eval_alloc (b))) ||
 		    (! (b -> head = buffer_alloc (4096))) ||
 		    (! (b -> body = buffer_alloc (65536))) ||
+		    (! (b -> link_maker = buffer_alloc (1024))) ||
 		    (! (b -> secret_uid = buffer_alloc (1024))) ||
 		    (! (b -> secret_sig = buffer_alloc (1024))) ||
 		    (! (b -> mtbuf[0] = xmlBufferCreate ())) ||
@@ -249,15 +249,13 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			free (b -> senddate);
 		if (b -> domain)
 			free (b -> domain);
+		if (b -> mailtrack)
+			mailtrack_free (b -> mailtrack);
 		
 		if (b -> email.subject)
 			xmlBufferFree (b -> email.subject);
 		if (b -> email.from)
 			xmlBufferFree (b -> email.from);
-		if (b -> profile_url)
-			xmlBufferFree (b -> profile_url);
-		if (b -> unsubscribe_url)
-			xmlBufferFree (b -> unsubscribe_url);
 		if (b -> auto_url)
 			xmlBufferFree (b -> auto_url);
 		if (b -> auto_url_prefix)
@@ -266,8 +264,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			free (b -> selector);
 		if (b -> onepixel_url)
 			xmlBufferFree (b -> onepixel_url);
-		if (b -> opxmaker)
-			buffer_free (b -> opxmaker);
+		if (b -> link_maker)
+			buffer_free (b -> link_maker);
 		if (b -> anon_url)
 			xmlBufferFree (b -> anon_url);
 		if (b -> secret_key)
@@ -319,9 +317,6 @@ blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes,
 {
 	counter_t	*run, *prv;
 
-	if (bytes == 0)
-		return true;
-	
 	for (run = b -> counter, prv = NULL; run; run = run -> next)
 		if ((! strcmp (run -> mediatype, mediatype)) && (run -> subtype == subtype))
 			break;
@@ -338,10 +333,14 @@ blockmail_count (blockmail_t *b, const char *mediatype, int subtype, long bytes,
 		b -> counter = run;
 	}
 	if (run) {
-		run -> unitcount++;
-		run -> bytecount += bytes;
-		run -> bccunitcount += bcccount;
-		run -> bccbytecount += bytes * bcccount;
+		if (bytes == 0) {
+			run -> unitskip++;
+		} else {
+			run -> unitcount++;
+			run -> bytecount += bytes;
+			run -> bccunitcount += bcccount;
+			run -> bccbytecount += bytes * bcccount;
+		}
 	}
 	return run ? true : false;
 }/*}}}*/
@@ -406,9 +405,11 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 		char	*size, *mtyp, *temp;
 		int	styp;
 		int	ncid;
+		long	bytes;
 		
 		while (inp = fgets (buf, sizeof (buf) - 1, b -> syfp)) {
 			ncid = atoi (buf);
+			bytes = 0;
 			mtyp = NULL;
 			styp = 0;
 			if (ptr = strchr (buf, ';')) {
@@ -423,13 +424,16 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 						if (ptr = strchr (ptr, '\n'))
 							*ptr = '\0';
 						styp = atoi (temp);
-						if (ncid)
-							blockmail_count (b, mtyp, styp, atol (size), bcccount);
+						if (ncid) {
+							bytes = atol (size);
+							blockmail_count (b, mtyp, styp, bytes, bcccount);
+						}
 					}
 				}
 			}
-			if (mtyp && (cid == ncid) &&
-			    (! strcmp (mtyp, mediatype)) && (styp == subtype)) {
+			if (mtyp && (cid == ncid) && (! strcmp (mtyp, mediatype)) && (styp == subtype)) {
+				if ((bytes > 0) && b -> mailtrack)
+					mailtrack_add (b -> mailtrack, cid);
 				rc = true;
 				break;
 			}
@@ -464,8 +468,11 @@ blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 				rc = false;
 		}
 	}
-	if (rc && cid && b -> active)
+	if (rc && cid) {
 		rc = blockmail_count (b, mediatype, subtype, size, bcccount);
+		if (b -> active && b -> mailtrack)
+			mailtrack_add (b -> mailtrack, cid);
+	}
 	return rc;
 }/*}}}*/
 
@@ -539,6 +546,15 @@ blockmail_setup_senddate (blockmail_t *b, const char *date) /*{{{*/
 	if (b -> senddate)
 		free (b -> senddate);
 	b -> senddate = tf_parse_date (date);
+}/*}}}*/
+void
+blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/
+{
+	var_t	*tmp;
+	
+	if ((tmp = var_find (b -> company_info, "rdir.UseRdirContextLinks")) && tmp -> val) {
+		b -> rdir_content_links = atob (tmp -> val);
+	}
 }/*}}}*/
 void
 blockmail_setup_mfrom (blockmail_t *b) /*{{{*/

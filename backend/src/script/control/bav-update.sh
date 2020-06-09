@@ -9,19 +9,25 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
+#
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/bav-update3.py $HOME/scripts/bav-update.py
 case "$1" in
 start)
 	active bav-update
-	starter $HOME/scripts/bav-update.py
+	shift
+	if py3available; then
+		starter $command -bw "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	terminator $HOME/scripts/bav-update.py
+	softterm $commands
 	;;
 status)
-	patternstatus "$HOME/scripts/bav-update.py"
+	patternstatus $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

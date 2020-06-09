@@ -8,7 +8,6 @@
  *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
-/*	-*- mode: c; mode: fold -*-	*/
 # include	<stdlib.h>
 # include	<string.h>
 # include	"xmlback.h"
@@ -59,15 +58,16 @@ count_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 			for (run = blockmail -> counter; run && st; run = run -> next) {
 				long	mb = (run -> bytecount + 1024 * 1024 - 1) / (1024 * 1024);
 				
-				log_out (blockmail -> lg, LV_DEBUG, "%s/%d: %8ld Mail%s %8ld MByte%s (%ld bcc)",
+				log_out (blockmail -> lg, LV_DEBUG, "%s/%d: %8ld Mail%s (%8ld skipped) %8ld MByte%s (%ld bcc)",
 					 run -> mediatype, run -> subtype,
-					 run -> unitcount, (run -> unitcount == 1 ? ", " : "s,"),
+					 run -> unitcount, (run -> unitcount == 1 ? ", " : "s,"), run -> unitskip,
 					 mb, (mb == 1 ? "" : "s"),
 					 run -> bccunitcount);
-				if (fprintf (fp, "%s\t%d\t%ld\t%lld\t%ld\t%lld\n",
+				if (fprintf (fp, "%s\t%d\t%ld\t%ld\t%lld\t%ld\t%lld\n",
 					     run -> mediatype,
 					     run -> subtype,
 					     run -> unitcount,
+					     run -> unitskip,
 					     run -> bytecount,
 					     run -> bccunitcount,
 					     run -> bccbytecount) == EOF) {

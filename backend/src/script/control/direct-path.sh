@@ -9,20 +9,26 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/direct-path3.py $HOME/scripts/direct-path.py
+cd $HOME
 case "$1" in
 start)
 	active direct-path
-	starter $HOME/scripts/direct-path.py
+	shift
+	if py3available; then
+		starter $command -b "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	terminator $HOME/scripts/direct-path.py
+	softterm $commands
 	;;
 status)
-	patternstatus 3 "$HOME/scripts/direct-path.py"
+	patternstatus 3 $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

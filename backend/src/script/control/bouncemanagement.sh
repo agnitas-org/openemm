@@ -13,4 +13,4 @@
 . $HOME/scripts/config.sh
 active bouncemanagement
 #
-$HOME/bin/softbounce.sh
+$HOME/bin/softbounce.sh "$@"

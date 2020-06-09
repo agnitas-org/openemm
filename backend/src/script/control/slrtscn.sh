@@ -9,20 +9,25 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/slrtscn3.py $HOME/scripts/slrtscn.py
 case "$1" in
 start)
 	active slrtscn
-	starter $HOME/scripts/slrtscn.py
+	shift
+	if py3available; then
+		starter $command -b "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	softterm $HOME/scripts/slrtscn.py
+	softterm $commands
 	;;
 status)
-	patternstatus "$HOME/scripts/slrtscn.py"
+	patternstatus $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

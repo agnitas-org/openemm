@@ -8,15 +8,14 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 
-CFLAGS	= '-DVERSION="OpenEMM 19.10.000.128"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DVERSION="OpenEMM 20.04.000.142"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
-LIBS	= -lagn -lslang -lsqlite3 -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
+LIBS	= -lagn -lslang -lsqlite3 -llua -Wl,-Bstatic -lssl -lcrypto -Wl,-Bdynamic -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
 	  blockmail.c block.c tagpos.c tracker.c mailtypedefinition.c links.c blockspec.c fix.c \
-	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c \
+	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
 	  codec.c eval.c counter.c rblock.c misc.c sqllike.c data.c none.c \
 	  generate.c count.c preview.c head.c \
 	  strmap.c uid.c alua.c tfunc.c tflua.c xbp.c \
@@ -33,6 +32,8 @@ xmlback:	libslang.a liblua.a $(OBJS) ../lib/libagn.a
 luatc:		libslang.a liblua.a $(LOBJS) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(LOBJS) $(LIBS)
 	strip -s $@
+
+xmlback.o:	xmlback.c Makefile
 
 ../lib/libagn.a:
 	$(MAKE) -C ../lib `basename $@`

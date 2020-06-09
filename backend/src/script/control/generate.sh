@@ -9,24 +9,29 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#	-*- sh -*-
 #
 . $HOME/scripts/config.sh
 #
+py3select $HOME/scripts/generate3.py $HOME/scripts/generate.py
 cd $HOME
 case "$1" in
 start)
 	active generate
-	starter $HOME/scripts/generate.py
+	shift
+	if py3available ; then
+		starter $command -b  "$@"
+	else
+		starter $command "$@"
+	fi
 	;;
 stop)
-	softterm $HOME/scripts/generate.py
+	softterm $commands
 	;;
 status)
-	patternstatus 2 "$HOME/scripts/generate.py"
+	patternstatus 2 $command
 	;;
 *)
-	echo "Usage: $0 [ start | stop ]"
+	echo "Usage: $0 [ start | stop | status ]"
 	exit 1
 	;;
 esac

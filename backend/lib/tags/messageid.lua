@@ -8,7 +8,6 @@
 --        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            --
 --                                                                                                                                                                                                                                                                  --
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- coding: -*- lua -*-;
 function messageid (ctx, parm, cust)
 	return ctx.message_id
 end
