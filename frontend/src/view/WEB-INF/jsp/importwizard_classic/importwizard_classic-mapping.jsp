@@ -1,5 +1,4 @@
 <%@page import="org.agnitas.util.importvalues.ImportMode"%>
-<%@page import="org.apache.commons.lang.StringUtils"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"
          import="org.agnitas.util.*,java.util.*, com.agnitas.web.ComImportWizardForm, com.agnitas.beans.ComAdmin"  errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>

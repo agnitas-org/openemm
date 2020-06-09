@@ -23,8 +23,7 @@ import javax.servlet.ServletResponse;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.util.RSACryptUtil;
@@ -69,12 +68,12 @@ public class BirtInterceptingFilter implements Filter {
 
 	private void forwardToErrorPage(ServletRequest request, ServletResponse response) throws ServletException, IOException {
 		request.setAttribute("error", new Exception("Not authenticated"));
-		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtErrorPage));
+		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(ConfigValue.BirtErrorPage));
 		dispatcher.forward(request, response);
 	}
 
 	private boolean verifySecurityToken(String securityTokenString, @VelocityCheck int companyID) {
-		String privateKeyString = getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtPrivateKey, companyID);
+		String privateKeyString = getConfigService().getValue(ConfigValue.BirtPrivateKey, companyID);
 		if (StringUtils.isBlank(privateKeyString) ) {
 			logger.warn("Birt private key is missing");
 			return false;
@@ -106,7 +105,7 @@ public class BirtInterceptingFilter implements Filter {
 	}
 	
 	public static String createSecurityToken(ConfigService configService, int companyID) throws Exception {
-		String publicKeyString = configService.getValue(AgnUtils.getHostName(), ConfigValue.BirtPublicKey, companyID);
+		String publicKeyString = configService.getValue(ConfigValue.BirtPublicKey, companyID);
         if (StringUtils.isBlank(publicKeyString)) {
             throw new Exception("Parameter 'birt.publickey' is missing");
         } else {

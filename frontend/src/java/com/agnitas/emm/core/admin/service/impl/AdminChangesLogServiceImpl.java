@@ -13,28 +13,35 @@ package com.agnitas.emm.core.admin.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
+import java.util.Objects;
+import java.util.Optional;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.form.AdminPreferences;
 import com.agnitas.emm.core.admin.service.AdminChangesLogService;
-import com.agnitas.web.ComAdminForm;
+import com.agnitas.emm.core.admin.service.AdminService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 public class AdminChangesLogServiceImpl implements AdminChangesLogService {
+
+    /** The logger. */
     private static final transient Logger logger = Logger.getLogger(AdminChangesLogServiceImpl.class);
 
-    private ComAdminDao adminDao;
+    /** Service handling admins. */
+    private AdminService adminService;
+
+    /** DAO accessing admin groups. */
     private ComAdminGroupDao adminGroupDao;
 
     @Override
-    public List<UserAction> getChangesAsUserActions(ComAdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
+    public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
         List<UserAction> userActions = new ArrayList<>();
 
         collectAdminChanges(userActions, newAdminData, oldAdmin);
@@ -50,7 +57,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
      * @param newAdminData new admin data
      * @param oldAdmin who will be changed and saved
      */
-    private void collectAdminChanges(List<UserAction> userActions, ComAdminForm newAdminData, ComAdmin oldAdmin) {
+    private void collectAdminChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin) {
         //Open EMM changes
         try {
             String userName = oldAdmin.getUsername();
@@ -141,24 +148,24 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
      * @param oldAdmin - current data
      * @param oldAdminPreferences - current admin preferences
      */
-    private void collectAdminPreferencesChanges(List<UserAction> userActions, ComAdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
+    private void collectAdminPreferencesChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
         //EMM preferences
         try {
             String userName = oldAdmin.getUsername();
-
+            AdminPreferences newAdminPreferences = newAdminData.getAdminPreferences();
             //Log changes of start page
-            if (oldAdminPreferences.getStartPage() != newAdminData.getStartPage()) {
-                if (oldAdminPreferences.getStartPage() == 0 && newAdminData.getStartPage() == 1) {
+            if (oldAdminPreferences.getStartPage() != newAdminPreferences.getStartPage()) {
+                if (oldAdminPreferences.getStartPage() == 0 && newAdminPreferences.getStartPage() == 1) {
                     userActions.add(new UserAction("edit user", "Username: " + userName + ". Start page changed from Dashboard to Calendar"));
                 }
-                if (oldAdminPreferences.getStartPage() == 1 && newAdminData.getStartPage() == 0) {
+                if (oldAdminPreferences.getStartPage() == 1 && newAdminPreferences.getStartPage() == 0) {
                     userActions.add(new UserAction("edit user", "Username: " + userName + ". Start page changed from Calendar to Dashboard"));
                 }
             }
 
             // Log changes of default mailing content view
             int oldMailingContentView = oldAdminPreferences.getMailingContentView();
-            int newMailingContentView = newAdminData.getMailingContentView();
+            int newMailingContentView = newAdminPreferences.getMailingContentView();
 
             if (oldMailingContentView != newMailingContentView) {
                 userActions.add(new UserAction("edit user",
@@ -168,7 +175,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             //Log changes of default dashboard mailings view
             int oldDashboardMailingsView = oldAdminPreferences.getDashboardMailingsView();
-            int newDashboardMailingsView = newAdminData.getDashboardMailingsView();
+            int newDashboardMailingsView = newAdminPreferences.getDashboardMailingsView();
 
             if (oldDashboardMailingsView != newDashboardMailingsView) {
                 userActions.add(new UserAction("edit user",
@@ -178,7 +185,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             // Log changes of default navigation location
             int oldNavigationLocation = oldAdminPreferences.getNavigationLocation();
-            int newNavigationLocation = newAdminData.getNavigationLocation();
+            int newNavigationLocation = newAdminPreferences.getNavigationLocation();
 
             if (oldNavigationLocation != newNavigationLocation) {
                 userActions.add(new UserAction("edit user",
@@ -188,7 +195,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             // Log changes of default mailing settings view (expanded ot collapsed)
             int oldMailingSettingsView = oldAdminPreferences.getMailingSettingsView();
-            int newMailingSettingsView = newAdminData.getMailingSettingsView();
+            int newMailingSettingsView = newAdminPreferences.getMailingSettingsView();
 
             if (oldMailingSettingsView != newMailingSettingsView) {
                 userActions.add(new UserAction("edit user",
@@ -198,7 +205,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             // Log changes of default position of the mailing content live preview (right/bottom/deactivated)
             int oldLivePreviewPosition = oldAdminPreferences.getLivePreviewPosition();
-            int newLivePreviewPosition = newAdminData.getLivePreviewPosition();
+            int newLivePreviewPosition = newAdminPreferences.getLivePreviewPosition();
 
             if (oldLivePreviewPosition != newLivePreviewPosition) {
                 userActions.add(new UserAction("edit user",
@@ -208,7 +215,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
             //Log changes of Statistic-Summary load type
             int oldStatisticLoadType = oldAdminPreferences.getStatisticLoadType();
-            int newStatisticLoadType = newAdminData.getStatisticLoadType();
+            int newStatisticLoadType = newAdminPreferences.getStatisticLoadType();
 
             if (oldStatisticLoadType != newStatisticLoadType) {
                 userActions.add(new UserAction("edit user",
@@ -225,13 +232,14 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
     }
 
     private boolean passwordChanged(String username, String password) {
-        ComAdmin admin = adminDao.getAdminByLogin(username, password);
-        return !(StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0));
+        final Optional<ComAdmin> adminOptional = adminService.findAdminByCredentials(username, password);
+
+        return !(StringUtils.isEmpty(password) || (adminOptional.isPresent() && adminOptional.get().getAdminID() > 0));
     }
 
     @Required
-    public void setAdminDao(ComAdminDao adminDao) {
-        this.adminDao = adminDao;
+    public void setAdminService(AdminService service) {
+        this.adminService = Objects.requireNonNull(service, "Admin service is null");
     }
 
     @Required

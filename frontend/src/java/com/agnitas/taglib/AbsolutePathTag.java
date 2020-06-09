@@ -10,13 +10,14 @@
 
 package com.agnitas.taglib;
 
+import static com.agnitas.util.JspUtilities.absUrlPrefix;
+import static java.util.regex.Pattern.compile;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.taglibs.standard.tag.common.core.SetSupport;
-import static com.agnitas.util.JspUtilities.absUrlPrefix;
-import static java.util.regex.Pattern.compile;
-import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class AbsolutePathTag extends SetSupport {
     private static final long serialVersionUID = 4854974831832193374L;
@@ -37,7 +38,7 @@ public class AbsolutePathTag extends SetSupport {
 
         String contextUrl = absUrlPrefix(((HttpServletRequest) pageContext.getRequest()).getContextPath());
 
-        if (isBlank(contextUrl) || compile("^" + contextUrl + "/.*").matcher(path).matches()) {
+        if (StringUtils.isBlank(contextUrl) || compile("^" + contextUrl + "/.*").matcher(path).matches()) {
             return absUrlPrefix(path);
         }
         return contextUrl + absUrlPrefix(path);

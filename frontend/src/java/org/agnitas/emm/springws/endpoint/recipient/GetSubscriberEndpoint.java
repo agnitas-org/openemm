@@ -22,10 +22,9 @@ import org.agnitas.emm.springws.jaxb.GetSubscriberResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class GetSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

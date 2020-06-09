@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComRecipientForm" %>
-<%@ page import="org.agnitas.web.RecipientAction" %>
 <%@ page import="com.agnitas.web.ComRecipientAction" %>
+<%@ page import="org.agnitas.web.RecipientAction" %>
+<%@ page import="org.agnitas.web.forms.FormSearchParams" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -12,13 +12,17 @@
 <emm:Permission token="recipient.show"/>
 
 <c:set var="ACTION_LIST" 			value="<%= RecipientAction.ACTION_LIST %>"/>
+<c:set var="ACTION_SAVE" 			value="<%= RecipientAction.ACTION_SAVE %>"/>
+<c:set var="ACTION_SAVE_BACK_TO_LIST" value="<%= ComRecipientAction.ACTION_SAVE_BACK_TO_LIST %>"/>
 <c:set var="ACTION_OVERVIEW_START" 	value="<%= ComRecipientAction.ACTION_OVERVIEW_START %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" 	value="<%= RecipientAction.ACTION_CONFIRM_DELETE %>"/>
+<c:set var="RESTORE_SEARCH_PARAM_NAME" value="<%= FormSearchParams.RESTORE_PARAM_NAME%>"/>
 
 <c:url var="recipientsOverviewLink" value="/recipient.do">
     <c:param name="action" value="${ACTION_OVERVIEW_START}"/>
     <c:param name="trgt_clear" value="1"/>
     <c:param name="overview" value="true"/>
+    <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
 </c:url>
 
 <c:set var="recipientExists" value="${recipientForm.recipientID != 0}"/>
@@ -33,6 +37,8 @@
 <c:set var="sidemenu_sub_active" 	value="default.search" 								scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 										scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Recipients" 									scope="request" />
+
+<emm:sideMenuAdditionalParam name="${RESTORE_SEARCH_PARAM_NAME}" value="true" forSubmenuOnly="false"/>
 
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="recipientID" value="${recipientForm.recipientID}"/>
@@ -98,7 +104,7 @@
         <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
         <c:set target="${element0}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
         <c:set target="${element0}" property="extraAttributes" value="data-toggle='dropdown'"/>
-        <c:set target="${element0}" property="iconBefore" value="icon-wrench"/>
+        <c:set target="${element0}" property="iconBefore" value="icoforwardToListn-wrench"/>
         <c:set target="${element0}" property="name"><bean:message key="action.Action"/></c:set>
         <c:set target="${element0}" property="iconAfter" value="icon-caret-down"/>
         <jsp:useBean id="optionList" class="java.util.LinkedHashMap" scope="request">
@@ -112,7 +118,6 @@
                 <c:set target="${option0}" property="extraAttributes"
                        value="data-tooltip-help data-tooltip-help-text='${reportTooltipMessage}'"/>
                 <c:set target="${option0}" property="url">
-                    <%-- todo: change to report url --%>
                     <c:url value="/report/recipients.action">
                         <c:param name="id" value="${recipientForm.recipientID}"/>
                     </c:url>
@@ -135,6 +140,7 @@
                     <c:param name="user_status" value="${recipientForm.user_status}"/>
                     <c:param name="listID" value="${recipientForm.listID}"/>
                     <c:param name="targetID" value="${recipientForm.targetID}"/>
+                    <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
                 </c:url>
             </c:set>
             <c:set target="${option1}" property="name">
@@ -165,8 +171,25 @@
             <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
                 <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
                 <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                <c:set target="${element1}" property="extraAttributes" value="data-form-set='save: save' data-form-target='#recipientForm' data-form-submit-event"/>
+                <c:set target="${element1}" property="extraAttributes" value="data-form-set='save: save' data-form-target='#recipientForm' data-form-submit-event data-action='toggleSaveAndBack'"/>
                 <c:set target="${element1}" property="iconBefore" value="icon-save"/>
+                <jsp:useBean id="saveList1" class="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${element1}" property="dropDownItems" value="${saveList1}"/>
+                </jsp:useBean>
+                <jsp:useBean id="optionSaveList1" class="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${saveList1}" property="0" value="${optionSaveList1}"/>
+                    <c:set target="${optionSaveList1}" property="extraAttributes" value="data-form-set='action: ${ACTION_SAVE_BACK_TO_LIST}' data-form-target='#recipientForm' data-form-submit-event data-action='toggleSubmenuSaveAndBack'"/>
+                    <c:set target="${optionSaveList1}" property="icon" value="icon-save"/>
+                    <c:set target="${optionSaveList1}" property="url">
+                        <c:url value="/recipient.do">
+                            <c:param name="action" value="${ACTION_SAVE_BACK_TO_LIST}"/>
+                            <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
+                        </c:url>
+                    </c:set>
+                    <c:set target="${optionSaveList1}" property="name">
+                        <bean:message key="button.SaveAndBack"/>
+                    </c:set>
+                </jsp:useBean>
                 <c:set target="${element1}" property="name">
                     <bean:message key="button.Save"/>
                 </c:set>

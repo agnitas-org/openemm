@@ -453,12 +453,12 @@ public class Log {
 				lvl = FATAL;
 			}
 			if (lvl != -1) {
-				String	name = e.getLoggerName ();
-				boolean match = (name == null) || (pattern == null) || (pattern.length == 0);
+				String loggerName = e.getLoggerName ();
+				boolean match = (loggerName == null) || (pattern == null) || (pattern.length == 0);
 
 				if (! match) {
 					for (int n = 0; n < pattern.length; ++n) {
-						if (name.startsWith (pattern[n])) {
+						if (loggerName != null && loggerName.startsWith (pattern[n])) {
 							match = true;
 							break;
 						}

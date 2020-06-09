@@ -93,10 +93,9 @@ public class URLExtension {
 	 * Add all columns used by this extension to be included
 	 * in main query of the customer profile.
 	 * 
-	 * @param data   the global configuration
 	 * @param predef a set to add each found column to
 	 */
-	public void requestFields (Data data, Set <String> predef) {
+	public void requestFields (Set <String> predef) {
 		fields
 			.stream ()
 			.filter (field -> data.columnByName (field) != null)

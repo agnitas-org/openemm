@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl;
+import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
@@ -44,7 +44,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	private RecipientFactory recipientFactory;
 	
 	/** Cache for content types of mailings. */
-	private MailingContentTypeCacheImpl mailingContentTypeCache;
+	private MailingContentTypeCache mailingContentTypeCache;
 
 	@Override
 	public final void trackOpening(final int companyID, final int customerID, final int mailingID, final String remoteAddr, final DeviceClass deviceClass, final int deviceID, final int clientID) {
@@ -64,7 +64,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 		if(uid == null) {
 			logger.warn("No UID", new Exception("No UID"));
 		} else {
-			final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, this.configService, this.mailingContentTypeCache);
+			final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
 			
 			if(trackingLevel == TrackingLevel.ANONYMOUS) {
 				if(logger.isInfoEnabled()) {
@@ -117,7 +117,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	 * @param cache cache for mailing content types
 	 */
 	@Required
-	public final void setMailingContentTypeCache(final MailingContentTypeCacheImpl cache) {
-		this.mailingContentTypeCache = Objects.requireNonNull(cache, "Content type cache cannot be null");
+	public final void setMailingContentTypeCache(final MailingContentTypeCache mailingContentTypeCache) {
+		this.mailingContentTypeCache = Objects.requireNonNull(mailingContentTypeCache, "Content type cache cannot be null");
 	}
 }

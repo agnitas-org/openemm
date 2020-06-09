@@ -36,7 +36,7 @@ import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingImporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComCampaign;
@@ -51,6 +51,7 @@ import com.agnitas.beans.impl.ComMailingImpl;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
@@ -63,6 +64,9 @@ import com.agnitas.json.JsonReader;
 public class MailingImporterImpl extends ActionImporter implements MailingImporter {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(MailingImporterImpl.class);
+	
+	@Resource(name="CompanyDao")
+	protected ComCompanyDao companyDao;
 
 	@Resource(name="MailingDao")
 	protected ComMailingDao mailingDao;
@@ -146,6 +150,8 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	}
 
 	protected int importMailingData(int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
+		String rdirDomain = companyDao.getRedirectDomain(companyID);
+		
 		ComMailing mailing = new ComMailingImpl();
 		mailing.setCompanyID(companyID);
 		
@@ -236,7 +242,9 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				mailingComponent.setDescription((String) componentJsonObject.get("description"));
 				mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) componentJsonObject.get("type")).getCode());
 				if (componentJsonObject.containsPropertyKey("emm_block")) {
-					mailingComponent.setEmmBlock((String) componentJsonObject.get("emm_block"), (String) componentJsonObject.get("mimetype"));
+					String emmBlock = (String) componentJsonObject.get("emm_block");
+					emmBlock = emmBlock.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+					mailingComponent.setEmmBlock(emmBlock, (String) componentJsonObject.get("mimetype"));
 				}
 				if (componentJsonObject.containsPropertyKey("target_id")) {
 					mailingComponent.setTargetID(targetIdMappings.get(componentJsonObject.get("target_id")));
@@ -268,7 +276,9 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						JsonObject dynContentJsonObject = (JsonObject) dynContentObject;
 						DynamicTagContent dynamicTagContent = new DynamicTagContentImpl();
 						dynamicTagContent.setDynOrder((Integer) dynContentJsonObject.get("order"));
-						dynamicTagContent.setDynContent((String) dynContentJsonObject.get("text"));
+						String contentText = (String) dynContentJsonObject.get("text");
+						contentText = contentText.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+						dynamicTagContent.setDynContent(contentText);
 						if (dynContentJsonObject.containsPropertyKey("target_id")) {
 							dynamicTagContent.setTargetID(targetIdMappings.get(dynContentJsonObject.get("target_id")));
 						}
@@ -286,7 +296,9 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				JsonObject linkJsonObject = (JsonObject) linkObject;
 				ComTrackableLink trackableLink = new ComTrackableLinkImpl();
 				trackableLink.setShortname((String) linkJsonObject.get("name"));
-				trackableLink.setFullUrl((String) linkJsonObject.get("url"));
+				String fullUrl = (String) linkJsonObject.get("url");
+				fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+				trackableLink.setFullUrl(fullUrl);
 
 				if (linkJsonObject.containsPropertyKey("deep_tracking")) {
 					trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));

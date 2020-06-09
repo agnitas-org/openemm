@@ -11,5 +11,5 @@
 package org.agnitas.preview;
 
 public interface PreviewFactory {
-	Preview createPreview();
+	public Preview createPreview();
 }

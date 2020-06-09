@@ -1,5 +1,4 @@
 AGN.Lib.Controller.new('blacklist-list', function () {
-  var Confirm = AGN.Lib.Confirm;
   var $blacklistSaveElement;
 
   this.addDomInitializer('blacklist-list-init', function () {
@@ -12,24 +11,43 @@ AGN.Lib.Controller.new('blacklist-list', function () {
     var $element = this.el;
     var form = AGN.Lib.Form.get($element);
     var saveActionUrl = $element.data('url');
-    var blacklist = {
-      email: $blacklistSaveElement.find('#new-blacklist').val()
-    };
 
     $.ajax(saveActionUrl, {
       type: 'POST',
-      data: blacklist ,
-      success: function (responseMessages) {
-        AGN.Lib.Page.render(responseMessages);
-        form.submit();
+      data: {
+        email: $blacklistSaveElement.find('#new-entry-email').val(),
+        reason: $blacklistSaveElement.find('#new-entry-reason').val()
+      },
+      success: function (resp) {
+        if (resp.success === true) {
+          form.submit().done(function() {
+            AGN.Lib.JsonMessages(resp.popups, true);
+          });
+        } else {
+          AGN.Lib.JsonMessages(resp.popups, true);
+        }
       }
     });
   });
 
-  this.addAction({click: 'blacklist-delete'}, function() {
-    Confirm.get(this.el).promise().done(function(response) {
-      AGN.Lib.Page.render(response);
-      $('#blacklistListView').submit();
+});
+
+AGN.Lib.Controller.new('edit-modal-blacklist-list', function () {
+  this.addAction({
+    click: 'saveChanges'
+  }, function () {
+    var $element = this.el;
+    var updateForm = AGN.Lib.Form.get($element);
+    updateForm.submit().done(function(resp) {
+      if(resp.success === true) {
+        AGN.Lib.Form.get($('#blacklistListView')).submit().done(function() {
+          AGN.Lib.JsonMessages(resp.popups, true);
+        });
+        AGN.Lib.Modal.getWrapper($element).modal('hide');
+      } else {
+        AGN.Lib.JsonMessages(resp.popups, true);
+      }
     });
   });
 });
+

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -29,6 +31,20 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import org.agnitas.beans.Mailing;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.target.TargetFactory;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
@@ -77,21 +93,6 @@ import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ComMailingSendService;
 import com.agnitas.service.ComMailingSendService.DeliveryType;
-import org.agnitas.beans.Mailing;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetFactory;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
 
 public class ComWorkflowActivationService {
 
@@ -126,27 +127,14 @@ public class ComWorkflowActivationService {
 	private ComWorkflowEQLHelper eqlHelper;
 	private ComRecipientDao recipientDao;
 
-	private int companyId;
-	private int workflowId;
-	private Set<WorkflowNode> processedNodes = new HashSet<>();
-	private Map<Integer, Date> reportsSendDates = new HashMap<>();
-	private Map<Integer, Date> optimizationsTestSendDates = new HashMap<>();
-    private Map<Integer, Date> importsActivationDates = new HashMap<>();
-    private Map<Integer, Date> exportsActivationDates = new HashMap<>();
-	private Map<Integer, ComMailing> mailingsToUpdate = new HashMap<>();
-
-	private WorkflowGraph workflowGraph;
-
-    public void init(int companyId, int workflowId) {
-		this.companyId = companyId;
-		this.workflowId = workflowId;
-		processedNodes = new HashSet<>();
-		workflowGraph = null;
-		mailingsToUpdate = new HashMap<>();
-	}
-
 	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
-		init(admin.getCompanyID(), workflowId);
+		int companyId = admin.getCompanyID();
+		Set<WorkflowNode> processedNodes = new HashSet<>();
+		Map<Integer, ComMailing> mailingsToUpdate = new HashMap<>();
+		Map<Integer, Date> reportsSendDates = new HashMap<>();
+		Map<Integer, Date> optimizationsTestSendDates = new HashMap<>();
+	    Map<Integer, Date> importsActivationDates = new HashMap<>();
+	    Map<Integer, Date> exportsActivationDates = new HashMap<>();
 
 		final boolean isMailTrackingAvailable = AgnUtils.isMailTrackingAvailable(admin);
 		Workflow workflow = workflowService.getWorkflow(workflowId, companyId);
@@ -160,7 +148,7 @@ public class ComWorkflowActivationService {
 		Map<Integer, MailingSendingProperties> mailingSendingPropertiesMap = null;
 
 		// create workflow graph
-		workflowGraph = new WorkflowGraph(workflowIcons);
+		WorkflowGraph workflowGraph = new WorkflowGraph(workflowIcons);
 
 		if (!testing) {
 			mailingSendingPropertiesMap = workflowIcons.stream()
@@ -170,7 +158,7 @@ public class ComWorkflowActivationService {
 		}
 
 		// handle followup mailings - set the appropriate base-mailing-id and decision criteria
-		handleFollowupMailings(workflowGraph.getAllNodesByType(WorkflowIconType.FOLLOWUP_MAILING.getId()));
+		handleFollowupMailings(companyId, mailingsToUpdate, workflowGraph.getAllNodesByType(WorkflowIconType.FOLLOWUP_MAILING.getId()));
 
 		// handle start icons
 		List<WorkflowNode> startNodes = workflowGraph.getAllNodesByType(WorkflowIconType.START.getId());
@@ -186,38 +174,41 @@ public class ComWorkflowActivationService {
 			Map<Integer, Integer> ruleStartMailingTargets = new HashMap<>();
 			// Any start-icon has start-date so we need to process it to apply it to mailings in campaign (paying
 			// attention to deadline icons which we can meet).
-			processStartDate(mailingsSendDates, startIcon, activationDate, testing, adminTimeZone);
+			processStartDate(workflowGraph, mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startIcon, activationDate, testing, adminTimeZone);
 
 			if (startIcon.getStartType() == WorkflowStartType.EVENT) {
 				switch (startIcon.getEvent()) {
 					// The action-based campaign.
 					case EVENT_REACTION:
 						// create trigger for reaction that will send action-based mailing(s) when reaction takes place
-						processActionBasedStart(startIcon, workflowId, activationDate, testing, adminTimeZone);
+						processActionBasedStart(companyId, workflowGraph, startIcon, workflowId, activationDate, testing, adminTimeZone);
 						break;
 
 					// The rule-based (date-based) campaign.
 					case EVENT_DATE:
-						processRuleBasedStart(startIcon, ruleStartMailingTargets, testing);
+						processRuleBasedStart(companyId, workflowId, workflowGraph, startIcon, ruleStartMailingTargets, testing);
+						break;
+						
+					default:
 						break;
 				}
 			}
 
 			Map<Integer, List<WorkflowRecipient>> assignedRecipients = new HashMap<>();
 			// Collect target groups and mailings lists from recipient icons and associate with mailings.
-			processRecipientIcons(startIcon, assignedRecipients);
+			processRecipientIcons(workflowGraph, processedNodes, startIcon, assignedRecipients);
 
 			assignedRecipients.forEach((mailingId, recipientIcons) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
+				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setMailinglistID(recipientIcons.get(0).getMailinglistId());
 			});
 
 			Map<Integer, Integer> assignedArchives = new HashMap<>();
 			// Collect archives (campaigns) and associate with mailings.
-			processArchiveIcons(startIcon, assignedArchives);
+			processArchiveIcons(workflowGraph, startIcon, assignedArchives);
 
 			assignedArchives.forEach((mailingId, archiveId) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
+				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setCampaignID(archiveId);
 			});
 
@@ -225,7 +216,7 @@ public class ComWorkflowActivationService {
 			// Collect workflow target groups (sequential mailings dependencies, decisions) and associate with mailings.
 			// Sequential mailings dependencies: ensures that every mailing wont be sent until previous mailings are sent (guarantees that
 			// a mailings order is kept and a new subscriber wont receive intermediate mailing).
-			processMailingTargets(startIcon, workflowConditions, isMailTrackingAvailable);
+			processMailingTargets(companyId, workflowId, workflowGraph, startIcon, workflowConditions, isMailTrackingAvailable);
 
 
 			// Attention: lazy calculation
@@ -286,17 +277,17 @@ public class ComWorkflowActivationService {
 					}
 				}
 
-				Mailing mailing = getMailingToUpdate(mailingId);
+				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setTargetExpression(Condition.toReducedTargetExpression(conditions));
 			}
 
 			Map<Integer, List<WorkflowParameter>> assignedParameters = new LinkedHashMap<>();
 			Map<WorkflowDecision, List<Integer>> optimizationMailings = new HashMap<>();
 			// Collect list-split parameters and auto-optimizations and associate with mailings and decisions.
-			processParameters(startIcon, assignedParameters, optimizationMailings);
+			processParameters(workflowGraph, startIcon, assignedParameters, optimizationMailings);
 
 			// process mailings to be handled by auto-optimization
-			List<ComOptimization> optimizations = processAutoOptimizations(workflow, optimizationMailings, assignedParameters, testing);
+			List<ComOptimization> optimizations = processAutoOptimizations(companyId, workflowId, workflowGraph, optimizationsTestSendDates, mailingsToUpdate, workflow, optimizationMailings, assignedParameters, testing);
 
 			// process mailings to assign needed list-split (for mailings not handled by auto-optimizations)
 			for (List<Integer> value : optimizationMailings.values()) {
@@ -308,15 +299,15 @@ public class ComWorkflowActivationService {
 			}
 
 			// Process mailings using list splits without auto-optimizations
-			applyListSplitsToMailings(assignedParameters, true);
+			applyListSplitsToMailings(companyId, workflowId, mailingsToUpdate, assignedParameters, true);
 
 			mailingsSendDates.forEach((mailingId, sendDate) -> {
-				ComMailing mailing = getMailingToUpdate(mailingId);
+				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setPlanDate(sendDate);
 			});
 
 			// Notice that updated mailings have to be saved before auto-optimizations/mailings scheduled
-			saveUpdatedMailings();
+			saveUpdatedMailings(mailingsToUpdate);
 
 			for (ComOptimization optimization : optimizations) {
 				try {
@@ -328,11 +319,11 @@ public class ComWorkflowActivationService {
 			}
 
 			// send/schedule mailings and reports
-			sendMailings(mailingsSendDates, admin.getAdminID(), testing, warnings, errorsList, userActions);
-			sendReports();
+			sendMailings(companyId, workflowGraph, mailingsSendDates, admin.getAdminID(), testing, warnings, errorsList, userActions);
+			sendReports(workflowGraph, companyId, workflowId, reportsSendDates);
 
-			updateAutoImportActivationDate(companyId);
-			updateAutoExportActivationDate(companyId);
+			updateAutoImportActivationDate(companyId, workflowGraph, importsActivationDates);
+			updateAutoExportActivationDate(companyId, workflowGraph, exportsActivationDates);
 		}
 
 		errors.addAll(errorsList);
@@ -340,12 +331,12 @@ public class ComWorkflowActivationService {
 		return errorsList.isEmpty();
 	}
 
-	private int createTargetWithDeadlineRespect(WorkflowStart start, List<WorkflowIcon> deadlineIcons) {
+	private int createTargetWithDeadlineRespect(int companyId, int workflowId, WorkflowStart start, List<WorkflowIcon> deadlineIcons) {
         List<WorkflowDeadline> deadlines = deadlineIcons.stream().map(icon -> ((WorkflowDeadline)icon)).collect(Collectors.toList());
         String eql = eqlHelper.generateDateEQL(companyId, start.getDateProfileField(),
 				start.getDateFieldOperator(), start.getDateFormat(),
 				start.getDateFieldValue() + getDeadlineExpression(deadlines));
-        ComTarget target = createTarget(eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "start by event date"));
+        ComTarget target = createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "start by event date"));
         return target.getId();
     }
 
@@ -374,18 +365,18 @@ public class ComWorkflowActivationService {
 		return StringUtils.EMPTY;
 	}
 
-	private ComMailing getMailingToUpdate(int mailingId) {
+	private ComMailing getMailingToUpdate(int companyId, int mailingId, Map<Integer, ComMailing> mailingsToUpdate) {
     	return mailingsToUpdate.computeIfAbsent(mailingId, mId -> (ComMailing) mailingDao.getMailing(mId, companyId));
 	}
 
-	private void saveUpdatedMailings() {
+	private void saveUpdatedMailings(Map<Integer, ComMailing> mailingsToUpdate) {
 		for (ComMailing mailing : mailingsToUpdate.values()) {
 			mailingDao.saveMailing(mailing, false);
 		}
 		mailingsToUpdate.clear();
 	}
 
-	private void processArchiveIcons(WorkflowStart startIcon, Map<Integer, Integer> assignedArchives) {
+	private void processArchiveIcons(WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, Integer> assignedArchives) {
 		workflowGraph.getAllNextIconsByType(startIcon, WorkflowIconType.ARCHIVE.getId(), Collections.emptySet())
 				.stream()
 				.map(icon -> (WorkflowArchive) icon)
@@ -399,7 +390,7 @@ public class ComWorkflowActivationService {
 				});
 	}
 
-	private void sendReports() {
+	private void sendReports(WorkflowGraph workflowGraph, int companyId, int workflowId, Map<Integer, Date> reportsSendDates) {
 		for (Entry<Integer, Date> entry : reportsSendDates.entrySet()) {
 			WorkflowReport reportIcon = (WorkflowReport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
 			List<Integer> reports = reportIcon.getReports();
@@ -409,8 +400,8 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private void sendMailings(Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
-		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap();
+	private void sendMailings(int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
+		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
 
 		for (Entry<Integer, Date> entry : mailingsSendDates.entrySet()) {
 			int mailingId = entry.getKey();
@@ -470,7 +461,7 @@ public class ComWorkflowActivationService {
 	}
 
 	// Collect all the mailings used in campaign and create map (mailingId -> mailingIcon).
-	private Map<Integer, WorkflowMailingAware> getMailingIconsMap() {
+	private Map<Integer, WorkflowMailingAware> getMailingIconsMap(WorkflowGraph workflowGraph) {
 		Map<Integer, WorkflowMailingAware> map = new HashMap<>();
 
 		for (WorkflowNode node : workflowGraph.getAllNodesByTypes(ALL_MAILING_TYPES)) {
@@ -492,7 +483,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private List<ComOptimization> processAutoOptimizations(Workflow workflow,
+	private List<ComOptimization> processAutoOptimizations(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, ComMailing> mailingsToUpdate, Workflow workflow,
 										  Map<WorkflowDecision, List<Integer>> optimizationMailings,
 										  Map<Integer, List<WorkflowParameter>> mailingsParameters,
 										  boolean testRun) {
@@ -514,6 +505,10 @@ public class ComWorkflowActivationService {
 				}
 
 				optimization = createOptimization(
+						companyId,
+						workflowId,
+						workflowGraph,
+						mailingsToUpdate,
 						optimization,
 						workflow,
 						archive.getCampaignId(),
@@ -531,7 +526,7 @@ public class ComWorkflowActivationService {
 		return entitiesToSchedule;
 	}
 
-	private ComOptimization createOptimization(ComOptimization optimization, Workflow workflow, int campaignId,
+	private ComOptimization createOptimization(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, ComMailing> mailingsToUpdate, ComOptimization optimization, Workflow workflow, int campaignId,
 											   WorkflowDecision decisionIcon, WorkflowRecipient recipientIcon,
 											   List<Integer> testMailings, Date testSendDate,
 											   Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean testRun) {
@@ -580,7 +575,7 @@ public class ComWorkflowActivationService {
 		workflowParameterList.add(finalParameter);
 		optimizationParameters.put(0, workflowParameterList);
 
-		LinkedHashMap<Integer, Integer> splitTargets = applyListSplitsToMailings(optimizationParameters, false);
+		LinkedHashMap<Integer, Integer> splitTargets = applyListSplitsToMailings(companyId, workflowId, mailingsToUpdate, optimizationParameters, false);
 
 		String splitBase = "";
 		if (!splitTargets.isEmpty()) {
@@ -628,7 +623,7 @@ public class ComWorkflowActivationService {
 		return optimization;
 	}
 
-	private LinkedHashMap<Integer, Integer> applyListSplitsToMailings(Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean assignToMailings) {
+	private LinkedHashMap<Integer, Integer> applyListSplitsToMailings(int companyId, int workflowId, Map<Integer, ComMailing> mailingsToUpdate, Map<Integer, List<WorkflowParameter>> mailingsParameters, boolean assignToMailings) {
 		Map<Integer, Double> mailingsParts = new HashMap<>();
 		Set<Integer> mailingsWithoutSplitting = new HashSet<>();
 
@@ -656,19 +651,19 @@ public class ComWorkflowActivationService {
 				})
 				.forEach(p -> orderedMailingsParts.put(p.getKey(), p.getValue()));
 
-		LinkedHashMap<Integer, Integer> splitTargets = createListSplitTargets(orderedMailingsParts);
+		LinkedHashMap<Integer, Integer> splitTargets = createListSplitTargets(companyId, workflowId, orderedMailingsParts);
 
 		if (assignToMailings) {
 			splitTargets.forEach((mailingId, splitId) -> {
 				if (mailingId > 0) {
-					ComMailing mailing = getMailingToUpdate(mailingId);
+					ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 					mailing.setSplitID(splitId);
 				}
 			});
 
 			for (int mailingId : mailingsWithoutSplitting) {
 				// No splitting required - reset splitId.
-				ComMailing mailing = getMailingToUpdate(mailingId);
+				ComMailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
 				mailing.setSplitID(0);
 			}
 		}
@@ -684,10 +679,10 @@ public class ComWorkflowActivationService {
 		return value;
 	}
 
-	private void handleFollowupMailings(List<WorkflowNode> followupMailings) throws Exception {
+	private void handleFollowupMailings(int companyId, Map<Integer, ComMailing> mailingsToUpdate, List<WorkflowNode> followupMailings) throws Exception {
 		for (WorkflowNode followupMailingNode : followupMailings) {
 			WorkflowFollowupMailing followupMailingIcon = (WorkflowFollowupMailing) followupMailingNode.getNodeIcon();
-			Mailing followupMailing = getMailingToUpdate(followupMailingIcon.getMailingId());
+			Mailing followupMailing = getMailingToUpdate(companyId, followupMailingIcon.getMailingId(), mailingsToUpdate);
 			String followUpMethod = WorkflowUtils.getFollowUpMethod(followupMailingIcon.getDecisionCriterion());
 			if (followUpMethod != null) {
 				int baseMailing = followupMailingIcon.getBaseMailingId();
@@ -702,7 +697,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private LinkedHashMap<Integer, Integer> createListSplitTargets(LinkedHashMap<Integer, Double> parts) {
+	private LinkedHashMap<Integer, Integer> createListSplitTargets(int companyId, int workflowId, LinkedHashMap<Integer, Double> parts) {
 		// mailingId -> splitId
 		LinkedHashMap<Integer, Integer> targets = new LinkedHashMap<>();
 		if (parts == null || parts.isEmpty()) {
@@ -756,7 +751,7 @@ public class ComWorkflowActivationService {
 			// as the existing one has the needed SQL expression
 			ComTarget target = targetDao.getListSplitTarget(splitType, partIndex, companyId);
 			if (target == null || !target.isValid() || StringUtils.isBlank(target.getEQL())) {
-				target = createTarget(targetEql, TargetLight.LIST_SPLIT_CM_PREFIX + splitType + "_" + partIndex, false);
+				target = createTarget(companyId, workflowId, targetEql, TargetLight.LIST_SPLIT_CM_PREFIX + splitType + "_" + partIndex, false);
 			}
 			targets.put(mailingId, target.getId());
 
@@ -801,7 +796,7 @@ public class ComWorkflowActivationService {
 		return targetExpression == null ? "" : targetExpression;
 	}
 
-	private void processParameters(WorkflowStart startIcon, Map<Integer, List<WorkflowParameter>> resultMap,
+	private void processParameters(WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, List<WorkflowParameter>> resultMap,
 								   Map<WorkflowDecision, List<Integer>> optimizationMailings) {
 		WorkflowNode startNode = workflowGraph.getNodeByIcon(startIcon);
 		processParameters(startNode, new ArrayList<>(), resultMap, optimizationMailings);
@@ -842,12 +837,12 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private List<WorkflowReactionStepDeclaration> processReactionSteps(WorkflowStart startIcon, boolean testRun, TimeZone timezone) {
+	private List<WorkflowReactionStepDeclaration> processReactionSteps(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowStart startIcon, boolean testRun, TimeZone timezone) {
     	ActionBasedCampaignProcessor processor = new ActionBasedCampaignProcessor(timezone, testRun);
-    	return processor.process(startIcon);
+    	return processor.process(companyId, workflowId, workflowGraph, startIcon);
 	}
 
-	private void processMailingTargets(WorkflowStart startIcon, Map<Integer, ConditionGroup> workflowConditions, boolean isMailTrackingAvailable) {
+	private void processMailingTargets(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, ConditionGroup> workflowConditions, boolean isMailTrackingAvailable) {
 		final Set<Integer> activeIconTypes = new HashSet<>();
 		activeIconTypes.add(WorkflowIconType.DECISION.getId());
 		activeIconTypes.add(WorkflowIconType.IMPORT.getId());
@@ -914,14 +909,14 @@ public class ComWorkflowActivationService {
 			if (mailingId > 0) {
 				workflowConditions.put(mailingId, new ConditionGroup(false, true) {{
 					for (TargetCondition condition : immediateDependencies.getOrDefault(icon.getId(), Collections.emptyList())) {
-						add(composeCondition(immediateDependencies, cache, new HashSet<>(), condition.getTargetId(), condition.isPositive(), isMailTrackingAvailable));
+						add(composeCondition(companyId, workflowId, workflowGraph, immediateDependencies, cache, new HashSet<>(), condition.getTargetId(), condition.isPositive(), isMailTrackingAvailable));
 					}
 				}});
 			}
 		}
 	}
 
-	private Condition composeCondition(Map<Integer, List<TargetCondition>> dependencies, Map<CompositeKey, Condition> cache, Set<Integer> reactedMailings, int iconId, boolean positive, boolean isMailtrackingAvailable) {
+	private Condition composeCondition(int companyId, int workflowId, WorkflowGraph workflowGraph, Map<Integer, List<TargetCondition>> dependencies, Map<CompositeKey, Condition> cache, Set<Integer> reactedMailings, int iconId, boolean positive, boolean isMailtrackingAvailable) {
 		WorkflowIcon icon = workflowGraph.getNodeByIconId(iconId).getNodeIcon();
 
 		// Use composite key to provide separate target groups for different decision branches.
@@ -935,7 +930,7 @@ public class ComWorkflowActivationService {
 					// Return empty group (to be reduced)
 					condition = new ConditionGroup(true);
 				} else if (condition == null && isMailtrackingAvailable) {
-					int mailingSentTargetId = createMailingSentTarget((WorkflowMailingAware) icon);
+					int mailingSentTargetId = createMailingSentTarget(companyId, workflowId, (WorkflowMailingAware) icon);
 					condition = new TargetCondition(mailingSentTargetId);
 					cache.put(cacheKey, condition);
 				}
@@ -943,14 +938,14 @@ public class ComWorkflowActivationService {
 				// AO final mailing
 				condition = new ConditionGroup(false) {{
 					for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-						add(composeCondition(dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+						add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 					}
 				}};
 			}
 		} else if (WorkflowUtils.isAutoOptimizationIcon(icon)) {
 			WorkflowDecision decision = (WorkflowDecision) icon;
 			if (condition == null) {
-				int testMailingsSentTargetId = createAutoOptimizationTarget(decision);
+				int testMailingsSentTargetId = createAutoOptimizationTarget(companyId, workflowId, workflowGraph, decision);
 				condition = new TargetCondition(testMailingsSentTargetId);
 				cache.put(cacheKey, condition);
 			}
@@ -958,7 +953,7 @@ public class ComWorkflowActivationService {
 			WorkflowDecision decision = (WorkflowDecision) icon;
 
 			if (condition == null) {
-				int decisionTargetId = createDecisionTarget(decision, positive);
+				int decisionTargetId = createDecisionTarget(companyId, workflowId, workflowGraph, decision, positive);
 				condition = new TargetCondition(decisionTargetId);
 				cache.put(cacheKey, condition);
 			}
@@ -980,7 +975,7 @@ public class ComWorkflowActivationService {
 					}
 
 					for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-						add(composeCondition(dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+						add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 					}
 
 					if (excludeReactedMailing) {
@@ -993,7 +988,7 @@ public class ComWorkflowActivationService {
 
 			ConditionGroup incomingConditions = new ConditionGroup(false, true) {{
 				for (TargetCondition target : dependencies.getOrDefault(iconId, Collections.emptyList())) {
-					add(composeCondition(dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
+					add(composeCondition(companyId, workflowId, workflowGraph, dependencies, cache, reactedMailings, target.getTargetId(), target.isPositive(), isMailtrackingAvailable));
 				}
 			}};
 
@@ -1001,7 +996,7 @@ public class ComWorkflowActivationService {
 				return incomingConditions;
 			} else {
 				if (condition == null) {
-					int autoImportTargetId = createImportTarget(autoImport);
+					int autoImportTargetId = createImportTarget(companyId, workflowId, autoImport);
 					condition = new TargetCondition(autoImportTargetId);
 					cache.put(cacheKey, condition);
 				}
@@ -1026,7 +1021,7 @@ public class ComWorkflowActivationService {
 		return condition;
 	}
 
-	private void processActionBasedStart(WorkflowStart startIcon, int workflowId, Date activationDate, boolean testRun, TimeZone timezone) {
+	private void processActionBasedStart(int companyId, WorkflowGraph workflowGraph, WorkflowStart startIcon, int workflowId, Date activationDate, boolean testRun, TimeZone timezone) {
 		ComWorkflowReaction reaction = new ComWorkflowReaction();
 
 		reaction.setCompanyId(companyId);
@@ -1043,7 +1038,9 @@ public class ComWorkflowActivationService {
 		reaction.setAdminTimezone(timezone);
 		reaction.setReactionType(startIcon.getReaction());
 		reaction.setOnce(startIcon.isExecuteOnce());
-		reaction.setMailinglistId(getMailingListId(startIcon));
+		reaction.setMailingsToSend(Collections.emptyList());
+
+		reaction.setMailinglistId(getMailingListId(workflowGraph, startIcon));
 		reaction.setTriggerMailingId(startIcon.getMailingId());
 		reaction.setTriggerLinkId(startIcon.getLinkId());
 		reaction.setProfileColumn(StringUtils.isEmpty(startIcon.getProfileField()) ? null : startIcon.getProfileField());
@@ -1056,21 +1053,20 @@ public class ComWorkflowActivationService {
 		}
 
 		// Legacy mode should never be used for newly activated workflows.
-		reaction.setMailingsToSend(Collections.emptyList());
 		reaction.setLegacyMode(false);
 
         reactionDao.saveReaction(reaction);
 
-		List<WorkflowReactionStepDeclaration> steps = processReactionSteps(startIcon, testRun, timezone);
+		List<WorkflowReactionStepDeclaration> steps = processReactionSteps(companyId, workflowId, workflowGraph, startIcon, testRun, timezone);
 		reactionDao.saveReactionStepDeclarations(steps, reaction.getReactionId(), companyId);
 
 		if (testRun) {
-			int mailingListId = getMailingListId(startIcon);
+			int mailingListId = getMailingListId(workflowGraph, startIcon);
 			reactionDao.trigger(reaction, recipientDao.getAdminAndTestRecipientIds(companyId, mailingListId));
 		}
 	}
 
-	private void processRuleBasedStart(WorkflowStart startIcon, Map<Integer, Integer> targetsMap, boolean testRun) {
+	private void processRuleBasedStart(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, Integer> targetsMap, boolean testRun) {
     	if (testRun) {
     		// In order to manage the test run for rule-based campaign it's enough to avoid assigning of root target (rule) to mailings.
     		return;
@@ -1082,12 +1078,12 @@ public class ComWorkflowActivationService {
 			.forEach(icon -> {
 				List<WorkflowIcon> deadlines = workflowGraph.getAllPreviousIconsByType(icon, WorkflowIconType.Constants.DEADLINE_ID, Collections.emptySet());
 				int mailingId = WorkflowUtils.getMailingId(icon);
-				int targetId = createTargetWithDeadlineRespect(startIcon, deadlines);
+				int targetId = createTargetWithDeadlineRespect(companyId, workflowId, startIcon, deadlines);
 				targetsMap.put(mailingId, targetId);
 			});
 	}
 
-	private int getMailingListId(WorkflowStart startIcon) {
+	private int getMailingListId(WorkflowGraph workflowGraph, WorkflowStart startIcon) {
 		return getMailingListId(workflowGraph.getNodeByIcon(startIcon));
 	}
 
@@ -1111,13 +1107,13 @@ public class ComWorkflowActivationService {
 		return 0;
 	}
 
-	private void processRecipientIcons(WorkflowStart startIcon, Map<Integer, List<WorkflowRecipient>> assignedRecipients) {
+	private void processRecipientIcons(WorkflowGraph workflowGraph, Set<WorkflowNode> processedNodes, WorkflowStart startIcon, Map<Integer, List<WorkflowRecipient>> assignedRecipients) {
 		WorkflowNode startNode = workflowGraph.getNodeByIcon(startIcon);
 		processedNodes.clear();
-		processRecipientIcons(assignedRecipients, new ArrayList<>(), startNode.getNextNodes(), false);
+		processRecipientIcons(processedNodes, assignedRecipients, new ArrayList<>(), startNode.getNextNodes(), false);
 	}
 
-	private void processRecipientIcons(Map<Integer, List<WorkflowRecipient>> assignedRecipients, List<WorkflowRecipient> recipientIcons,
+	private void processRecipientIcons(Set<WorkflowNode> processedNodes, Map<Integer, List<WorkflowRecipient>> assignedRecipients, List<WorkflowRecipient> recipientIcons,
 									   List<WorkflowNode> nodes, boolean appendNextRecipientIcon) {
 		for (WorkflowNode node : nodes) {
 			if (!processedNodes.contains(node)) {
@@ -1142,16 +1138,16 @@ public class ComWorkflowActivationService {
                 else if (WorkflowUtils.isBranchingDecisionIcon(icon)) {
                     appendNextRecipientIcon = true;
                 }
-				processRecipientIcons(assignedRecipients, recipientIcons, node.getNextNodes(), appendNextRecipientIcon);
+				processRecipientIcons(processedNodes, assignedRecipients, recipientIcons, node.getNextNodes(), appendNextRecipientIcon);
 			}
 		}
 	}
 	
-	private ComTarget createTarget(String eql, String targetName) {
-    	return createTarget(eql, targetName, true);
+	private ComTarget createTarget(int companyId, int workflowId, String eql, String targetName) {
+    	return createTarget(companyId, workflowId, eql, targetName, true);
     }
 
-	private ComTarget createTarget(String eql, String targetName, boolean isTrackable) {
+	private ComTarget createTarget(int companyId, int workflowId, String eql, String targetName, boolean isTrackable) {
         ComTarget target = targetFactory.newTarget();
 		
 		target.setTargetName(targetName);
@@ -1175,24 +1171,24 @@ public class ComWorkflowActivationService {
 		return target;
     }
 	
-	private int createMailingSentTarget(WorkflowMailingAware mailing) {
+	private int createMailingSentTarget(int companyId, int workflowId, WorkflowMailingAware mailing) {
 		int mailingId = mailing.getMailingId();
 		
 		if (mailingId > 0) {
 			String eql = String.format("RECEIVED MAILING %d", mailingId);
-			return createTarget(eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "previous mailing has to be sent")).getId();
+			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "previous mailing has to be sent")).getId();
 		}
 		
 		return 0;
 	}
 	
-	private int createDecisionTarget(WorkflowDecision decision, boolean isPositiveDecisionCase) {
+	private int createDecisionTarget(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowDecision decision, boolean isPositiveDecisionCase) {
 		try {
 			if(WorkflowUtils.isBranchingDecisionIcon(decision)) {
 				String eql = eqlHelper.generateDecisionEQL(companyId, decision, isPositiveDecisionCase);
-				return createTarget(eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "decision")).getId();
+				return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "decision")).getId();
 			} else if(WorkflowUtils.isAutoOptimizationIcon(decision)) {
-				return createAutoOptimizationTarget(decision);
+				return createAutoOptimizationTarget(companyId, workflowId, workflowGraph, decision);
 			}
 		} catch (Exception e) {
 			logger.error("Error while creating target group during campaign activation: " + e.getMessage(), e);
@@ -1201,40 +1197,40 @@ public class ComWorkflowActivationService {
 		return 0;
 	}
 	
-	private int createAutoOptimizationTarget(WorkflowDecision decision) {
+	private int createAutoOptimizationTarget(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowDecision decision) {
 		try {
 			String eql = workflowGraph.getAllNextParallelIconsByType(decision, ALL_MAILING_TYPES, Collections.emptySet(), true).stream()
 					.map(WorkflowUtils::getMailingId)
 					.map(mailingId -> String.format("RECEIVED MAILING %d", mailingId))
 					.collect(Collectors.joining(" AND "));
 			
-			return createTarget(eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "decision")).getId();
+			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "decision")).getId();
 		} catch (Exception e) {
 			logger.error("Error while creating target group during campaign activation: " + e.getMessage(), e);
 		}
 		return 0;
 	}
 	
-	private int createImportTarget(WorkflowImport importIcon) {
+	private int createImportTarget(int companyId, int workflowId, WorkflowImport importIcon) {
 		int autoImportId = importIcon.getImportexportId();
 
     	if (autoImportId > 0) {
 			String eql = String.format("FINISHED AUTOIMPORT %d", autoImportId);
-			return createTarget(eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "auto-import succeeded")).getId();
+			return createTarget(companyId, workflowId, eql, String.format(WORKFLOW_TARGET_NAME_PATTERN, "auto-import succeeded")).getId();
 		}
 
 		return 0;
 	}
 
-	private void processStartDate(Map<Integer, Date> mailingsSendDates, WorkflowStart startIcon, Date date, boolean testRun, TimeZone adminTimeZone) {
+	private void processStartDate(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Map<Integer, Date> reportsSendDates, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, WorkflowStart startIcon, Date date, boolean testRun, TimeZone adminTimeZone) {
 		WorkflowNode startNode = workflowGraph.getNodeByIcon(startIcon);
 		if (!testRun) {
 			date = WorkflowUtils.getStartStopIconDate(startIcon, adminTimeZone);
 		}
-		processStartDate(mailingsSendDates, startNode.getNextNodes(), date, testRun, adminTimeZone);
+		processStartDate(mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, startNode.getNextNodes(), date, testRun, adminTimeZone);
 	}
 
-	private void processStartDate(Map<Integer, Date> mailingsSendDates, List<WorkflowNode> nodes, Date date, boolean testRun, TimeZone adminTimeZone) {
+	private void processStartDate(Map<Integer, Date> mailingsSendDates, Map<Integer, Date> reportsSendDates, Map<Integer, Date> optimizationsTestSendDates, Map<Integer, Date> importsActivationDates, Map<Integer, Date> exportsActivationDates, List<WorkflowNode> nodes, Date date, boolean testRun, TimeZone adminTimeZone) {
 		for (WorkflowNode node : nodes) {
 			WorkflowIcon icon = node.getNodeIcon();
 			int iconId = icon.getId();
@@ -1268,7 +1264,7 @@ public class ComWorkflowActivationService {
 				WorkflowDeadline deadline = (WorkflowDeadline) node.getNodeIcon();
 				nextDate = applyDeadline(date, deadline, testRun, adminTimeZone);
 			}
-			processStartDate(mailingsSendDates, node.getNextNodes(), nextDate, testRun, adminTimeZone);
+			processStartDate(mailingsSendDates, reportsSendDates, optimizationsTestSendDates, importsActivationDates, exportsActivationDates, node.getNextNodes(), nextDate, testRun, adminTimeZone);
 		}
 	}
 
@@ -1311,14 +1307,14 @@ public class ComWorkflowActivationService {
 		return calendar.getTime();
 	}
 
-    private void updateAutoImportActivationDate(@VelocityCheck int companyId) throws Exception {
+    private void updateAutoImportActivationDate(@VelocityCheck int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> importsActivationDates) throws Exception {
         for (Entry<Integer, Date> entry : importsActivationDates.entrySet()) {
             WorkflowImport importIcon = (WorkflowImport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
             autoImportService.setAutoActivationDateAndActivate(companyId, importIcon.getImportexportId(), entry.getValue(), true);
         }
     }
 
-	private void updateAutoExportActivationDate(@VelocityCheck int companyId) throws Exception {
+	private void updateAutoExportActivationDate(@VelocityCheck int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> exportsActivationDates) throws Exception {
         for (Entry<Integer, Date> entry : exportsActivationDates.entrySet()) {
             WorkflowExport exportIcon = (WorkflowExport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
             autoExportService.setAutoActivationDateAndActivate(companyId, exportIcon.getImportexportId(), entry.getValue(), true);
@@ -1398,50 +1394,50 @@ public class ComWorkflowActivationService {
 			this.testing = testing;
 		}
 
-		public List<WorkflowReactionStepDeclaration> process(WorkflowStart start) {
+		public List<WorkflowReactionStepDeclaration> process(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowStart start) {
 			targetsCache = new HashMap<>();
 			steps = new LinkedHashMap<>();
 			maxStepId = 0;
 
-			process(workflowGraph.getNodeByIcon(start), new WorkflowReactionStepDeclarationImpl(), null);
-			assignDecisionTargets();
+			process(companyId, workflowId, workflowGraph, workflowGraph.getNodeByIcon(start), new WorkflowReactionStepDeclarationImpl(), null);
+			assignDecisionTargets(companyId, workflowId, workflowGraph);
 
 			return new ArrayList<>(steps.keySet());
 		}
 
-		private void process(WorkflowNode node, WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration previousMailingStep) {
+		private void process(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowNode node, WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration previousMailingStep) {
 			WorkflowIcon icon = node.getNodeIcon();
 
 			if (WorkflowUtils.isBranchingDecisionIcon(icon)) {
 				WorkflowReactionStepDeclaration positiveStep = next(step, icon, true);
-				process(workflowGraph.getDecisionYesBranch(node), positiveStep, processForPositiveDecision((WorkflowDecision) icon, previousMailingStep));
+				process(companyId, workflowId, workflowGraph, workflowGraph.getDecisionYesBranch(node), positiveStep, processForPositiveDecision((WorkflowDecision) icon, previousMailingStep));
 
 				WorkflowReactionStepDeclaration negativeStep = next(step, icon, false);
-				process(workflowGraph.getDecisionNoBranch(node), negativeStep, previousMailingStep);
+				process(companyId, workflowId, workflowGraph, workflowGraph.getDecisionNoBranch(node), negativeStep, previousMailingStep);
 			} else {
 				if (WorkflowUtils.isMailingIcon(icon)) {
 					step = next(step, icon);
-					assignPreviousMailingTarget(step, previousMailingStep);
+					assignPreviousMailingTarget(companyId, workflowId, workflowGraph, step, previousMailingStep);
 					previousMailingStep = step;
 				} else if (icon.getType() == WorkflowIconType.DEADLINE.getId()) {
 					step = append(step, deadline(icon));
 				}
 
-				process(node.getNextNodes(), step, previousMailingStep);
+				process(companyId, workflowId, workflowGraph, node.getNextNodes(), step, previousMailingStep);
 			}
 		}
 
-		private void process(List<WorkflowNode> nodes, WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration previousMailingStep) {
+		private void process(int companyId, int workflowId, WorkflowGraph workflowGraph, List<WorkflowNode> nodes, WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration previousMailingStep) {
 			if (CollectionUtils.isNotEmpty(nodes)) {
 				for (WorkflowNode next : nodes) {
-					process(next, step, previousMailingStep);
+					process(companyId, workflowId, workflowGraph, next, step, previousMailingStep);
 				}
 			}
 		}
 
-		private void assignPreviousMailingTarget(WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration mailingStep) {
+		private void assignPreviousMailingTarget(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowReactionStepDeclaration step, WorkflowReactionStepDeclaration mailingStep) {
 			if (mailingStep != null) {
-				step.setTargetId(getTargetId(steps.get(mailingStep), true));
+				step.setTargetId(getTargetId(companyId, workflowId, workflowGraph, steps.get(mailingStep), true));
 			}
 		}
 
@@ -1459,7 +1455,7 @@ public class ComWorkflowActivationService {
 			return mailingStep;
 		}
 
-		private void assignDecisionTargets() {
+		private void assignDecisionTargets(int companyId, int workflowId, WorkflowGraph workflowGraph) {
 			Set<Integer> referencedSteps = new HashSet<>();
 
 			// Collect all the 'referenced' steps — the steps that some other ones depend on.
@@ -1470,7 +1466,7 @@ public class ComWorkflowActivationService {
 			steps.forEach((step, icon) -> {
 				// Prevent target group creation for final steps.
 				if (WorkflowUtils.isBranchingDecisionIcon(icon) && referencedSteps.contains(step.getStepId())) {
-					step.setTargetId(getTargetId(icon, step.isTargetPositive()));
+					step.setTargetId(getTargetId(companyId, workflowId, workflowGraph, icon, step.isTargetPositive()));
 				}
 			});
 		}
@@ -1514,17 +1510,17 @@ public class ComWorkflowActivationService {
 			return step;
 		}
 
-		private int getTargetId(WorkflowIcon icon, boolean positive) {
-			return targetsCache.computeIfAbsent(CompositeKey.of(icon, positive), k -> createTargetFrom(icon, positive));
+		private int getTargetId(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowIcon icon, boolean positive) {
+			return targetsCache.computeIfAbsent(CompositeKey.of(icon, positive), k -> createTargetFrom(companyId, workflowId, workflowGraph, icon, positive));
 		}
 
-		private int createTargetFrom(WorkflowIcon icon, boolean positive) {
+		private int createTargetFrom(int companyId, int workflowId, WorkflowGraph workflowGraph, WorkflowIcon icon, boolean positive) {
 			if (WorkflowUtils.isBranchingDecisionIcon(icon)) {
-				return createDecisionTarget((WorkflowDecision) icon, positive);
+				return createDecisionTarget(companyId, workflowId, workflowGraph, (WorkflowDecision) icon, positive);
 			}
 
 			if (WorkflowUtils.isMailingIcon(icon)) {
-				return createMailingSentTarget((WorkflowMailingAware) icon);
+				return createMailingSentTarget(companyId, workflowId, (WorkflowMailingAware) icon);
 			}
 
 			return 0;
@@ -1681,8 +1677,8 @@ public class ComWorkflowActivationService {
 			conditions.add(condition);
 		}
 
-		public void addAll(Collection<Condition> conditions) {
-			this.conditions.addAll(conditions);
+		public void addAll(Collection<Condition> conditionsToAdd) {
+			this.conditions.addAll(conditionsToAdd);
 		}
 
         @SuppressWarnings("unused")
@@ -1691,8 +1687,8 @@ public class ComWorkflowActivationService {
 		}
 
         @SuppressWarnings("unused")
-		public void removeAll(Collection<Condition> conditions) {
-			this.conditions.removeAll(conditions);
+		public void removeAll(Collection<Condition> conditionsToRemove) {
+			this.conditions.removeAll(conditionsToRemove);
 		}
 
 		@Override

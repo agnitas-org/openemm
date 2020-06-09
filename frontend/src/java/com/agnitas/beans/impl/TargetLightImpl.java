@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.TargetLight;
@@ -33,7 +33,7 @@ public class TargetLightImpl implements TargetLight {
 	/** Name of target group. */
 	protected String targetName;
 	
-	/** Descriptional text. */
+	/** Descriptive text. */
 	protected String targetDescription;
 	
 	/** Write-protection flag. */
@@ -53,7 +53,10 @@ public class TargetLightImpl implements TargetLight {
 
 	/** Indicator, if target group can be used with content blocks. */
     private boolean componentHide;
-    
+
+    /** A number that describes target structure complexity */
+	private int complexityIndex;
+
 	@Override
 	public int getCompanyID() {
 		return companyID;
@@ -140,7 +143,8 @@ public class TargetLightImpl implements TargetLight {
      * 
      * @param valid <code>true</code> if target group is valid.
      */
-    public void setValid(boolean valid) {
+    @Override
+	public void setValid(boolean valid) {
     	this.valid = valid;
     }
     
@@ -234,4 +238,14 @@ public class TargetLightImpl implements TargetLight {
     public boolean getComponentHide() {
         return componentHide;
     }
+
+	@Override
+	public int getComplexityIndex() {
+		return complexityIndex;
+	}
+
+	@Override
+	public void setComplexityIndex(int complexityIndex) {
+		this.complexityIndex = complexityIndex;
+	}
 }

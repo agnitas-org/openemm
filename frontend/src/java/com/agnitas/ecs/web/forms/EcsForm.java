@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.agnitas.ecs.EcsGlobals;
-import org.agnitas.ecs.EcsPreviewSize;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.web.forms.StrutsFormBase;
@@ -63,9 +62,9 @@ public class EcsForm extends StrutsFormBase {
     protected String statServerUrl;
 
     /**
-     * dimensions of mailing preview
+     * select device type for calculating clicks and clickers
      */
-    private EcsPreviewSize previewSize = EcsPreviewSize.DESKTOP;
+    private int deviceType = 0;
 
     private int workflowId;
 
@@ -94,20 +93,12 @@ public class EcsForm extends StrutsFormBase {
         this.shortname = shortname;
     }
 
-    public int getPreviewSize() {
-        return previewSize.getId();
+    public int getDeviceType() {
+        return deviceType;
     }
 
-    public void setPreviewSize(int previewSize) {
-        this.previewSize = EcsPreviewSize.getForId(previewSize);
-    }
-
-    public int getPreviewWidth() {
-        return previewSize.getWidth();
-    }
-
-    public int getPreviewHeight() {
-        return previewSize.getHeight();
+    public void setDeviceType(int deviceType) {
+        this.deviceType = deviceType;
     }
 
     public int getSelectedRecipient() {

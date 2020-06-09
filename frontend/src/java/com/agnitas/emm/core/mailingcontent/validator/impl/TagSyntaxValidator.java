@@ -12,12 +12,11 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.preview.AgnTagError;
 import org.agnitas.preview.TagSyntaxChecker;
-import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -32,27 +31,28 @@ import com.agnitas.web.mvc.Popups;
 public class TagSyntaxValidator implements DynTagValidator {
     private static final Logger logger = Logger.getLogger(TagSyntaxValidator.class);
 
-    private HttpServletRequest request;
     private TagSyntaxChecker tagSyntaxChecker;
 
-    public TagSyntaxValidator(HttpServletRequest request, TagSyntaxChecker tagSyntaxChecker) {
-        this.request = request;
+    public TagSyntaxValidator(TagSyntaxChecker tagSyntaxChecker) {
         this.tagSyntaxChecker = tagSyntaxChecker;
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
         boolean hasNoErrors = true;
+        Locale locale = admin.getLocale();
+        if (locale == null) {
+            locale = Locale.ENGLISH;
+        }
 
         try {
             List<AgnTagError> agnTagSyntaxErrors = new ArrayList<>();
             List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
 
             for (DynContentDto contentBlock : contentBlocks) {
-                int companyId = AgnUtils.getCompanyID(request);
-                if (!tagSyntaxChecker.check(companyId, contentBlock.getContent(), agnTagSyntaxErrors)) {
+                if (!tagSyntaxChecker.check(dynTagDto.getCompanyId(), contentBlock.getContent(), agnTagSyntaxErrors)) {
                     for (AgnTagError agnTagError : agnTagSyntaxErrors) {
-                        String localizedMessage = agnTagError.getLocalizedMessage(request.getLocale());
+                        String localizedMessage = agnTagError.getLocalizedMessage(locale);
                         popups.alert("error.mailing.agntags", agnTagError.getFullAgnTagText(), localizedMessage);
                     }
 

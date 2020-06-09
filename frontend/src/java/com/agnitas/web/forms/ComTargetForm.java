@@ -12,12 +12,13 @@ package com.agnitas.web.forms;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.TargetForm;
 import org.apache.struts.action.ActionErrors;
@@ -40,7 +41,7 @@ public class ComTargetForm extends TargetForm {
 	public static final int COLUMN_TYPE_MAILING_CLICKED_SPECIFIC_LINK = 8;
 	
 	/**
-	 * Set of ID marked for bulk action. Ensure this set is cleared 
+	 * Set of ID marked for bulk action. Ensure this set is cleared
 	 */
 	private Set<Integer> bulkIDs = new HashSet<>();
 	private boolean useForAdminAndTestDelivery;
@@ -56,7 +57,7 @@ public class ComTargetForm extends TargetForm {
     private boolean searchEnabled;
     private String eql;
 	private int mailingId;
-	private List<LightweightMailing> usedInMailings;
+	private Map<Integer, TargetComplexityGrade> targetComplexities;
 
     @Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -73,14 +74,14 @@ public class ComTargetForm extends TargetForm {
 		this.setTargetNodeToRemove(-1);
 		this.setMailingId(0);
 		this.setLocked(false);
-		usedInMailings = null;
 
 		setNumberOfRows(-1);
 	}
 
 	public void setBulkID( int id, String value) {
-		if( value != null && (value.equals( "on") || value.equals( "yes") || value.equals( "true")))
+		if( value != null && (value.equals( "on") || value.equals( "yes") || value.equals( "true"))) {
 			this.bulkIDs.add(id);
+		}
 	}
 	
 	public String getBulkID( int id) {
@@ -213,11 +214,11 @@ public class ComTargetForm extends TargetForm {
 		this.mailingId = mailingId;
 	}
 
-	public List<LightweightMailing> getUsedInMailings() {
-		return usedInMailings;
+	public Map<Integer, TargetComplexityGrade> getTargetComplexities() {
+		return targetComplexities;
 	}
 
-	public void setUsedInMailings(List<LightweightMailing> usedInMailings) {
-		this.usedInMailings = usedInMailings;
+	public void setTargetComplexities(Map<Integer, TargetComplexityGrade> targetComplexities) {
+		this.targetComplexities = targetComplexities;
 	}
 }

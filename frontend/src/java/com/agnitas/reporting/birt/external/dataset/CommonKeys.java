@@ -135,4 +135,7 @@ public interface CommonKeys {
 	String SCHEDULED_SEND_TIME = "statistic.ScheduledSendTime";
 
     List<DeviceClass> AVAILABLE_DEVICECLASSES = Arrays.asList(DeviceClass.DESKTOP, DeviceClass.MOBILE, DeviceClass.TABLET, DeviceClass.SMARTTV);
+    
+    int OPTIMIZATION_SUMMARY_GROUP_ID = -1;
+    int OPTIMIZATION_WINNER_GROUP_ID = 0;
 }

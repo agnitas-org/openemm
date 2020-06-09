@@ -1,5 +1,8 @@
-<%@ page language="java" import="java.util.List, com.agnitas.web.ComMailingComponentsAction, com.agnitas.web.ShowImageServlet, org.agnitas.beans.MailingComponent"
-         contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ComMailingComponentsAction" %>
+<%@ page import="com.agnitas.web.ShowImageServlet" %>
+<%@ page import="org.agnitas.beans.MailingComponent" %>
+<%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,14 +14,25 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm"--%>
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="components" type="java.util.List<org.agnitas.beans.MailingComponent>"--%>
+<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
+<%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
+<%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
 <c:set var="MOBILE_IMAGE_PREFIX" value="<%=ShowImageServlet.MOBILE_IMAGE_PREFIX%>"/>
 <c:set var="ACTION_SAVE_COMPONENTS" value="<%=ComMailingComponentsAction.ACTION_SAVE_COMPONENTS%>"/>
 <c:set var="ACTION_UPLOAD_ARCHIVE" value="<%=ComMailingComponentsAction.ACTION_UPLOAD_ARCHIVE%>"/>
 <c:set var="ACTION_BULK_DOWNLOAD_COMPONENT" value="<%=ComMailingComponentsAction.ACTION_BULK_DOWNLOAD_COMPONENT%>"/>
+<c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%=ComMailingComponentsAction.ACTION_BULK_CONFIRM_DELETE%>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%=ComMailingComponentsAction.ACTION_CONFIRM_DELETE%>"/>
 <c:set var="ACTION_UPLOAD_SFTP" value="<%=ComMailingComponentsAction.ACTION_UPLOAD_SFTP%>"/>
 <c:set var="ACTION_UPDATE_HOST_IMAGE" value="<%=ComMailingComponentsAction.ACTION_UPDATE_HOST_IMAGE%>"/>
+
+<c:set var="ACTION_LIST"                            value="<%= MailingBaseAction.ACTION_LIST %>"        scope="request" />
+<c:set var="ACTION_VIEW"							value="<%= MailingBaseAction.ACTION_VIEW %>"		scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_IMAGE"           value="<%= MailingComponent.TYPE_IMAGE %>"          scope="request" />
+<c:set var="MAILING_COMPONENT_TYPE_HOSTED_IMAGE"	value="<%= MailingComponent.TYPE_HOSTED_IMAGE %>"	scope="request" />
 
 <div class="row">
     <div class="tile">
@@ -148,7 +162,7 @@
     </div>
 
 
-    <agn:agnForm action="/mcomponents" enctype="multipart/form-data" class="form-vertical" data-form="search">
+    <agn:agnForm action="/mcomponents" class="form-vertical" data-form="resource">
         <html:hidden property="mailingID"/>
         <html:hidden property="action"/>
         <!-- Tile BEGIN -->
@@ -171,8 +185,14 @@
 
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="#" data-prevent-load data-form-set="action: ${ACTION_BULK_DOWNLOAD_COMPONENT}" data-form-submit-static>
-                                    <bean:message key="mailing.Graphics_Component.bulk.download"/>
+                                <a href="#" data-prevent-load data-form-submit-static data-form-set="action: ${ACTION_BULK_DOWNLOAD_COMPONENT}">
+                                    <bean:message key="bulkAction.download.image.selected"/>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#" data-form-confirm="${ACTION_BULK_CONFIRM_DELETE}">
+                                    <bean:message key="bulkAction.delete.image"/>
                                 </a>
                             </li>
                         </ul>
@@ -188,14 +208,27 @@
             <div class="tile-content" data-form-content>
                 <!-- Table BEGIN -->
                 <div class="table-wrapper">
-                    <display:table class="table table-bordered table-striped js-table" id="component"
-                                   name="components" requestURI="/mcomponents.do"
+                    <display:table class="table table-bordered table-striped js-table"
+                                   id="component"
+                                   name="components"
+                                   requestURI="/mcomponents.do"
                                    pagesize="${mailingComponentsForm.numberOfRows}">
 
+                        <!-- Prevent table controls/headers collapsing when the table is empty -->
+                        <display:setProperty name="basic.empty.showtable" value="true"/>
+
+                        <display:setProperty name="basic.msg.empty_list_row" value=" "/>
+
+                        <display:column sortable="false" title="<input type='checkbox' data-form-bulk='bulkID'/>" headerClass="squeeze-column">
+                            <html:checkbox property="bulkID[${component.id}]"/>
+                        </display:column>
+
+                        <c:url var="sourceSrc" value="/sc?compID=${component.id}"/>
                         <display:column titleKey="mailing.Graphics_Component" sortable="false" class="align-center">
-                            <a href="<html:rewrite page="/sc?compID=${component.id}"/>" data-modal="modal-preview-image"
-                               data-modal-set="src: <html:rewrite page="/sc?compID=${component.id}" />, title: ${component.description}" class="inline-block">
-                                <img data-display-dimensions="scope: tr" src="<html:rewrite page="/sc?compID=${component.id}" />" alt="${component.description}" border="1" style="max-width: 100px; max-height: 150px; width: auto; height: auto; display: block;" />
+                            <a href="${sourceSrc}" data-modal="modal-preview-image"
+                               data-modal-set="src: ${sourceSrc}, title: ${component.description}" class="inline-block">
+                                <img data-display-dimensions="scope: tr" src="${sourceSrc}" alt="${component.description}" border="1"
+                                     style="max-width: 100px; max-height: 150px; width: auto; height: auto; display: block;" />
                             </a>
                         </display:column>
 
@@ -210,7 +243,7 @@
                         <display:column titleKey="htmled.link" sortable="false">
                             <c:set var="isShownAlready" value="false"/>
                             <logic:iterate id="url" name="componentLinks" scope="request">
-                                <c:if test="${component.urlID eq url.id and url.fullUrl ne '' and isShownAlready ne true}">
+                                <c:if test="${component.urlID eq url.id and not empty url.fullUrl and isShownAlready ne true}">
                                     <a class="btn btn-regular" target="_blank" href="${url.fullUrl}" data-tooltip="${url.fullUrl}">
                                         <i class="icon icon-share-square-o"></i>
                                     </a>
@@ -228,10 +261,10 @@
                         </display:column>
 
                         <display:column titleKey="default.Type" sortable="false">
-                            <c:if test="${not fn:startsWith(component.componentName, MOBILE_IMAGE_PREFIX)}">
+                            <c:if test="${not component.mobileImage}">
                                 <bean:message key="predelivery.desktop" />
                             </c:if>
-                            <c:if test="${fn:startsWith(component.componentName, MOBILE_IMAGE_PREFIX)}">
+                            <c:if test="${component.mobileImage}">
                                 <bean:message key="Mobile" />
                             </c:if>
                         </display:column>
@@ -242,13 +275,13 @@
                         </display:column>
 
                         <display:column titleKey="default.Size" sortable="false">
-                            <c:if test="${mailingComponentsForm.fileSizes[component.id] ne null}">
+                            <c:if test="${not empty mailingComponentsForm.fileSizes[component.id]}">
                                 ${mailingComponentsForm.fileSizes[component.id]} kB
                             </c:if>
                         </display:column>
 
                         <display:column titleKey="report.data.type" sortable="true" sortProperty="mimeType" headerClass="js-table-sort">
-                            <c:if test="${component.mimeType ne null and fn:startsWith(component.mimeType, 'image')}">
+                            <c:if test="${not empty component.mimeType and fn:startsWith(component.mimeType, 'image')}">
                                 <span class="badge">
                                     ${fn:toUpperCase(fn:substring(component.mimeType, 6, -1))}
                                 </span>
@@ -381,17 +414,14 @@
             </label>
             <select id="mobileComponentBase{{= count }}" name="mobileComponentBaseComponent[{{= count }}]" class="form-control js-select">
                 <option value="" selected="selected"><bean:message key="default.none"/></option>
-            <%
-            	if (request.getAttribute("components") != null) {
-	                for (MailingComponent component : (List<MailingComponent>) request.getAttribute("components")) {
-	                    if ((component.getType() == MailingComponent.TYPE_IMAGE || component.getType() == MailingComponent.TYPE_HOSTED_IMAGE) && !component.getComponentName().startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX)) {
-	            %>
-                <option value="<%= component.getComponentName() %>"><%= component.getComponentName() %></option>
-            <%
-	                    }
-	                }
-                }
-            %>
+
+                <c:if test="${not empty components}">
+                    <c:forEach items="${components}" var="component">
+                        <c:if test="${component.sourceComponent}">
+                            <option value="${component.componentName}">${component.componentName}</option>
+                        </c:if>
+                    </c:forEach>
+                </c:if>
             </select>
         </div>
     </div>
@@ -439,17 +469,13 @@
     <td>
         <select id="mobileComponentBase{{= count }}" name="mobileComponentBaseComponent[{{= count }}]" class="form-control js-select">
             <option value="" selected="selected"><bean:message key="default.none"/></option>
-        <%
-	        if (request.getAttribute("components") != null) {
-	            for (MailingComponent component : (List<MailingComponent>) request.getAttribute("components")) {
-	                if ((component.getType() == MailingComponent.TYPE_IMAGE || component.getType() == MailingComponent.TYPE_HOSTED_IMAGE) && !component.getComponentName().startsWith(ShowImageServlet.MOBILE_IMAGE_PREFIX)) {
-	        %>
-            <option value="<%= component.getComponentName() %>"><%= component.getComponentName() %></option>
-        <%
-	                }
-	            }
-            }
-        %>
+            <c:if test="${not empty components}">
+                <c:forEach items="${components}" var="component">
+                    <c:if test="${component.sourceComponent}">
+                        <option value="${component.componentName}">${component.componentName}</option>
+                    </c:if>
+                </c:forEach>
+            </c:if>
         </select>
     </td>
     {{ } }}

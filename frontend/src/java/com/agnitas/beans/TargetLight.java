@@ -188,4 +188,8 @@ public interface TargetLight {
      */
     boolean getComponentHide();
 
+	int getComplexityIndex();
+
+	void setComplexityIndex(int complexityIndex);
+
 }

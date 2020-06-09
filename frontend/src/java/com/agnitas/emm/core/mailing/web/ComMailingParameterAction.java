@@ -11,16 +11,10 @@
 package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.forms.ComMailingParameterForm;
-import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
-import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.service.ComWebStorage;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
@@ -29,8 +23,8 @@ import org.agnitas.web.BaseDispatchAction;
 import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -40,11 +34,19 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.forms.ComMailingParameterForm;
+import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
+import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.service.ComWebStorage;
+
 public class ComMailingParameterAction extends BaseDispatchAction {
 	/** The logger. */
 	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComMailingParameterAction.class);
-	private ComMailingParameterService mailingParameterService;	
+	private ComMailingParameterService mailingParameterService;
 	private MailingService mailingService;
 	private WebStorage webStorage;
 	
@@ -63,6 +65,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	 */
 	public ActionForward list(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		final ComAdmin admin = AgnUtils.getAdmin(request);
+		AgnUtils.setAdminDateTimeFormatPatterns(request);
 
 		// parameter name or description
 		final String parameterQuery = request.getParameter("parameterSearchQuery");
@@ -120,13 +123,13 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	public ActionForward view(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		ComMailingParameter parameter = mailingParameterService.getParameter(((ComMailingParameterForm)form).getMailingInfoID(), AgnUtils.getAdmin(request));
 		loadMailings(request);
-		form = fillFormWithData((ComMailingParameterForm) form, parameter);
-		return mapping.findForward("view");	
+		fillFormWithData((ComMailingParameterForm) form, parameter);
+		return mapping.findForward("view");
 	}
 	
 	//show empty form to enter new parameter values
 	public ActionForward newParameter(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-		((ComMailingParameterForm)form).resetFormValues(mapping, request);	
+		((ComMailingParameterForm)form).resetFormValues(mapping, request);
 		((ComMailingParameterForm)form).setCompanyID(AgnUtils.getCompanyID(request));
 		loadMailings(request);
 		return mapping.findForward("view");
@@ -134,7 +137,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	
 	//save a (new?) parameter
 	public ActionForward save(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-		ActionMessages messages = new ActionMessages();
+		ActionMessages actionMessages = new ActionMessages();
 		ActionErrors errors = new ActionErrors();
 		
 		// load Data...
@@ -158,10 +161,10 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 		if (result) {
 			list(mapping, form, request, response);
 			showSavedMessage(request);
-			return mapping.findForward("list");	
+			return mapping.findForward("list");
 		} else {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error"));
-            saveErrors(request, messages);
+            saveErrors(request, actionMessages);
 			return mapping.findForward("view");
 		}
 	}
@@ -178,7 +181,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 		if (result) {
 			list(mapping, form, request, response);
 			showSavedMessage(request, "default.selection.deleted");
-			return mapping.findForward("list");	
+			return mapping.findForward("list");
 		} else {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error"));
 			return mapping.findForward("view");
@@ -207,7 +210,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
         return mapping.findForward("delete");
     }
 	
-	/**	 
+	/**
 	 * This method fills the given form with the data from the upload-object.
 	 * Warning! The Form you pass as parameter will be changed!
 	 * @param form
@@ -244,7 +247,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	}
 
 	protected void loadMailings(HttpServletRequest req) {
-		List<LightweightMailing> mailings = mailingService.getAllMailingNames(AgnUtils.getCompanyID(req));
+		List<LightweightMailing> mailings = mailingService.getAllMailingNames(AgnUtils.getAdmin(req));
 		req.setAttribute("mailings", mailings);
 	}
 

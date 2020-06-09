@@ -21,13 +21,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.userform.service.UserFormFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -66,7 +67,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		if (formID == 0 || companyID == 0) {
 			return null;
 		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active FROM userform_tbl WHERE form_id = ? AND company_id = ?";
+			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active "
+					+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
 			List<UserForm> userFormList = select(logger, sql, new UserForm_RowMapper(), formID, companyID);
 			if (userFormList == null || userFormList.size() < 1) {
 				return null;
@@ -562,6 +564,38 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		if (Objects.nonNull(activenessFilter)){
 			query += " AND active = ?";
 			params.add(BooleanUtils.toInteger(activenessFilter));
+		}
+
+		return selectPaginatedListWithSortClause(logger, query, sortClause, sortColumn, sortDirectionAscending,
+				pageNumber, pageSize, new UserForm_LightWithActionIDs_RowMapper(), params.toArray());
+	}
+	
+	@Override
+	public PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection,
+			int pageNumber, int pageSize, UserFormFilter filter, @VelocityCheck int companyID) {
+
+		String sortClause;
+		if (StringUtils.isBlank(sortColumn)) {
+			sortClause = "ORDER BY LOWER(formname)";
+		} else if ("changedate".equalsIgnoreCase(sortColumn)) {
+			sortClause = "ORDER BY change_date";
+		} else if ("creationdate".equalsIgnoreCase(sortColumn)) {
+			sortClause = "ORDER BY creation_date";
+		} else {
+			sortClause = "ORDER BY " + sortColumn;
+		}
+		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
+		sortClause += (sortDirectionAscending ? " ASC" : " DESC");
+
+		List<Object> params = new ArrayList<>();
+		params.add(companyID);
+
+		String query = "SELECT form_id, company_id, formname, description, creation_date, change_date, startaction_id, endaction_id, active " +
+				"FROM userform_tbl WHERE company_id = ?";
+
+		if (filter != UserFormFilter.NONE){
+			query += " AND active = ?";
+			params.add(BooleanUtils.toInteger(UserFormFilter.ACTIVE == filter));
 		}
 
 		return selectPaginatedListWithSortClause(logger, query, sortClause, sortColumn, sortDirectionAscending,

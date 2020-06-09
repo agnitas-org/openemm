@@ -15,10 +15,52 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import org.agnitas.dao.TrackableLinkDao;
+import org.agnitas.dao.exception.target.TargetGroupLockedException;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.target.exception.TargetGroupException;
+import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.service.ColumnInfoService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.target.TargetFactory;
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetNodeFactory;
+import org.agnitas.target.TargetRepresentation;
+import org.agnitas.target.TargetRepresentationFactory;
+import org.agnitas.target.impl.TargetNodeDate;
+import org.agnitas.target.impl.TargetNodeMailingClicked;
+import org.agnitas.target.impl.TargetNodeMailingOpened;
+import org.agnitas.target.impl.TargetNodeMailingReceived;
+import org.agnitas.target.impl.TargetNodeNumeric;
+import org.agnitas.target.impl.TargetNodeString;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.GuiConstants;
+import org.agnitas.util.SafeString;
+import org.agnitas.web.StrutsActionBase;
+import org.agnitas.web.TargetForm;
+import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.Action;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.ActionRedirect;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
@@ -51,46 +93,6 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.forms.ComTargetForm;
-import org.agnitas.dao.TrackableLinkDao;
-import org.agnitas.dao.exception.target.TargetGroupLockedException;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.target.exception.TargetGroupException;
-import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.ColumnInfoService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.target.TargetFactory;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetNodeFactory;
-import org.agnitas.target.TargetRepresentation;
-import org.agnitas.target.TargetRepresentationFactory;
-import org.agnitas.target.impl.TargetNodeDate;
-import org.agnitas.target.impl.TargetNodeMailingClicked;
-import org.agnitas.target.impl.TargetNodeMailingOpened;
-import org.agnitas.target.impl.TargetNodeMailingReceived;
-import org.agnitas.target.impl.TargetNodeNumeric;
-import org.agnitas.target.impl.TargetNodeString;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.util.SafeString;
-import org.agnitas.web.StrutsActionBase;
-import org.agnitas.web.TargetForm;
-import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.action.ActionRedirect;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Struts {@link Action} dealing with target groups.
@@ -141,7 +143,6 @@ public class ComTargetAction extends StrutsActionBase {
 	public static final int ACTION_LOCK_TARGET_GROUP = ACTION_LAST + 8;
 	public static final int ACTION_UNLOCK_TARGET_GROUP = ACTION_LAST + 9;
 	public static final int ACTION_REBUILD_STRUCTURE_DATA = ACTION_LAST + 10;
-	public static final int ACTION_VIEW_MAILINGS = ACTION_LAST + 11;
 
     private BirtStatisticsService birtStatisticsService;
     private ComBirtReportDao birtReportDao;
@@ -199,9 +200,7 @@ public class ComTargetAction extends StrutsActionBase {
             return "delete_recipients";
         case ACTION_BACK_TO_MAILINGWIZARD:
             return "back_to_mailingwizard";
-        case ACTION_VIEW_MAILINGS:
-            return "view_mailings";
-            
+
         default:
             return super.subActionMethodName(subAction);
         }
@@ -606,13 +605,7 @@ public class ComTargetAction extends StrutsActionBase {
                 targetForm.setSearchEnabled(targetDao.isBasicFullTextSearchSupported());
                 destination = mapping.findForward(listTargetGroups(targetForm, req));
                 break;
-			
-            case ACTION_VIEW_MAILINGS:
-				targetForm.setUsedInMailings(mailingDao.getMailingsDependentOnTargetGroup(AgnUtils.getCompanyID(req), targetForm.getTargetID()));
-				targetForm.setShortname(targetService.getTargetName(targetForm.getTargetID(), AgnUtils.getCompanyID(req)));
-				destination = mapping.findForward("view_mailings");
-				break;
-				
+
             case ACTION_CREATE_ML:
             	destination = mapping.findForward("create_ml");
             	break;
@@ -638,6 +631,7 @@ public class ComTargetAction extends StrutsActionBase {
 			if ("success".equals(destination.getName())) {
 				prepareListParameters(targetForm);
 				req.setAttribute("targetlist", loadTargetList(req, targetForm));
+				targetForm.setTargetComplexities(targetService.getTargetComplexities(AgnUtils.getCompanyID(req)));
 			}
 		}
 
@@ -672,7 +666,9 @@ public class ComTargetAction extends StrutsActionBase {
 
 		prepareListParameters(form);
 		request.setAttribute("targetlist", loadTargetList(request, form));
+		form.setTargetComplexities(targetService.getTargetComplexities(AgnUtils.getCompanyID(request)));
 
+		AgnUtils.setAdminDateTimeFormatPatterns(request);
 		return "list";
 	}
 
@@ -954,7 +950,7 @@ public class ComTargetAction extends StrutsActionBase {
 
         return targetDao.getTargetLightsBySearchParameters(AgnUtils.getCompanyID(request), false,
                 targetForm.isShowWorldDelivery(), targetForm.isShowTestAndAdminDelivery(), false,
-                targetForm.isSearchNameChecked(), targetForm.isSearchDescriptionChecked(), searchQuery
+                targetForm.isSearchNameChecked(), targetForm.isSearchDescriptionChecked(), searchQuery, false
         );
 	}
 
@@ -970,8 +966,8 @@ public class ComTargetAction extends StrutsActionBase {
 	public void setBirtStatisticsService(BirtStatisticsService birtStatisticsService) {
 		this.birtStatisticsService = birtStatisticsService;
 	}
-
-    public void setBirtReportDao(ComBirtReportDao birtReportDao) {
+	
+	public void setBirtReportDao(ComBirtReportDao birtReportDao) {
         this.birtReportDao = birtReportDao;
     }
 
@@ -979,7 +975,7 @@ public class ComTargetAction extends StrutsActionBase {
     public void setEqlFacade(EqlFacade eqlFacade) {
     	this.eqlFacade = eqlFacade;
     }
-
+    
     private String getReportUrl(HttpServletRequest request, ComTargetForm form) {
 		try {
 			RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();

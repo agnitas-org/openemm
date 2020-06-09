@@ -29,7 +29,7 @@ public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDa
 	protected void processGetOperation(ActionOperationGetCustomerParameters operation) {
 		Map<String, Object> row = selectObject(logger, "select load_always from actop_get_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
 			@Override
-			public Map<String, Object> mapRow(ResultSet resultSet, int row) throws SQLException {
+			public Map<String, Object> mapRow(ResultSet resultSet, int rowIndex) throws SQLException {
 				Map<String, Object> map = new HashMap<>(1);
 				map.put("load_always", resultSet.getBoolean("load_always"));
 				return map;

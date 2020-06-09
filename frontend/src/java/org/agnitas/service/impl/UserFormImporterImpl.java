@@ -15,10 +15,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Resource;
 
 import com.agnitas.beans.LinkProperty;
@@ -32,9 +30,10 @@ import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
+import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class UserFormImporterImpl extends ActionImporter implements UserFormImporter {
@@ -48,7 +47,7 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
      * Import userform
      */
 	@Override
-	public UserFormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception {
+	public FormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception {
 		return importUserFormFromJson(companyID, input, null, null);
 	}
 
@@ -56,8 +55,7 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
      * Import userform
      */
 	@Override
-	public UserFormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception {
-		Set<String> warningKeys = new HashSet<>();
+	public FormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception {
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
 			
@@ -77,31 +75,23 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 
 			UserForm userForm = new UserFormImpl();
 			userForm.setCompanyID(companyID);
+			userForm.setFormName(StringUtils.defaultIfEmpty(formName, (String) jsonObject.get("formname")));
 			
-			if (formName == null) {
-				userForm.setFormName((String) jsonObject.get("formname"));
-			} else {
-				userForm.setFormName(formName);
-			}
+			FormImportResult.Builder importResult = FormImportResult.builder();
 			
 			int nameCollisionIterationsCount = 0;
 			String originalFormName = userForm.getFormName();
 			while (userFormDao.getUserFormByName(userForm.getFormName(), companyID) != null && nameCollisionIterationsCount < 10) {
 				nameCollisionIterationsCount++;
-				if (!warningKeys.contains("userform.name.already.exists")) {
-					warningKeys.add("userform.name.already.exists");
-				}
+				importResult.addWarning("error.form.name_in_use");
 				userForm.setFormName(originalFormName + "_" + nameCollisionIterationsCount);
 			}
 			if (nameCollisionIterationsCount >= 10) {
-				throw new Exception("UserForm import had unresolvable collision with userformname: '" + originalFormName + "' in company: " + companyID);
+				logger.error("UserForm import had unresolvable collision with userformname: '" + originalFormName + "' in company: " + companyID);
+				return importResult.setSuccess(false).addError("error.userform.import").build();
 			}
 			
-			if (description == null) {
-				userForm.setDescription((String) jsonObject.get("description"));
-			} else {
-				userForm.setDescription(description);
-			}
+			userForm.setDescription(StringUtils.defaultIfEmpty(description, (String) jsonObject.get("description")));
 			
 			userForm.setIsActive((boolean) jsonObject.get("active"));
 			
@@ -182,9 +172,10 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			int importedUserFormID = userFormDao.storeUserForm(userForm);
 			
 			if (importedUserFormID <= 0) {
-				throw new Exception("Cannot save userform");
+				logger.error("Cannot save userform");
+				return importResult.setSuccess(false).addError("error.userform.import").build();
 			} else {
-				return new UserFormImportResult(importedUserFormID, warningKeys);
+				return importResult.setUserFormID(importedUserFormID).setSuccess(true).build();
 			}
 		} catch (Exception e) {
 			logger.error("Error in userform import: " + e.getMessage(), e);

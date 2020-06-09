@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
@@ -48,19 +48,15 @@ public class ComBirtStatForm extends ActionForm {
 		return errors;
 	}
 
-	private String getLocalePattern(HttpServletRequest request) {
-		return AgnUtils.getLocaleDateFormatSpecific(request).toPattern();
-	}
-
     private void validateDate(String date, HttpServletRequest request, ActionErrors errors) {
-	    String localePattern = getLocalePattern(request);
+	    String localePattern = AgnUtils.getAdmin(request).getDateFormat().toPattern();
 	    if (!StringUtils.isEmpty(date) && !AgnUtils.isDateValid(date, localePattern)) {
             errors.add("global", new ActionMessage("error.date.format"));
         }
     }
 
 	private void validateDate(String startDate, String endDate, HttpServletRequest request, ActionErrors errors) {
-		String localePattern = getLocalePattern(request);
+		String localePattern = AgnUtils.getAdmin(request).getDateFormat().toPattern();
         if (!StringUtils.isEmpty(startDate) && !AgnUtils.isDateValid(startDate, localePattern)) {
             errors.add("global", new ActionMessage("error.date.format"));
         }
@@ -121,7 +117,7 @@ public class ComBirtStatForm extends ActionForm {
    	private DateMode dateSelectMode;
 
 	/**
-   	 * Selected end date of period (arbitrary selected period). 
+   	 * Selected end date of period (arbitrary selected period).
    	 */
    	private String endDay;
     /**
@@ -155,7 +151,7 @@ public class ComBirtStatForm extends ActionForm {
 //   	private boolean showReport;
    	
    	/**
-   	 * show hourly stats for selected day. 
+   	 * show hourly stats for selected day.
    	 */
    	private String selectDay;
 	/**
@@ -163,9 +159,9 @@ public class ComBirtStatForm extends ActionForm {
 	 */
    	private String[] selectedTargets;
   	/**
-   	 * Selected beginning date of period (arbitrary selected period). 
+   	 * Selected beginning date of period (arbitrary selected period).
    	 */
-    private String startDay; 	
+    private String startDay;
     /**
      * restrict report by this target
      */
@@ -182,7 +178,7 @@ public class ComBirtStatForm extends ActionForm {
 	
 	
 	/**
-	 * which kind of recipients should be included in the statistics value ? 
+	 * which kind of recipients should be included in the statistics value ?
 	 */
 	
 	private String recipientType = "ALL_SUBSCRIBERS";
@@ -279,7 +275,7 @@ public class ComBirtStatForm extends ActionForm {
 
 	public String getReportFormat() {
 		return reportFormat;
-	}    
+	}
 
  
 
@@ -295,7 +291,7 @@ public class ComBirtStatForm extends ActionForm {
 		return selectedTargets;
 	}
 
-	public String getStartDay() {   
+	public String getStartDay() {
 		return startDay;
 	}
 	
@@ -317,10 +313,11 @@ public class ComBirtStatForm extends ActionForm {
 	}
 
 	public void setDateSelectMode(String dateSelectMode) {
-		if (StringUtils.isEmpty(dateSelectMode))
+		if (StringUtils.isEmpty(dateSelectMode)) {
 			this.dateSelectMode = DateMode.SELECT_MONTH;
-		else
+		} else {
 			this.dateSelectMode = DateMode.valueOf(dateSelectMode);
+		}
 	}
 	
 	public void setEndDay(String endDay)  {
@@ -357,7 +354,7 @@ public class ComBirtStatForm extends ActionForm {
 	}
 
 
-	public void setStartDay(String startDay){		
+	public void setStartDay(String startDay){
 		this.startDay = startDay;
 	}
 	public void setTargetID(int targetID) {

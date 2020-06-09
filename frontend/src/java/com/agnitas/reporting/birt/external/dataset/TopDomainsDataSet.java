@@ -14,16 +14,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
 
 public class TopDomainsDataSet extends BIRTDataSet {
 	private static final transient Logger logger = Logger.getLogger(TopDomainsDataSet.class);
@@ -43,7 +44,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	public static final String CATEGORY_NAME_OPENERS = "statistic.opener";
 	public static final String CATEGORY_NAME_CLICKERS = "statistic.clicker";
 
-	private static class TempRow {
+	protected static class TempRow {
 		private String categoryName;
 		private int categoryIndex;
 		private String domainName;
@@ -125,7 +126,6 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		/**
 		 * Used by JSP
 		 */
-		@SuppressWarnings("unused")
 		public void setRate(double rate) {
 			this.rate = rate;
 		}
@@ -159,7 +159,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	}
 
 	public List<SendPerDomainStatRow> getResultsFromTempTable(int tempTableID) throws Exception {
-		List<SendPerDomainStatRow> returnList = selectEmbedded(logger, "SELECT * FROM " + getTemporaryTableName(tempTableID) + " WHERE domainname IS NOT NULL ORDER BY category_index, domainname_index, targetgroup_index", (resultSet, index) -> {
+		return selectEmbedded(logger, "SELECT * FROM " + getTemporaryTableName(tempTableID) + " " +
+				"WHERE domainname IS NOT NULL ORDER BY category_index, domainname_index, targetgroup_index",
+				(resultSet, index) -> {
 			SendPerDomainStatRow row = new SendPerDomainStatRow();
 			row.setCategory(resultSet.getString("category_name"));
 			row.setCategoryindex(resultSet.getInt("category_index"));
@@ -171,7 +173,6 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			row.setRate(resultSet.getDouble("rate"));
 			return row;
 		});
-		return returnList;
 	}
 
 	@DaoUpdateReturnValueCheck
@@ -182,14 +183,14 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (mailingTrackingDataAvailable) {
 			overallSentMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, success_" + companyID + "_tbl succ WHERE cust.customer_id = succ.customer_id AND succ.mailing_id = ?", mailingID);
 		} else {
-			overallSentMailings = selectInt(logger, "SELECT SUM(" + getIfNull() + "(no_of_mailings, 0)) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
+			overallSentMailings = selectInt(logger, "SELECT SUM(COALESCE(no_of_mailings, 0)) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
 		}
 
 		TempRow overallRow = new TempRow();
 		overallRow.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
 		overallRow.setCategoryIndex(CATEGORY_TOTAL_SENT_EMAILS);
 		overallRow.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-		overallRow.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+		overallRow.setTargetGroup(ALL_SUBSCRIBERS);
 		overallRow.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 		overallRow.setValue(overallSentMailings);
 		otherDomainsMap.put(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, overallRow);
@@ -240,7 +241,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 					row.setDomainName(resultSet.getString("domain_name"));
 					row.setDomainNameIndex(index + 1);
 					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-					row.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+					row.setTargetGroup(ALL_SUBSCRIBERS);
 					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 					row.setValue(resultSet.getInt("mails_per_domain"));
 					return row;
@@ -304,138 +305,159 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	}
 
 	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
-		class Rule {
-			String condition;
-			String categoryName;
-			int categoryIndex;
+		insertHardBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
+		insertSoftBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
+	}
+	
+	private void insertHardBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
+				new Rule("bounce.detail < 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES));
 
-			Rule(String condition, String categoryName, int categoryIndex) {
-				this.condition = condition;
-				this.categoryName = categoryName;
-				this.categoryIndex = categoryIndex;
+	}
+	
+	private void insertSoftBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
+				new Rule("bounce.detail >= 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES));
+	}
+
+	public static class Rule {
+		private String condition;
+		private String categoryName;
+		private int categoryIndex;
+
+		Rule(String condition, String categoryName, int categoryIndex) {
+			this.condition = condition;
+			this.categoryName = categoryName;
+			this.categoryIndex = categoryIndex;
+		}
+		
+		public String getCondition() {
+			return condition;
+		}
+		
+		public String getCategoryName() {
+			return categoryName;
+		}
+		
+		public int getCategoryIndex() {
+			return categoryIndex;
+		}
+	}
+
+	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, Rule rule) throws Exception {
+		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
+
+		int overallBouncedMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition, companyID, mailingID);
+
+		TempRow overallRow = new TempRow();
+		overallRow.setCategoryName(rule.categoryName);
+		overallRow.setCategoryIndex(rule.categoryIndex);
+		overallRow.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+		overallRow.setTargetGroup(ALL_SUBSCRIBERS);
+		overallRow.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+		overallRow.setValue(overallBouncedMailings);
+		otherDomainsMap.put(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, overallRow);
+		insertIntoTempTable(tempTableID, overallRow);
+
+		if (targets != null) {
+			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
+			for (LightTarget target : targets) {
+				int targetSentMailings = selectInt(logger,
+					"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
+						+ " AND (" + target.getTargetSQL() + ")",
+					companyID,
+					mailingID);
+
+				TempRow targetRow = new TempRow();
+				targetRow.setCategoryName(rule.categoryName);
+				targetRow.setCategoryIndex(rule.categoryIndex);
+				targetRow.setTargetGroupId(target.getId());
+				targetRow.setTargetGroup(target.getName());
+				targetRow.setTargetGroupIndex(targetGroupIndex);
+				targetRow.setValue(targetSentMailings);
+				otherDomainsMap.put(target.getId(), targetRow);
+				insertIntoTempTable(tempTableID, targetRow);
+				targetGroupIndex++;
 			}
 		}
 
-		Rule[] rules = new Rule[] {
-			new Rule("bounce.detail < 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES),
-			new Rule("bounce.detail >= 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES)
-		};
-
-		for (Rule rule : rules) {
-			Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
-
-			int overallBouncedMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition, companyID, mailingID);
-
-			TempRow overallRow = new TempRow();
-			overallRow.setCategoryName(rule.categoryName);
-			overallRow.setCategoryIndex(rule.categoryIndex);
-			overallRow.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-			overallRow.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
-			overallRow.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-			overallRow.setValue(overallBouncedMailings);
-			otherDomainsMap.put(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, overallRow);
-			insertIntoTempTable(tempTableID, overallRow);
-
-			if (targets != null) {
-				int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
-				for (LightTarget target : targets) {
-					int targetSentMailings = selectInt(logger,
-						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
-							+ " AND (" + target.getTargetSQL() + ")",
-						companyID,
-						mailingID);
-
-					TempRow targetRow = new TempRow();
-					targetRow.setCategoryName(rule.categoryName);
-					targetRow.setCategoryIndex(rule.categoryIndex);
-					targetRow.setTargetGroupId(target.getId());
-					targetRow.setTargetGroup(target.getName());
-					targetRow.setTargetGroupIndex(targetGroupIndex);
-					targetRow.setValue(targetSentMailings);
-					otherDomainsMap.put(target.getId(), targetRow);
-					insertIntoTempTable(tempTableID, targetRow);
-					targetGroupIndex++;
-				}
+		String overallDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
+			+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
+				+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition + ")" + (isOracleDB() ? "" : " sub")
+			+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
+		if (domainsMax > 1) {
+			if (isOracleDB()) {
+				overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
+			} else {
+				overallDomainsSql = overallDomainsSql + " LIMIT " + domainsMax;
 			}
+		}
 
-			String overallDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
-				+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
-					+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition + ")" + (isOracleDB() ? "" : " sub")
-				+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
-			if (domainsMax > 1) {
-				if (isOracleDB()) {
-					overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
-				} else {
-					overallDomainsSql = overallDomainsSql + " LIMIT " + domainsMax;
-				}
-			}
+		List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
+				TempRow row = new TempRow();
+				row.setCategoryName(rule.categoryName);
+				row.setCategoryIndex(rule.categoryIndex);
+				row.setDomainName(resultSet.getString("domain_name"));
+				row.setDomainNameIndex(index + 1);
+				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+				row.setTargetGroup(ALL_SUBSCRIBERS);
+				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+				row.setValue(resultSet.getInt("bounces_per_domain"));
+				return row;
+			},
+			companyID,
+			mailingID
+		);
+		for (TempRow row : overallDomainsRows) {
+			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
+		}
+		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainName(I18nString.getLocaleString("statistic.Other", language));
+		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainNameIndex(domainsMax + 1);
+		otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setCategoryIndex(rule.categoryIndex);
+		overallDomainsRows.add(otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID));
+		insertIntoTempTable(tempTableID, overallDomainsRows);
 
-			List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
-					TempRow row = new TempRow();
-					row.setCategoryName(rule.categoryName);
-					row.setCategoryIndex(rule.categoryIndex);
-					row.setDomainName(resultSet.getString("domain_name"));
-					row.setDomainNameIndex(index + 1);
-					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-					row.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
-					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-					row.setValue(resultSet.getInt("bounces_per_domain"));
-					return row;
-				},
-				companyID,
-				mailingID
-			);
-			for (TempRow row : overallDomainsRows) {
-				otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
-			}
-			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainName(I18nString.getLocaleString("statistic.Other", language));
-			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setDomainNameIndex(domainsMax + 1);
-			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).setCategoryIndex(rule.categoryIndex);
-			overallDomainsRows.add(otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID));
-			insertIntoTempTable(tempTableID, overallDomainsRows);
-
-			if (targets != null) {
-				int domainTargetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
-				for (LightTarget target : targets) {
-					String targetDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
-						+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
-							+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
-								+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
-						+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
-					if (domainsMax > 1) {
-						if (isOracleDB()) {
-							targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE bounces_per_domain > 0 AND ROWNUM <= " + domainsMax;
-						} else {
-							targetDomainsSql = targetDomainsSql + " LIMIT " + domainsMax;
-						}
+		if (targets != null) {
+			int domainTargetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
+			for (LightTarget target : targets) {
+				String targetDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
+					+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
+						+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
+							+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
+					+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
+				if (domainsMax > 1) {
+					if (isOracleDB()) {
+						targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE bounces_per_domain > 0 AND ROWNUM <= " + domainsMax;
+					} else {
+						targetDomainsSql = targetDomainsSql + " LIMIT " + domainsMax;
 					}
-
-					final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
-					List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
-							TempRow row = new TempRow();
-							row.setCategoryName(rule.categoryName);
-							row.setCategoryIndex(rule.categoryIndex);
-							row.setDomainName(resultSet.getString("domain_name"));
-							row.setDomainNameIndex(index + 1);
-							row.setTargetGroupId(target.getId());
-							row.setTargetGroup(target.getName());
-							row.setTargetGroupIndex(domainTargetGroupIndexFinal);
-							row.setValue(resultSet.getInt("bounces_per_domain"));
-							return row;
-						},
-						companyID,
-						mailingID
-					);
-					for (TempRow row : targetDomainsRows) {
-						otherDomainsMap.get(target.getId()).value -= row.getValue();
-					}
-					otherDomainsMap.get(target.getId()).setDomainName(I18nString.getLocaleString("statistic.Other", language));
-					otherDomainsMap.get(target.getId()).setDomainNameIndex(domainsMax + 1);
-					otherDomainsMap.get(target.getId()).setCategoryIndex(rule.categoryIndex);
-					targetDomainsRows.add(otherDomainsMap.get(target.getId()));
-					insertIntoTempTable(tempTableID, targetDomainsRows);
-					domainTargetGroupIndex++;
 				}
+
+				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
+				List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
+						TempRow row = new TempRow();
+						row.setCategoryName(rule.categoryName);
+						row.setCategoryIndex(rule.categoryIndex);
+						row.setDomainName(resultSet.getString("domain_name"));
+						row.setDomainNameIndex(index + 1);
+						row.setTargetGroupId(target.getId());
+						row.setTargetGroup(target.getName());
+						row.setTargetGroupIndex(domainTargetGroupIndexFinal);
+						row.setValue(resultSet.getInt("bounces_per_domain"));
+						return row;
+					},
+					companyID,
+					mailingID
+				);
+				for (TempRow row : targetDomainsRows) {
+					otherDomainsMap.get(target.getId()).value -= row.getValue();
+				}
+				otherDomainsMap.get(target.getId()).setDomainName(I18nString.getLocaleString("statistic.Other", language));
+				otherDomainsMap.get(target.getId()).setDomainNameIndex(domainsMax + 1);
+				otherDomainsMap.get(target.getId()).setCategoryIndex(rule.categoryIndex);
+				targetDomainsRows.add(otherDomainsMap.get(target.getId()));
+				insertIntoTempTable(tempTableID, targetDomainsRows);
+				domainTargetGroupIndex++;
 			}
 		}
 	}
@@ -449,7 +471,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		overallRow.setCategoryName(CATEGORY_NAME_OPENERS);
 		overallRow.setCategoryIndex(CATEGORY_TOTAL_OPENERS);
 		overallRow.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-		overallRow.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+		overallRow.setTargetGroup(ALL_SUBSCRIBERS);
 		overallRow.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 		overallRow.setValue(overallOpeners);
 		otherDomainsMap.put(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, overallRow);
@@ -495,7 +517,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				row.setDomainName(resultSet.getString("domain_name"));
 				row.setDomainNameIndex(index + 1);
 				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-				row.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+				row.setTargetGroup(ALL_SUBSCRIBERS);
 				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 				row.setValue(resultSet.getInt("openers_per_domain"));
 				return row;
@@ -565,7 +587,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		overallRow.setCategoryName(CATEGORY_NAME_CLICKERS);
 		overallRow.setCategoryIndex(CATEGORY_TOTAL_CLICKERS);
 		overallRow.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-		overallRow.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+		overallRow.setTargetGroup(ALL_SUBSCRIBERS);
 		overallRow.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 		overallRow.setValue(overallClickers);
 		otherDomainsMap.put(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, overallRow);
@@ -611,7 +633,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				row.setDomainName(resultSet.getString("domain_name"));
 				row.setDomainNameIndex(index + 1);
 				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-				row.setTargetGroup(CommonKeys.ALL_SUBSCRIBERS);
+				row.setTargetGroup(ALL_SUBSCRIBERS);
 				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
 				row.setValue(resultSet.getInt("clickers_per_domain"));
 				return row;
@@ -669,7 +691,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void updateRates(int tempTableID, List<LightTarget> targets, boolean mailtrackingDataAvailable) throws Exception {
+	protected void updateRates(int tempTableID, List<LightTarget> targets, boolean mailtrackingDataAvailable) throws Exception {
 		boolean targetsAvailable = CollectionUtils.isNotEmpty(targets);
 
 		int totalSentEmails = getTotalSentEmails(tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX);
@@ -735,17 +757,17 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 	private int getTotalSentEmails(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalSentEmails = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbedded(logger, sqlGetTotalSentEmails, Integer.class, CATEGORY_TOTAL_SENT_EMAILS, targetGroupIndex);
+		return selectEmbeddedInt(logger, sqlGetTotalSentEmails, CATEGORY_TOTAL_SENT_EMAILS, targetGroupIndex);
 	}
 
 	private int getTotalClickers(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalClickers = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbedded(logger, sqlGetTotalClickers, Integer.class, CATEGORY_TOTAL_CLICKERS, targetGroupIndex);
+		return selectEmbeddedInt(logger, sqlGetTotalClickers, CATEGORY_TOTAL_CLICKERS, targetGroupIndex);
 	}
 
 	private int getTotalOpeners(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalOpeners = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbedded(logger, sqlGetTotalOpeners, Integer.class, CATEGORY_TOTAL_OPENERS, targetGroupIndex);
+		return selectEmbeddedInt(logger, sqlGetTotalOpeners, CATEGORY_TOTAL_OPENERS, targetGroupIndex);
 	}
 
 	private void insertIntoTempTable(int tempTableID, List<TempRow> rows) throws Exception {
@@ -772,11 +794,11 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		);
 	}
 
-	private String getTemporaryTableName(int tempTableID) {
+	protected String getTemporaryTableName(int tempTableID) {
 		return "tmp_report_aggregation_" + tempTableID + "_tbl";
 	}
 
-	private String getDomainFromEmailExpression(boolean topLevelDomains) {
+	public String getDomainFromEmailExpression(boolean topLevelDomains) {
 		String getPosExpression;
 		if (isOracleDB()) {
 			getPosExpression = topLevelDomains ? "INSTR(email, '.', -1) " : "INSTR(email, '@')";
@@ -792,7 +814,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	 * @return id of the create temporary table
 	 * @throws Exception
 	 */
-	private int createTempTable() throws Exception {
+	protected int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
 		executeEmbedded(logger,
 			"CREATE TABLE " + getTemporaryTableName(tempTableID) + " ("

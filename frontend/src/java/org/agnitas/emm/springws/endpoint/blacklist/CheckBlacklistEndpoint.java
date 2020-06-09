@@ -20,13 +20,12 @@ import org.agnitas.emm.springws.jaxb.CheckBlacklistResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class CheckBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private BlacklistService blacklistService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

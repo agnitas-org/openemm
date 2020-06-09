@@ -39,19 +39,18 @@ import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.springws.WebserviceNotAllowedException;
 import com.agnitas.emm.springws.endpoint.BulkSizeLimitExeededExeption;
+import com.agnitas.emm.springws.exception.WebServiceFileDataEmptyException;
 import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRejectedException;
 
 public class CommonExceptionResolver extends AbstractSoapFaultDefinitionExceptionResolver {
-	
-	@SuppressWarnings("hiding")
-	private static final transient Logger logger = Logger.getLogger(CommonExceptionResolver.class);
+	private static final transient Logger classLogger = Logger.getLogger(CommonExceptionResolver.class);
 
     @SuppressWarnings("rawtypes")
 	private Set mappedEndpoints;
 
 	protected SoapFaultDefinition getDefaultDefinition(Exception ex) {
 		if (!(ex instanceof InvalidDataException)) {
-			logger.error("Exception", ex);
+			classLogger.error("Exception", ex);
 		} else {
         	// TODO: Log output in user error log
         }
@@ -117,6 +116,8 @@ public class CommonExceptionResolver extends AbstractSoapFaultDefinitionExceptio
         	definition.setFaultStringOrReason("Unknown form name");
         } else if(ex instanceof SubscriptionRejectedException) {
         	definition.setFaultStringOrReason("Subscription rejection by anti-spam rules.");
+        } else if(ex instanceof WebServiceFileDataEmptyException) {
+        	definition.setFaultStringOrReason("File is missing or empty.");
         } else {
             definition.setFaultStringOrReason("Unknown error");
         }

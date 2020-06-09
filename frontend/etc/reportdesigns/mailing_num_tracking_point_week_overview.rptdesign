@@ -4382,7 +4382,7 @@ function onCreateCell( cellInst, reportContext )
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Units>Points</Units>
   <SeriesThickness>10.0</SeriesThickness>
   <ExtendedProperties>

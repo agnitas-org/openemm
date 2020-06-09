@@ -23,13 +23,14 @@
     </bean>
 	
 	<bean id="throttlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
-        <property name="comAdminDao" ref="AdminDao"/>
+        <property name="webserviceUserService" ref="WebserviceUserService"/>
     </bean>
 	
 	<bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
         <property name="throttlingService" ref="throttlingService"/>
     </bean>
 	
+	<!-- EMM-4686: When enabled IP lock, remove this interceptor and enable new LoginTrackingXwsSecurityInterceptor. 
 	<bean id="wsSecurityInterceptor"
         class="org.springframework.ws.soap.security.xwss.XwsSecurityInterceptor">
         <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
@@ -37,8 +38,18 @@
             <ref bean="springSecurityHandler"/>
         </property>
     </bean>
+    -->
     
-
+    <!-- EMM-4686: Replacement for old XwsSecurityInterceptor from above. Remove old interceptor and enable this one here. -->
+	<bean id="wsSecurityInterceptor" class="org.agnitas.emm.springws.security.LoginTrackingXwsSecurityInterceptor">
+        <property name="policyConfiguration" value="classpath:server-securityPolicy.xml"/>
+        <property name="callbackHandlers">
+            <ref bean="springSecurityHandler"/>
+        </property>
+        <property name="loginTrackService" ref="WsLoginTrackService" />
+    </bean>
+    
+    
     
     <bean id="permissionInterceptor" class="com.agnitas.emm.springws.permissions.PermissionCheckingEndpointInterceptor" />
  
@@ -52,7 +63,18 @@
         <property name="javaMailService" ref="JavaMailService"/>
         <property name="configService" ref="ConfigService" />
 	</bean>
+	   
+	<bean id="WsLoginTrackService" class="org.agnitas.emm.core.logintracking.service.impl.LoginTrackServiceImpl">
+		<property name="loginTrackDao" ref="WsLoginTrackDao" />
+        
+        <property name="loginTrackSettingsDao">
+        	<bean class="com.agnitas.emm.springws.logintrack.WebserviceLoginTrackSettingsDaoImpl">
+	        	<property name="configService" ref="ConfigService" />
+	        </bean>
+        </property>
+    </bean>
 
+	
     
 
 

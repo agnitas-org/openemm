@@ -11,28 +11,10 @@
 package org.agnitas.service;
 
 import java.io.InputStream;
-import java.util.Set;
 
 public interface UserFormImporter {
-	UserFormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception;
+	FormImportResult importUserFormFromJson(int companyID, InputStream input) throws Exception;
 
-	UserFormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception;
+	FormImportResult importUserFormFromJson(int companyID, InputStream input, String formName, String description) throws Exception;
 	
-	class UserFormImportResult {
-		private int userFormID;
-		private Set<String> warningKeys;
-
-		public UserFormImportResult(int userFormID, Set<String> warningKeys) {
-			this.userFormID = userFormID;
-			this.warningKeys = warningKeys;
-		}
-
-		public int getUserFormID() {
-			return userFormID;
-		}
-
-		public Set<String> getWarningKeys() {
-			return warningKeys;
-		}
-	}
 }

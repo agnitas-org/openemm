@@ -2381,7 +2381,7 @@ return false;]]></method>
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before generation of chart model to GeneratedChartState.
  * 
@@ -5035,7 +5035,7 @@ function beforeGeneration(chart, icsc) {
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>
 /**
  * Called before generation of chart model to GeneratedChartState.
@@ -5614,7 +5614,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -6081,7 +6081,7 @@ function beforeGeneration( chart, icsc )
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>
 /**
  * Called before generation of chart model to GeneratedChartState.
@@ -6660,7 +6660,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -10809,7 +10809,7 @@ itemLinkNumber = this.getRowData().getColumnValue('linkItemNumber');]]></method>
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>
 /**
  * Called before drawing the legend item.

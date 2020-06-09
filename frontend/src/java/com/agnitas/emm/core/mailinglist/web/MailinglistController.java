@@ -18,6 +18,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
+import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
+import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientForm;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import net.sf.json.JSONArray;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -34,6 +49,7 @@ import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,23 +60,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
-import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientForm;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import net.sf.json.JSONArray;
 
 @Controller
 @RequestMapping("/mailinglist")
@@ -114,50 +113,60 @@ public class MailinglistController {
 	}
 
 	@RequestMapping("/{id:\\d+}/view.action")
-	public String view(ComAdmin admin, @PathVariable int id, Model model) throws Exception {
-		if(id == 0) {
+	public String view(ComAdmin admin, @PathVariable int id, ModelMap model) throws Exception {
+		if (id == 0) {
 			return "redirect:/mailinglist/create.action";
 		}
-		
+
 		MailinglistForm form = null;
-		if(model.asMap().containsKey("mailinglistForm")) {
-			form = (MailinglistForm) model.asMap().get("mailinglistForm");
+		if (model.containsKey("mailinglistForm")) {
+			form = (MailinglistForm) model.get("mailinglistForm");
 		} else {
 			Mailinglist mailinglist = mailinglistService.getMailinglist(id, admin.getCompanyID());
 			if (Objects.nonNull(mailinglist)) {
 				form = conversionService.convert(mailinglist, MailinglistForm.class);
-				
 			}
 		}
-		
-		if(form == null) {
+
+		if (form == null) {
 			form = new MailinglistForm();
 		} else {
-			loadStatistics(admin, form, model);
+			RecipientProgressStatisticDto statistic = null;
+			if (model.containsAttribute("statisticParams")) {
+				statistic = (RecipientProgressStatisticDto) model.get("statisticParams");
+			} else {
+				statistic = form.getStatistic();
+			}
+
+			loadStatistics(admin, statistic, form, model);
 			userActivityLogService.writeUserActivityLog(admin, "mailing list view", getDescription(form));
 		}
-		
+
 		model.addAttribute("mailinglistForm", form);
 
 		return "mailinglist_view";
 	}
 
 	@RequestMapping(value = "/create.action", method = {RequestMethod.GET, RequestMethod.POST})
-	public String create(@SuppressWarnings("unused") MailinglistForm form) {
+	public String create(MailinglistForm form) {
 		return "mailinglist_view";
 	}
 
 	@PostMapping("/save.action")
-	public String save(ComAdmin admin, @Validated MailinglistForm form, BindingResult result, Popups popups) {
+	public String save(ComAdmin admin, @Validated MailinglistForm form, BindingResult result,
+					   RedirectAttributes redirectAttributes, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (isValid(companyId, form, result, popups)) {
 			int id = mailinglistService.saveMailinglist(companyId, conversionService.convert(form, MailinglistDto.class));
-
 			logger.info("save Mailinglist with id: " + id);
 			popups.success("default.changes_saved");
-			userActivityLogService.writeUserActivityLog(admin, (form.getId() == id ? "edit " : "create ") + "mailing list", String.format("%s (%d)", form.getShortname(), id), logger);
-
+			userActivityLogService.writeUserActivityLog(admin,
+					(form.getId() == id ? "edit " : "create ") + "mailing list",
+					String.format("%s (%d)", form.getShortname(), id), logger);
+			if(form.getStatistic() != null) {
+				redirectAttributes.addFlashAttribute("statisticParams", form.getStatistic());
+			}
 			return "redirect:/mailinglist/" + id + "/view.action";
 		} else {
 			return "messages";
@@ -229,15 +238,16 @@ public class MailinglistController {
 		return "redirect:/mailinglist/list.action";
 	}
 	
-	@GetMapping("/{id:\\d+}/users.action")
-	public String recipientList(ComAdmin admin, @PathVariable("id") int mailinglistId, MailinglistRecipientForm form, Model model) {
+	@PostMapping("/{id:\\d+}/users.action")
+	public String recipientList(ComAdmin admin, @PathVariable int id, Model model) {
 		int companyId = admin.getCompanyID();
 		
 		model.addAttribute("recipientMap", adminService.getAdminsNamesMap(companyId));
 		
-		form.setMailinglistId(mailinglistId);
-		form.setMailinglistShortname(mailinglistService.getMailinglistName(mailinglistId, companyId));
-		form.setAllowedRecipientIds(mailinglistApprovalService.getAdminsAllowedToUseMailinglist(companyId, mailinglistId));
+		MailinglistRecipientForm form = new MailinglistRecipientForm();
+		form.setMailinglistId(id);
+		form.setMailinglistShortname(mailinglistService.getMailinglistName(id, companyId));
+		form.setAllowedRecipientIds(mailinglistApprovalService.getAdminsAllowedToUseMailinglist(companyId, id));
 		
 		model.addAttribute("mailinglistRecipientForm", form);
 		
@@ -247,7 +257,7 @@ public class MailinglistController {
 	}
 	
 	@PostMapping("/saveUsers.action")
-	public String recipientSave(ComAdmin admin, @ModelAttribute MailinglistRecipientForm form, Popups popups) {
+	public String recipientSave(ComAdmin admin, @ModelAttribute("form") MailinglistRecipientForm form, Popups popups) {
 		List<UserAction> userActions = new ArrayList<>();
 		if(mailinglistApprovalService.editUsersApprovalPermissions(admin.getCompanyID(), form.getMailinglistId(), form.getAllowedRecipientIds(), userActions)) {
 			popups.success("default.changes_saved");
@@ -258,7 +268,7 @@ public class MailinglistController {
 			popups.alert("changes_not_saved");
 		}
 		
-		return "redirect:/mailinglist/" + form.getMailinglistId() + "/users.action";
+		return "redirect:/mailinglist/" + form.getMailinglistId() + "/view.action";
 	}
 
 	@GetMapping("/{id:\\d+}/usersDeleteSettings.action")
@@ -300,35 +310,29 @@ public class MailinglistController {
 		
 		return true;
 	}
-	
-	private void loadStatistics(ComAdmin admin, MailinglistForm form, Model model) throws Exception {
-		RecipientProgressStatisticDto statistic = form.getStatistic();
-		
-		if(statistic == null) {
+
+	private void loadStatistics(ComAdmin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) throws Exception {
+		if (statistic == null) {
 			statistic = new RecipientProgressStatisticDto();
 		}
-		
-		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-		
+
 		statistic.setMailinglistId(form.getId());
 
-		Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));
-		currentDate.set(Calendar.DAY_OF_MONTH, 1);
+		if (statistic.getStartYear() == 0 && statistic.getStartMonth() == 0) {
+			Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));
+			currentDate.set(Calendar.DAY_OF_MONTH, 1);
 
-		if(statistic.getStartMonth() == 0) {
+			statistic.setStartYear(currentDate.get(Calendar.YEAR));
 			statistic.setStartMonth(currentDate.get(Calendar.MONTH));
 		}
 
-		if(statistic.getStartYear() == 0) {
-			statistic.setStartYear(currentDate.get(Calendar.YEAR));
-		}
-
+		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
 		String urlWithoutFormat = birtStatisticsService.getRecipientMonthlyStatisticsUrlWithoutFormat(admin, sessionId, statistic);
-		
+
 		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
 		model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());
 		model.addAttribute(BIRT_STATISTIC_URL_WITHOUT_FORMAT, urlWithoutFormat);
-		
+
 		form.setStatistic(statistic);
 	}
 

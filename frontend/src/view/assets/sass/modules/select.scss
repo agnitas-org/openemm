@@ -666,19 +666,24 @@ html[dir="rtl"] .select2-container-multi .select2-search-choice-close {
 }
 
 .select2-result.ui-sortable-helper {
-    border: 1px dashed $c-gray-55;
+    .select2-result-label {
+        border: 1px dashed $c-gray-55;
+    }
 }
 
 .select2-result.sortable {
   .select2-result-label {
+      padding-right: 20px;
       position: relative;
       cursor: move;
 
       &:after {
           position: absolute;
           right: 10px;
+          top: 50%;
           content: $fa-var-ellipsis-v;
           font-family: FontAwesome;
+          @include translateY(-50%);
       }
   }
 }

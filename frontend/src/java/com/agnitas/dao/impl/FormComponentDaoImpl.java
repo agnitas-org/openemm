@@ -18,11 +18,9 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -37,13 +35,6 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	/** The Constant logger. */
 	private static final transient Logger logger = Logger.getLogger(FormComponentDaoImpl.class);
 	
-	private ConfigService configService;
-	
-	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
 	/* (non-Javadoc)
 	 * @see com.agnitas.dao.FormComponentDao#exists(int, int, int)
 	 */

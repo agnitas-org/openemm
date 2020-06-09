@@ -240,7 +240,6 @@
 		<property name="targetDao" ref="TargetDao" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="eqlFacade" ref="EqlFacade" />
-		<property name="mailinglistService" ref="MailinglistService"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 	</bean>
 	

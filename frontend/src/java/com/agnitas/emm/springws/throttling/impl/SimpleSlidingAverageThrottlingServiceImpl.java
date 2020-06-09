@@ -11,12 +11,15 @@
 package com.agnitas.emm.springws.throttling.impl;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.emm.springws.throttling.ThrottlingService;
+import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheException;
@@ -32,13 +35,14 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 	private static final long TRACKING_PERIOD_SECONDS = 60;
 	private static final long THRESHOLD_TIME_SECONDS = 1;
 	
-	private ComAdminDao comAdminDao;
-	
-	public void setComAdminDao(ComAdminDao comAdminDao) {
-		this.comAdminDao = comAdminDao;
-	}
+	private WebserviceUserService userService;
 	
 	private Cache cache;
+	
+	@Required
+	public void setWebserviceUserService(WebserviceUserService service) {
+		this.userService = Objects.requireNonNull(service, "Webservice user service is null");
+	}
 	
 	private SimpleSlidingAverageThrottlingServiceImpl() throws CacheException {
 		CacheManager cacheManager = CacheManager.create();
@@ -72,7 +76,7 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 	}
 
 	private LimitMeter createMeter(String name) {
-		Double limit = getUserLimit(name);
+		Double limit = getRequestRateLimit(name);
 		SlidingAverageRateMeter meter = (limit == null) ? null 
 				: new SlidingAverageRateMeter(TRACKING_PERIOD_SECONDS * 1000, THRESHOLD_TIME_SECONDS * 1000);
 		LimitMeter limitMeter = new LimitMeter(meter, limit);
@@ -80,10 +84,18 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements ThrottlingServ
 		return limitMeter;
 	}
 
-	private Double getUserLimit(String user) {
-		Double rate = comAdminDao.getWsRateLimit(user);
-		return rate;
-//		return DEFAULT_RATE_LIMIT;
+	private Double getRequestRateLimit(final String username) {
+		try {
+			final WebserviceUserSettings settings = this.userService.findSettingsForWebserviceUser(username);
+			
+			return settings.getRequestRateLimit().isPresent()
+					? (double)settings.getRequestRateLimit().getAsInt()
+					: null;
+		} catch(final Exception e) {
+			logger.error(String.format("Error reading settings for webservice user '%s'", username), e);
+			
+			return null;
+		}
 	}
 	
 	private class LimitMeter implements Serializable {

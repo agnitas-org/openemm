@@ -18,18 +18,17 @@
                 <entry key="error.unspecified" value="always.allowed" />
 
                 <entry key="admin.view" value="admin.show" />
-                <entry key="admin.save" value="admin.change" />
-                <entry key="admin.view_rights" value="admin.show" />
-                <entry key="admin.save_rights" value="admin.change" />
-                <entry key="admin.new" value="admin.new" />
+                <entry key="admin.viewRights" value="admin.show" />
                 <entry key="admin.list" value="admin.show" />
-                <entry key="admin.view_without_load" value="admin.show" />
-                <entry key="admin.export_csv" value="admin.show" />
-                <entry key="admin.export_pdf" value="admin.show" />
+                <entry key="admin.save" value="admin.change" />
+                <entry key="admin.saveRights" value="admin.change" />
+                <entry key="admin.create" value="admin.new" />
+                <entry key="admin.saveNew" value="admin.new" />
+                <entry key="admin.exportCsv" value="admin.show" />
+                <entry key="admin.exportPdf" value="admin.show" />
+                <entry key="admin.confirmDelete" value="admin.delete" />
                 <entry key="admin.delete" value="admin.delete" />
-                <entry key="admin.confirm_delete" value="admin.delete" />
-                <entry key="admin.unspecified" value="admin.show" />
-                
+
                 <entry key="user.group.list" value="role.show" />
                 <entry key="user.group.save" value="role.change" />
                 <entry key="user.group.create" value="role.change" />
@@ -59,6 +58,7 @@
                 <entry key="plugin.manager.activate" value="pluginmanager.change"/>
 
                 <entry key="profiledb.list" value="profileField.show" />
+                <entry key="profiledb.dependents" value="profileField.show" />
                 <entry key="profiledb.view" value="profileField.show" />
                 <entry key="profiledb.save" value="profileField.show" />
                 <entry key="profiledb.new" value="profileField.show" />
@@ -73,6 +73,7 @@
                 <entry key="profiledb.back_to_target" value="targets.show" />
                 <entry key="profiledb.unspecified" value="profileField.show" />
 
+<!--                GWUA-4279: Struts permissions-->
                 <entry key="userform.save" value="forms.change" />
                 <entry key="userform.confirm_delete" value="forms.delete" />
                 <entry key="userform.delete" value="forms.delete" />
@@ -87,6 +88,22 @@
                 <entry key="userform.save_activeness" value="forms.change" />
                 <entry key="userform.import" value="forms.import" />
                 <entry key="userform.export" value="forms.export" />
+                <entry key="userform.import_templates" value="mailing.import|forms.import" />
+
+<!--                GWUA-4279: Spring MVC migration permissions-->
+                <entry key="userformNew.save" value="forms.migration" />
+                <entry key="userformNew.confirmDelete" value="forms.migration" />
+                <entry key="userformNew.delete" value="forms.migration" />
+                <entry key="userformNew.list" value="forms.migration" />
+                <entry key="userformNew.view" value="forms.migration" />
+                <entry key="userformNew.create" value="forms.migration" />
+                <entry key="userformNew.bulkDelete" value="forms.migration" />
+                <entry key="userformNew.confirmBulkDelete" value="forms.migration" />
+                <entry key="userformNew.clone" value="forms.migration" />
+                <entry key="userformNew.saveActiveness" value="forms.migration" />
+                <entry key="userformNew.importForm" value="forms.migration" />
+                <entry key="userformNew.exportForm" value="forms.migration" />
+                <entry key="userformNew.importTemplates" value="forms.migration" />
 
                 <entry key="action.bulk_confirm_delete" value="actions.delete" />
                 <entry key="action.bulk_delete" value="actions.delete" />
@@ -143,13 +160,15 @@
                 <entry key="targetQB.copy" value="targets.change" />
                 <entry key="targetQB.create" value="targets.change" />
                 <entry key="targetQB.lock" value="targets.change" />
-                <entry key="targetQB.viewMailings" value="targets.show" />
+                <entry key="targetQB.listDependents" value="targets.show" />
                 <entry key="targetQB.unlock" value="targets.change" />
                 
                 <entry key="recipient.overview_start" value="recipient.show" />
                 <entry key="recipient.search" value="recipient.show" />
                 <entry key="recipient.view" value="recipient.show" />
                 <entry key="recipient.mailings_view" value="recipient.history.mailing" />
+                <entry key="recipient.mailing_delivery_history" value="recipient.history.mailing.delivery" />
+                <entry key="recipient.save_back_to_list" value="recipient.change" />
                 <entry key="recipient.history_view" value="recipient.history" />
                 <!--Spring MVC import/export edit field content -->
                 <entry key="recipient.bulkView" value="recipient.change.bulk" />
@@ -169,14 +188,10 @@
                 <!-- GWUA-3764 test feature -->
                 <entry key="report.recipients" value="always.allowed"/>
 
+                <!-- Import/Export Logs permission-->
                 <entry key="recipientsreport.list" value="wizard.import|wizard.export"/>
                 <entry key="recipientsreport.view" value="wizard.import|wizard.export"/>
                 <entry key="recipientsreport.download" value="wizard.import|wizard.export"/>
-
-                <!-- GWUA-4247 'recipientsreport.migration' should be changed to 'wizard.import|wizard.export' -->
-                <entry key="recipientsreport_new.list" value="recipientsreport.migration"/>
-                <entry key="recipientsreport_new.view" value="recipientsreport.migration"/>
-                <entry key="recipientsreport_new.download" value="recipientsreport.migration"/>
 
                 <entry key="newimportwizard.start" value="wizard.import" />
                 <entry key="newimportwizard.init" value="wizard.import|wizard.importclassic"/>
@@ -229,6 +244,7 @@
                 <!-- recipient blacklist -->
                 <entry key="blacklist.list" value="blacklist" />
                 <entry key="blacklist.save" value="blacklist" />
+                <entry key="blacklist.update" value="blacklist" />
                 <entry key="blacklist.confirm.delete" value="blacklist" />
                 <entry key="blacklist.delete" value="blacklist" />
                 <entry key="blacklist.download" value="blacklist" />
@@ -241,34 +257,20 @@
                 <entry key="salutation.delete" value="salutation.delete" />
                 <entry key="salutation.unspecified" value="salutation.show" />
 
-                <entry key="mailing_stat.list" value="stats.mailing" />
-                <entry key="mailing_stat.mailingstat" value="stats.mailing" />
-                <entry key="mailing_stat.weekstat" value="stats.mailing" />
-                <entry key="mailing_stat.daystat" value="stats.mailing" />
-                <entry key="mailing_stat.url_weekstat" value="stats.mailing" />
-                <entry key="mailing_stat.url_daystat" value="stats.mailing" />
-                <entry key="mailing_stat.mailing_send_opened" value="stats.mailing" />
-                <entry key="mailing_stat.mailing_optout" value="stats.mailing" />
-                <entry key="mailing_stat.mailing_bounces" value="stats.mailing" />
-                <entry key="mailing_stat.unspecified" value="stats.mailing" />
+                <!-- Statistics -> Mailing (separate)-->
+                <entry key="mailing.stat.list" value="stats.mailing" />
+                <entry key="mailing.stat.view" value="stats.mailing" />
 
-                <entry key="mailing_stat_new.list" value="stats.mailing.migration" />
-                <entry key="mailing_stat_new.view" value="stats.mailing.migration" />
-                <entry key="mailing_stat_new.unspecified" value="stats.mailing.migration" />
+                <!-- GWUA-4277: permissions for Spring MVC controller -->
+                <entry key="mailing.comparison.statistics.list" value="stats.mailing" />
+                <entry key="mailing.comparison.statistics.compare" value="stats.mailing" />
+                <entry key="mailing.comparison.statistics.export" value="stats.mailing" />
 
-                <entry key="mailing_compare.list" value="stats.mailing" />
-                <entry key="mailing_compare.compare" value="stats.mailing" />
-                <entry key="mailing_compare.unspecified" value="stats.mailing" />
 
                 <entry key="domain.statistics.view" value="stats.domains"/>
 
-                <!-- GWUA-4275: permissions for Struts Actions -->
-                <entry key="recipient_stats.list" value="stats.mailing" />
-                <entry key="recipient_stats.view" value="stats.mailing" />
-                <entry key="recipient_stats.unspecified" value="stats.mailing" />
-
-                <!-- GWUA-4275: permissions for Spring MVC controller -->
-                <entry key="recipient.stats.new.view" value="stats.recipient.migration" />
+                <!-- recipient statistic permission-->
+                <entry key="recipient.stats.view" value="stats.mailing" />
 
                 <entry key="monthly.statistics.view" value="stats.month"/>
 
@@ -311,6 +313,10 @@
                 <entry key="mailingbase.mailing_templates" value="mailing.show" />
                 <entry key="mailingbase.is_advertising_content_type" value="mailing.show" />
                 <entry key="mailingbase.mailing_import" value="mailing.import" />
+                <entry key="mailing_ajax.tryToLock" value="mailing.content.show" />
+
+                <!--TODO: GWUA-4327: replace tebeta permission to mailing.import|forms.import after test successfully-->
+                <entry key="mailingbase.import_templates" value="mailing.import|forms.import" />
 
                 <entry key="mailingParameter.newParameter" value="mailing.parameter.change" />
                 <entry key="mailingParameter.save" value="mailing.parameter.change" />
@@ -352,7 +358,7 @@
                 <entry key="mwStart.next" value="mailing.change" />
                 <entry key="mwStart.skip" value="mailing.change" />
 
-                <!-- workflow permissions-->
+				<!-- workflow permissions-->
 				<entry key="workflow.list" value="workflow.show"/>
 				<entry key="workflow.view" value="workflow.show"/>
 				<entry key="workflow.viewOnlyElements" value="workflow.show"/>
@@ -363,6 +369,7 @@
 				<entry key="workflow.getWorkflowContent" value="workflow.show"/>
 				<entry key="workflow.getSampleWorkflowContent" value="workflow.show"/>
 				<entry key="workflow.loadStatistics" value="workflow.show"/>
+				<entry key="workflow.getTotalStatistics" value="temp.beta"/>
 				<entry key="workflow.getCurrentAdminTime" value="workflow.show"/>
 				<entry key="workflow.getMailingContent" value="workflow.show"/>
 				<entry key="workflow.validateDependency" value="workflow.show"/>
@@ -376,7 +383,6 @@
 				<entry key="workflow.confirmBulkDelete" value="workflow.delete"/>
 				<entry key="workflow.bulkDeactivate" value="workflow.activate"/>
 				<entry key="workflow.confirmBulkDeactivate" value="workflow.activate"/>
-
 
                 <entry key="importwizard.start" value="wizard.importclassic" />
                 <entry key="importwizard.mode" value="wizard.importclassic" />
@@ -403,17 +409,9 @@
                 <entry key="mailingcontent.unspecified" value="mailing.content.show" />
                 <entry key="mailingcontent.view_content" value="mailing.content.show" />
                 <entry key="mailingcontent.import_content" value="mailing.content.show" />
-                <entry key="mailingcontent.view_textblock" value="mailing.content.show" />
-                <entry key="mailingcontent.save_textblock_and_back" value="mailing.content.show" />
-                <entry key="mailingcontent.save_textblock" value="mailing.content.show" />
-                <entry key="mailingcontent.add_textblock" value="mailing.content.show" />
-                <entry key="mailingcontent.add_textblock_and_back" value="mailing.content.show" />
-                <entry key="mailingcontent.delete_textblock" value="mailing.content.show" />
-                <entry key="mailingcontent.change_order_up" value="mailing.content.show" />
-                <entry key="mailingcontent.change_order_down" value="mailing.content.show" />
-                <entry key="mailingcontent.change_order_top" value="mailing.content.show" />
-                <entry key="mailingcontent.change_order_bottom" value="mailing.content.show" />
                 <entry key="mailingcontent.generate_text_from_html" value="mailing.content.show" />
+
+                <entry key="mailing.content.view" value="mailing.content.show" />
                 <entry key="mailing.content.save" value="mailing.content.show" />
 
                 <entry key="mcomponents.list" value="mailing.components.show" />
@@ -426,6 +424,8 @@
                 <entry key="mcomponents.unspecified" value="mailing.components.show" />
                 <entry key="mcomponents.confirm_delete" value="mailing.components.change" />
                 <entry key="mcomponents.update_image" value="mailing.components.change" />
+                <entry key="mcomponents.bulk_confirm_delete" value="mailing.components.change" />
+                <entry key="mcomponents.bulk_delete" value="mailing.components.change" />
 
                 <entry key="mailingattachments.list" value="mailing.attachments.show" />
                 <entry key="mailingattachments.save" value="mailing.attachments.show" />
@@ -476,6 +476,8 @@
                 <entry key="webservice.manager.user.create" value="webservice.user.create"/>
                 <entry key="webservice.manager.user.update" value="webservice.user.change"/>
                 <entry key="webservice.manager.user.view" value="webservice.user.change"/>
+
+                <entry key="wysiwyg.showAgnTags" value="always.allowed"/>
 
                 <entry key="session.info" value="always.allowed"/>
 

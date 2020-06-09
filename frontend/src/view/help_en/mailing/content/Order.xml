@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Order]]></title>
+    <content><![CDATA[You can insert different content into the module for different target groups. You select the target group using the selection field below the column. You can use the plus sign to add further target group-specific content. The sequence defines the priority with which the target group content is inserted in mailings and can be changed using drag &amp; drop. The top entry always has the highest priority. The priority only plays a role if the target groups do not overlap (example: "Men under 35" and "all men"). The smallest group must always be in first place, otherwise everyone will see the contents of the larger group.]]></content>
+</HelpBalloon>

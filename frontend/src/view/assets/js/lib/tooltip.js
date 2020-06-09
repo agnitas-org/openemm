@@ -94,6 +94,9 @@
         $e.bsTooltip('enable');
       }
     });
+    $e.on('remove', function(){
+      Tooltip.remove($e);
+    })
   };
 
   Tooltip.remove = function($e) {

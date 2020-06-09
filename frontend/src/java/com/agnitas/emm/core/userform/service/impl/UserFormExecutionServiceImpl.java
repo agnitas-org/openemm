@@ -17,18 +17,21 @@ import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -39,6 +42,9 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
+import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
+import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
@@ -51,13 +57,15 @@ import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 public final class UserFormExecutionServiceImpl implements UserFormExecutionService, ApplicationContextAware {
 	
 	private static final transient Logger logger = Logger.getLogger(UserFormExecutionServiceImpl.class);
-	
+
+	private ConfigService configService;
 	private ComDeviceService deviceService;
 	private ClientService clientService;
 	private UserFormDao userFormDao;
 	private ExtensibleUIDService extensibleUIDService;
 	private ComCompanyDao companyDao;
 	private ComRecipientDao recipientDao;
+	private MailingContentTypeCache mailingContentTypeCache;
 	
 	private ApplicationContext applicationContext;
 
@@ -169,7 +177,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return uidString;
 	}
 
-	private final void logFormAccess(final UserForm userForm, final ComExtensibleUID uid, final String removeAddress, final int deviceID, final DeviceClass deviceClass, final int clientID) throws Exception {
+	private final void logFormAccess(final UserForm userForm, final ComExtensibleUID uid, String remoteAddress, final int deviceID, final DeviceClass deviceClass, final int clientID) throws Exception {
 		Integer mailingIdInt = null;
 		Integer customerIdInt = null;
 		
@@ -186,7 +194,14 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 			final ComTrackableUserFormLink formStatisticsDummyLink = userFormDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
 			if (formStatisticsDummyLink != null) {
-				userFormDao.logUserFormCallInDB(userForm.getCompanyID(), userForm.getId(), formStatisticsDummyLink.getId(), mailingIdInt, customerIdInt, removeAddress, deviceClass, deviceID, clientID);
+				if (uid != null) {
+					final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
+					if (trackingLevel == TrackingLevel.ANONYMOUS) {
+						customerIdInt = 0;
+						remoteAddress = null;
+					}
+				}
+				userFormDao.logUserFormCallInDB(userForm.getCompanyID(), userForm.getId(), formStatisticsDummyLink.getId(), mailingIdInt, customerIdInt, remoteAddress, deviceClass, deviceID, clientID);
 			}
 		}
 	}
@@ -256,7 +271,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		for (ComTrackableUserFormLink link : trackableLinks.values()) {
 			String replaceFromString = "href=\"" + link.getFullUrl() + "\"";
 
-			if (link.getUsage() != ComTrackableUserFormLink.TRACKABLE_NO) {
+			if (link.getUsage() != BaseTrackableLink.TRACKABLE_NO) {
 				// Create rdir link (without link extensions, extensions are inserted in rdir call)
 				String rdirLinkString = "href=\"" + companyDao.getCompany(userForm.getCompanyID()).getRdirDomain() + "/rdirFormUrl?lid=" + link.getId();
 				if (uidString != null) {
@@ -348,30 +363,44 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	public void setApplicationContext(ApplicationContext ctxt) throws BeansException {
 		this.applicationContext = ctxt;
 	}
-	
+
+	@Required
 	public final void setDeviceService(final ComDeviceService service) {
 		this.deviceService = service;
 	}
-	
+
+	@Required
 	public final void setClientService(final ClientService service) {
 		this.clientService = service;
 	}
 
+	@Required
 	public final void setUserFormDao(final UserFormDao dao) {
 		this.userFormDao = dao;
 	}
-	
+
+	@Required
 	public final void setExtensibleUIDService(final ExtensibleUIDService service) {
 		this.extensibleUIDService = service;
 	}
-	
+
+	@Required
 	public final void setCompanyDao(final ComCompanyDao dao) {
 		this.companyDao = dao;
 	}
-	
+
+	@Required
 	public final void setRecipientDao(final ComRecipientDao dao) {
 		this.recipientDao = dao;
 	}
-	
 
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	@Required
+	public void setMailingContentTypeCache(MailingContentTypeCache mailingContentTypeCache) {
+		this.mailingContentTypeCache = mailingContentTypeCache;
+	}
 }

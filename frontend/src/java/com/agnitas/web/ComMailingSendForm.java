@@ -13,18 +13,19 @@ package com.agnitas.web;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
-
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.web.MailingSendAction;
-import org.agnitas.web.MailingSendForm;
-import org.apache.commons.lang.StringUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.mailing.bean.MailingDependentType;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.web.MailingSendAction;
+import org.agnitas.web.MailingSendForm;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
 
 public class ComMailingSendForm extends MailingSendForm {
 	private static final long serialVersionUID = -2719144223604027921L;
@@ -80,6 +81,11 @@ public class ComMailingSendForm extends MailingSendForm {
 	List<AutoExport> autoExports;
 
 	private String[] mailingTestRecipients;
+	private String[] filterTypes;
+	private List<Dependent<MailingDependentType>> dependents;
+	
+	private boolean mayCreateExternal = false;
+	private String externalEditorLink = null;
 
 	@Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -423,5 +429,99 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	public void setMailingTestRecipients(String[] mailingTestRecipients) {
 		this.mailingTestRecipients = mailingTestRecipients;
+	}
+
+	public List<Dependent<MailingDependentType>> getDependents() {
+		return dependents;
+	}
+
+	public void setDependents(List<Dependent<MailingDependentType>> dependents) {
+		this.dependents = dependents;
+	}
+
+	public void setFilterTypes(String[] filterTypes) {
+		this.filterTypes = filterTypes;
+	}
+
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	public String getExternalEditorLink() {
+		return externalEditorLink;
+	}
+
+	public void setExternalEditorLink(String externalEditorLink) {
+		this.externalEditorLink = externalEditorLink;
+	}
+
+	public boolean isMayCreateExternal() {
+		return mayCreateExternal;
+	}
+
+	public void setMayCreateExternal(boolean mayCreateExternal) {
+		this.mayCreateExternal = mayCreateExternal;
+	}
+	
+	public int getPreviewWidth(){
+        int width;
+
+        switch (previewSize) {
+            case 1:
+                width = 1022;
+                break;
+            case 2:
+                width = 320;
+                break;
+            case 3:
+                width = 356;
+                break;
+            case 4:
+                width = 768;
+                break;
+            case 5:
+                width = 1024;
+                break;
+            default:
+                previewSize = 1;
+                width = 800;
+                break;
+        }
+
+        return width + 2;
+    }
+    
+    public String getMediaQuery(){
+        String mediaQuery;
+
+        switch (previewSize) {
+            case 1:
+                mediaQuery = "false";
+                break;
+            case 2:
+                mediaQuery = "true";
+                break;
+            case 3:
+                mediaQuery = "true";
+                break;
+            case 4:
+                mediaQuery = "true";
+                break;
+            case 5:
+                mediaQuery = "false";
+                break;
+            default:
+                mediaQuery = "false";
+                break;
+        }
+        return mediaQuery;
+    }
+	
+	public boolean isPreviewFormatContainsHeader() {
+		if (previewFormat == MediaTypes.EMAIL.getMediaCode()) {
+			return true;
+		}
+		int mediaTypeCode = previewFormat - 1;
+		return mediaTypeCode == MediaTypes.EMAIL.getMediaCode();
 	}
 }

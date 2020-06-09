@@ -22,7 +22,7 @@ import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -265,7 +265,7 @@ public class MailingRecipientExportWorker extends GenericExportWorker {
 					csvheaders.add(sqlColumn);
 				}
 			}
-			csvheaders.add(I18nString.getLocaleString("mailing.recipients.mailing_received", locale));
+			csvheaders.add(I18nString.getLocaleString("target.rule.mailingReceived", locale));
 			csvheaders.add(I18nString.getLocaleString("mailing.recipients.mailing_opened", locale));
 			csvheaders.add(I18nString.getLocaleString("statistic.openings", locale));
 			csvheaders.add(I18nString.getLocaleString("mailing.recipients.mailing_clicked", locale));

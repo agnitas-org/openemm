@@ -12,9 +12,12 @@ package com.agnitas.emm.core.components.service;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.upload.FormFile;
 
@@ -37,12 +40,14 @@ public interface ComMailingComponentsService {
 		int getStored();
 	}
 
+	MailingComponent getMailingTextTemplate(int mailingId, int companyID);
+	
 	/**
 	 * Upload all valid images files from given ZIP stream. This method does not close the ZIP stream.
 	 * <b>Mailing is neither saved (if successful) nor restored (in cases of errors).</b>
 	 *
 	 * @param mailing mailing to add the new components
-	 * @param stream ZIP stream to read
+	 * @param zipFile ZIP stream to read
 	 * @return an instance of {@link UploadStatistics} filled with stats.
 	 * @throws IOException on errors reading data
 	 */
@@ -65,4 +70,24 @@ public interface ComMailingComponentsService {
 	Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages);
 
 	Map<Integer, String> getImageTimestamps(@VelocityCheck int companyId, int mailingId, DateFormat format);
+	
+	MailingComponent getComponent(int componentId, @VelocityCheck int companyID);
+	
+	/**
+	 * Gets the mailing components by ids
+	 *
+	 * @param companyID the company id
+	 * @param componentIds the mailing compnent id list
+	 * @return the mailing components
+	 */
+	List<MailingComponent> getComponents(@VelocityCheck int companyID, int mailingId, Set<Integer> componentIds);
+
+	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<Integer> types);
+	
+	void deleteComponent(MailingComponent component);
+
+	void deleteComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> bulkIds);
+	
+	void updateHostImage(int mailingID, @VelocityCheck int companyID, int componentID, byte[] imageBytes);
+
 }

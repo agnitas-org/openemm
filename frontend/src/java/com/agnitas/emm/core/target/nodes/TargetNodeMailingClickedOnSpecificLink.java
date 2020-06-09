@@ -29,49 +29,50 @@ public class TargetNodeMailingClickedOnSpecificLink extends TargetNode implement
 	 */
 	private static final long serialVersionUID = 3659479768587208149L;
 
-	/** 
-	 * The logger. 
+	/**
+	 * The logger.
 	 */
 	private static final transient Logger logger = Logger.getLogger(TargetNodeMailingClickedOnSpecificLink.class);
 	
-	/** 
-	 * Name of pseudo column. 
+	/**
+	 * Name of pseudo column.
 	 */
 	public static final String PSEUDO_COLUMN_NAME = "pseudo_column_mailing_clicked_on_specific_link";
 
-	/** 
-	 * Flag, if opening parenthesis is set. 
+	/**
+	 * Flag, if opening parenthesis is set.
 	 */
 	private boolean openBracketBefore;
 	
-	/** 
-	 * Flag, if closing parenthesis is set. 
+	/**
+	 * Flag, if closing parenthesis is set.
 	 */
 	private boolean closeBracketAfter;
 	
-	/** 
-	 * Type of operator for chaining rules. 
+	/**
+	 * Type of operator for chaining rules.
 	 */
 	private int chainOperator;
 	
-	/** 
-	 * Type of primary operator. 
+	/**
+	 * Type of primary operator.
 	 */
 	private int primaryOperator;
 	
-	/** 
-	 * Primary value (The mailing ID). 
+	/**
+	 * Primary value (The mailing ID).
 	 */
 	private int mailingID;
 	
 	/**
-	 * Secondary value (the link ID). 
+	 * Secondary value (the link ID).
 	 */
 	private int linkID;
 	
-	/** 
-	 * Company ID. 
+	/**
+	 * Company ID.
 	 */
+	@SuppressWarnings("unused")
 	private int companyId;
 	
 	/**
@@ -101,8 +102,8 @@ public class TargetNodeMailingClickedOnSpecificLink extends TargetNode implement
 	 * @return array of valid operators
 	 */
 	public static TargetOperator[] getValidOperators() {
-		return new TargetOperator[] { 
-				OPERATOR_YES, 
+		return new TargetOperator[] {
+				OPERATOR_YES,
 				OPERATOR_NO
 				};
 	}
@@ -129,7 +130,7 @@ public class TargetNodeMailingClickedOnSpecificLink extends TargetNode implement
 
 	@Override
 	public void setCloseBracketAfter(boolean closeBracketAfter) {
-		this.closeBracketAfter = closeBracketAfter;		
+		this.closeBracketAfter = closeBracketAfter;
 	}
 
 	@Override

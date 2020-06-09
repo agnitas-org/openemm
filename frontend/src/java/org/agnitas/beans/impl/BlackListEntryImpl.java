@@ -15,20 +15,14 @@ import java.util.Date;
 import org.agnitas.beans.BlackListEntry;
 
 public class BlackListEntryImpl implements BlackListEntry {
-
-	
 	private String email;
+	private String reason;
 	private Date date;
-		
-	
-	public BlackListEntryImpl(String email, Date date) {
-		this.email = email;
-		this.date = date;
-	}
 
-	@Override
-	public Date getDate() {
-		return date;
+	public BlackListEntryImpl(String email, String reason, Date date) {
+		this.email = email;
+		this.reason = reason;
+		this.date = date;
 	}
 
 	@Override
@@ -36,4 +30,13 @@ public class BlackListEntryImpl implements BlackListEntry {
 		return email;
 	}
 
+	@Override
+	public String getReason() {
+		return reason;
+	}
+
+	@Override
+	public Date getDate() {
+		return date;
+	}
 }

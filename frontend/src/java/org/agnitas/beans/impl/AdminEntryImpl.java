@@ -29,20 +29,11 @@ public class AdminEntryImpl implements AdminEntry {
     private boolean passwordExpired;
 
     public AdminEntryImpl(ComAdmin admin) {
-        this(admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getShortname(), admin.getEmail());
+        this(admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail());
     }
 
-    public AdminEntryImpl(int id, String username, String fullname, String shortname) {
-		this(id, username, fullname, shortname, null);
-    }
-
-    public AdminEntryImpl(int id, String username, String fullname, String shortname, String email) {
-        this.username = username;
-        this.fullname = fullname;
-        this.firstname = fullname;
-        this.shortname = shortname;
-        this.id = id;
-        this.email = email;
+    public AdminEntryImpl(int id, String username, String fullname, String firstname, String shortname) {
+		this(id, username, fullname, firstname, shortname, null);
     }
 
     public AdminEntryImpl(int id, String userName, String fullName, String firstName, String shortName, String email) {

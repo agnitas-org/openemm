@@ -44,7 +44,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.util.UriComponents;
@@ -112,6 +114,19 @@ public class HttpUtils {
 		}
 
 		return values.contains("XMLHttpRequest");
+	}
+
+	public static int getResponseStatusCode(String urlString) {
+		try{
+			HttpURLConnection huc =  (HttpURLConnection) new URL(urlString).openConnection();
+			huc.setInstanceFollowRedirects(false);
+			huc.setRequestMethod("GET");
+			huc.connect();
+			return huc.getResponseCode();
+		} catch (IOException e) {
+			logger.warn("Could not instantiate connection");
+		}
+		return -1;
 	}
 
 	public static String convertToParameterString(Map<String, Object> parameterMap, String encoding) {
@@ -589,9 +604,33 @@ public class HttpUtils {
 			return null;
 		}
 	}
-	
+
 	public static void setDownloadFilenameHeader(HttpServletResponse response, String filename) {
 		String encodedFilename = escapeFileName(filename);
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFilename + "\";");
+		response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFilename + "\";");
+	}
+
+	public static String getContentDispositionHeaderContent(String filename) {
+		String encodedFilename = escapeFileName(filename);
+		return "attachment; filename=\"" + encodedFilename + "\";";
+	}
+	
+	/**
+	 * Method that initialize http client
+	 *
+	 * note: this method is used to export birt statistics files
+	 * @param internalURL
+	 * @return
+	 * @throws MalformedURLException
+	 */
+	public static HttpClient initializeHttpClient(String internalURL) throws MalformedURLException {
+        HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+        URL url = new URL(internalURL);
+        int port = (url.getPort() == -1) ? url.getDefaultPort() : url.getPort();
+        
+        httpClient.getHostConfiguration()
+				.setHost(url.getHost(), port, url.getProtocol());
+
+        return httpClient;
     }
 }

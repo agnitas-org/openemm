@@ -79,7 +79,7 @@ import org.springframework.context.ApplicationContext;
  * 
  * @see ExtensionUtils#getExtensionSystem(javax.servlet.ServletContext)
  */
-public class ExtensionSystemImpl implements ExtensionSystem { 
+public class ExtensionSystemImpl implements ExtensionSystem {
 
 	/** Logger. */
 	private static final transient Logger logger = Logger.getLogger(ExtensionSystemImpl.class);
@@ -122,7 +122,7 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 	 * @param pluginInstaller
 	 * @param pluginDao
 	 *
-	 * @see ExtensionUtils#getExtensionSystem(javax.servlet.ServletContext) 
+	 * @see ExtensionUtils#getExtensionSystem(javax.servlet.ServletContext)
 	 */
 	public ExtensionSystemImpl(ExtensionSystemConfiguration configuration, JspRestoreUtil jspRestoreUtil, PluginInstaller pluginInstaller, PluginDao pluginDao) {
 		if(logger.isInfoEnabled()) {
@@ -217,20 +217,23 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 			for(File file : files) {
 				try {
 					if(file.isFile()) {
-						if(logger.isInfoEnabled())
+						if(logger.isInfoEnabled()) {
 							logger.info("found archive file: " + file.getAbsolutePath());
+						}
 						
 						PluginLocation location = StandardPluginLocation.create(file);
-						if(logger.isDebugEnabled())
+						if(logger.isDebugEnabled()) {
 							logger.debug("plugin location is " + location);
+						}
 	
 						locations.add(location);
 					} else {
 						PluginLocation location = processDirectory(file);
 						
 						if(location != null) {
-							if(logger.isInfoEnabled())
+							if(logger.isInfoEnabled()) {
 								logger.info("found plugin location: " + file.getAbsolutePath());
+							}
 							
 							locations.add(location);
 						}
@@ -245,8 +248,9 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 	}
 	
 	private void registerLocations(Collection<PluginLocation> locations, boolean systemPlugins) {
-		for(PluginLocation location : locations) 
+		for(PluginLocation location : locations) {
 			this.locationTracker.registerLocation(location, systemPlugins);
+		}
 	}
 	
 	private void publishPlugins(Collection<PluginLocation> locations, boolean systemPlugins) throws JpfException {
@@ -268,7 +272,7 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 	private void publishPlugin(PluginLocation location) throws JpfException {
 		if(logger.isInfoEnabled()) {
 			logger.info("Publishing single plugin");
-		} 
+		}
 		
 		this.pluginManager.publishPlugins(new PluginLocation[] { location });
 		this.locationTracker.registerLocation(location, false);
@@ -303,8 +307,9 @@ public class ExtensionSystemImpl implements ExtensionSystem {
                     if(file.isDirectory()) {
                         pluginLocation = processDirectory(file);
                         
-                        if(pluginLocation != null)
-                        	break;
+                        if(pluginLocation != null) {
+							break;
+						}
                     }
                 }
             }
@@ -313,7 +318,7 @@ public class ExtensionSystemImpl implements ExtensionSystem {
             return null;
         }
         
-        return pluginLocation;		
+        return pluginLocation;
 	}
 	
 	/**
@@ -339,7 +344,7 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 			} catch (PluginLifecycleException | PluginInstantiationException e) {
 				logger.error("Error activating plugin: " + descriptor.getPluginClassName(), e);
 			}
-		}		
+		}
 	}
 	
 	/**
@@ -351,8 +356,9 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 	 * @throws PluginInstantiationException on errors creating a plugin instance
 	 */
 	private void activatePlugin(PluginDescriptor pluginDescriptor) throws PluginLifecycleException, PluginInstantiationException {
-		if(logger.isInfoEnabled())
+		if(logger.isInfoEnabled()) {
 			logger.info("Activating plugin: " + pluginDescriptor.getId());
+		}
 		
 		pluginManager.activatePlugin(pluginDescriptor.getId());
 	}
@@ -436,8 +442,9 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 		Collection<Extension> activeExtensions = new Vector<>();
 		
 		for(Extension extension : connectedExtensions) {
-			if(this.pluginManager.isPluginActivated(extension.getDeclaringPluginDescriptor()))
+			if(this.pluginManager.isPluginActivated(extension.getDeclaringPluginDescriptor())) {
 				activeExtensions.add(extension);
+			}
 		}
 		
 		return activeExtensions;
@@ -482,7 +489,7 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 	
 	@Override
 	public PluginStatusReport getPluginStatusReport() {
-		Map<URL, PluginStatus> pluginStatusItemMap = createStatusMapFromPluginLocations(this.locationTracker);
+		Map<URL, PluginStatus> pluginStatusItemMap = createStatusMapFromPluginLocations();
 		Collection<PluginDescriptor> descriptors = getPluginRegistry().getPluginDescriptors();
 		
 		setPluginStatusInformationsInMap(descriptors, pluginStatusItemMap);
@@ -506,13 +513,14 @@ public class ExtensionSystemImpl implements ExtensionSystem {
 		return pluginDetail;
 	}
 	
-	private Map<URL, PluginStatus> createStatusMapFromPluginLocations(LocationTracker locationTracker) {
+	private Map<URL, PluginStatus> createStatusMapFromPluginLocations() {
 		Collection<PluginLocation> pluginLocations = locationTracker.getPluginLocations();
 		Map<URL, PluginStatus> map = new HashMap<>();
 		
 		for(PluginLocation location : pluginLocations) {
-			if(logger.isDebugEnabled())
+			if(logger.isDebugEnabled()) {
 				logger.debug("Tracked plugin location: " + location);
+			}
 			
 			PluginStatusImpl item = new PluginStatusImpl();
 			item.setUrl(location.getContextLocation());

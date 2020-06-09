@@ -62,7 +62,7 @@
 <c:set var="isBreadcrumbsShown"	 	value="true" 					scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Mailings" 				scope="request" />
 <c:set var="agnBreadcrumbsRootUrl"	value="${mailingsOverviewLink}"	scope="request" />
-<c:set var="agnHelpKey" 			value="sendMailing" 		scope="request" />
+<c:set var="agnHelpKey" 			value="mailingsCheck" 		scope="request" />
 
 <c:choose>
     <c:when test="${isMailingGrid}">
@@ -84,7 +84,10 @@
                 <c:set var="agnNavigationKey" 		value="mailingView"                         scope="request" />
             </c:otherwise>
         </c:choose>
-        <c:set var="agnNavHrefAppend"	value="&mailingID=${mailingId}&init=true"	scope="request" />
+        <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
+            <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+        </emm:instantiate>
     </c:otherwise>
 </c:choose>
 

@@ -1,9 +1,3 @@
-(function() {
-
-  var Popover = AGN.Lib.Popover;
-
-  AGN.Initializers.Popover = function() {
-    Popover.validate();
-  };
-
-})();
+AGN.Lib.CoreInitializer.new('popover-validate', function() {
+  AGN.Lib.Popover.validate();
+});

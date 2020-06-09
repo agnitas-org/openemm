@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.grid.grid.service;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public final class MailingCreationOptions {
     public static Builder builder() {
@@ -24,6 +24,7 @@ public final class MailingCreationOptions {
     private boolean createdFromReleased;
     private String textTemplateStub;
     private boolean generateTextVersion;
+    private boolean imagesMigrationRequired = true;
 
     private MailingCreationOptions() {}
 
@@ -51,6 +52,24 @@ public final class MailingCreationOptions {
         return generateTextVersion;
     }
 
+    public boolean isImagesMigrationRequired() {
+        return imagesMigrationRequired;
+    }
+
+    @Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (alwaysCreateNew ? 1231 : 1237);
+		result = prime * result + (createdFromReleased ? 1231 : 1237);
+		result = prime * result + (generateTextVersion ? 1231 : 1237);
+		result = prime * result + (imagesMigrationRequired ? 1231 : 1237);
+		result = prime * result + mailingListId;
+		result = prime * result + ((targetGroupExtension == null) ? 0 : targetGroupExtension.hashCode());
+		result = prime * result + ((textTemplateStub == null) ? 0 : textTemplateStub.hashCode());
+		return result;
+	}
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof MailingCreationOptions) {
@@ -61,7 +80,8 @@ public final class MailingCreationOptions {
                 StringUtils.equals(options.targetGroupExtension, targetGroupExtension) &&
                 options.createdFromReleased == createdFromReleased &&
                 StringUtils.equals(options.textTemplateStub, textTemplateStub) &&
-                options.generateTextVersion == generateTextVersion;
+                options.generateTextVersion == generateTextVersion &&
+                options.imagesMigrationRequired == imagesMigrationRequired;
         }
 
         return false;
@@ -76,6 +96,7 @@ public final class MailingCreationOptions {
             .append("createdFromReleased", createdFromReleased)
             .append("textTemplateStub", textTemplateStub)
             .append("generateTextVersion", generateTextVersion)
+            .append("imagesMigrationRequired", imagesMigrationRequired)
             .toString();
     }
 
@@ -111,6 +132,11 @@ public final class MailingCreationOptions {
 
         public Builder setGenerateTextVersion(boolean generateTextVersion) {
             options.generateTextVersion = generateTextVersion;
+            return this;
+        }
+
+        public Builder setImagesMigrationRequired(boolean imagesMigrationRequired) {
+            options.imagesMigrationRequired = imagesMigrationRequired;
             return this;
         }
 

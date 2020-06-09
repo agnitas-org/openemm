@@ -23,21 +23,21 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
@@ -199,16 +199,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, DateFormats dateFormats) throws Exception {
-        if (successTableActivated(companyID)) {
+        if (successTableActivated(companyID) && hasSuccessTableData(companyID, mailingID)) {
             insertDeliveredMailsFromSuccessTbl(tempTableID, mailingID, companyID, targets, recipientsType, dateFormats);
-        } else {
-            if (isMailingNotExpired(mailingID)) {
-                insertDeliveredMailsCalculated(tempTableID, companyID);
-            }
+        } else if (isMailingNotExpired(mailingID)) {
+            insertDeliveredMailsCalculated(tempTableID, companyID);
         }
     }
 
-    @DaoUpdateReturnValueCheck
+	@DaoUpdateReturnValueCheck
     public void insertMailformatsIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<BirtReporUtils.BirtReportFigure> figures, String startDateString, String endDateString) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
@@ -229,11 +227,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         parameters.add(mailingID);
 
         int mailingType = getMailingType(mailingID);
-		if (mailingType == Mailing.TYPE_DATEBASED) {
+		if (mailingType == MailingTypes.DATE_BASED.getCode()) {
 			queryBuilder.append("AND ma.status_field = 'R' ");
-		} else if (mailingType == Mailing.TYPE_ACTIONBASED) {
+		} else if (mailingType == MailingTypes.ACTION_BASED.getCode()) {
 			queryBuilder.append("AND ma.status_field = 'E' ");
-		} else if (mailingType == Mailing.TYPE_INTERVAL) {
+		} else if (mailingType == MailingTypes.INTERVAL.getCode()) {
 			queryBuilder.append("AND ma.status_field = 'D' ");
 		} else {
 			queryBuilder.append("AND ma.status_field = 'W' ");
@@ -1043,7 +1041,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         }
 
         LightMailing mailing = new LightMailingDaoImpl(getDataSource()).getMailing(mailingID, companyID);
-        if (mailing != null && mailing.getMailingType() == LightMailing.TYPE_NORMAL) {
+        if (mailing != null && mailing.getMailingType() == MailingType.NORMAL.getCode()) {
             int deliveredMails = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, null, null, null);
             insertSoftbouncesIntoTempTable(tempTableID, deliveredMails, null, CommonKeys.ALL_SUBSCRIBERS_INDEX);
             if (targets != null && targets.size() > 0){
@@ -1057,7 +1055,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         }
     }
 
-    private void insertSoftbouncesIntoTempTable(int tempTableID, int deliveredMails, LightTarget target, int targetGroupIndex) throws Exception {
+    protected void insertSoftbouncesIntoTempTable(int tempTableID, int deliveredMails, LightTarget target, int targetGroupIndex) throws Exception {
 	    target = getDefaultTarget(target);
 
         int sentMails = getTempTableValuesByCategoryAndTargetGroupId(tempTableID, CommonKeys.DELIVERED_EMAILS, target.getId());
@@ -1070,7 +1068,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
 	@DaoUpdateReturnValueCheck
     private void insertBouncesFromBenchmarkTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, boolean includeSoftbounces ) throws Exception {
-        String query = "SELECT " + getIfNull() + "(bounces_hard, 0) bounces_hard, " + getIfNull() + "(bounces_soft, 0) bounces_soft"
+        String query = "SELECT COALESCE(bounces_hard, 0) bounces_hard, COALESCE(bounces_soft, 0) bounces_soft"
         		+ " FROM benchmark_mailing_stat_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY days_between DESC";
 		List<Map<String, Object>> result = select(logger, query, companyID, mailingID);
         int softbounces = 0;
@@ -1111,7 +1109,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         }
     }
 
-	private int selectOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT(r.customer_id)) counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1158,7 +1156,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return ((Number) result.get(0).get("counter")).intValue();
 	}
 
-	private int selectNonOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectNonOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT(r.customer_id)) counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1276,7 +1274,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return returnMap;
 	}
 
-	private int selectClicks(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectClicks(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) AS counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1317,7 +1315,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return ((Number) result.get(0).get("counter")).intValue();
 	}
 
-	private int selectAnonymousClicks(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
+	protected int selectAnonymousClicks(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) AS counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1355,11 +1353,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @param mailingID
 	 * @param recipientsType
 	 * @param targetSql
-	 * @param dateFormats
+	 * @param startDateString
+	 * @param endDateString
 	 * @return
 	 * @throws Exception
 	 */
-	private Map<DeviceClass, Integer> selectClickersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+    protected Map<DeviceClass, Integer> selectClickersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1423,7 +1422,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return returnMap;
 	}
 
-	private int selectClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1480,11 +1479,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @param mailingID
 	 * @param recipientsType
 	 * @param targetSql
-	 * @param dateFormats
+	 * @param startDateString
+	 * @param endDateString
 	 * @return
 	 * @throws Exception
 	 */
-	private Map<DeviceClass, Integer> selectOpenersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+    protected Map<DeviceClass, Integer> selectOpenersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT o.device_class_id AS deviceClassId, COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1548,7 +1548,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return returnMap;
 	}
 
-	private int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1593,7 +1593,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return ((Number) result.get(0).get("counter")).intValue();
 	}
 
-	private int selectOpenings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectOpenings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1634,7 +1634,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return ((Number) result.get(0).get("counter")).intValue();
 	}
 
-	private int selectAnonymousOpenings(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
+	protected int selectAnonymousOpenings(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1749,7 +1749,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return result;
     }
 
-    private Map<Integer, Integer> getMeasuredFromTempTable(int tempTableId) throws Exception {
+    protected Map<Integer, Integer> getMeasuredFromTempTable(int tempTableId) throws Exception {
         String query = "SELECT value, targetgroup_id FROM " + getTempTableName(tempTableId) + " WHERE category_index = ?";
         Map<Integer, Integer> result = new HashMap<>();
         selectEmbedded(logger, query, (resultSet, i) -> {
@@ -1759,8 +1759,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return result;
 	}
 
-	private double selectRevenue(int companyID, int mailingID, String targetSql, String startDateString, String endDateString) throws Exception {
-        StringBuilder queryBuilder = new StringBuilder("SELECT " + getIfNull() + "(SUM(r.num_parameter), 0) AS revenue FROM rdirlog_" + companyID + "_val_num_tbl r");
+	protected double selectRevenue(int companyID, int mailingID, String targetSql, String startDateString, String endDateString) throws Exception {
+        StringBuilder queryBuilder = new StringBuilder("SELECT COALESCE(SUM(r.num_parameter), 0) AS revenue FROM rdirlog_" + companyID + "_val_num_tbl r");
 		List<Object> parameters = new ArrayList<>();
 
         if (targetSql != null && targetSql.contains("cust.")) {
@@ -1796,7 +1796,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 		return ((Number) result.get(0).get("revenue")).doubleValue();
 	}
 
-	private int selectOptOuts(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
+	protected int selectOptOuts(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS optouts FROM customer_" + companyID + "_binding_tbl b");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1850,7 +1850,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @return
 	 * @throws Exception
 	 */
-	private int selectSoftbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
+    protected int selectSoftbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS softbounces FROM customer_" + companyID + "_binding_tbl b");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1904,7 +1904,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @return
 	 * @throws Exception
 	 */
-	private int selectHardbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
+    protected int selectHardbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS hardbounces FROM customer_" + companyID + "_binding_tbl b");
 		List<Object> parameters = new ArrayList<>();
 
@@ -1958,7 +1958,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @return
 	 * @throws Exception
 	 */
-	private int selectSoftbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
+    protected int selectSoftbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS softbounces FROM bounce_tbl b");
 		List<Object> parameters = new ArrayList<>();
 
@@ -2011,7 +2011,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 	 * @return
 	 * @throws Exception
 	 */
-	private int selectHardbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
+    protected int selectHardbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS hardbounces FROM bounce_tbl b");
 		List<Object> parameters = new ArrayList<>();
 

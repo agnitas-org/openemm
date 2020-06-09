@@ -10,9 +10,6 @@
 
 package com.agnitas.beans;
 
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-
 import org.agnitas.beans.TrackableLink;
 
 public interface ComTrackableLink extends TrackableLink {
@@ -30,15 +27,20 @@ public interface ComTrackableLink extends TrackableLink {
      */
     void setAltText(String altText);
 
+    /**
+	 * Checks, if trackable link is not longer used by mailing.
+	 *
+	 * return true, if link is not longer used, otherwise true
+	 */
     boolean isDeleted();
 
+	/**
+	 * Marks link as not longer used by mailing.
+	 *
+	 * @param deleted
+	 *            true if not longer used
+	 */
     void setDeleted(boolean deleted);
-	
-	void setProperties(List<LinkProperty> linkProperties);
-	
-	List<LinkProperty> getProperties();
-	
-	String createDirectLinkWithOptionalExtensionsWithoutUserData() throws UnsupportedEncodingException;
 	
 	boolean isExtendByMailingExtensions();
 	
@@ -69,8 +71,4 @@ public interface ComTrackableLink extends TrackableLink {
 	void setStaticValue(final boolean flag);
 	
 	boolean isStaticValue();
-    
-    int getLinkExtensionCount();
-    
-    String getFullUrlWithExtensions();
 }

@@ -28,7 +28,7 @@ import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.ImportMode;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 

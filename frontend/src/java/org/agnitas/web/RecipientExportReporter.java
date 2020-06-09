@@ -14,6 +14,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -24,16 +25,16 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
@@ -49,7 +50,7 @@ public class RecipientExportReporter {
 	
 	private ComCompanyDao companyDao;
 	
-	private ComAdminDao adminDao;
+	private AdminService adminService;
 	
 	private ConfigService configService;
 	
@@ -71,10 +72,10 @@ public class RecipientExportReporter {
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
-
+	
 	@Required
-	public void setAdminDao(ComAdminDao adminDao) {
-		this.adminDao = adminDao;
+	public final void setAdminService(final AdminService service) {
+		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 
 	@Required
@@ -105,7 +106,7 @@ public class RecipientExportReporter {
 		String additionalContent = "";
 		ComCompany comp = companyDao.getCompany(admin.getCompanyID());
 		if (comp.getExportNotifyAdmin() > 0) {
-			ComAdmin notifyAdmin = adminDao.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
@@ -130,8 +131,7 @@ public class RecipientExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin != null ? admin.getLocale() : null;
-			
+			Locale locale = admin.getLocale();
 			ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 			
 			String subject;
@@ -369,7 +369,7 @@ public class RecipientExportReporter {
 		String additionalContent = "";
 		ComCompany comp = companyDao.getCompany(admin.getCompanyID());
 		if (comp.getExportNotifyAdmin() > 0) {
-			ComAdmin notifyAdmin = adminDao.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
@@ -402,8 +402,7 @@ public class RecipientExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin != null ? admin.getLocale() : null;
-			
+			Locale locale = admin.getLocale();
 			ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 			
 			String subject;

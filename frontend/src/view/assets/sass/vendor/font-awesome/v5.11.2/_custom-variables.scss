@@ -1,0 +1,14 @@
+@import 'custom-fa5-variables';
+
+$fa-font-path:         'fonts/fontawesome-5.11.2';
+$fa-font-size-base:    $custom-fa5-font-size-base;
+$fa-line-height-base:  $custom-fa5-line-height-base;
+$fa-font-display:      auto;
+$fa-css-prefix:        $custom-fa5-css-prefix;
+$fa-version:           '5.11.2';
+$fa-border-color:      #eee;
+$fa-inverse:           #fff;
+$fa-li-width:          2em;
+$fa-fw-width:          (20em / 16);
+$fa-primary-opacity:   1;
+$fa-secondary-opacity: .4;

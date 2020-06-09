@@ -11,7 +11,6 @@
 package org.agnitas.backend;
 
 import	org.agnitas.backend.dao.MailinglistDAO;
-import	org.agnitas.util.Config;
 import	org.agnitas.util.Log;
 
 /**
@@ -27,6 +26,8 @@ public class Mailinglist {
 	private String		name;
 	/** the mailinglist version of the RDIR domain to use		*/
 	private String		rdirDomain;
+	/** if frequency counter is enabled for this mailinglist	*/
+	private boolean		frequencyCounterEnabled;
 
 	public Mailinglist (Data nData) {
 		data = nData;
@@ -44,6 +45,7 @@ public class Mailinglist {
 			id = nId;
 			name = null;
 			rdirDomain = null;
+			frequencyCounterEnabled = false;
 		}
 	}
 	
@@ -61,6 +63,13 @@ public class Mailinglist {
 		rdirDomain = nRdirDomain;
 	}
 
+	public boolean frequencyCounterEnabled () {
+		return frequencyCounterEnabled;
+	}
+	public void frequencyCounterEnabled (boolean nFrequencyCounterEnabled) {
+		frequencyCounterEnabled = nFrequencyCounterEnabled;
+	}
+	
 	/**
 	 * Write all mailinglist related settings to logfile
 	 */
@@ -72,6 +81,7 @@ public class Mailinglist {
 		if (rdirDomain != null) {
 			data.logging (Log.DEBUG, "init", "\tmailinglist.rdirDomain = " + rdirDomain);
 		}
+		data.logging (Log.DEBUG, "init", "\tmailinglist.frequencyCounterEnabled = " + frequencyCounterEnabled);
 	}
 
 	/**
@@ -80,6 +90,7 @@ public class Mailinglist {
 	 * @param cfg the configuration
 	 */
 	public void configure (Config cfg) {
+		// nothing to do
 	}
 
 	/**
@@ -93,5 +104,6 @@ public class Mailinglist {
 		}
 		name (mailinglist.shortName ());
 		rdirDomain (mailinglist.rdirDomain ());
+		frequencyCounterEnabled (mailinglist.frequencyCounterEnabled ());
 	}
 }

@@ -22,7 +22,7 @@ public interface EmbeddedClickStatService {
 	 * Color that will we set to stat-label if color for some percentage
 	 * value is not specified in DB
 	 */
-	public static final String DEFAULT_STAT_LABEL_COLOR = "FFFFFF";
+	String DEFAULT_STAT_LABEL_COLOR = "FFFFFF";
 
 	/**
 	 * Method gets mailing HTML-content for the certain recipient
@@ -31,7 +31,7 @@ public interface EmbeddedClickStatService {
 	 * @param recipientId id of recipient
 	 * @return mailing HTML-content
 	 */
-	public String getMailingContent(int mailingId, int recipientId);
+	String getMailingContent(int mailingId, int recipientId);
 
 	/**
 	 * Method adds click-stat info to mailing content in a form of hidden fields.
@@ -45,14 +45,16 @@ public interface EmbeddedClickStatService {
 	 * @return mailing HTML content + hidden fields that will be used by ECS-page javascript
 	 * @throws Exception 
 	 */
-	public String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId) throws Exception;
+	String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId) throws Exception;
+	
+	String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId, int deviceType) throws Exception;
 
 	/**
 	 * Setter for Dao that handles color values for different percentage values for ECS
 	 *
 	 * @param ecsDao dao object
 	 */
-	public void setEmbeddedClickStatDao(EmbeddedClickStatDao ecsDao);
+	void setEmbeddedClickStatDao(EmbeddedClickStatDao ecsDao);
 
-        public UrlMaker getURLMaker(String program, int mailingId, String option) throws Exception;
+    UrlMaker getURLMaker(String program, int mailingId, String option) throws Exception;
 }

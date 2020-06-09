@@ -125,9 +125,9 @@ public class StringUtils {
                 int posB = paramList.indexOf("\",", posA);
                 if(posB != -1) {
                     result = paramList.substring(posA+paramName.length()+2, posB);
-                    result = org.apache.commons.lang.StringUtils.replace(result, "\\=", "=");
-                    result = org.apache.commons.lang.StringUtils.replace(result, "\\\"", "\"");
-                    result = org.apache.commons.lang.StringUtils.replace(result, "\\,", ",");
+                    result = result.replace("\\=", "=");
+                    result = result.replace("\\\"", "\"");
+                    result = result.replace("\\,", ",");
                 }
             }
         }

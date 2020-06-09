@@ -12,8 +12,6 @@ package org.agnitas.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 import javax.crypto.Cipher;
@@ -22,7 +20,10 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Class to encrypt data and get the data back from encrypted base64 string.
@@ -31,15 +32,23 @@ public class DataEncryptor {
 	private char[] encryptorPassword;
 	private byte[] saltBytes;
 	
+	private ConfigService configService;
+	
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+	
 	/**
 	 * Only the files first line of text is used as password
 	 * 
 	 * @param passwordFile
 	 * @throws IOException
 	 */
-	public DataEncryptor(File passwordFile) throws IOException {
+	private void init() throws IOException {
+		String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
 		@SuppressWarnings("unchecked")
-		List<String> lines = FileUtils.readLines(passwordFile, "UTF-8");
+		List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
 		String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
 		encryptorPassword = encryptorPasswordString.toCharArray();
 		if (encryptorPasswordString.length() < 8) {
@@ -49,11 +58,10 @@ public class DataEncryptor {
 		}
 	}
 	
-	public DataEncryptor(char[] encryptorPassword) throws IOException {
-		this.encryptorPassword = encryptorPassword;
-	}
-	
-	public String encrypt(String dataToEncrypt) throws GeneralSecurityException, UnsupportedEncodingException {
+	public String encrypt(String dataToEncrypt) throws Exception {
+		if (saltBytes == null) {
+			init();
+		}
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
         SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
         Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
@@ -61,7 +69,10 @@ public class DataEncryptor {
         return AgnUtils.encodeBase64(pbeCipher.doFinal(dataToEncrypt.getBytes("UTF-8")));
     }
 
-	public String decrypt(String encryptedDataBase64) throws GeneralSecurityException, UnsupportedEncodingException {
+	public String decrypt(String encryptedDataBase64) throws Exception {
+		if (saltBytes == null) {
+			init();
+		}
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
         SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
         Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");

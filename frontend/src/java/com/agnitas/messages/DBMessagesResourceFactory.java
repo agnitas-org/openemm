@@ -26,8 +26,8 @@ public class DBMessagesResourceFactory extends MessageResourcesFactory {
 	}
 
 	@Override
-	public MessageResources createResources(String config) {
-		DBMessagesResourceWrapperForStruts dbMessagesResource = new DBMessagesResourceWrapperForStruts(this, config);
+	public MessageResources createResources(String configuration) {
+		DBMessagesResourceWrapperForStruts dbMessagesResource = new DBMessagesResourceWrapperForStruts(this, configuration);
 		dbMessagesResource.init();
 		return dbMessagesResource;
 	}

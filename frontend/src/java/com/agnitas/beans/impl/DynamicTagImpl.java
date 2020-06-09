@@ -19,7 +19,7 @@ import java.util.Set;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.DynamicTag;
 
@@ -233,10 +233,10 @@ public final class DynamicTagImpl implements DynamicTag {
 	}
 
 	@Override
-	public DynamicTagContent getDynContentID(int id) {
+	public DynamicTagContent getDynContentID(int contentId) {
 		if (dynContent != null) {
 			for (DynamicTagContent aContent : dynContent.values()) {
-				if (aContent.getId() == id) {
+				if (aContent.getId() == contentId) {
 					return aContent;
 				}
 			}

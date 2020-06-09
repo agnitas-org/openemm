@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
     <property name="comments">Copyright (c) 2007 &lt;&lt;Your Company Name here>></property>
-    <property name="createdBy">Eclipse BIRT Designer Version 4.4.0.v201405191524 Build &lt;4.4.0.v20140611-1043></property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <html-property name="description">Creates a grouped report with a chart giving a visual representation of each group data.</html-property>
-
     <property name="units">in</property>
     <text-property name="displayName">Chart &amp; Listing</text-property>
     <property name="iconFile">/templates/chart_listing.gif</property>
@@ -66,6 +65,17 @@
             <property name="paramType">simple</property>
             <property name="controlType">check-box</property>
             <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="adminID" id="451">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
         </scalar-parameter>
     </parameters>
     <data-sources>
@@ -148,7 +158,7 @@
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["startdate"] , params["enddate"]);
+mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < mailDetails.size() ) {
 	row["date"] = mailDetails.get(currentrow).getDate();

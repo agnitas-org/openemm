@@ -33,9 +33,10 @@ import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
 import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.EmmActionForm;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -49,6 +50,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTrackpointDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationExecuteScriptParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
@@ -77,6 +79,7 @@ public class EmmActionAction extends StrutsActionBase {
     protected ComEmmActionService emmActionService;
     protected ComRecipientDao recipientDao;
     protected BlacklistService blacklistService;
+    protected ComTrackpointDao trackpointDao;
     
 	protected ConfigService configService;
 	protected WebStorage webStorage;
@@ -135,16 +138,16 @@ public class EmmActionAction extends StrutsActionBase {
      * @param res HTTP response
      * @param mapping The ActionMapping used to select this instance
      * @return destination specified in struts-config.xml to forward to next jsp
-     * @throws Exception 
+     * @throws Exception
      */
     @Override
-    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws Exception {
+    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse res) throws Exception {
 
         EmmActionForm aForm = null;
         ActionMessages errors = new ActionMessages();
         ActionMessages messages = new ActionMessages();
         ActionForward destination = null;
-        ComAdmin admin = AgnUtils.getAdmin(req);
+        ComAdmin admin = AgnUtils.getAdmin(request);
 
         if (Objects.isNull(admin)) {
             return mapping.findForward("logon");
@@ -152,29 +155,48 @@ public class EmmActionAction extends StrutsActionBase {
 
         aForm = (EmmActionForm) form;
 
-        req.setAttribute("oplist", getActionOperations());
+        request.setAttribute("oplist", getActionOperations());
 
-        if (logger.isInfoEnabled()) logger.info("Action: " + aForm.getAction());
+        if (logger.isInfoEnabled()) {
+			logger.info("Action: " + aForm.getAction());
+		}
         try {
             switch (aForm.getAction()) {
+            	case EmmActionAction.ACTION_NEW:
+            		aForm.setShortname(SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request)));
+            		aForm.setDescription(SafeString.getLocaleString("default.description", AgnUtils.getLocale(request)));
+            		aForm.setActionID(0);
+            		aForm.setActions(null);
+            		aForm.setDeleteModule(0);
+            		aForm.setType(0);
+
+                    aForm.setAction(EmmActionAction.ACTION_SAVE);
+
+                    // Some deserialized Actions need the mailings to show their configuration data
+                    aForm.setMailings(mailingDao.getMailingsByStatusE(AgnUtils.getCompanyID(request)));
+                    aForm.setCampaigns(campaignDao.getCampaignList(AgnUtils.getCompanyID(request), "lower(shortname)", 1));
+
+                    destination = mapping.findForward("success");
+            		break;
                 case EmmActionAction.ACTION_LIST:
                     //loadActionUsed(aForm, req);
                     if (aForm.getColumnwidthsList() == null) {
                         aForm.setColumnwidthsList(getInitializedColumnWidthList(4));
                     }
+                    AgnUtils.setAdminDateTimeFormatPatterns(request);
                     destination = mapping.findForward("list");
                     break;
                 case EmmActionAction.ACTION_VIEW:
                     if (aForm.getActionID() != 0) {
                         aForm.setAction(EmmActionAction.ACTION_SAVE);
-                        loadAction(aForm, req);
+                        loadAction(aForm, request);
                     } else {
                         aForm.setAction(EmmActionAction.ACTION_SAVE);
                     }
 
                     // Some deserialized Actions need the mailings to show their configuration data
-                    aForm.setMailings(mailingDao.getMailingsByStatusE(AgnUtils.getCompanyID(req)));
-                    aForm.setCampaigns(campaignDao.getCampaignList(AgnUtils.getCompanyID(req), "lower(shortname)", 1));
+                    aForm.setMailings(mailingDao.getMailingsByStatusE(AgnUtils.getCompanyID(request)));
+                    aForm.setCampaigns(campaignDao.getCampaignList(AgnUtils.getCompanyID(request), "lower(shortname)", 1));
 
                     destination = mapping.findForward("success");
                     break;
@@ -186,12 +208,12 @@ public class EmmActionAction extends StrutsActionBase {
                     destination = mapping.findForward("success");
                     break;
                 case EmmActionAction.ACTION_CONFIRM_DELETE:
-                    loadAction(aForm, req);
+                    loadAction(aForm, request);
                     destination = mapping.findForward("delete");
                     aForm.setAction(EmmActionAction.ACTION_DELETE);
                     break;
                 case EmmActionAction.ACTION_DELETE:
-                    deleteAction(aForm, req);
+                    deleteAction(aForm, request);
 
                     // Show "changes saved"
                     messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
@@ -226,8 +248,8 @@ public class EmmActionAction extends StrutsActionBase {
         if (destination != null && "list".equals(destination.getName())) {
             try {
                 FormUtils.syncNumberOfRows(webStorage, WebStorage.ACTION_OVERVIEW, aForm);
-                req.setAttribute("emmactionList", getActionList(req));
-                aForm.setMailings(mailingDao.getMailingsByStatusE(AgnUtils.getCompanyID(req)));
+                request.setAttribute("emmactionList", getActionList(request));
+                aForm.setMailings(mailingDao.getMailingsByStatusE(AgnUtils.getCompanyID(request)));
             } catch (Exception e) {
                 logger.error("getActionList", e);
                 errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
@@ -237,13 +259,13 @@ public class EmmActionAction extends StrutsActionBase {
 
         // Report any errors we have discovered back to the original form
         if (!errors.isEmpty()) {
-            saveErrors(req, errors);
+            saveErrors(request, errors);
             return (new ActionForward(mapping.getInput()));
         }
 
         // Report any message (non-errors) we have discovered
         if (!messages.isEmpty()) {
-            saveMessages(req, messages);
+            saveMessages(request, messages);
         }
 
         return destination;
@@ -274,7 +296,7 @@ public class EmmActionAction extends StrutsActionBase {
         }
     }
 
-    private void saveAction(EmmActionForm aForm, ComAdmin admin, ActionMessages errors) {
+    private void saveAction(EmmActionForm aForm, ComAdmin admin, ActionMessages errors) throws Exception {
         if (isValidActions(aForm, errors)) {
             EmmAction aAction = emmActionFactory.newEmmAction();
 
@@ -289,8 +311,16 @@ public class EmmActionAction extends StrutsActionBase {
             if (operations == null) {
                 operations = new ArrayList<>();
             }
+            
             for (AbstractActionOperationParameters operation : operations) {
-                operation.setCompanyId(companyId);
+				operation.setCompanyId(companyId);
+				
+				try {
+					operation.validate(errors, admin.getLocale(), recipientDao, trackpointDao);
+				} catch (Exception e) {
+					logger.error("Cannot validate AbstractActionOperationParameters: " + e.getMessage(), e);
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("Error", e.getMessage()));
+				}
                 
                 if (ActionOperationType.SEND_MAILING.equals(operation.getOperationType())) {
                 	String bccAddress = ((ActionOperationSendMailingParameters) operation).getBcc();
@@ -298,9 +328,7 @@ public class EmmActionAction extends StrutsActionBase {
                         errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.action.blacklistedBcc", bccAddress));
                         return;
                 	}
-                }
-                
-                if (ActionOperationType.SERVICE_MAIL.equals(operation.getOperationType())) {
+                } else if (ActionOperationType.SERVICE_MAIL.equals(operation.getOperationType())) {
                 	String toAddress = ((ActionOperationServiceMailParameters) operation).getToAddress();
                 	if (StringUtils.isNotBlank(toAddress)) {
 	                	for (String singleAdr : toAddress.split(";|,| ")) {
@@ -511,5 +539,10 @@ public class EmmActionAction extends StrutsActionBase {
     @Required
     public void setBlacklistService(BlacklistService blacklistService) {
         this.blacklistService = blacklistService;
+    }
+    
+    // not required for OpenEMM
+    public void setTrackpointDao(ComTrackpointDao trackpointDao) {
+        this.trackpointDao = trackpointDao;
     }
 }

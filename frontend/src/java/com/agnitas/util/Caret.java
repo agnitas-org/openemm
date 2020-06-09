@@ -13,8 +13,8 @@ package com.agnitas.util;
 import java.util.Objects;
 
 public final class Caret {
-    private int line;
-    private int column;
+    private final int line;
+    private final int column;
 
     public static Caret at(int line, int column) {
         if (line < 1 || column < 1) {

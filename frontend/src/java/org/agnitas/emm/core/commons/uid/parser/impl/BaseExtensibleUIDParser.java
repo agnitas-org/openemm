@@ -22,7 +22,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionExc
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.SignatureNotMatchParseException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 

@@ -297,6 +297,11 @@ table td a {
 
   background-color: $c-white;
 
+  &.disabled {
+    text-decoration: none;
+    background-color: #ebebe4;
+  }
+
   > thead,
   > tbody,
   > tfoot {
@@ -530,7 +535,7 @@ table td a {
 //
 // Default zebra-stripe styles (alternating gray and transparent backgrounds)
 
-.table-striped {
+.table-striped:not(.disabled) {
   > tbody > tr:nth-child(even):not(.error-row) {
     > td,
     > th {
@@ -543,7 +548,7 @@ table td a {
 //
 // Placed here since it has to come after the potential zebra striping
 
-.table-hover {
+.table-hover:not(.disabled) {
   > tbody > tr:hover:not(.error-row) {
     > td,
     > th {

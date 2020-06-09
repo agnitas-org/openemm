@@ -10,10 +10,7 @@
 
 package com.agnitas.emm.core.wsmanager.converter;
 
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
-
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -55,7 +52,7 @@ public class WsUserDtoToWebserviceUserConverter implements Converter<WebserviceU
             user.setGrantedPermissionGroupIDs(userDto.getGrantedPermissionGroupIDs());
             
             return user;
-        } catch (GeneralSecurityException | UnsupportedEncodingException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Cannot converted to webservice user: " + e.getMessage());
         }
     }

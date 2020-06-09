@@ -10,40 +10,26 @@
 
 package com.agnitas.emm.core.mailingcontent.validator.impl;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.agnitas.util.AgnUtils;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 @Component
 @Order(0)
 public class MailingEditableValidator implements DynTagValidator {
-
     private MaildropService maildropService;
-    private HttpServletRequest request;
 
-    public MailingEditableValidator(MaildropService maildropService,
-                                    HttpServletRequest request) {
+    public MailingEditableValidator(MaildropService maildropService) {
         this.maildropService = maildropService;
-        this.request = request;
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
-        if (admin == null) {
-            return false;
-        }
-
-
+    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
         if (!isMailingGridEditable(dynTagDto.getMailingId(), admin)) {
             popups.alert("status_changed");
             return false;

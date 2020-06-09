@@ -20,7 +20,7 @@
             restore(result === true ? bundle.values : result, bundle.timestamp);
             AGN.Lib.Messages(t('autosave.success.title'), t('autosave.success.message'), 'success');
           })
-          .fail(function() {
+          .always(function() {
             AGN.Lib.Storage.delete('autosave#' + scopeId);
           });
       }

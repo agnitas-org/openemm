@@ -1,27 +1,63 @@
-(function () {
-    var expiresDays = 30;
+(function() {
+    var NOTIFICATION_DISMISS_EXPIRATION_DAYS = 30;
 
-    var saveDate = function () {
-        localStorage.setItem('closedDate', new Date());
-    };
+    function getSettings() {
+        return AGN.Lib.Storage.get('login-page') || {};
+    }
 
-    var isExpired = function (expiresDays) {
-        var currentDate = new Date();
-        var requiredDate = new Date(localStorage.getItem('closedDate'));
-        requiredDate.setDate(requiredDate.getDate() + parseInt(expiresDays));
+    function setSettings(settings) {
+        AGN.Lib.Storage.set('login-page', settings);
+    }
 
-        if (currentDate - requiredDate > 0) {
-            return true;
+    function isNotificationDismissExpired() {
+        var settings = getSettings();
+
+        if (settings) {
+            if (settings.notificationDismissExpiration) {
+                return settings.notificationDismissExpiration <= Date.now();
+            }
         }
-        return false;
-    };
 
-    AGN.Lib.DomInitializer.new('logon-notification', function ($e) {
-        var head = t('defaults.info');
-        var content = t('logon.info.multiple_tabs');
+        /* Compatible mode */
+        /* To be removed 30 days later */
+        var closedDate = localStorage.getItem('closedDate');
+        if (closedDate) {
+            var currentDate = new Date();
+            var requiredDate = new Date(closedDate);
+            requiredDate.setDate(requiredDate.getDate() + NOTIFICATION_DISMISS_EXPIRATION_DAYS);
 
-        if (isExpired(expiresDays)) {
-            AGN.Lib.Messages(head, content, 'info', saveDate, false);
+            return currentDate - requiredDate > 0;
+
+        }
+        /* Compatible mode */
+
+        return true;
+    }
+
+    function onNotificationDismiss() {
+        var settings = getSettings();
+        var expirationDate = new Date();
+
+        expirationDate.setDate(expirationDate.getDate() + NOTIFICATION_DISMISS_EXPIRATION_DAYS);
+        settings.notificationDismissExpiration = expirationDate.getTime();
+
+        setSettings(settings);
+    }
+
+    function isFrameHidden() {
+        // By default it's shown.
+        return getSettings().isFrameShown == false;
+    }
+
+    AGN.Lib.DomInitializer.new('logon', function($e) {
+        $e.toggleClass('l-hide-frame', isFrameHidden());
+        $e.removeClass('hidden');
+
+        if (isNotificationDismissExpired()) {
+            var head = t('defaults.info');
+            var content = t('logon.info.multiple_tabs');
+
+            AGN.Lib.Messages(head, content, 'info', onNotificationDismiss, false);
         }
     });
 

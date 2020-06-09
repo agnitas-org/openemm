@@ -2,7 +2,6 @@
 
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.push.bean.PushNotificationStatus" %>
-<%@ page import="com.agnitas.reporting.birt.web.ComMailingBIRTStatAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -31,7 +30,6 @@
 <c:set var="SECONDS_BEFORE_WAIT_MESSAGE" value="<%= CalendarController.SECONDS_BEFORE_WAIT_MESSAGE %>"/>
 
 <c:set var="ACTION_VIEW" value="<%= ComMailingBaseAction.ACTION_VIEW %>"/>
-<c:set var="ACTION_MAILINGSTAT" value="<%= ComMailingBIRTStatAction.ACTION_MAILINGSTAT %>"/>
 
 <c:set var="MONTH_LIST" value="<%= AgnUtils.getMonthList() %>"/>
 <c:set var="YEAR_LIST" value="<%= AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM) %>"/>
@@ -57,8 +55,7 @@
             <c:param name="init" value="true"/>
         </c:url>
 
-        <c:url var="mailingStatisticsViewUrl" value="/mailing_stat.do">
-            <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
+        <c:url var="mailingStatisticsViewUrl" value="/statistics/mailing/{mailingId}/view.action">
             <c:param name="init" value="true"/>
         </c:url>
 
@@ -87,7 +84,7 @@
                     "CALENDAR_COMMENT_REMOVE": "<c:url value="/calendar/removeComment.action"/>",
                     "CALENDAR_COMMENT_LIST": "<c:url value="/calendar/comments.action"/>",
                     "MAILING_VIEW": "${mailingViewUrl}&mailingID={mailingId}",
-                    "MAILING_STATISTICS_VIEW": "${mailingStatisticsViewUrl}&mailingID={mailingId}"
+                    "MAILING_STATISTICS_VIEW": "${mailingStatisticsViewUrl}"
                 }
             }
         </script>

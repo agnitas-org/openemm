@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
-<%@ page import="com.agnitas.reporting.birt.web.ComMailingBIRTStatAction" %>
 <%@ page import="org.agnitas.web.ExportWizardAction" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.MailingWizardAction" %>
@@ -19,7 +18,6 @@
 
 <c:set var="ACTION_VIEW_MAILING" value="<%= MailingBaseAction.ACTION_VIEW %>" scope="request"/>
 <c:set var="ACTION_NEW_MAILING" value="<%= MailingBaseAction.ACTION_NEW %>" scope="request"/>
-<c:set var="ACTION_MAILINGSTAT" value="<%= ComMailingBIRTStatAction.ACTION_MAILINGSTAT %>" scope="request"/>
 <c:set var="ACTION_START_MW" value="<%= MailingWizardAction.ACTION_START %>" scope="request"/>
 <c:set var="ACTION_RECIPIENT_OVERVIEW" value="<%= RecipientAction.ACTION_OVERVIEW_START%>" scope="request"/>
 <c:set var="ACTION_VIEW_RECIPIENT" value="<%= RecipientAction.ACTION_VIEW %>" scope="request"/>
@@ -84,11 +82,7 @@
 
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
-                                                <c:url var="mailingLink" value="/mailing_stat.do">
-                                                    <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
-                                                    <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                                    <c:param name="init" value="true"/>
-                                                </c:url>
+                                                <c:url var="mailingLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
                                             </emm:ShowByPermission>
                                         </c:if>
                                         <a href="${mailingLink}" class="link-list-item">
@@ -147,11 +141,7 @@
                                             </c:url>
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
-                                                    <c:url var="mailingLink" value="/mailing_stat.do">
-                                                        <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
-                                                        <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                                        <c:param name="init" value="true"/>
-                                                    </c:url>
+                                                <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
                                             </emm:ShowByPermission>
                                         </c:if>
                                         <a class="mailing-preview-card" href="${mailingLink}">
@@ -233,10 +223,7 @@
                             <div class="chart-controls">
                                 <c:choose>
                                     <c:when test="${dashboardForm.lastSentMailingId ne 0}">
-                                        <c:url var="mailingStatLink" value="/mailing_stat.do">
-                                            <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
-                                            <c:param name="init" value="true"/>
-                                        </c:url>
+                                        <c:url var="mailingStatLink" value="/statistics/mailing/{mailing-id}/view.action"/>
 
                                         <div class="form-group" data-initializer="dashboard-statistics">
                                             <div class="col-sm-8">
@@ -252,7 +239,7 @@
                                             <script id="config:dashboard-statistics" type="application/json">
                                                 {
                                                   "mailingId": ${dashboardForm.lastSentMailingId},
-                                                  "mailingStatisticsLinkPattern": "${mailingStatLink}&mailingID={mailing-id}",
+                                                  "mailingStatisticsLinkPattern": "${mailingStatLink}",
                                                   "urls": {
                                                       "STATISTICS": "<c:url value="/dashboard/statistics.action"/>"
                                                   }

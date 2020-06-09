@@ -4,6 +4,8 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <%--@elvariable id="sendDiagnosisResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="jobStartResult" type="com.agnitas.service.SimpleServiceResult"--%>
@@ -15,6 +17,8 @@
     .status {color: #FFFFFF !important;}
     .status-success {background-color: green !important;}
     .status-error {background-color: red !important;}
+    .import_status_ok {display: none;}
+    .import_status_error {}
 </style>
 
 <mvc:form servletRelativeAction="/serverstatus/view.action" method="post" modelAttribute="serverStatusForm" data-form="resource">
@@ -198,35 +202,50 @@
                                 <td>Overall Status</td>
                                 <c:set var="isOkOverallStatus" value="${serverStatus.overallStatus}"/>
                                 <td class="status ${isOkOverallStatus ? 'status-success' : 'status-error'}">
-                                        ${isOkOverallStatus ? 'OK' : 'ERROR'}
+                                		${isOkOverallStatus ? 'OK' : 'ERROR'}
                                 </td>
                             </tr>
                             <tr>
                                 <td>Jobqueue Status</td>
                                 <c:set var="isOkJobQueuStatus" value="${serverStatus.jobQueueStatus}"/>
                                 <td class="status ${isOkJobQueuStatus ? 'status-success' : 'status-error'}">
-                                        ${isOkJobQueuStatus ? 'OK' : 'ERROR'}
+                                		${isOkJobQueuStatus ? 'OK' : 'ERROR'}
                                 </td>
                             </tr>
                             <tr>
                                 <td>Import Status</td>
                                 <c:set var="isOkImportStatus" value="${serverStatus.importStatus}"/>
                                 <td class="status ${isOkImportStatus ? 'status-success' : 'status-error'}">
-                                        ${isOkImportStatus ? 'OK' : 'STALLING'}
+                                		${isOkImportStatus ? 'OK' : 'STALLING'}
                                 </td>
                             </tr>
                             <tr>
                                 <td>DB Status</td>
                                 <c:set var="isOkDbStatus" value="${serverStatus.dbStatus}"/>
                                 <td class="status ${isOkDbStatus ? 'status-success' : 'status-error'}">
-                                        ${isOkDbStatus ? 'OK' : 'ERROR'}
+                                		${isOkDbStatus ? 'OK' : 'ERROR'}
                                 </td>
                             </tr>
                             <tr>
                                 <td>DB Connection Status</td>
                                 <c:set var="isOkDbConnectionStatus" value="${serverStatus.dbConnectStatus}"/>
                                 <td class="status ${isOkDbConnectionStatus ? 'status-success' : 'status-error'}">
-                                        ${isOkDbConnectionStatus ? 'OK' : 'Cannot connect to DB'}
+                                		${isOkDbConnectionStatus ? 'OK' : 'Cannot connect to DB'}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Report Status</td>
+                                <c:set var="isOkReportStatus" value="${serverStatus.reportStatus}"/>
+                                <td class="status ${isOkReportStatus ? 'status-success' : 'status-error'}">
+                                		${isOkReportStatus ? 'OK' : 'ERROR'}
+                                </td>
+                            </tr>
+                            <tr class="${isOkImportStatus ? 'import_status_ok' : 'import_status_error'}">
+                                <td colspan="2">
+				                            <c:url var="killRunningImportsUrl" value="/serverstatus/killRunningImports.action"/>
+				                            <button type="button" class="btn btn-primary btn-regular col-sm-12 kill-import-btn" style="white-space: normal; padding:5px">
+				                            		<mvc:message code="serverStatus.killImports" />
+				                            </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -308,6 +327,55 @@
             </div>
         </div>
     </div>
+<!-- ----------Kill Running Imports Light Box------------------------------------------- -->
+	    <div class="modal-backdrop in kill-import-modal" style="display: none;"></div>
+	    <div class="modal modal-wide kill-import-modal" style="display: none;">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="tile">
+							
+							<div class="tile-header">
+								<div class="headline">
+									<mvc:message code="serverStatus.killImports" />
+								</div>
+							</div>
+						
+							<div class="tile-content">
+								<div class="col-sm-12" style="padding: 10px;">
+									<p style="padding-bottom: 5px; color: #A91B1B;"><strong><mvc:message code="serverStatus.killImports.Xplain1" /></strong></p>
+									<p><mvc:message code="serverStatus.killImports.Xplain2" /></p>
+								</div>
+								<div class="row">
+									<div class="col-sm-12" style="padding: 10px;">
+										<div class="btn-group">
+											<div class="col-sm-4 pull-left">
+												<button type="button" class="btn btn-large pull-left kill-import-btn">
+													<i class="icon icon-times"></i> <span class="text"><bean:message key="button.Cancel" /></span>
+												</button>
+											</div>
+											<div class="col-sm-4 pull-right">
+												<button type="button" class="btn btn-large btn-primary pull-right kill-import-btn" data-form-url="${killRunningImportsUrl}" data-form-submit="">
+													<i class="icon icon-check"></i> <span class="text"><bean:message key="button.OK" /></span>
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		<script>
+			jQuery('.kill-import-btn').on('click', function() {
+				if (jQuery('.kill-import-modal').is(':visible')) {
+						jQuery('.kill-import-modal').hide();
+			    } else {
+			    	jQuery('.kill-import-modal').show();
+			    }
+			});
+		</script>
 </mvc:form>
 
 <%@ include file="serverstatus-license-upload.jspf" %>

@@ -34,8 +34,16 @@ public final class HtmlXSSPreventer {
 	 */
 	
     public static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
-	
-	public final void checkString(final String string) throws XSSHtmlException {
+    
+    public static void checkString(final String string) throws XSSHtmlException {
+		checkString(string, ALLOWED_HTML_TAGS);
+	}
+    
+	public static void checkString(final String string, String[] whitelist) throws XSSHtmlException {
+    	if (whitelist == null) {
+    		whitelist = ALLOWED_HTML_TAGS;
+		}
+		
 		final Source source = new Source(string);
 		final Stack<String> openedTags = new Stack<>();
 		final Set<HtmlCheckError> errors = new HashSet<>();
@@ -46,7 +54,7 @@ public final class HtmlXSSPreventer {
 		// Perform checks on each tag
 		for(final Tag tag : tags) {
 			if(tag instanceof StartTag) {
-				checkStartTag(tag, openedTags, errors);
+				checkStartTag(tag, whitelist, openedTags, errors);
 			} else if(tag instanceof EndTag) {
 				checkEndTag(tag, openedTags, errors);
 			}
@@ -61,20 +69,20 @@ public final class HtmlXSSPreventer {
 	}
 	
 	// -------------------------------------------------------------------------------------------------------- Start tag related tests
-	private final void checkStartTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+	private static void checkStartTag(final Tag tag, String[] whitelist, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
 		openedTags.push(tag.getName());
 		
-		checkWhitelistedTag(tag, errors);
+		checkWhitelistedTag(tag, whitelist, errors);
 		checkTagAttributes(tag, errors);
 	}
 	
-	private final void checkWhitelistedTag(final Tag tag, final Set<HtmlCheckError> errors) {
-		if(!isWhitelisted(tag)) {
+	private static void checkWhitelistedTag(final Tag tag, String[] whitelist, final Set<HtmlCheckError> errors) {
+		if(!isWhitelisted(tag, whitelist)) {
 			errors.add(new ForbiddenTagError(tag.getName()));
 		}
 	}
 	
-	private final void checkTagAttributes(final Tag tag, final Set<HtmlCheckError> errors) {
+	private static void checkTagAttributes(final Tag tag, final Set<HtmlCheckError> errors) {
 		final Attributes attributes = tag.parseAttributes();
 		
 		if(attributes.size() > 0) {
@@ -85,11 +93,11 @@ public final class HtmlXSSPreventer {
 	}
 	
 	// -------------------------------------------------------------------------------------------------------- End tag related tests
-	private final void checkEndTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+	private static void checkEndTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
 		checkOpenedTag(tag, openedTags, errors);
 	}
 	
-	private final void checkOpenedTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+	private static void checkOpenedTag(final Tag tag, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
 		if(openedTags.isEmpty()) {
 			errors.add(new UnopenedTagError(tag.getName()));
 		} else {
@@ -104,7 +112,7 @@ public final class HtmlXSSPreventer {
 	}
 	
 	// -------------------------------------------------------------------------------------------------------- Checks related to start and end tags
-	private final void checkUnclosedTags(final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
+	private static void checkUnclosedTags(final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
 		if(!openedTags.isEmpty()) {
 			for(final String tagName : openedTags) {
 				errors.add(new UnclosedTagError(tagName));
@@ -113,10 +121,10 @@ public final class HtmlXSSPreventer {
 	}
 	
 	// -------------------------------------------------------------------------------------------------------- Utility methods
-	private final boolean isWhitelisted(final Tag tag) {
+	private static boolean isWhitelisted(final Tag tag, String[] whitelist) {
 		final String tagName = tag.getName();
 
-		for(final String allowedTag : ALLOWED_HTML_TAGS) {
+		for(final String allowedTag : whitelist) {
 			if(allowedTag.equalsIgnoreCase(tagName)) {
 				return true;
 			}

@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.StrutsActionBase;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.departments.beans.Department;
 import com.agnitas.emm.core.departments.service.DepartmentService;
+import com.agnitas.emm.core.departments.util.DepartmentI18n;
 import com.agnitas.emm.core.supervisor.common.UnknownSupervisorIdException;
 import com.agnitas.emm.core.supervisor.service.SupervisorLoginPermissionService;
 import com.agnitas.util.OneOf;
@@ -96,7 +97,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 	}
 	
 	private final void grantLimitedLoginPermission(final SupervisorGrantLoginPermissionForm loginPermissionForm, final ComAdmin admin, final ActionMessages errors, final ActionMessages messages) {
-		final SimpleDateFormat dateFormat = AgnUtils.getDatePickerFormat(admin, true);
+		final SimpleDateFormat dateFormat = admin.getDateFormat();
         
         try {
 	        final Date expireDateFromForm = dateFormat.parse(loginPermissionForm.getExpireDateLocalized());
@@ -115,7 +116,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 			        
 			        logToUal(admin, department, expireDateFromForm);
 			        
-			        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("settings.supervisor.loginGranted", department.getSlug()));
+			        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("settings.supervisor.loginGranted", DepartmentI18n.translateDepartmentName(department, admin.getLocale()), department.getId()));
 	        	} else if(loginPermissionForm.getDepartmentID() == ComUserSelfServiceGrantSupervisorLoginPermissionAction.ALL_DEPARTMENTS_ID) {
 	        		this.supervisorLoginPermissionService.grantLoginPermissionToAllDepartments(admin, expireDate);
 			        
@@ -135,7 +136,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 	        }
         } catch(final ParseException e) {
         	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.date.format"));
-        }	
+        }
 	}
 	
 	private final void grantUnlimitedLoginPermission(final SupervisorGrantLoginPermissionForm loginPermissionForm, final ComAdmin admin, final ActionMessages errors, final ActionMessages messages) {
@@ -146,7 +147,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 		        
 		        logToUal(admin, department, null);
 		        
-		        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("settings.supervisor.loginGranted.unlimited", department.getSlug()));
+		        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("settings.supervisor.loginGranted.unlimited", DepartmentI18n.translateDepartmentName(department, admin.getLocale()), department.getId()));
         	} else if(loginPermissionForm.getDepartmentID() == ComUserSelfServiceGrantSupervisorLoginPermissionAction.ALL_DEPARTMENTS_ID) {
         		supervisorLoginPermissionService.grantUnlimitedLoginPermissionToAllDepartments(admin);
 		        
@@ -163,7 +164,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
         	logger.error(String.format("Error granting unlimited login permission to department %d (all if 0)", loginPermissionForm.getDepartmentID()), e);
         	// TODO Why the f#@* is the only generic error message "An error occured" related to webservices????
         	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.webserviceuser.general"));
-        }	
+        }
 	}
 
 	private final void checkAndCorrectFormData(final SupervisorGrantLoginPermissionForm loginPermissionForm, final ActionMessages errors) {
@@ -179,7 +180,7 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 		// Check data
 		if(loginPermissionForm.getDepartmentID() == 0) {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.settings.supervisor.noDepartmentSelected"));
-		} 
+		}
 		
 		if(!OneOf.oneObjectOf(loginPermissionForm.getLimit(), "LIMITED", "UNLIMITED")) {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.settings.supervisor.noLoginLimitSelected"));
@@ -195,34 +196,34 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 			final DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM);
 			final String formattedDate = dateFormat.format(expireDate);
 			
-			final String msg = department != null 
+			final String msg = department != null
 					? String.format(
-							"User '%s' (%d) granted login permission to department '%s' until including %s", 
-							admin.getUsername(), 
-							admin.getAdminID(), 
+							"User '%s' (%d) granted login permission to department '%s' until including %s",
+							admin.getUsername(),
+							admin.getAdminID(),
 							department.getSlug(),
 							formattedDate
 							)
 					: String.format(
-							"User '%s' (%d) granted login permission to ALL departments until including %s", 
-							admin.getUsername(), 
-							admin.getAdminID(), 
+							"User '%s' (%d) granted login permission to ALL departments until including %s",
+							admin.getUsername(),
+							admin.getAdminID(),
 							formattedDate
 							)
 							;
 			
 	        writeUserActivityLog(admin, "grant login permission", msg, logger);
 		} else {
-			final String msg = department != null 
+			final String msg = department != null
 					? String.format(
-							"User '%s' (%d) granted UNLIMITED login permission to department '%s'", 
-							admin.getUsername(), 
-							admin.getAdminID(), 
-							department.getSlug() 
+							"User '%s' (%d) granted UNLIMITED login permission to department '%s'",
+							admin.getUsername(),
+							admin.getAdminID(),
+							department.getSlug()
 							)
 					: String.format(
-							"User '%s' (%d) granted UNLIMITED login permission to ALL departments", 
-							admin.getUsername(), 
+							"User '%s' (%d) granted UNLIMITED login permission to ALL departments",
+							admin.getUsername(),
 							admin.getAdminID()
 							)
 							;
@@ -230,7 +231,6 @@ public final class ComUserSelfServiceGrantSupervisorLoginPermissionAction extend
 	        writeUserActivityLog(admin, "grant login permission", msg, logger);
 		}
 	}
-	
 
 	@Required
 	public final void setSupervisorLoginPermissionService(final SupervisorLoginPermissionService service) {

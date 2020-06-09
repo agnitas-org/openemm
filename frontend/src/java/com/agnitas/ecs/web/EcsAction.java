@@ -15,6 +15,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.ecs.service.EcsHeatMapOptions;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -71,7 +73,7 @@ public class EcsAction extends BaseDispatchAction {
 
         form.setCompanyId(companyId);
         form.setRangeColors(ecsService.getClickStatColors(companyId));
-        form.setStatServerUrl(configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
+        form.setStatServerUrl(configService.getValue(ConfigValue.SystemUrl));
 
         form.setShortname(mailingBaseService.getMailingName(mailingId, companyId));
 
@@ -81,6 +83,8 @@ public class EcsAction extends BaseDispatchAction {
 
         form.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(mailingId));
         form.setWorkflowId(mailingBaseService.getWorkflowId(mailingId, companyId));
+        
+        req.setAttribute("previewWidth", DeviceClass.getPreviewSizeByDeviceType(form.getDeviceType()).getWidth());
 
         if (!errors.isEmpty()) {
             saveErrors(req, errors);
@@ -92,7 +96,15 @@ public class EcsAction extends BaseDispatchAction {
 
     public ActionForward export(ActionMapping mapping, ActionForm actionForm, HttpServletRequest req, HttpServletResponse res) throws Exception {
         EcsForm form = (EcsForm) actionForm;
-        if (!ecsService.exportHeatMap(req, res, form.getMailingID(), form.getSelectedRecipient(), form.getViewMode(), form.getPreviewSize())) {
+        EcsHeatMapOptions options = EcsHeatMapOptions.builder()
+                .setMailingId(form.getMailingID())
+                .setRecipientId(form.getSelectedRecipient())
+                .setViewMode(form.getViewMode())
+                .setPreviewSize(DeviceClass.getPreviewSizeByDeviceType(form.getDeviceType()).getId())
+                .setDeviceType(form.getDeviceType())
+                .build();
+        
+        if (!ecsService.exportHeatMap(AgnUtils.getAdmin(req), req.getRequestedSessionId(), res, options)) {
             res.setStatus(HttpServletResponse.SC_NO_CONTENT);
         }
         return null;

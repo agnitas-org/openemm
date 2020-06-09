@@ -10,7 +10,7 @@
 
 package org.agnitas.util;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class DbColumnType {
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";

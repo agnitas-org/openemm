@@ -57,13 +57,13 @@ public class ComSupportAction extends DispatchAction {
 		String companyIdValue = getReportedParameterValue( "agnCI", supportForm);
 		String formNameValue = getReportedParameterValue( "agnFN", supportForm);
 
-		ActionMessages messages = new ActionMessages();
+		ActionMessages actionMessages = new ActionMessages();
 		
 		if( companyIdValue == null || companyIdValue.equals( "") || formNameValue == null || formNameValue.equals( "")) {
 			logger.warn("formSupport: couldn't send error report");
 			
-			messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSendMissingInformation"));
-			saveErrors(request, messages);
+			actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSendMissingInformation"));
+			saveErrors(request, actionMessages);
 
 			request.setAttribute("MESSAGE_BODY", "");
 		} else {
@@ -71,13 +71,13 @@ public class ComSupportAction extends DispatchAction {
 			request.setAttribute("MESSAGE_BODY", messageBody);
 			
 			if (javaMailService.sendEmail(supportAddress, I18nString.getLocaleString("FormNotFoundTitle", "de"), messageBody, messageBody)) {
-				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSent"));
-				saveMessages(request, messages);
+				actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSent"));
+				saveMessages(request, actionMessages);
 			} else {
 				logger.warn("formSupport: couldn't send error report");
 	
-				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSendFailed"));
-				saveErrors(request, messages);
+				actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FormNotFoundSendFailed"));
+				saveErrors(request, actionMessages);
 			}
 		}
 		

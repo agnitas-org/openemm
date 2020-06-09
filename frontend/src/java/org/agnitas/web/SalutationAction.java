@@ -32,7 +32,7 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;

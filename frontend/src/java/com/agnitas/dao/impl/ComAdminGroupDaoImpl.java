@@ -24,7 +24,7 @@ import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
@@ -159,9 +159,6 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 			for (Permission permission : permissions) {
 				parameterList.add(new Object[] {adminGroupId, permission.getTokenString()});
 			}
-			if (logger.isDebugEnabled()) {
-				logger.debug("stmt:" + "INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) VALUES (?, ?)");
-			}
 			batchupdate(logger, "INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) VALUES (?, ?)", parameterList);
 		}
 	}
@@ -259,4 +256,20 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
         
         return new HashSet<>(tokensList);
     }
+
+	@Override
+	public AdminGroup getAdminGroupByName(String adminGroupName, int companyToLimitPremiumPermissionsFor) {
+		try {
+			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE shortname = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), adminGroupName);
+			if (groups.size() > 0) {
+				return groups.get(0);
+			} else {
+				// No Group found
+				return null;
+			}
+		} catch (DataAccessException e) {
+			// No Group found
+			return null;
+		}
+	}
 }

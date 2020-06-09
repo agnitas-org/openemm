@@ -15,8 +15,10 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan base-package="org.agnitas" />
-	<context:component-scan base-package="com.agnitas" />
+	<context:component-scan base-package="org.agnitas, com.agnitas">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
 
 <!-- ============================================================================================================================== Admin -->
 	<bean id="Admin" class="com.agnitas.beans.impl.ComAdminImpl" scope="prototype" />
@@ -51,6 +53,7 @@
 <!-- ============================================================================================================================== Caches -->
 	<bean id="MailingContentTypeCache" class="com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl">
 		<property name="mailingDao" ref="MailingDao" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Calendar -->
@@ -126,15 +129,6 @@
 
 <!-- ============================================================================================================================== Mailgun -->
 	<bean id="Mailgun" class="org.agnitas.backend.MailgunImpl" scope="prototype" /> <!-- If modifying this, don't forget to update implementation of MailgunFactory if necessary!!! -->
-
-	<bean id="mailgunCache" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${mailgun.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${mailgun.maxCacheTimeMillis}</value>
-		</constructor-arg>
-	</bean>
 	
 	<bean id="MailgunFactory" class="com.agnitas.backend.MailgunFactoryImpl" />
 
@@ -159,46 +153,19 @@
 	
 	<bean id="RdirMailingDataDaoCache" class="com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache">
 		<property name="mailingDao" ref="MailingDao" />
-		<property name="cache" ref="mailingDataCache" />
-	</bean>
-
-	<bean id="mailingDataCache" class="org.agnitas.util.TimeoutLRUMap"> <!-- For internal use in bean "RdirMailingDataDaoCache" only! -->
-		<constructor-arg index="0" type="int">
-			<value>${rdir.mailingIds.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1" type="long">
-			<value>${rdir.mailingIds.maxCacheTimeMillis}</value>
-		</constructor-arg>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 	<bean id="MailingFactory" class="com.agnitas.beans.factory.impl.ComMailingFactoryImpl" />
 
 	<bean id="IntelliAdMailingSettingsCache" class="com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettingsCacheImpl">
 		<property name="mediatypesDao" ref="MediatypesDao" />
-		<property name="cache" ref="IntelliAdMailingSettingsCacheMap" />
-	</bean>
-
-	<bean id="IntelliAdMailingSettingsCacheMap" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${mailgun.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${mailgun.maxCacheTimeMillis}</value>
-		</constructor-arg>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 	<bean id="SnowflakeMailingCache" class="com.agnitas.emm.core.mailing.cache.ComSnowflakeMailingCacheImpl">
-		<property name="cache" ref="SnowflakeMailingCacheMap" />
+		<property name="configService" ref="ConfigService" />
 		<property name="comMailingDao" ref="MailingDao" />
-	</bean>
-
-	<bean id="SnowflakeMailingCacheMap" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${mailgun.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${mailgun.maxCacheTimeMillis}</value>
-		</constructor-arg>
 	</bean>
 
 <!-- ============================================================================================================================== Mailing component -->
@@ -219,19 +186,13 @@
 
 <!-- ============================================================================================================================== Password handling -->
 	<bean id="PasswordCheck" class="com.agnitas.emm.core.commons.password.ComPasswordCheckImpl">
-		<property name="adminDao" ref="AdminDao" />
+		<property name="adminService" ref="AdminService" />
 		<property name="supervisorService" ref="SupervisorService" />
 	</bean>
 	
 	<!-- For RDIR: remove that bean and set all properties referencing this bean to null -->
 	<bean id="passwordEncryptor" class="com.agnitas.emm.core.admin.encrypt.PasswordEncryptor">
-		<constructor-arg index="0">
-			<bean class="java.io.File">
-				<constructor-arg index="0">
-					<value>${system.salt.file}</value>
-				</constructor-arg>
-			</bean>
-		</constructor-arg>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Preview -->
@@ -243,7 +204,9 @@
 		<property name="mailingDao" ref="MailingDao"/>
 	</bean>
 	
-	<bean id="PreviewFactory" class="com.agnitas.preview.PreviewFactoryImpl" init-method="createInstance" />
+	<bean id="PreviewFactory" class="com.agnitas.preview.PreviewFactoryImpl" init-method="createInstance">
+		<property name="configService" ref="ConfigService" />
+	</bean>
 
 <!-- ============================================================================================================================== Profile fields -->
 	<bean id="ProfileField" class="com.agnitas.beans.impl.ComProfileFieldImpl" scope="prototype" />
@@ -421,33 +384,6 @@
 
 	<bean id="CharacterEncodingValidator" class="org.agnitas.util.CharacterEncodingValidatorImpl" />
 	
-	<bean id="imageCache" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${hostedImage.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${hostedImage.maxCacheTimeMillis}</value>
-		</constructor-arg>
-	</bean>
-	
-	<bean id="cdnCache" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${cdn.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${cdn.maxCacheTimeMillis}</value>
-		</constructor-arg>
-	</bean>
-	
-	<bean id="formImageCache" class="org.agnitas.util.TimeoutLRUMap">
-		<constructor-arg index="0">
-			<value>${hostedImage.maxCache}</value>
-		</constructor-arg>
-		<constructor-arg index="1">
-			<value>${hostedImage.maxCacheTimeMillis}</value>
-		</constructor-arg>
-	</bean>
-	
 	<bean id="Unsubscribe" class="com.agnitas.emm.core.unsubscribe.ComUnsubscribe" />
 	
 	<bean id="databaseKeywordList" class="org.agnitas.util.KeywordList">
@@ -581,14 +517,6 @@
 		<property name="workerExecutorService" ref="WorkerExecutorService"/>
 	</bean>
 
-	<bean id="onlinehelp.languages" class="java.lang.String">
-		<constructor-arg value="${onlinehelp.languages}" />
-	</bean>
-
-	<bean id="onlinehelp.languages.array" class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToStringArray">
-		<constructor-arg value="${onlinehelp.languages}" />
-	</bean>
-
 	<!-- Support email "form not found" -->
 
 	<bean id="formNotFoundEmailTemplate" class="java.lang.String">
@@ -619,13 +547,7 @@ Euer freundlicher EMM
 	</bean>
 	
 	<bean id="WebservicePasswordEncryptor" class="com.agnitas.emm.springws.WebservicePasswordEncryptor">
-		<constructor-arg index="0">
-			<bean class="java.io.File">
-				<constructor-arg index="0">
-					<value>${system.salt.file}</value>
-				</constructor-arg>
-			</bean>
-		</constructor-arg>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	
@@ -646,10 +568,7 @@ Euer freundlicher EMM
 		<constructor-arg ref="BeanShellCodeGeneratorCallbackFactory" />
 		<constructor-arg ref="EqlToTargetRepresentationConverterFactory" />
 		
-		
 		<property name="targetRepresentationToEqlConverter" ref="EqlTargetRepresentationToEqlConverter" />
-		<property name="mailingIdValidator" ref="EqlMailingIdValidator" />
-		<property name="sqlDialect" ref="EqlSqlDialect" />
 	</bean>
 
 	<bean id="MailingTypeResolverFactory" class="com.agnitas.emm.core.target.eql.emm.resolver.EmmMailingTypeResolverFactory">
@@ -690,7 +609,7 @@ Euer freundlicher EMM
 			 Hashtag-related stuff
 		  ================================================================================= -->
 	<bean id="SaltFileDESKeyProvider" class="com.agnitas.emm.core.commons.encrypt.SaltFileDESKeyProvider">
-		<constructor-arg><value>${system.salt.file}</value></constructor-arg>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<bean id="ProfileFieldEncryptor" class="com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor">
@@ -824,6 +743,7 @@ Euer freundlicher EMM
 		<property name="mailingComponentDao" ref="MailingComponentDao"/>
 		<property name="recipientDao" ref="RecipientDao"/>
 		<property name="previewImageGenerationQueue" ref="PreviewImageGenerationQueue"/>
+		<property name="mediaTypesService" ref="MediaTypesService"/>
 	</bean>
 		  
 </beans>

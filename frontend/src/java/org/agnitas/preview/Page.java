@@ -13,57 +13,57 @@ package org.agnitas.preview;
 import java.util.Map;
 
 public interface Page {
-	public void addContent(String key, String value);
+	void addContent(String key, String value);
 
-	public void setError(String msg);
+	void setError(String msg);
 
-	public String getError();
+	String getError();
 
-	public Map<String, Object> compatibilityRepresentation();
+	Map<String, Object> compatibilityRepresentation();
 
-	public byte[] getPartByID(String id, String charset, boolean escape);
+	byte[] getPartByID(String id, String charset, boolean escape);
 
-	public byte[] getHeaderPart(String charset, boolean escape);
+	byte[] getHeaderPart(String charset, boolean escape);
 
-	public byte[] getHeaderPart(String charset);
+	byte[] getHeaderPart(String charset);
 
-	public byte[] getTextPart(String charset, boolean escape);
+	byte[] getTextPart(String charset, boolean escape);
 
-	public byte[] getTextPart(String charset);
+	byte[] getTextPart(String charset);
 
-	public byte[] getHTMLPart(String charset, boolean escape);
+	byte[] getHTMLPart(String charset, boolean escape);
 
-	public byte[] getHTMLPart(String charset);
+	byte[] getHTMLPart(String charset);
 
-	public String getByID(String id, boolean escape);
+	String getByID(String id, boolean escape);
 
-	public String getStrippedByID(String id, boolean escape);
+	String getStrippedByID(String id, boolean escape);
 
-	public String getHeader(boolean escape);
+	String getHeader(boolean escape);
 
-	public String getHeader();
+	String getHeader();
 
-	public String getText(boolean escape);
+	String getText(boolean escape);
 
-	public String getText();
+	String getText();
 
-	public String getHTML(boolean escape);
+	String getHTML(boolean escape);
 
-	public String getHTML();
+	String getHTML();
 
-	public String getStrippedHTML(boolean escape);
+	String getStrippedHTML(boolean escape);
 
-	public String getStrippedHTML();
+	String getStrippedHTML();
 
-	public String[] getIDs();
+	String[] getIDs();
 
-	public String[] getAttachmentNames();
+	String[] getAttachmentNames();
 
-	public byte[] getAttachment(String name);
+	byte[] getAttachment(String name);
 
-	public String[] getHeaderFields(String field);
+	String[] getHeaderFields(String field);
 
-	public String getHeaderField(String field, boolean escape);
+	String getHeaderField(String field, boolean escape);
 
-	public String getHeaderField(String field);
+	String getHeaderField(String field);
 }

@@ -15,21 +15,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlNodeParser;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlToQueryBuilderParserConfiguration;
 import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolver;
 import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFactory;
-import net.sf.json.JSONSerializer;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.parser.EqlToQueryBuilderParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import net.sf.json.JSONSerializer;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Converts EQL code to QueryBuilder rules in JSON format.

@@ -10,18 +10,22 @@
 
 package com.agnitas.emm.core.birtreport.service;
 
-import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 
 public interface ComBirtReportService {
-    
-    boolean insert(ComBirtReport report);
+    boolean insert(ComBirtReport report) throws Exception;
 
-    boolean logSentReport(ComBirtReport report);
+    void logSentReport(ComBirtReport report);
 
-    List<ComBirtReport> getReportsToSend(Date date);
+    boolean isExistedBenchmarkMailingTbls();
 
-    boolean isExistBenchmarkMailingStatTbl();
+	boolean announceStart(ComBirtReport birtReport);
+
+	void announceEnd(ComBirtReport birtReport);
+
+	int getRunningReportsByHost(String hostName);
+
+	List<ComBirtReport> getReportsToSend(int i, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 }

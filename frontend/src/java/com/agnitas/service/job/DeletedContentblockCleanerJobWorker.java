@@ -11,7 +11,7 @@
 package com.agnitas.service.job;
 
 import org.agnitas.service.JobWorker;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**

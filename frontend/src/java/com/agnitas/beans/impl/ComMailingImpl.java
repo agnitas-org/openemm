@@ -37,9 +37,9 @@ import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -214,7 +214,7 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 					
 					// Check for not measurable links
 					if (linkScanResult.getNotTrackableLinks().size() > 0) {
-						actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", textModuleName, StringEscapeUtils.escapeHtml(linkScanResult.getNotTrackableLinks().get(0))));
+						actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", textModuleName, StringEscapeUtils.escapeHtml4(linkScanResult.getNotTrackableLinks().get(0))));
 					}
 					
 					if (linkScanResult.getLocalLinks().size() > 0) {
@@ -222,7 +222,7 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 							actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT,
 									new ActionMessage("error.mailing.localLink",
 											textModuleName,
-											StringEscapeUtils.escapeHtml(link.getLinkText())));
+											StringEscapeUtils.escapeHtml4(link.getLinkText())));
 						}
 					}
 					
@@ -232,7 +232,7 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 								new ActionMessage("error.mailing.links.errorneous",
 										linkScanResult.getErrorneousLinks().size(),
 										textModuleName,
-										StringEscapeUtils.escapeHtml(linkScanResult.getErrorneousLinks().get(0).getLinkText()),
+										StringEscapeUtils.escapeHtml4(linkScanResult.getErrorneousLinks().get(0).getLinkText()),
 										I18nString.getLocaleString(linkScanResult.getErrorneousLinks().get(0).getErrorMessageKey(), admin.getLocale())));
 					}
 				}
@@ -250,15 +250,21 @@ public class ComMailingImpl extends MailingImpl implements ComMailing {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", SafeString.getLocaleString("error.in", locale)
 					+ " " + textModuleName + "<br> " + message));
 		} catch (Exception e) {
-			logger.error("scanForLinks error in " + textModuleName + ": " + e.getMessage(), e);
-			if (errors == null) {
-				throw e;
-			}
+            logger.error("scanForLinks error in " + textModuleName + ": " + e.getMessage(), e);
+            if (errors == null) {
+                throw e;
+            }
 
-			Locale locale = admin.getLocale();
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", SafeString.getLocaleString("error.in", locale)
-						+ " " + textModuleName + "<br> " + e.getMessage()));
-		}
+            Locale locale = admin.getLocale();
+            if (e.getCause() instanceof LinkService.ErrorLinkStorage) {
+                LinkService.ErrorLinkStorage linkError = (LinkService.ErrorLinkStorage) e.getCause();
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link",
+                        String.format("%s %s<br> %s", SafeString.getLocaleString("error.in", locale), textModuleName, linkError.getErrorLink())));
+            } else {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", SafeString.getLocaleString("error.in", locale)
+                        + " " + textModuleName + "<br> " + e.getMessage()));
+            }
+        }
 		
 		return new Vector<>();
 	}

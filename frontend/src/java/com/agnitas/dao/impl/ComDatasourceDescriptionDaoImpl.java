@@ -155,7 +155,7 @@ public class ComDatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implem
 		}
 	}
 
-	protected class DataSourceRowMapper implements RowMapper<DataSource> {
+	protected static class DataSourceRowMapper implements RowMapper<DataSource> {
 		@Override
 		public DataSource mapRow(ResultSet resultSet, int row) throws SQLException {
             DataSource datasource = new DataSourceImpl();

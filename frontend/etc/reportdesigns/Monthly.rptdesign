@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
     <property name="comments">Copyright (c) 2007 &lt;&lt;Your Company Name here>></property>
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <html-property name="description">Creates a grouped report with a chart giving a visual representation of each group data.</html-property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
@@ -101,6 +101,17 @@
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="adminID" id="868">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
             <property name="paramType">simple</property>
             <property name="controlType">text-box</property>
             <structure name="format">
@@ -220,7 +231,7 @@ return false;]]></method>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailCount = monthStatDataSet.getMailingCounts(params["companyID"], params["startdate"] , params["enddate"]);
+mailCount = monthStatDataSet.getMailingCounts(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < mailCount.size() ) {
 	row["mailing_count"] = mailCount.get(currentrow).getMailingCount();
@@ -372,7 +383,7 @@ return false;]]></method>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["startdate"] , params["enddate"]);
+mailDetails = monthStatDataSet.getMonthDetails(params["companyID"], params["adminID"], params["startdate"] , params["enddate"]);
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < mailDetails.size() ) {
     row["mailing_id"] = mailDetails.get(currentrow).getMailingId();
@@ -443,7 +454,7 @@ return false;]]></method>
             </structure>
             <property name="dataSource">Scripted Data Source</property>
             <method name="open"><![CDATA[monthStatDataSet1 = new Packages.com.agnitas.reporting.birt.external.dataset.MonthStatDataSet();
-mailTotals = monthStatDataSet1.getMonthTotals(params["companyID"], params["startdate"] , params["enddate"], params["top10metrics"]);
+mailTotals = monthStatDataSet1.getMonthTotals(params["companyID"], params["adminID"], params["startdate"] , params["enddate"], params["top10metrics"]);
 indexRow = 0;]]></method>
             <method name="fetch"><![CDATA[if( indexRow < mailTotals.size() ) {
     row["mailing_id"] = mailTotals.get(indexRow).getMailingId();
@@ -2621,10 +2632,7 @@ function getColorDefinition( styleName ) {
                                         <list-property name="action">
                                             <structure>
                                                 <property name="linkType">hyperlink</property>
-                                                <expression name="uri" type="javascript">params["targetBaseUrl"].value &#13;
-+"/mailing_stat.do" &#13;
-+ ";jsessionid=" + params["sessionID"].value &#13;
-+ "?action=7&amp;mailingID=" + row["mailing_id"]</expression>
+                                                <expression name="uri" type="javascript">params["targetBaseUrl"].value + "/statistics/mailing/" + row["mailing_id"] + "/view.action;jsessionid=" + params["sessionID"].value</expression>
                                                 <property name="targetWindow">_parent</property>
                                             </structure>
                                         </list-property>

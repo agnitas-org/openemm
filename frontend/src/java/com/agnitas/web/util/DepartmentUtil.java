@@ -12,13 +12,13 @@ package com.agnitas.web.util;
 
 import com.agnitas.emm.core.departments.beans.Department;
 
-public class DepartmentUtil {
+public final class DepartmentUtil {
 
-	public final String getDepartmentMessageKey(final String slug) {
+	public static final String getDepartmentMessageKey(final String slug) {
 		return String.format("department.slugs.%s", slug);
 	}
 	
-	public final String getDepartmentMessageKey(final Department department) {
+	public static final String getDepartmentMessageKey(final Department department) {
 		return getDepartmentMessageKey(department.getSlug());
 	}
 

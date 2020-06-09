@@ -29,6 +29,8 @@ public class CompanyEntryRowMapper implements RowMapper<CompanyEntry> {
 		companyEntry.setCompanyId(resultSet.getInt("company_id"));
 		companyEntry.setShortname(resultSet.getString("shortname"));
 		companyEntry.setDescription(resultSet.getString("description"));
+		companyEntry.setStatus(resultSet.getString("status"));
+		companyEntry.setTimestamp(resultSet.getTimestamp("timestamp"));
 			
 		return companyEntry;
 	}

@@ -15,26 +15,9 @@ import java.util.Date;
 import org.agnitas.beans.Company;
 
 public interface ComCompany extends Company {
-
-	int getExpireStat();
-	
-	void setExpireStat(int expireStat);
-	
-	int getExpireOnePixel();
-	
-	void setExpireOnePixel(int expireOnePixel);
-	
-	int getExpireUpload();
-	
-	void setExpireUpload(int expireUpload);
-	
 	int getStatAdmin();
 	
 	void setStatAdmin(int statAdmin);
-	
-	int getExpireCookie();
-	
-	void setExpireCookie(int expireCookie);
 	
 	String getSecretKey();
 	
@@ -56,10 +39,6 @@ public interface ComCompany extends Company {
 
 	void setSector(int sector);
 	
-	void setExpireRecipient(int expireRecipient);
-	
-	int getExpireRecipient();
-	
 	void setSalutationExtended(int salutationExtended);
 	
 	int getSalutationExtended();
@@ -68,10 +47,6 @@ public interface ComCompany extends Company {
 	
 	int getEnabledUIDVersion();
 	
-	int getMaxAdminMails();
-
-	void setMaxAdminMails(int maxAdminMails);
-	
 	void setExportNotifyAdmin(int exportNotifyAdmin);
 	
 	int getExportNotifyAdmin();
@@ -79,18 +54,6 @@ public interface ComCompany extends Company {
 	int getParentCompanyId();
 	
 	void setParentCompanyId(int companyId);
-
-	int getExpireSuccess();
-
-	void setExpireSuccess(int maximumAgeInDays);
-
-	int getExpireBounce();
-
-	void setExpireBounce(int expireBounce);
-	
-	int getMaxFields();
-
-	void setMaxFields(int maxFields);
 	
 	String getLocaleTimezone();
 

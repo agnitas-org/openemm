@@ -14,13 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.emm.springws.exceptionresolver.CommonExceptionResolver;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 public class ConfigurableCommonExceptionResolver extends CommonExceptionResolver {
-
-    private static final Logger logger = Logger.getLogger(ConfigurableCommonExceptionResolver.class);
+    private static final Logger classLogger = Logger.getLogger(ConfigurableCommonExceptionResolver.class);
 
     private final Map<Class<? extends Exception>, String> exceptionMessageMappings = new HashMap<>();
 
@@ -31,9 +30,9 @@ public class ConfigurableCommonExceptionResolver extends CommonExceptionResolver
                 Class<Exception> exceptionClass = (Class<Exception>) Class.forName(key);
                 this.exceptionMessageMappings.put(exceptionClass, value);
             } catch (ClassNotFoundException e) {
-                logger.error("Specified exception cannot be found.", e);
+                classLogger.error("Specified exception cannot be found.", e);
             } catch (ClassCastException e) {
-                logger.error("Specified class name is not en exception.", e);
+                classLogger.error("Specified class name is not en exception.", e);
             }
         });
     }

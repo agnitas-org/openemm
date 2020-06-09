@@ -3,7 +3,7 @@
 <%@ page import="org.agnitas.beans.Company" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page import="org.apache.commons.lang.math.NumberUtils" %>
+<%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>

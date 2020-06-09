@@ -18,40 +18,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.dao.MailingComponentDao;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.target.exception.TargetGroupException;
-import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
-import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.target.service.TargetGroupLocator;
-import org.agnitas.emm.core.target.service.UserActivityLog;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetError;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetNodeValidatorKit;
-import org.agnitas.target.TargetRepresentation;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.util.UriComponentsBuilder;
-
+import bsh.Interpreter;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTarget;
@@ -63,10 +35,18 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
+import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluationCacheImpl;
+import com.agnitas.emm.core.target.complexity.service.TargetComplexityEvaluator;
+import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
@@ -77,9 +57,34 @@ import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollect
 import com.agnitas.emm.core.target.exception.EqlFormatException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
-
-import bsh.Interpreter;
-
+import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
+import com.phloc.commons.collections.pair.Pair;
+import org.agnitas.beans.DynamicTagContent;
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailingComponentDao;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.target.exception.TargetGroupException;
+import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
+import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import org.agnitas.emm.core.target.service.TargetGroupLocator;
+import org.agnitas.emm.core.target.service.UserActivityLog;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.target.TargetError;
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetNodeValidatorKit;
+import org.agnitas.target.TargetRepresentation;
+import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.web.util.UriComponentsBuilder;
 import static com.agnitas.beans.ComMailing.NONE_SPLIT_ID;
 
 /**
@@ -125,8 +130,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 	/** Service dealing with profile fields. */
 	private ProfileFieldService profileFieldService;
 
-	private ConfigService configService;
-	
+	private TargetComplexityEvaluator complexityEvaluator;
+
 	private BeanShellInterpreterFactory beanShellInterpreterFactory;
 
 	// ---------------------------------------------------------------------------------------- Business Code
@@ -155,6 +160,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 				throw new TargetGroupIsInUseException(targetGroupID);
 			}
+			default:
+				throw new TargetGroupException("Invalid target group status");
 		}
 	}
 
@@ -378,13 +385,22 @@ public class ComTargetServiceImpl implements ComTargetService {
 
     @Override
     public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
+    	final TargetSavingAndAnalysisResult result = saveTargetWithAnalysis(admin, newTarget, target, errors, userActivityLog);
+    	
+    	return result.getTargetID();
+    }
+    
+    @Override
+	public TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
         if (target == null) {
             // be sure to use id 0 if there is no existing object
             newTarget.setId(0);
         }
 
         if (validateTargetDefinition(admin.getCompanyID(), newTarget.getEQL())) {
-			int newId = targetDao.saveTarget(newTarget);
+			newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
+
+			final int newId = targetDao.saveTarget(newTarget);
 
 			// Check for maximum "compare to"-value of gender equations
 			// Must be done after saveTarget(..)-call because there the new target sql expression is generated
@@ -402,15 +418,16 @@ public class ComTargetServiceImpl implements ComTargetService {
 			} else if (newTarget.getTargetSQL().equals("1=0")) {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
 			}
-
 			newTarget.setId(newId);
+
+			final EqlAnalysisResult analysisResultOrNull = this.eqlFacade.analyseEql(newTarget.getEQL());
 
 			logTargetGroupSave(admin, newTarget, target, userActivityLog);
 
-			return newId;
+			return new TargetSavingAndAnalysisResult(newId, analysisResultOrNull);
 		} else {
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
-            return 0;
+            return new TargetSavingAndAnalysisResult(0, null);
         }
     }
 
@@ -460,7 +477,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			}
 		}
 
-		if (targetExpression != null) {
+		if (StringUtils.isNotBlank(targetExpression)) {
 			return getSQLFromTargetExpression(targetExpression, new TargetSqlCachingResolver(companyId));
 		} else {
 			return "";
@@ -619,16 +636,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return targetDao.getTargetName(targetId, companyId, includeDeleted);
 	}
 
-	@Override
-	public Map<Integer, String> getTargetNames(int companyId, Collection<Integer> targetIds) {
-		List<ComTarget> targetList = targetDao.getTargetGroup(companyId, targetIds, false);
-		Map<Integer, String> map = new HashMap<>();
-		for (ComTarget target: targetList) {
-			map.put(target.getId(), target.getTargetName());
-		}
-		return map;
-	}
-
 	private void logTargetGroupSave(ComAdmin admin, ComTarget newTarget, ComTarget target, UserActivityLog userActivityLog) {
         try {
 			final String description = newTarget.getTargetName() + " (" + newTarget.getId() + ")";
@@ -683,23 +690,18 @@ public class ComTargetServiceImpl implements ComTargetService {
     }
 
 	@Override
-	public boolean checkIfTargetNameAlreadyExists(int companyID, String targetName, int targetID) {
-		List<TargetLight> targetList = targetDao.getTargetLightsByName(targetName, companyID, false);
-		for (TargetLight target : targetList) {
-			if (target.getId() != targetID) {
-				return true;
-			}
-		}
-		return false;
+	public boolean checkIfTargetNameAlreadyExists(@VelocityCheck int companyId, String targetName, int targetId) {
+		String existingName = StringUtils.defaultString(targetDao.getTargetName(targetId, companyId, true));
+
+		// Allow to keep existing name anyway.
+		return !existingName.equals(targetName) && targetDao.isTargetNameInUse(companyId, targetName, false);
 	}
 
 	@Override
 	public boolean checkIfTargetNameIsValid(String targetShortname) {
-		if (targetShortname == null || targetShortname.trim().equalsIgnoreCase("Alle Empfänger") || targetShortname.trim().equalsIgnoreCase("Blacklist")) {
-			return false;
-		} else {
-			return true;
-		}
+		return StringUtils.isNotBlank(targetShortname) &&
+				!StringUtils.equalsIgnoreCase(targetShortname.trim(), "Alle Empfänger") &&
+				!StringUtils.equalsIgnoreCase(targetShortname.trim(), "Blacklist");
 	}
 
 	@Override
@@ -770,7 +772,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public String getTargetSplitName(int splitId) {
 		return targetDao.getTargetSplitName(splitId);
 	}
-	
+
 	private interface TargetSqlResolver {
 		String resolve(int targetId);
 	}
@@ -797,38 +799,43 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, final int companyID) {
-		final List<RawTargetGroup> list = this.targetDao.listRawTargetGroups(companyID);
-		
-		return list.stream()
-				.filter(t -> checkTargetGroupReferencesProfileField(t, fieldNameOnDatabase, companyID))
-				.map(t -> rawToTargetLight(t))
-				.collect(Collectors.toList());
+	public final List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, @VelocityCheck final int companyID) {
+		try {
+			String fieldShortname = profileFieldService.translateDatabaseNameToVisibleName(companyID, fieldNameOnDatabase);
+			List<RawTargetGroup> list = targetDao.listRawTargetGroups(companyID, fieldShortname);
+
+			return list.stream()
+					.filter(t -> checkTargetGroupReferencesProfileField(t, fieldShortname, companyID))
+					.map(ComTargetServiceImpl::rawToTargetLight)
+					.collect(Collectors.toList());
+		} catch (ProfileFieldException e) {
+			return Collections.emptyList();
+		}
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsUsingReferenceTable(final String tableName, final int companyID) {
-		final List<RawTargetGroup> list = this.targetDao.listRawTargetGroups(companyID);
-		
+	public final List<TargetLight> listTargetGroupsUsingReferenceTable(final String tableName, @VelocityCheck final int companyID) {
+		final List<RawTargetGroup> list = targetDao.listRawTargetGroups(companyID, tableName);
+
 		return list.stream()
 				.filter(t -> checkTargetGroupReferencesReferenceTable(t, tableName, companyID))
-				.map(t -> rawToTargetLight(t))
+				.map(ComTargetServiceImpl::rawToTargetLight)
 				.collect(Collectors.toList());
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, final int companyID) {
-		final List<RawTargetGroup> list = this.targetDao.listRawTargetGroups(companyID);
-		
+	public final List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, @VelocityCheck final int companyID) {
+		final List<RawTargetGroup> list = targetDao.listRawTargetGroups(companyID, tableName, columnName);
+
 		return list.stream()
 				.filter(t -> checkTargetGroupReferencesReferenceTableColumn(t, tableName, columnName, companyID))
-				.map(t -> rawToTargetLight(t))
+				.map(ComTargetServiceImpl::rawToTargetLight)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public String toViewUri(int targetId) {
-		return UriComponentsBuilder.fromHttpUrl(configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl) + "/targetQB.do")
+		return UriComponentsBuilder.fromPath("/targetQB.do")
 				.queryParam("method", "show")
 				.queryParam("targetID", targetId)
 				.toUriString();
@@ -854,27 +861,24 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 * Checks if given target group references given profile field.
 	 * 
 	 * @param targetGroup target group to check
-	 * @param fieldNameOnDatabase database name of profile field
+	 * @param fieldShortname visible name of profile field
 	 * @param companyID company ID of target group
 	 * 
 	 * @return <code>true</code> if target group references given profile field
 	 */
-	private final boolean checkTargetGroupReferencesProfileField(final RawTargetGroup targetGroup, final String fieldNameOnDatabase, final int companyID) {
+	private final boolean checkTargetGroupReferencesProfileField(final RawTargetGroup targetGroup, final String fieldShortname, final int companyID) {
 		try {
 			final String eql = normalizeToEQL(targetGroup.getEql(), targetGroup.getRepresentation(), companyID);
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
-			
+
 			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
-			
-			final String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, fieldNameOnDatabase);
-			
-			return collector.getReferencedProfileFields().contains(visibleName);
+
+			return collector.getReferencedProfileFields().contains(fieldShortname.toLowerCase());
 		} catch(final TargetRepresentationToEqlConversionException |
                 EqlParserException |
                 CodeGeneratorException |
                 ProfileFieldResolveException |
-                ReferenceTableResolveException |
-                ProfileFieldException e) {
+                ReferenceTableResolveException e) {
 			return false;	// Invalid target group
 		}
     }
@@ -886,7 +890,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			
 			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
 			
-			return collector.getReferencedReferenceTables().contains(tableName);
+			return collector.getReferencedReferenceTables().contains(tableName.toLowerCase());
 		} catch(final TargetRepresentationToEqlConversionException |
                 EqlParserException |
                 CodeGeneratorException |
@@ -902,9 +906,9 @@ public class ComTargetServiceImpl implements ComTargetService {
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 			
 			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
-			
-			final Optional<Boolean> result = collector.getReferencedRefTableColumns().stream().map(ref -> (ref.getTable().equals(tableName) && ref.getColumn().equals(columnName))).reduce((a,b) -> a || b);
-			return result.orElse(false).booleanValue();	// If empty stream -> return false (meaning no target group references column)
+
+			return collector.getReferencedRefTableColumns().stream()
+					.anyMatch(ref -> ref.getTable().equalsIgnoreCase(tableName) && ref.getColumn().equalsIgnoreCase(columnName));
 		} catch(final TargetRepresentationToEqlConversionException |
                 EqlParserException |
                 ReferenceTableResolveException |
@@ -947,17 +951,85 @@ public class ComTargetServiceImpl implements ComTargetService {
 		
 		return new BeanShellRecipientTargetGroupMatcher(companyID, beanShellInterpreter, this.eqlFacade);
 	}
-	
+
 	@Override
 	public List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
 		return targetDao.getTargetLights(companyId, targetGroups, includeDeleted);
 	}
-	
+
 	@Override
 	public List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String splitType) {
 		return targetDao.getSplitTargetLights(companyId, splitType);
 	}
-	
+
+	@Override
+	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId,
+                                                                                Set<TargetGroupDependentType> allowedTypes, int pageNumber,
+                                                                                int pageSize, String sortColumn, String order) {
+		return targetDao.getDependents(companyId, targetId, allowedTypes, pageNumber, pageSize, sortColumn, order);
+	}
+
+	@Override
+	public Map<Integer, TargetComplexityGrade> getTargetComplexities(int companyId) {
+		Map<Integer, Integer> complexityIndicesMap = targetDao.getTargetComplexityIndices(companyId);
+		Map<Integer, TargetComplexityGrade> complexityGradeMap = new HashMap<>(complexityIndicesMap.size());
+
+		int recipientsCount = recipientDao.getNumberOfRecipients(companyId);
+
+		complexityIndicesMap.forEach((targetId, complexityIndex) ->
+			complexityGradeMap.put(targetId, TargetUtils.getComplexityGrade(complexityIndex, recipientsCount))
+		);
+
+		return complexityGradeMap;
+	}
+
+	@Override
+	public TargetComplexityGrade getTargetComplexityGrade(@VelocityCheck int companyId, int targetId) {
+		Integer complexityIndex = targetDao.getTargetComplexityIndex(companyId, targetId);
+
+		if (complexityIndex == null || complexityIndex < 0) {
+			return null;
+		}
+
+		return TargetUtils.getComplexityGrade(complexityIndex, recipientDao.getNumberOfRecipients(companyId));
+	}
+
+	@Override
+	public int calculateComplexityIndex(String eql, @VelocityCheck int companyId) {
+		return calculateComplexityIndex(eql, companyId, new TargetComplexityEvaluationCacheImpl());
+	}
+
+	@Override
+	public int calculateComplexityIndex(String eql, @VelocityCheck int companyId, TargetComplexityEvaluationCache cache) {
+		try {
+			return complexityEvaluator.evaluate(eql, companyId, cache);
+		} catch (Exception e) {
+			logger.error("Target group complexity index evaluation failed", e);
+			return 0;
+		}
+	}
+
+	@Override
+	public void initializeComplexityIndex(@VelocityCheck int companyId) {
+		Map<Integer, Integer> complexities = new HashMap<>();
+		TargetComplexityEvaluationCache cache = new TargetComplexityEvaluationCacheImpl();
+
+		for (Pair<Integer, String> pair : targetDao.getTargetsToInitializeComplexityIndices(companyId)) {
+			try {
+				complexities.put(pair.getFirst(), calculateComplexityIndex(pair.getSecond(), companyId, cache));
+			} catch (Exception e) {
+				logger.error("Error occurred: " + e.getMessage(), e);
+			}
+		}
+
+		targetDao.saveComplexityIndices(companyId, complexities);
+	}
+
+	@Override
+	public List<TargetLight> getLimitingTargetLights(int companyId) {
+		return Collections.emptyList();
+	}
+
 	/**
 	 * Sets the service handling profile fields.
 	 * 
@@ -967,15 +1039,15 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public final void setProfileFieldService(final ProfileFieldService service) {
 		this.profileFieldService = Objects.requireNonNull(service, "Profile field service cannot be null");
 	}
-
-	@Required
-	public final void setConfigService(final ConfigService configService) {
-		this.configService = Objects.requireNonNull(configService, "ConfigService is null");
-	}
 	
 	@Required
 	public final void setBeanShellInterpreterFactory(final BeanShellInterpreterFactory factory) {
 		this.beanShellInterpreterFactory = Objects.requireNonNull(factory, "BeanShellInterpreterFactory is null");
+	}
+
+	@Required
+	public void setTargetComplexityEvaluator(TargetComplexityEvaluator complexityEvaluator) {
+		this.complexityEvaluator = complexityEvaluator;
 	}
 
 	private int getMaxGenderValue(ComAdmin admin) {

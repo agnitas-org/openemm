@@ -144,7 +144,7 @@ abstract public class MailWriter {
 
 		String	unique;
 
-		if (data.maildropStatus.isCampaignMailing ()) {
+		if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 			unique = getUniqueNr (timestamp, 1) +
 				"C" + (data.maildropStatus.statusField () != null ? data.maildropStatus.statusField (): "") +
 				StringOps.format_number (data.campaignCustomerID, 8);

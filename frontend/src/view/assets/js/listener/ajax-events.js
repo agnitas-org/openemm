@@ -117,17 +117,27 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
 
       $('body').append(errorMessage);
     } else {
+      var isDefault = true;
+
       if (jqxhr.responseText) {
         try {
-          errorMessage = $(jqxhr.responseText).filter('#error-message');
+          var $resp = $(jqxhr.responseText);
+          var $errorMessage = $resp.filter('#error-message');
+          var $scriptMessages = $resp.all('[data-message]');
+
+          if ($errorMessage.exists()) {
+            $('body').append($errorMessage);
+            isDefault = false;
+          } else if ($scriptMessages.exists()) {
+            Page.render(jqxhr.responseText);
+            isDefault = false;
+          }
         } catch (e) {
           console.debug(e);
         }
       }
 
-      if (errorMessage && errorMessage.exists()) {
-        $('body').append(errorMessage.html());
-      } else {
+      if (isDefault) {
         errorMessage = Template.text('error', {
           headline: t('messages.error.headline'),
           text: t('messages.error.text'),

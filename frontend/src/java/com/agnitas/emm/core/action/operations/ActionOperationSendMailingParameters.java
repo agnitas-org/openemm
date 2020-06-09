@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.action.operations;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ActionOperationSendMailingParameters extends AbstractActionOperationParameters {
 	private int mailingID;

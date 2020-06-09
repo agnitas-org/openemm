@@ -16,8 +16,10 @@ import java.util.function.Supplier;
 
 import org.agnitas.backend.Mailgun;
 import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -44,6 +46,8 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 	private static final transient Logger logger = Logger.getLogger(SendActionbasedMailingServiceImpl.class);
 
 	private MaildropStatusDao maildropStatusDao;
+	
+	private ConfigService configService;
 
 	/** Factory for instantiating new Mailgun objects. */
 	private MailgunFactory mailgunFactory;
@@ -83,19 +87,14 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 		this.mailgunFactory = factory;
 	}
 
-	/**
-	 * Set cache for {@link Mailgun}.
-	 *
-	 * @param cache cache for {@link Mailgun}
-	 */
-	@Required
-	public void setMailgunCache(final TimeoutLRUMap<String, Mailgun> cache) {
-		this.mailgunCache = cache;
-	}
-
 	@Required
 	public void setMaildropStatusDao(final MaildropStatusDao maildropStatusDao) {
 		this.maildropStatusDao = maildropStatusDao;
+	}
+
+	@Required
+	public void setConfigService(final ConfigService configService) {
+		this.configService = configService;
 	}
 
 	private class MailgunSupplier {
@@ -118,7 +117,7 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 		 */
 		public Mailgun get() throws Exception {
 			final String cacheId = Integer.toString(companyId) + "_" + Integer.toString(mailingId);
-			Mailgun mailgun = mailgunCache.get(cacheId);
+			Mailgun mailgun = getMailgunCache().get(cacheId);
 
 			if (mailgun == null) {
 				final MaildropEntry maildropEntry = getMaildropEntry();
@@ -132,10 +131,18 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 				mailgun.initialize(Integer.toString(maildropEntry.getId()));
 				mailgun.prepare(new Hashtable<>());
 
-				mailgunCache.put(cacheId, mailgun);
+				getMailgunCache().put(cacheId, mailgun);
 			}
 
 			return mailgun;
+		}
+
+		private TimeoutLRUMap<String, Mailgun> getMailgunCache() {
+			if (mailgunCache == null) {
+				mailgunCache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.MailgunMaxCache), configService.getLongValue(ConfigValue.MailgunMaxCacheTimeMillis));
+			}
+			
+			return mailgunCache;
 		}
 
 		private MaildropEntry getMaildropEntry() throws Exception {

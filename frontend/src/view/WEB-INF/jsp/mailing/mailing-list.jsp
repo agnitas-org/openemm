@@ -1,8 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.forms.*" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.emm.core.commons.util.Constants" %>
-<%@ page import="com.agnitas.reporting.birt.web.ComMailingBIRTStatAction" %>
 <%@ page import="com.agnitas.beans.ComMailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -22,11 +22,8 @@
 <c:set var="ACTION_USED_ACTIONS" value="<%= MailingBaseAction.ACTION_USED_ACTIONS %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= ComMailingBaseAction.ACTION_BULK_CONFIRM_DELETE %>"/>
-<c:set var="ACTION_MAILINGSTAT" value="<%= ComMailingBIRTStatAction.ACTION_MAILINGSTAT %>"/>
 
-<c:set var="MAILING_TYPE_NORMAL" value="<%= ComMailing.TYPE_NORMAL %>"/>
-
-<c:set var="DATE_PATTERN" value="<%= Constants.DATE_PATTERN %>"/>
+<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>"/>
 
 <c:choose>
     <c:when test="${mailingBaseForm.isTemplate}">
@@ -340,6 +337,8 @@
                     <c:set var="filterStatusSelectedSending" value=""/>
                     <c:set var="filterStatusSelectedActive" value=""/>
                     <c:set var="filterStatusSelectedDisable" value=""/>
+                    <c:set var="filterStatusSelectedInGeneration" value="" />
+                    <c:set var="filterStatusSelectedGenerated" value="" />
 
                     <c:forEach var="filterStatusName" items="${mailingBaseForm.filterStatus}">
                         <c:choose>
@@ -378,6 +377,12 @@
                             </c:when>
                             <c:when test="${filterStatusName eq 'disable'}">
                                 <c:set var="filterStatusSelectedDisable" value="checked"/>
+                            </c:when>
+                            <c:when test="${filterStatusName eq 'in-generation'}">
+			                   <c:set var="filterStatusSelectedInGeneration" value="checked" />
+                            </c:when>
+                            <c:when test="${filterStatusName eq 'generation-finished'}">
+            			        <c:set var="filterStatusSelectedGenerated" value="checked" />
                             </c:when>
                         </c:choose>
                     </c:forEach>
@@ -420,6 +425,22 @@
                                     <bean:message key="mailing.status.scheduled"/>
                                 </label>
                             </li>
+
+							<c:if test="${mailingBaseForm.mailingTypeNormal}">
+	                            <li>
+	                                <label class="label">
+	                                    <input type="checkbox" name="filterStatus" value="in-generation" data-field-filter="" ${filterStatusSelectedInGeneration}>
+	                                    <bean:message key="mailing.status.in-generation"/>
+	                                </label>
+	                            </li>
+	                            <li>
+	                                <label class="label">
+	                                    <input type="checkbox" name="filterStatus" value="generation-finished" data-field-filter="" ${filterStatusSelectedGenerated}>
+	                                    <bean:message key="mailing.status.generation-finished"/>
+	                                </label>
+	                            </li>
+							</c:if>                        
+
                             <li>
                                 <label class="label">
                                     <input type="checkbox" name="filterStatus" value="sent" data-field-filter="" ${filterStatusSelectedSent}>
@@ -538,13 +559,13 @@
                         <li>
                             <p>
                                 <label class="label"><bean:message key="operator.between"/></label>
-                                <input type="text" name="filterSendDateBegin" value="${mailingBaseForm.filterSendDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
+                                <input type="text" name="filterSendDateBegin" value="${mailingBaseForm.filterSendDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li>
                             <p>
                                 <label class="label"><bean:message key="default.and"/></label>
-                                <input type="text" name="filterSendDateEnd" value="${mailingBaseForm.filterSendDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
+                                <input type="text" name="filterSendDateEnd" value="${mailingBaseForm.filterSendDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li class="divider"></li>
@@ -574,13 +595,13 @@
                         <li>
                             <p>
                                 <label class="label"><bean:message key="operator.between"/></label>
-                                <input type="text" name="filterCreationDateBegin" value="${mailingBaseForm.filterCreationDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
+                                <input type="text" name="filterCreationDateBegin" value="${mailingBaseForm.filterCreationDateBegin}" data-filter-date-min="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li>
                             <p>
                                 <label class="label"><bean:message key="default.and"/></label>
-                                <input type="text" name="filterCreationDateEnd" value="${mailingBaseForm.filterCreationDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(DATE_PATTERN)}'">
+                                <input type="text" name="filterCreationDateEnd" value="${mailingBaseForm.filterCreationDateEnd}" data-filter-date-max="" class="form-control js-datepicker js-datepicker-right" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}'">
                             </p>
                         </li>
                         <li class="divider"></li>
@@ -668,9 +689,7 @@
                             <c:choose>
                                 <c:when test="${mailing.workstatus eq 'mailing.status.sent' or mailing.workstatus eq 'mailing.status.norecipients'}">
                                     <emm:ShowByPermission token="stats.mailing">
-                                        <c:url var="mailingViewLink" value="/mailing_stat.do">
-                                            <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
-                                            <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                        <c:url var="mailingViewLink" value="/statistics/mailing/${mailing.mailingid}/view.action">
                                             <c:param name="init" value="true"/>
                                         </c:url>
                                     </emm:ShowByPermission>
@@ -823,9 +842,7 @@
                     <c:choose>
                         <c:when test="${mailing.workstatus eq 'mailing.status.sent' or mailing.workstatus eq 'mailing.status.norecipients'}">
                             <emm:ShowByPermission token="stats.mailing">
-                                <c:url var="mailingViewLink" value="/mailing_stat.do">
-                                    <c:param name="action" value="${ACTION_MAILINGSTAT}"/>
-                                    <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                <c:url var="mailingViewLink" value="/statistics/mailing/${mailing.mailingid}/view.action">
                                     <c:param name="init" value="true"/>
                                 </c:url>
                             </emm:ShowByPermission>
@@ -996,12 +1013,12 @@
                         <display:column titleKey="Mailinglist" property="mailinglist"
                             sortable="true" sortProperty="mailinglist" headerClass="js-table-sort" />
                         <display:column titleKey="default.creationDate" sortable="true"
-                            format="{0,date,yyyy-MM-dd}" property="creationdate"
+                            format="{0, date, ${adminDateFormat}}" property="creationdate"
                             sortProperty="creation_date" headerClass="js-table-sort">
                             ${mailing.creationdate}
                         </display:column>
                         <display:column titleKey="default.changeDate" sortable="true"
-                            format="{0,date,yyyy-MM-dd}" property="changedate"
+                            format="{0, date, ${adminDateFormat}}" property="changedate"
                             sortProperty="change_date" headerClass="js-table-sort">
                             ${mailing.changedate}
                         </display:column>
@@ -1039,39 +1056,38 @@
             </div>
             <!-- Table END -->
 
-            <logic:equal name="mailingBaseForm" property="isTemplate" value="false">
-            <script language="javascript" type="text/javascript">
-                AGN.Initializers.ShowMailingListFilters = function($scope) {
-                    if (!$scope) {
-                        $scope = $(document);
-                    }
-
-                    var filtersDescription = "";
-
+            <c:if test="${not mailingBaseForm.isTemplate}">
+                <emm:instantiate var="appliedFilters" type="java.util.LinkedHashMap">
                     <c:if test="${mailingBaseForm.mailingTypeNormal}">
-                    	filtersDescription += "<bean:message key="Normal"/>, ";
+                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="Normal"/></c:set>
                     </c:if>
+
                     <c:if test="${mailingBaseForm.mailingTypeEvent}">
-                    	filtersDescription += "<bean:message key="mailing.event"/>, ";
+                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="mailing.event"/></c:set>
                     </c:if>
+
                     <c:if test="${mailingBaseForm.mailingTypeDate}">
-                    	filtersDescription += "<bean:message key="mailing.date"/>, ";
+                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="mailing.date"/></c:set>
                     </c:if>
+
                     <%@include file="mailing-list-follow-js.jspf" %>
+
                     <%@include file="mailing-list-interval-js.jspf" %>
-					
-                    if (filtersDescription.length > 0) {
-                        filtersDescription = "<div class='well'><strong><bean:message key="mailing.showing"/></strong> " + filtersDescription;
-                        filtersDescription = filtersDescription.substr(0, filtersDescription.length - 2) + "</div>";
+                </emm:instantiate>
+
+                <script data-initializer="mailing-overview-filters" type="application/json">
+                    {
+                        "filters": ${emm:toJson(appliedFilters.values())}
                     }
+                </script>
 
-                    $scope.find("#filtersDescription").html(filtersDescription);
-
-                    $scope.find('#mailing')
-                      .after($scope.find('#mailings-overviewPreview'));
-                }
-            </script>
-            </logic:equal>
+                <script id="mailing-overview-filters" type="text/x-mustache-template">
+                    <div class='well'>
+                        <strong><bean:message key="mailing.showing"/></strong>
+                        {{- filters.join(', ') }}
+                    </div>
+                </script>
+            </c:if>
 
         </div>
         <!-- Tile Content END -->

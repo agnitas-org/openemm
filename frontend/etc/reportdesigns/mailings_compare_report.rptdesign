@@ -82,26 +82,19 @@ reportContext.setPersistentGlobalVariable("predefineMailingName", compareDataSet
 reportContext.setPersistentGlobalVariable("accountName", compareDataSet.getAccountName(params["accountId"]));
 reportContext.setPersistentGlobalVariable("reportName", compareDataSet.getReportName(params["reportId"]));
 
-// here we need to calculate the mailing-name max length for displaying in charts
-// and that depends on the number of mailings used in report
-var mailingNum = String.valueOf(params["selectedMailings"]).split(",").length;
-var mailingMaxLengthChart = Math.floor(200/mailingNum);
-reportContext.setPersistentGlobalVariable("mailingMaxLengthChart", new Integer(mailingMaxLengthChart));
-
-
 reportContext.setPersistentGlobalVariable("showOpenersNotes", "0");
 
 /******************************************************************************************************/
 function setupScaleAxis(chart, icsc, axisIndex, maxScaleValue) {
-	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);	
-	xAxis = chart.getBaseAxes()[0]; 
-    yAxis = chart.getOrthogonalAxes(xAxis, true)[axisIndex]; 
-	yscale = yAxis.getScale(); 
+	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
+	xAxis = chart.getBaseAxes()[0];
+    yAxis = chart.getOrthogonalAxes(xAxis, true)[axisIndex];
+	yscale = yAxis.getScale();
 	yscale.setMin(NumberDataElementImpl.create(0));
 	max = maxScaleValue > 100 ? maxScaleValue : 100;
 	yscale.setMax(NumberDataElementImpl.create(max));
-	yscale.setStep(BirtMath.round(max/10)); 
-	yAxis.setScale(yscale); 
+	yscale.setStep(BirtMath.round(max/10));
+	yAxis.setScale(yscale);
 }
 reportContext.setPersistentGlobalVariable("setupScaleAxis", setupScaleAxis);
 
@@ -114,12 +107,17 @@ function wrap(longStr, width) {
 }
 reportContext.setGlobalVariable("wrap", wrap);
 
+function tr(messageKey) {
+	return Packages.com.agnitas.messages.I18nString.getLocaleString(messageKey, reportContext.getLocale());
+}
+reportContext.setGlobalVariable("tr", tr);
+
 function removeSerieByIdentifier(chart, identifier) {
 	var xAxis = chart.getBaseAxes()[0];
 	var yAxis = chart.getOrthogonalAxes(xAxis, true)[0];
 	var ySeriesDefinitions = yAxis.getSeriesDefinitions();
 	var ySeries = yAxis.getRuntimeSeries();
-	
+
 	for (i = 0; i < ySeries.length; i++) {
 		if (ySeries[i].getSeriesIdentifier().equals(identifier)) {
 			ySeriesDefinitions.remove(i);
@@ -479,38 +477,38 @@ if (currentrow >= compareData.size()) {
 
 row["mailing_id"] = compareData.get(currentrow).getMailingId();
 
-var mailingName =  compareData.get(currentrow).getMailingName();
-row["mailing_name"] = mailingName;
+row["mailing_name"] = wrap(compareData.get(currentrow).getMailingName(), 25);
 
-var maxLength = reportContext.getPersistentGlobalVariable("mailingMaxLengthChart");
-row["mailing_name_wrap"] = StringUtils.wordWrap(mailingName, maxLength, 3, new Locale(reportContext.getLocale().getLanguage()));
-  
+
 row["send_date"] = compareData.get(currentrow).getSendDate();
-row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString(compareData.get(currentrow).getCategory(), reportContext.getLocale());
+row["category"] = tr(compareData.get(currentrow).getCategory());
 row["category_index"] = compareData.get(currentrow).getCategoryindex();
 row["category_row_index"] = compareData.get(currentrow).getCategoryRowIndex();
 
 if ((row["category_index"] == CommonKeys.SEND_DATE_INDEX) &amp;&amp; (reportContext.getLocale().getLanguage() == "de")){
-   row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("Delivery", reportContext.getLocale());
+   row["category"] = tr("Delivery");
 }
 
 if ((row["category_index"] == CommonKeys.CLICKER_INDEX) &amp;&amp; (reportContext.getLocale().getLanguage() == "de")){
-   row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale());
+   row["category"] = tr("statistic.clicker");
 }
 
-if(compareData.get(currentrow).getTargetgroupindex() == 1) {
-	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
-}
-else {
+if(compareData.get(currentrow).getTargetgroupindex() == 1 ||
+		compareData.get(currentrow).getTargetgroup() == "All_Subscribers") {
+	row["targetgroup"] = tr("statistic.all_subscribers");
+} else {
 	row["targetgroup"] = compareData.get(currentrow).getTargetgroup();
 }
-if(row["targetgroup"] == "All_Subscribers") {
-	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+
+if(compareData.get(currentrow).getAssignedTargets() == "All_Subscribers") {
+	row["targets_assigned"] = wrap(tr("statistic.all_subscribers"), 15);
+} else {
+	row["targets_assigned"] = wrap(compareData.get(currentrow).getAssignedTargets(), 15);
 }
+
 row["targetgroup_index"] = compareData.get(currentrow).getTargetgroupindex();
 row["value"] = compareData.get(currentrow).getCount();
 row["rate"] = compareData.get(currentrow).getRate();
-row["targets_assigned"] = compareData.get(currentrow).getAssignedTargets();
 row["rowNumber"] = compareData.get(currentrow).getRowNum();
 
 currentrow++;
@@ -1185,11 +1183,6 @@ return true;]]></method>
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -1209,13 +1202,10 @@ return true;]]></method>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">if (row["targetgroup_index"] == 1) {
-   wrap(row["mailing_name"],25)
- } else {
-   row["mailing_name"]
- }</expression>
+                                        <expression name="value" type="javascript">row["mailing_name"]</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">targets_assigned_</property>
@@ -1227,9 +1217,10 @@ return true;]]></method>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">wrap(row["targets_assigned"],15)</expression>
+                                        <expression name="value" type="javascript">row["targets_assigned"]</expression>
                                     </structure>
                                 </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">delivered_emails_value</property>
@@ -1688,7 +1679,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                                     <value>CommonKeys.OPT_OUTS_INDEX</value>
                                     <value>CommonKeys.HARD_BOUNCES_INDEX</value>
                                     <value>CommonKeys.REVENUE_INDEX</value>
-s                                    <value>CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX</value>
+                                    <value>CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX</value>
                                 </simple-property-list>
                             </structure>
                         </list-property>
@@ -2646,11 +2637,6 @@ s                                    <value>CommonKeys.DELIVERED_EMAILS_DELIVERE
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -3545,14 +3531,14 @@ reportContext.setPersistentGlobalVariable("maxRowNumber", new Integer(this.getRo
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
-  <Script>importPackage(Packages.org.eclipse.birt.chart.model.data.impl);	
+  <Dimension>Two_Dimensional</Dimension>
+  <Script>importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
 importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 
 
 /**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh LegendEntryRenderingHints
  * @param bounds Bounds
  * @param icsc IChartScriptContext
@@ -3561,20 +3547,20 @@ importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 function beforeDrawLegendItem(lerh, bounds, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
     if (lerh.getLabel().getCaption().getValue() == &quot;openers_value&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;));
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;openers_rate&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;) + &quot; in %&quot;);		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;) + &quot; in %&quot;);
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;anonymous_value&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_openers_total_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_openers_total_legend&quot;));
     }
     bounds.setLeft(bounds.getLeft() - 5.0);
 }
 
 /**
  * Called before rendering the Title of an Axis.
- * 
+ *
  * @param axis Axis
  * @param label Title
  * @param icsc IChartScriptContext
@@ -3585,43 +3571,43 @@ function beforeDrawAxisTitle(axis, label, icsc) {
 		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;));
     }
     if (axis.getTitle().getCaption().getValue() == &quot;openers_rate&quot;) {
-		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;) + &quot; in %&quot;);		
+		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_total_legend&quot;) + &quot; in %&quot;);
     }
 }
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart Chart
  * @param icsc IChartScriptContext
  */
 function beforeGeneration(chart, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
-	
+
 	var removeSerieByIdentifier = reportContext.getPersistentGlobalVariable(&quot;removeSerieByIdentifier&quot;);
 	var setupScaleAxis = reportContext.getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
-		
+
 	var openers_total_show = reportContext.getPersistentGlobalVariable(&quot;openers_total_show&quot;);
 	var anonymous_openings_show = reportContext.getPersistentGlobalVariable(&quot;anonymous_openings_show&quot;);
 	var maxOpenersTotalRate = parseInt(reportContext.getPersistentGlobalVariable(&quot;maxOpenersTotalRate&quot;));
-	
+
 	if (openers_total_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;openers_value&quot;);
 		removeSerieByIdentifier(chart, &quot;openers_rate&quot;);
-	} 
-	
+	}
+
 	if (anonymous_openings_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;anonymous_value&quot;);
 	}
-	
+
 	setupScaleAxis(chart, icsc, 1, maxOpenersTotalRate);
-	
+
     var rpCtx = icsc.getExternalContext().getScriptable();
 	icsc.getChartInstance().getTitle().getLabel().getCaption().setValue(rpCtx.getPersistentGlobalVariable(&quot;openersTitle&quot;));
-	
-	var xAxis = chart.getBaseAxes()[0]; 
-    var yAxis = chart.getOrthogonalAxes(xAxis, true)[1]; 
-	yAxis.getOrigin().setValue(NumberDataElementImpl.create(parseInt(rpCtx.getPersistentGlobalVariable(&quot;maxRowNumber&quot;))));	
+
+	var xAxis = chart.getBaseAxes()[0];
+    var yAxis = chart.getOrthogonalAxes(xAxis, true)[1];
+	yAxis.getOrigin().setValue(NumberDataElementImpl.create(parseInt(rpCtx.getPersistentGlobalVariable(&quot;maxRowNumber&quot;))));
 }
 </Script>
   <Units>Points</Units>
@@ -5370,11 +5356,6 @@ function beforeGeneration(chart, icsc) {
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -6234,11 +6215,11 @@ reportContext.setPersistentGlobalVariable("maxRowNumber", new Integer(this.getRo
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>
 /**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh LegendEntryRenderingHints
  * @param bounds Bounds
  * @param icsc IChartScriptContext
@@ -6247,13 +6228,13 @@ reportContext.setPersistentGlobalVariable("maxRowNumber", new Integer(this.getRo
 function beforeDrawLegendItem(lerh, bounds, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
     if (lerh.getLabel().getCaption().getValue() == &quot;clickers_value&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;));
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;clickers_rate&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;) + &quot; in %&quot;);		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;) + &quot; in %&quot;);
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;anonymous_value&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_clicker_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_clicker_legend&quot;));
     }
     bounds.setLeft(bounds.getLeft() - 5.0);
 }
@@ -6261,7 +6242,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 /**
  * Called before rendering the Title of an Axis.
- * 
+ *
  * @param axis Axis
  * @param label Title
  * @param icsc IChartScriptContext
@@ -6272,45 +6253,45 @@ function beforeDrawAxisTitle(axis, label, icsc) {
 		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;));
     }
     if (axis.getTitle().getCaption().getValue() == &quot;clickers_rate&quot;) {
-		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;) + &quot; in %&quot;);		
+		label.getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;clicker_legend&quot;) + &quot; in %&quot;);
     }
 }
 
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart Chart
  * @param icsc IChartScriptContext
  */
 function beforeGeneration(chart, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
-	
+
 	var setupScaleAxis = icsc.getExternalContext().getObject().getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
 	var removeSerieByIdentifier = reportContext.getPersistentGlobalVariable(&quot;removeSerieByIdentifier&quot;);
-	
+
 	var clickers_total_show = reportContext.getPersistentGlobalVariable(&quot;clickers_total_show&quot;);
 	var anonymous_clicks_show = reportContext.getPersistentGlobalVariable(&quot;anonymous_clicks_show&quot;);
-	
+
 	setupScaleAxis(chart, icsc, 1, 100);
-	
+
 	if (clickers_total_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;clickers_value&quot;);
 		removeSerieByIdentifier(chart, &quot;clickers_rate&quot;);
 	}
-	
+
 	if (anonymous_clicks_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;anonymous_value&quot;);
 	}
-	
+
 	rpCtx = icsc.getExternalContext().getScriptable();
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 	icsc.getChartInstance().getTitle().getLabel().getCaption().setValue(rpCtx.getPersistentGlobalVariable(&quot;clickersTitle&quot;));
-	
-	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);	
-	xAxis = chart.getBaseAxes()[0]; 
-	yAxis = chart.getOrthogonalAxes(xAxis, true)[1]; 
-	yAxis.getOrigin().setValue(NumberDataElementImpl.create(parseInt(rpCtx.getPersistentGlobalVariable(&quot;maxRowNumber&quot;))));		
+
+	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
+	xAxis = chart.getBaseAxes()[0];
+	yAxis = chart.getOrthogonalAxes(xAxis, true)[1];
+	yAxis.getOrigin().setValue(NumberDataElementImpl.create(parseInt(rpCtx.getPersistentGlobalVariable(&quot;maxRowNumber&quot;))));
 }
 </Script>
   <Units>Points</Units>
@@ -8051,11 +8032,6 @@ function beforeGeneration(chart, icsc) {
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -8890,10 +8866,10 @@ reportContext.setPersistentGlobalVariable("maxRowNumber", new Integer(this.getRo
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh
  * 			  LegendEntryRenderingHints
  * @param bounds
@@ -8927,7 +8903,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
 		    bounds.setWidth(0);
 		} else {
 			lerh.getLabel().setVisible(true);
-		}		
+		}
     }
     bounds.setLeft(bounds.getLeft() - 5.0);
 }
@@ -8938,21 +8914,21 @@ function beforeDrawAxisTitle( axis, label, icsc )
     var reportContext =  icsc.getExternalContext().getObject();
     if (axis.getTitle().getCaption().getValue() == &quot;_scaleY2&quot;) {
         signed_off_show = reportContext.getPersistentGlobalVariable(&quot;signed_off_show&quot;);
-        hardbounces_show = reportContext.getPersistentGlobalVariable(&quot;hardbounces_show&quot;);        
+        hardbounces_show = reportContext.getPersistentGlobalVariable(&quot;hardbounces_show&quot;);
      	title = &quot;&quot;;
      	if (hardbounces_show == &quot;true&quot;) {
      		title = reportContext.getPersistentGlobalVariable(&quot;hardbounce_legend&quot;);
-     	} 
+     	}
      	if (signed_off_show == &quot;true&quot;) {
      		title = reportContext.getPersistentGlobalVariable(&quot;signed_off_legend&quot;) + (hardbounces_show == &quot;true&quot; ? &quot; / &quot; + title : &quot;&quot;);
-     	}        
-		label.getCaption().setValue(title);		
+     	}
+		label.getCaption().setValue(title);
     }
 }
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart
  *            Chart
  * @param icsc
@@ -8962,19 +8938,19 @@ function beforeDrawAxisTitle( axis, label, icsc )
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-	
-	rpCtx = icsc.getExternalContext().getObject(); 
-	
-	sentEmailsChart = rpCtx.getPersistentGlobalVariable(&quot;sentEmailsChart&quot;);	
-	if (sentEmailsChart != '1') { 	
+
+	rpCtx = icsc.getExternalContext().getObject();
+
+	sentEmailsChart = rpCtx.getPersistentGlobalVariable(&quot;sentEmailsChart&quot;);
+	if (sentEmailsChart != '1') {
 	    rpCtx.setPersistentGlobalVariable(&quot;sentEmailsChart&quot;, &quot;1&quot;);
-	    
+
 	    hardbounces_show = rpCtx.getPersistentGlobalVariable(&quot;hardbounces_show&quot;);
         signed_off_show = rpCtx.getPersistentGlobalVariable(&quot;signed_off_show&quot;);
-	
+
 		xAxis = chart.getBaseAxes()[0];
 		yAxis = chart.getOrthogonalAxes(xAxis, true)[1];
-	
+
 		if (hardbounces_show == &quot;false&quot;) {
 	   		yAxis.getSeriesDefinitions().remove(1);
 		}
@@ -8983,16 +8959,16 @@ function beforeGeneration( chart, icsc )
 		}
 		if ((hardbounces_show == &quot;false&quot;) &amp;&amp; (signed_off_show == &quot;false&quot;)) {
 			yAxis.getLineAttributes().setVisible(false);
-	    	yAxis.getMajorGrid().getTickAttributes().setVisible(false);	    
-	    	yAxis.getLabel().setVisible(false);	
-		}		
-	}	
+	    	yAxis.getMajorGrid().getTickAttributes().setVisible(false);
+	    	yAxis.getLabel().setVisible(false);
+		}
+	}
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 	icsc.getChartInstance().getTitle().getLabel().getCaption().setValue(rpCtx.getPersistentGlobalVariable(&quot;sentTitle&quot;));
-	
-	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);	
-	xAxis = chart.getBaseAxes()[0]; 
-	yAxis = chart.getOrthogonalAxes(xAxis, true)[1]; 
+
+	importPackage(Packages.org.eclipse.birt.chart.model.data.impl);
+	xAxis = chart.getBaseAxes()[0];
+	yAxis = chart.getOrthogonalAxes(xAxis, true)[1];
 	yAxis.getOrigin().setValue(NumberDataElementImpl.create(parseInt(rpCtx.getPersistentGlobalVariable(&quot;maxRowNumber&quot;))));
 }
 </Script>
@@ -10766,11 +10742,6 @@ reportContext.setPersistentGlobalVariable("hardbounce_legend", this.getRowData()
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -11629,11 +11600,6 @@ row["openers_invisible_name_"] + '\u00b2'
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -12328,13 +12294,13 @@ reportContext.setPersistentGlobalVariable("openersStatTitle", this.getRowData().
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 
 
 /**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh LegendEntryRenderingHints
  * @param bounds Bounds
  * @param icsc IChartScriptContext
@@ -12343,13 +12309,13 @@ reportContext.setPersistentGlobalVariable("openersStatTitle", this.getRowData().
 function beforeDrawLegendItem(lerh, bounds, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
     if (lerh.getLabel().getCaption().getValue() == &quot;openers_invisible&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_invisible_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_invisible_legend&quot;));
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;openers_measured&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_measured_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_measured_legend&quot;));
     }
 	if (lerh.getLabel().getCaption().getValue() == &quot;anonymous_openings&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_openers_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;anonymous_openers_legend&quot;));
     }
     bounds.setLeft(bounds.getLeft() - 5.0);
 }
@@ -12357,7 +12323,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart Chart
  * @param icsc IChartScriptContext
  */
@@ -12366,39 +12332,39 @@ function beforeGeneration(chart, icsc) {
 
 	var setupScaleAxis = reportContext.getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
 	var removeSerieByIdentifier = reportContext.getPersistentGlobalVariable(&quot;removeSerieByIdentifier&quot;);
-	
+
     var openers_measured_show = reportContext.getPersistentGlobalVariable(&quot;openers_measured_show&quot;);
 	var openers_invisible_show = reportContext.getPersistentGlobalVariable(&quot;openers_invisible_show&quot;);
 	var anonymous_openings_show = reportContext.getPersistentGlobalVariable(&quot;anonymous_openings_show&quot;);
 
 	setupScaleAxis(chart, icsc, 0, 100);
-			    
+
 	if (openers_invisible_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;openers_invisible&quot;)
 	}
-		
+
 	if (openers_measured_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;openers_measured&quot;)
 	}
-	
+
 	if (anonymous_openings_show == &quot;false&quot;) {
 		removeSerieByIdentifier(chart, &quot;anonymous_openings&quot;)
-	}	
-	
+	}
+
 	icsc.getChartInstance().getTitle().getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openersStatTitle&quot;));
 }
 
 /**
  * Called before rendering the Title of an Axis.
- * 
+ *
  * @param axis Axis
  * @param label Title
  * @param icsc IChartScriptContext
  */
  function beforeDrawAxisTitle(axis, label, icsc) {
     var reportContext =  icsc.getExternalContext().getObject();
-    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {    
-		label.getCaption().setValue(&quot;in %&quot;);		
+    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {
+		label.getCaption().setValue(&quot;in %&quot;);
     }
 }</Script>
   <Units>Points</Units>
@@ -13985,11 +13951,6 @@ reportContext.setPersistentGlobalVariable("openers_invisible_legend", this.getRo
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -14976,11 +14937,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -15760,10 +15716,10 @@ reportContext.setPersistentGlobalVariable("openersDeviceTitle", this.getRowData(
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh
  * 			  LegendEntryRenderingHints
  * @param bounds
@@ -15778,10 +15734,10 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     var reportContext =  icsc.getExternalContext().getObject();
     if (lerh.getLabel().getCaption().getValue() == &quot;series1&quot;) {
 		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_others_legend&quot;));
-    }        
+    }
     if (lerh.getLabel().getCaption().getValue() == &quot;series2&quot;) {
 		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_smarttv_legend&quot;));
-    }    
+    }
     if (lerh.getLabel().getCaption().getValue() == &quot;series3&quot;) {
     	lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_tablet_legend&quot;));
     }
@@ -15789,21 +15745,21 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
     	lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_mobil_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series5&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_pc_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;openers_pc_legend&quot;));
     }
-    bounds.setLeft(bounds.getLeft() - 5.0);      
+    bounds.setLeft(bounds.getLeft() - 5.0);
 }
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
     var reportContext =  icsc.getExternalContext().getObject();
-    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {    
-		label.getCaption().setValue(&quot;in %&quot;);		
+    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {
+		label.getCaption().setValue(&quot;in %&quot;);
     }
 }
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart
  *            Chart
  * @param icsc
@@ -15813,7 +15769,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-	
+
 	setupScaleAxis = icsc.getExternalContext().getObject().getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
 	setupScaleAxis(chart, icsc, 0, 100);
     importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -17892,11 +17848,6 @@ reportContext.setPersistentGlobalVariable("openers_others_legend", this.getRowDa
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -18875,11 +18826,6 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.smarttv
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -19698,10 +19644,10 @@ reportContext.setPersistentGlobalVariable("clickersDeviceTitle", this.getRowData
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh
  * 			  LegendEntryRenderingHints
  * @param bounds
@@ -19715,33 +19661,33 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
 {
     var reportContext =  icsc.getExternalContext().getObject();
     if (lerh.getLabel().getCaption().getValue() == &quot;series1&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_multiple_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_multiple_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series2&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_smarttv_legend&quot;));		
-    }    
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_smarttv_legend&quot;));
+    }
     if (lerh.getLabel().getCaption().getValue() == &quot;series3&quot;) {
 		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_tablet_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series4&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_mobil_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_mobil_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series5&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_pc_legend&quot;));		
-    }    
-    bounds.setLeft(bounds.getLeft() - 5.0);    
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;click_pc_legend&quot;));
+    }
+    bounds.setLeft(bounds.getLeft() - 5.0);
 }
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
     var reportContext =  icsc.getExternalContext().getObject();
-    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {    
-		label.getCaption().setValue(&quot;in %&quot;);		
+    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {
+		label.getCaption().setValue(&quot;in %&quot;);
     }
 }
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart
  *            Chart
  * @param icsc
@@ -19751,7 +19697,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-	
+
 	setupScaleAxis = icsc.getExternalContext().getObject().getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
 	setupScaleAxis(chart, icsc, 0, 100);
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
@@ -21829,11 +21775,6 @@ reportContext.setPersistentGlobalVariable("click_pc_legend", this.getRowData().g
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -22532,11 +22473,6 @@ reportContext.setPersistentGlobalVariable("click_pc_legend", this.getRowData().g
                                 <property name="dataType">float</property>
                             </structure>
                             <structure>
-                                <property name="name">mailing_name_wrap</property>
-                                <expression name="expression" type="javascript">dataSetRow["mailing_name_wrap"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
                                 <property name="name">targets_assigned</property>
                                 <expression name="expression" type="javascript">dataSetRow["targets_assigned"]</expression>
                                 <property name="dataType">string</property>
@@ -23169,10 +23105,10 @@ reportContext.setPersistentGlobalVariable("typeTitle", this.getRowData().getExpr
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before drawing the legend item.
- * 
+ *
  * @param lerh
  * 			  LegendEntryRenderingHints
  * @param bounds
@@ -23189,24 +23125,24 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
 		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;type_offline_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series2&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;type_text_legend&quot;));		
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;type_text_legend&quot;));
     }
     if (lerh.getLabel().getCaption().getValue() == &quot;series3&quot;) {
-		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;type_html_legend&quot;));		
-    }   
-    bounds.setLeft(bounds.getLeft() - 5.0);    
+		lerh.getLabel().getCaption().setValue(reportContext.getPersistentGlobalVariable(&quot;type_html_legend&quot;));
+    }
+    bounds.setLeft(bounds.getLeft() - 5.0);
 }
 
 function beforeDrawAxisTitle( axis, label, icsc )
 {
     var reportContext =  icsc.getExternalContext().getObject();
-    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {    
-		label.getCaption().setValue(&quot;in %&quot;);		
+    if (axis.getTitle().getCaption().getValue() == &quot;_scaleY&quot;) {
+		label.getCaption().setValue(&quot;in %&quot;);
     }
 }
 /**
  * Called before generation of chart model to GeneratedChartState.
- * 
+ *
  * @param chart
  *            Chart
  * @param icsc
@@ -23216,18 +23152,18 @@ function beforeDrawAxisTitle( axis, label, icsc )
 function beforeGeneration( chart, icsc )
 {
 	reportContext = icsc.getExternalContext().getObject();
-	
-    rpCtx = icsc.getExternalContext().getObject(); 
+
+    rpCtx = icsc.getExternalContext().getObject();
 
 	setupScaleAxis = rpCtx.getPersistentGlobalVariable(&quot;setupScaleAxis&quot;);
 	setupScaleAxis(chart, icsc, 0, 100);
 	type_html_show = rpCtx.getPersistentGlobalVariable(&quot;type_html_show&quot;);
 	type_text_show = rpCtx.getPersistentGlobalVariable(&quot;type_text_show&quot;);
 	type_offline_show = rpCtx.getPersistentGlobalVariable(&quot;type_offline_show&quot;);
-	
+
 	xAxis = chart.getBaseAxes()[0];
 	yAxis = chart.getOrthogonalAxes(xAxis, true)[0];
-	
+
 	if (type_html_show == &quot;false&quot;) {
 	   yAxis.getSeriesDefinitions().remove(2);
 	}

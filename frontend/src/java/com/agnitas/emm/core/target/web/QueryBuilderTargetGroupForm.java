@@ -10,20 +10,24 @@
 
 package com.agnitas.emm.core.target.web;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.web.forms.StrutsFormBase;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Form bean containing all the data of the target group editors.
  */
-public final class QueryBuilderTargetGroupForm extends ActionForm {
+public final class QueryBuilderTargetGroupForm extends StrutsFormBase {
 	
 	/** Serial version UID. */
 	private static final long serialVersionUID = 2219139308500990657L;
@@ -61,13 +65,17 @@ public final class QueryBuilderTargetGroupForm extends ActionForm {
 
 	private String workflowForwardParams;
 
+	private String[] filterTypes;
+
+	private TargetComplexityGrade complexityGrade;
+
 	/** 
 	 * Currently shown format of target group data.
 	 * @see TargetgroupViewFormat 
 	 */
 	private String format;
 
-	private List<LightweightMailing> usedInMailings;
+	private PaginatedListImpl<Dependent<TargetGroupDependentType>> dependents;
 
 	private int mailinglistId;
 
@@ -76,22 +84,6 @@ public final class QueryBuilderTargetGroupForm extends ActionForm {
 	private boolean showStatistic = false;
 
 	private String statisticUrl;
-	
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		super.reset(mapping, request);
-		
-		useForAdminAndTestDelivery = false;
-		mailingId = 0;
-		targetID = 0;
-		workflowId = null;
-		workflowForwardParams = null;
-		usedInMailings = null;
-	}
-
-	protected ActionErrors doFormValidate(final ActionMapping mapping, final HttpServletRequest request, final ActionErrors messages) {
-		return messages;
-	}
 
 	// ----------------------------------------------------------------------------------------------------- property "targetID"	
 	public final void setTargetID(final int id) {
@@ -217,12 +209,12 @@ public final class QueryBuilderTargetGroupForm extends ActionForm {
 		this.workflowForwardParams = workflowForwardParams;
 	}
 
-	public List<LightweightMailing> getUsedInMailings() {
-		return usedInMailings;
+	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents() {
+		return dependents;
 	}
 
-	public void setUsedInMailings(List<LightweightMailing> usedInMailings) {
-		this.usedInMailings = usedInMailings;
+	public void setDependents(PaginatedListImpl<Dependent<TargetGroupDependentType>> dependents) {
+		this.dependents = dependents;
 	}
 
 	public int getMailinglistId() {
@@ -257,4 +249,27 @@ public final class QueryBuilderTargetGroupForm extends ActionForm {
 		this.statisticUrl = statisticUrl;
 	}
 
+	public String[] getFilterTypes() {
+		return filterTypes;
+	}
+
+	public void setFilterTypes(String[] filterTypes) {
+		this.filterTypes = filterTypes;
+	}
+
+	public Set<TargetGroupDependentType> getFilterTypesSet() {
+		if (ArrayUtils.isEmpty(filterTypes)) {
+			return Collections.emptySet();
+		} else {
+			return Arrays.stream(filterTypes).map(TargetGroupDependentType::valueOf).collect(Collectors.toSet());
+		}
+	}
+
+	public TargetComplexityGrade getComplexityGrade() {
+		return complexityGrade;
+	}
+
+	public void setComplexityGrade(TargetComplexityGrade complexityGrade) {
+		this.complexityGrade = complexityGrade;
+	}
 }

@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class DynamicTagContentImpl implements DynamicTagContent {
 

@@ -23,11 +23,13 @@ import java.util.stream.Stream;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComAdminGroupDao;
@@ -35,29 +37,45 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.PermissionFilter;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.company.service.ComCompanyService;
+import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
 import com.agnitas.service.ExtendedConversionService;
 
-@Service("UserGroupService")
 public class UserGroupServiceImpl implements UserGroupService {
     
     private static final Logger logger = Logger.getLogger(UserGroupServiceImpl.class);
 
     private ComAdminGroupDao userGroupDao;
-    
     private ComCompanyService companyService;
-    
     private ExtendedConversionService conversionService;
-    
     private PermissionFilter permissionFilter;
-    
-    public UserGroupServiceImpl(ComAdminGroupDao userGroupDao, ComCompanyService companyService, ExtendedConversionService conversionService, PermissionFilter permissionFilter) {
-        this.userGroupDao = userGroupDao;
-        this.companyService = companyService;
-        this.conversionService = conversionService;
-        this.permissionFilter = permissionFilter;
-    }
+	protected PermissionService permissionService;
+	
+	@Required
+	public void setUserGroupDao(ComAdminGroupDao userGroupDao) {
+		this.userGroupDao = userGroupDao;
+	}
+	
+	@Required
+	public void setCompanyService(ComCompanyService companyService) {
+		this.companyService = companyService;
+	}
+	
+	@Required
+	public void setConversionService(ExtendedConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
+	
+	@Required
+	public void setPermissionFilter(PermissionFilter permissionFilter) {
+		this.permissionFilter = permissionFilter;
+	}
+	
+	@Required
+	public void setPermissionService(PermissionService permissionService) {
+		this.permissionService = permissionService;
+	}
     
     @Override
     public PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber) {
@@ -78,9 +96,9 @@ public class UserGroupServiceImpl implements UserGroupService {
             Set<Permission> groupPermissions = adminGroup.getGroupPermissions();
             Set<Permission> companyPermissions = companyService.getCompanyPermissions(admin.getCompanyID());
             
-            Set<String> permissionGranted = Permission.getAllPermissionsAndCategories().keySet().stream()
+            Set<String> permissionGranted = permissionService.getAllPermissionsAndCategories(admin.getCompanyID()).keySet().stream()
                     .filter(permission -> allowedPermissionsCategories.contains(permission.getCategory()))
-                    .filter(permission -> Permission.permissionAllowed(groupPermissions, companyPermissions, permission))
+                    .filter(permission -> Permission.permissionAllowed(admin.getCompanyID(), groupPermissions, companyPermissions, permission))
                     .map(Permission::toString)
                     .collect(Collectors.toSet());
             
@@ -97,7 +115,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     
         Set<String> groupPermissions = userGroupDao.getGroupPermissionsTokens(userGroupId);
         Set<Permission> companyPermissions = companyService.getCompanyPermissions(userGroupDto.getCompanyId());
-        List<String> premiumCategories = Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES);
         
         List<String> allPermissionCategories = getUserGroupPermissionCategories(userGroupId, userGroupDto.getCompanyId(), admin);
         Set<String> allChangeablePermissions = getAllChangeablePermissions(allPermissionCategories, companyPermissions, admin);
@@ -114,7 +131,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                 if (StringUtils.equals(Permission.CATEGORY_KEY_SYSTEM, category) || StringUtils.equals(Permission.CATEGORY_KEY_OTHERS, category)) {
                     // User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
                     selectedPermissions.add(permissionToken);
-                } else if (premiumCategories.contains(category) && !companyPermissions.contains(permission)) {
+                } else if (permission.isPremium() && !companyPermissions.contains(permission)) {
                     // Current users company does not have this right, but usergroup to edit has it.
                     // This happens only for the emm-master user, who makes changes in some foreign company
                     // Just leave it unchanged
@@ -177,7 +194,7 @@ public class UserGroupServiceImpl implements UserGroupService {
         String category = permission.getCategory();
         if (Arrays.asList(Permission.ORDERED_STANDARD_RIGHT_CATEGORIES).contains(category)) {
             return true;
-        } else if (Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES).contains(category)) {
+        } else if (permission.isPremium()) {
             return companyPermissions.contains(permission);
         } else {
             return admin.permissionAllowed(permission) ||
@@ -220,12 +237,13 @@ public class UserGroupServiceImpl implements UserGroupService {
         builder.setAdmin(admin);
         builder.setCompanyPermissions(companyService.getCompanyPermissions(groupCompanyId));
         builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
+		builder.setNewPermissionManagement("new".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.PermissionSystem, admin.getCompanyID())));
     
         return builder.build().getPermissionsCategories();
     }
     
     private Set<String> getAllChangeablePermissions(List<String> permissionCategories, Set<Permission> companyPermissions, ComAdmin admin) {
-        return Permission.getAllPermissionsAndCategories().keySet().stream()
+        return permissionService.getAllPermissionsAndCategories(admin.getCompanyID()).keySet().stream()
                 .filter(permission -> permissionCategories.contains(permission.getCategory()))
                 .filter(permission -> isUserGroupPermissionChangeable(admin, permission, companyPermissions))
                 .map(Permission::toString)

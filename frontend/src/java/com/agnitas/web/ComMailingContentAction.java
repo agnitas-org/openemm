@@ -11,12 +11,9 @@
 package com.agnitas.web;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Vector;
 import javax.servlet.ServletException;
@@ -33,15 +30,14 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ComMailingContentService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.util.preview.PreviewImageService;
-import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
@@ -52,20 +48,13 @@ import org.agnitas.dao.AdminPreferencesDao;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
-import org.agnitas.exceptions.EncodingError;
-import org.agnitas.preview.AgnTagError;
-import org.agnitas.preview.PreviewHelper;
-import org.agnitas.preview.TAGCheck;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.preview.TAGCheckFactory;
 import org.agnitas.preview.TagSyntaxChecker;
-import org.agnitas.util.AgnTagUtils;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CharacterEncodingValidator;
 import org.agnitas.web.StrutsActionBase;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -81,20 +70,8 @@ public class ComMailingContentAction extends StrutsActionBase {
 	private static final transient Logger logger = Logger.getLogger(ComMailingContentAction.class);
 
 	public static final int ACTION_VIEW_CONTENT = ACTION_LAST + 1;
-	public static final int ACTION_VIEW_TEXTBLOCK = ACTION_LAST + 2;
-	public static final int ACTION_ADD_TEXTBLOCK = ACTION_LAST + 3;
-	public static final int ACTION_SAVE_TEXTBLOCK = ACTION_LAST + 4;
-	public static final int ACTION_SAVE_COMPONENT_EDIT = ACTION_LAST + 5;
-	public static final int ACTION_DELETE_TEXTBLOCK = ACTION_LAST + 6;
-	public static final int ACTION_CHANGE_ORDER_UP = ACTION_LAST + 7;
-	public static final int ACTION_CHANGE_ORDER_DOWN = ACTION_LAST + 8;
-	public static final int ACTION_CHANGE_ORDER_TOP = ACTION_LAST + 9;
-	public static final int ACTION_CHANGE_ORDER_BOTTOM = ACTION_LAST + 10;
-	public static final int ACTION_SAVE_TEXTBLOCK_AND_BACK = ACTION_LAST + 11;
-	public static final int ACTION_MAILING_CONTENT_LAST = ACTION_LAST + 11;
-	public static final int ACTION_IMPORT_CONTENT = ACTION_MAILING_CONTENT_LAST + 1;
-	public static final int ACTION_GENERATE_TEXT_FROM_HTML = ACTION_MAILING_CONTENT_LAST + 2;
-	public static final int ACTION_ADD_TEXTBLOCK_AND_BACK = ACTION_MAILING_CONTENT_LAST + 3;
+	public static final int ACTION_IMPORT_CONTENT = ACTION_LAST + 2;
+	public static final int ACTION_GENERATE_TEXT_FROM_HTML = ACTION_LAST + 3;
 
 	protected ComProfileFieldDao profileFieldDao;
 	protected ComMailingContentService mailingContentService;
@@ -106,6 +83,7 @@ public class ComMailingContentAction extends StrutsActionBase {
     protected ComMailingBaseService mailingBaseService;
     private MaildropService maildropService;
     private MailinglistApprovalService mailinglistApprovalService;
+	protected MailingService mailingService;
 
 	protected TAGCheckFactory tagCheckFactory;
 	protected CharacterEncodingValidator characterEncodingValidator;
@@ -124,8 +102,6 @@ public class ComMailingContentAction extends StrutsActionBase {
 	/** DAO accessing preference settings of admins. */
 	protected AdminPreferencesDao adminPreferencesDao;
     
-    private LinkService linkService;
-    
     private GridServiceWrapper gridServiceWrapper;
 
 	@Override
@@ -135,29 +111,8 @@ public class ComMailingContentAction extends StrutsActionBase {
                 return "view_content";
             case ACTION_IMPORT_CONTENT:
                 return "import_content";
-            case ACTION_VIEW_TEXTBLOCK:
-                return "view_textblock";  
-            case ACTION_SAVE_TEXTBLOCK_AND_BACK:
-                return "save_textblock_and_back";
-            case ACTION_SAVE_TEXTBLOCK:
-                return "save_textblock";
-            case ACTION_ADD_TEXTBLOCK:
-                return "add_textblock";
-            case ACTION_DELETE_TEXTBLOCK:
-                return "delete_textblock";
-            case ACTION_CHANGE_ORDER_UP:
-                return "change_order_up"; 
-            case ACTION_CHANGE_ORDER_DOWN:
-                return "change_order_down";
-            case ACTION_CHANGE_ORDER_TOP:
-                return "change_order_top";
-            case ACTION_CHANGE_ORDER_BOTTOM:
-                return "change_order_bottom";
             case ACTION_GENERATE_TEXT_FROM_HTML:
                 return "generate_text_from_html";
-			case ACTION_ADD_TEXTBLOCK_AND_BACK:
-				return "add_textblock_and_back";
-                
             default:
                 return super.subActionMethodName(subAction);
         }
@@ -194,49 +149,22 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 		return destination;
 	}
+
 	protected ActionForward doExecute(ActionMapping mapping, ComMailingContentForm form, HttpServletRequest req, HttpServletResponse res, final ActionMessages errors, final ActionMessages messages) throws Exception {
+		ComAdmin admin = AgnUtils.getAdmin(req);
+
+		assert admin != null;
+
 		switch (form.getAction()) {
 		case ACTION_VIEW_CONTENT:
 			prepareListPage(form, req);
 			form.setShowHTMLEditor(true);
-			
-			//remove after successful testing GWUA-3758
-			req.setAttribute("hasTempBetaPermission", AgnUtils.getAdmin(req).permissionAllowed(Permission.CONTENT_TAB_MIGRATION));
-			writeUserActivityLog(AgnUtils.getAdmin(req), "view content", "active tab - content");
+			writeUserActivityLog(admin, "view content", "active tab - content");
 			return mapping.findForward("list");
 
-		case ACTION_VIEW_TEXTBLOCK:
-			prepareViewPage(form, req, true);
-			writeUserActivityLog(AgnUtils.getAdmin(req), "view content text block", "active tab - content");
-			return mapping.findForward("view");
-
-		case ACTION_SAVE_TEXTBLOCK_AND_BACK:
-		case ACTION_ADD_TEXTBLOCK_AND_BACK:
-			if (saveChanges(form, req, messages, errors)) {
-				prepareListPage(form, req);
-				return mapping.findForward("list");
-			} else {
-				prepareViewPage(form, req, false);
-				return mapping.findForward("view");
-			}
-
-		case ACTION_SAVE_TEXTBLOCK:
-		case ACTION_ADD_TEXTBLOCK:
-		case ACTION_CHANGE_ORDER_UP:
-		case ACTION_CHANGE_ORDER_DOWN:
-		case ACTION_CHANGE_ORDER_TOP:
-		case ACTION_CHANGE_ORDER_BOTTOM:
-		case ACTION_DELETE_TEXTBLOCK:
-			if (saveChanges(form, req, messages, errors)) {
-				prepareViewPage(form, req, true);
-			} else {
-				prepareViewPage(form, req, false);
-			}
-			return mapping.findForward("view");
-
 		case ACTION_GENERATE_TEXT_FROM_HTML:
-			if (isMailingEditable(form, req)) {
-				if (generateTextContent(req, form)) {
+			if (isMailingEditable(admin, form)) {
+				if (generateTextContent(admin, form.getMailingID())) {
 					messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 				} else {
 					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("Error"));
@@ -245,9 +173,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("status_changed"));
 			}
 			prepareViewPage(form, req, StringUtils.equals(form.getDynName(), AgnUtils.DEFAULT_MAILING_TEXT_DYNNAME));
-			
-			//remove after successful testing GWUA-3758
-            req.setAttribute("hasTempBetaPermission", AgnUtils.getAdmin(req).permissionAllowed(Permission.CONTENT_TAB_MIGRATION));
+
 			return mapping.findForward("list");
 
 		default:
@@ -255,10 +181,19 @@ public class ComMailingContentAction extends StrutsActionBase {
 		}
 	}
 	
+	private boolean generateTextContent(ComAdmin admin, int mailingId) {
+		try {
+			return mailingService.generateMailingTextContentFromHtml(admin, mailingId);
+		} catch (Exception e) {
+			logger.error("Error occurred: " + e.getMessage(), e);
+		}
+		return false;
+	}
+	
 	private void prepareViewPage(ComMailingContentForm form, HttpServletRequest req, boolean overrideSubmittedValues) {
 		Map<Integer, DynamicTagContent> contentMap = form.getContent();
 
-		loadMailing(form, req, true);
+		loadMailing(form, req);
 
 		if (!overrideSubmittedValues) {
 			form.setContent(contentMap);
@@ -273,7 +208,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	protected void prepareListPage(ComMailingContentForm form, HttpServletRequest req) {
-		loadMailing(form, req, false);
+		loadMailing(form, req);
 		loadTargetGroups(form, req);
 		loadAvailableInterestGroups(form, req);
 
@@ -282,7 +217,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 						!mailinglistApprovalService.isAdminHaveAccess(AgnUtils.getAdmin(req), form.getMailinglistID()));
 	}
 
-	private Mailing loadMailing(ComMailingContentForm form, HttpServletRequest req, boolean loadContentBlock) {
+	private void loadMailing(ComMailingContentForm form, HttpServletRequest req) {
 		Mailing mailing = mailingDao.getMailing(form.getMailingID(), AgnUtils.getCompanyID(req));
 
 		ComAdmin admin = AgnUtils.getAdmin(req);
@@ -294,8 +229,10 @@ public class ComMailingContentAction extends StrutsActionBase {
 			mailing.setId(0);
 			form.setMailingID(0);
 			form.setMailingEditable(true);
+			form.setMailingExclusiveLockingAcquired(true);
 		} else {
-			form.setMailingEditable(isMailingGridEditable(form.getMailingID(), req));
+			form.setMailingEditable(isMailingEditable(admin, form));
+			form.setMailingExclusiveLockingAcquired(tryToLock(admin, form));
 		}
 
 		form.setShortname(mailing.getShortname());
@@ -309,22 +246,6 @@ public class ComMailingContentAction extends StrutsActionBase {
 
 		form.setMailingContentView(adminPreferences.getMailingContentView());
 		form.setDynTagNames(mailingBaseService.getDynamicTagNames(mailing));
-
-		//TODO: remove loadContentBlock logic block when GWUA-3758 will be successful tested
-		if (loadContentBlock) {
-			final DynamicTag tag = mailing.getDynamicTagById(form.getDynNameID());
-
-			if (tag == null) {
-				form.setContent(new HashMap<>());
-				form.setDynName(StringUtils.EMPTY);
-				form.setShowHTMLEditor(true);
-			} else {
-				form.setContent(tag.getDynContent());
-				form.setDynName(tag.getDynName());
-				form.setShowHTMLEditor(calculateShowingHTMLEditor(tag.getDynName(), mailing, req));
-				form.setDisableLinkExtension(tag.isDisableLinkExtension());
-			}
-		}
 
 		writeUserActivityLog(admin, "view " + (form.isIsTemplate() ? "template" : "mailing"),
 				form.getShortname() + " (" + form.getMailingID() + ")");
@@ -350,21 +271,6 @@ public class ComMailingContentAction extends StrutsActionBase {
 			form.setIsMailingUndoAvailable(false);
 			form.setGridTemplateId(0);
 			form.setWorkflowId(0);
-		}
-
-		return mailing;
-	}
-
-	/**
-	 * Check whether or not a mailing is editable.
-	 * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
-	 * that unlocks sent mailing so it could be edited anyway.
-	 */
-	private boolean isMailingGridEditable(int mailingID, HttpServletRequest request){
-		if(maildropService.isActiveMailing(mailingID, AgnUtils.getCompanyID(request))) {
-			return AgnUtils.allowed(request, Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-		} else {
-			return true;
 		}
 	}
 
@@ -404,406 +310,25 @@ public class ComMailingContentAction extends StrutsActionBase {
 		form.setDynInterestGroup(interestGroup);
 	}
 
-	private boolean saveChanges(ComMailingContentForm form, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
-		if (isMailingEditable(form, req)) {
-			if (doSaveChanges(form, req, messages, errors)) {
-				previewImageService.generateMailingPreview(AgnUtils.getAdmin(req), req.getSession(false).getId(), form.getMailingID(), true);
-				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-				return true;
-			}
-		} else {
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("status_changed"));
-		}
-		return false;
-	}
-
-	private boolean validateTextBlockTags(ComMailingContentForm form, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
-		boolean success = true;
-
-		if (form.getMailingID() > 0) {
-			List<AgnTagError> agnTagSyntaxErrors = new ArrayList<>();
-			List<String[]> errorReport = new ArrayList<>();
-
-			String dynName = form.getDynName();
-
-			TAGCheck tagCheck = tagCheckFactory.createTAGCheck(form.getMailingID());
-			for (String textBlockContent : form.getContentForValidation()) {
-				// Validate HTML link syntax
-				Integer errorLine = linkService.getLineNumberOfFirstInvalidLink(textBlockContent);
-				if (errorLine != null) {
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid_link", dynName, errorLine));
-				}
-
-				// Validate agn-tag syntax
-				if (!tagSyntaxChecker.check(AgnUtils.getCompanyID(req), textBlockContent, agnTagSyntaxErrors)) {
-					for (AgnTagError agnTagError : agnTagSyntaxErrors) {
-						appendErrorToList(errorReport, dynName, agnTagError.getFullAgnTagText(), agnTagError.getLocalizedMessage(req.getLocale()));
-					}
-					success = false;
-				}
-
-				if (success) {
-					StringBuffer tagErrorReport = new StringBuffer();
-					Vector<String> failures = new Vector<>();
-					// Use the old check method only if the new one has not found any errors
-					if (!tagCheck.checkContent(textBlockContent, tagErrorReport, failures)) {
-						appendErrorsToList(errorReport, dynName, new StringBuffer(StringEscapeUtils.escapeHtml(tagErrorReport.toString())));
-						success = false;
-					}
-				}
-
-				// Check for content warnings
-				ComMailingContentChecker.checkHtmlWarningConditions(textBlockContent, messages);
-			}
-			tagCheck.done();
-
-			if (!success) {
-				req.setAttribute("errorReport", errorReport);
-
-				if (agnTagSyntaxErrors.isEmpty()) {
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.template.dyntags"));
-				} else {
-					AgnTagError error = agnTagSyntaxErrors.get(0);
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(error.getErrorKey().getMessageKey(), error.getAdditionalErrorDataWithLineInfo()));
-				}
-			}
-		} else {
-			success = false;
-		}
-
-		return success;
-	}
-
-	@SuppressWarnings("unused")
-    private boolean validateTextBlockEncoding(ComMailingContentForm form, ActionMessages errors) {
-        try {
-            String parameters = mailingDao.getEmailParameter(form.getMailingID());
-            if (parameters != null) {
-                String charset = AgnUtils.getAttributeFromParameterString(parameters, "charset");
-                characterEncodingValidator.validateContentMod(form, charset);
-            }
-        } catch (CharacterEncodingValidationExceptionMod e) {
-            for (EncodingError ignored : e.getSubjectErrors()) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.charset.subject"));
-			}
-            for (EncodingError mailingComponent : e.getFailedMailingComponents()) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.charset.component", mailingComponent.getStrWithError(), mailingComponent.getLine()));
-			}
-            for (EncodingError dynTag : e.getFailedDynamicTags()) {
-				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.charset.content", dynTag.getStrWithError(), dynTag.getLine()));
-			}
-			return false;
-        }
-        return true;
-    }
-
-	public boolean isMailingEditable(ComMailingContentForm aForm, HttpServletRequest req) {
-		if (maildropService.isActiveMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req))) {
-			return AgnUtils.allowed(req, Permission.MAILING_CONTENT_CHANGE_ALWAYS);
-		}
-		return true;
-	}
-
-	private boolean generateTextContent(HttpServletRequest req, ComMailingContentForm aForm) {
-		try {
-			Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
-			if (mailing.getId() > 0) {
-				mailingContentService.generateTextContent(mailing);
-				saveContentChangesInDB(req, aForm, mailing);
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
-			return false;
-		}
-		return true;
-	}
-
-	private boolean doSaveChanges(ComMailingContentForm form, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
-		Mailing mailing = mailingDao.getMailing(form.getMailingID(), AgnUtils.getCompanyID(req));
-		
-		if (mailing != null) {
-            if (mailing.getId() == 0 || mailing.getCompanyID() == 0) {
-                logger.error("Mailing with zero IDs found. Mailing ID is: " + mailing.getId() + ", Company ID is: " +
-						mailing.getCompanyID() + ", Mailing ID stored in Form is: " + form.getMailingID());
-            }
-
-			validateTextBlockEncoding(form, errors);
-            if (!validateTextBlockTags(form, req, messages, errors)) {
-            	return false;
-			}
-
-			DynamicTag tag = mailing.getDynamicTagById(form.getDynNameID());
-
-			Map<Integer, DynamicTagContent> contentOld = null;
-
-			if (tag != null) {
-				contentOld = tag.getDynContent();
-				tag.setDynContent(form.getContent());
-				tag.setDynInterestGroup(form.getDynInterestGroup());
-				tag.setDisableLinkExtension(form.isDisableLinkExtension());
-
-				switch (form.getAction()) {
-				case ACTION_SAVE_TEXTBLOCK:
-				case ACTION_SAVE_TEXTBLOCK_AND_BACK:
-					if (StringUtils.isNotBlank(form.getNewContent())) {
-						addNewTextBlock(form, tag);
-					}
-					break;
-
-				case ACTION_ADD_TEXTBLOCK:
-				case ACTION_ADD_TEXTBLOCK_AND_BACK:
-					addNewTextBlock(form, tag);
-					break;
-
-				case ACTION_DELETE_TEXTBLOCK:
-					// Bug-Fix
-					// 1st delete content from database
-					// Jira AGNEMM-319: Deleting content block *after* saving
-					// the undo data, otherwise the undo data won't contain the
-					// deleted block!
-					// ((ComMailingDaoImpl)mDao).deleteContentFromMailing(aMailing,
-					// aForm.getContentID());
-					// 2nd delete content from list
-					tag.removeContent(form.getContentID());
-					break;
-
-				case ACTION_CHANGE_ORDER_UP:
-					tag.moveContentDown(form.getContentID(), -1);
-					break;
-
-				case ACTION_CHANGE_ORDER_DOWN:
-					tag.moveContentDown(form.getContentID(), 1);
-					break;
-
-				case ACTION_CHANGE_ORDER_TOP:
-					for (int numOfContent = 0; numOfContent < tag.getDynContentCount(); numOfContent++) {
-						tag.moveContentDown(form.getContentID(), -1);
-					}
-					break;
-
-				case ACTION_CHANGE_ORDER_BOTTOM:
-					for (int numOfContent = 0; numOfContent < tag.getDynContentCount(); numOfContent++) {
-						tag.moveContentDown(form.getContentID(), 1);
-					}
-					break;
-				}
-
-                fixAngTagsQuotes(form);
-			}
-
-			try {
-                List<EmmAction> actions = actionDao.getEmmActions(AgnUtils.getCompanyID(req));
-                mailing.setPossibleActions(actions);
-
-                ComAdmin admin = AgnUtils.getAdmin(req);
-				mailing.buildDependencies(false, null, getApplicationContext(req), messages, errors, admin);
-			} catch (Exception e) {
-				logger.error("Error building dependencies", e);
-				if (errors != null) {
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.dependencies", e.getMessage()));
-				} else {
-					throw e;
-				}
-			}
-			
-            mailingBaseService.saveMailingWithUndo(mailing, AgnUtils.getAdminId(req), AgnUtils.allowed(req, Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
-
-			// If user requested a target block to be deleted, do it now, after
-			// saving the undo data
-			if (form.getAction() == ACTION_DELETE_TEXTBLOCK) {
-				mailingDao.deleteContentFromMailing(mailing, form.getContentID());
-			}
-
-            mailingDao.updateStatus(mailing.getId(), "edit");
-            writeTextblocksChangeLog(form, AgnUtils.getAdmin(req), mailing, contentOld);
-            logger.info("change content of mailing: " + form.getMailingID());
-			return true;
-		} else {
-            logger.warn(String.format("unable to change content of mailing: %d. Mailing is null.", form.getMailingID()));
-			return false;
-        }
-	}
-
-	private DynamicTagContent addNewTextBlock(ComMailingContentForm form, DynamicTag tag) {
-		DynamicTagContent block = dynamicTagContentFactory.newDynamicTagContent();
-
-		block.setCompanyID(tag.getCompanyID());
-		block.setDynContent(form.getNewContent());
-		block.setTargetID(form.getNewTargetID());
-		block.setDynOrder(tag.getMaxOrder() + 1);
-		block.setDynNameID(tag.getId());
-		block.setMailingID(tag.getMailingID());
-
-		tag.addContent(block);
-
-		// Add the new text block to a content map
-		form.getContent().put(block.getDynOrder(), block);
-
-		// Reset new text block controls
-		form.setNewContent(StringUtils.EMPTY);
-		form.setNewTargetID(0);
-
-		return block;
-    }
-
-	private void saveContentChangesInDB(HttpServletRequest req, ComMailingContentForm aForm, Mailing aMailing) {
-		try {
-			// Rebuild dependencies to hide unused content blocks
-			List<String> dynNamesForDeletion = new Vector<>();
-
-			aMailing.buildDependencies(true, dynNamesForDeletion, getApplicationContext(req));
-
-			// Mark names in dynNamesForDeletion as "deleted"
-			dynamicTagDao.markNamesAsDeleted(aMailing.getId(), dynNamesForDeletion);
-		} catch (Exception e) {
-			logger.error("Error building dependencies", e);
-		}
-        mailingBaseService.saveMailingWithUndo(aMailing, AgnUtils.getAdminId(req), false);
-		logger.info("change content of mailing: " + aForm.getMailingID());
-	}
-
-	private boolean calculateShowingHTMLEditor(String dynTargetName, Mailing mailing, HttpServletRequest req) {
-		MailingComponent htmlTemplate = mailing.getHtmlTemplate();
-		if (htmlTemplate == null) {
-			return false;
-		}
-
-		String htmlEmmBlock = htmlTemplate.getEmmBlock();
-		try {
-			Vector<String> tagsInHTMLTemplate = mailing.findDynTagsInTemplates(htmlEmmBlock, getApplicationContext(req));
-			return tagsInHTMLTemplate.contains(dynTargetName);
-		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
-			return false;
-		}
-	}
-
 	/**
-	 * Format and write to user event log message about textblock
-	 *
-	 * @param aForm
-	 *            - MailingContentForm
-	 * @param admin
-	 *            - Admin
-	 * @param aMailing
-	 *            - Mailing which is container for textblock
-	 * @param contentOld
-	 * 			  - Texblocks before changes.
+	 * Check whether or not a mailing is editable.
+	 * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
+	 * that unlocks sent mailing so it could be edited anyway.
 	 */
-	private void writeTextblocksChangeLog(ComMailingContentForm aForm, ComAdmin admin, Mailing aMailing,
-											Map<Integer, DynamicTagContent> contentOld) {
-		String entityName = aMailing.isIsTemplate() ? "template" : "mailing";
-		DynamicTag aTag = aMailing.getDynamicTagById(aForm.getDynNameID());
-		String blockName = aTag.getDynName();
-		
-		final String formatPattern = "%s (%d) %s %s %s (%d)";
-		final Object[] formatParameter = new Object[] { blockName, null, null, entityName, aMailing.getShortname(), aMailing.getId() };
-		
-		Map<Integer, DynamicTagContent> contentNew = aForm.getContent();
-
-		switch (aForm.getAction()) {
-			case ACTION_ADD_TEXTBLOCK:
-			case ACTION_ADD_TEXTBLOCK_AND_BACK:
-				contentNew.forEach((index, block) -> {
-					if (MapUtils.isEmpty(contentOld) || !contentOld.containsKey(index)) {
-						formatParameter[1] = block.getId();
-						formatParameter[2] = "in the";
-						
-						writeUserActivityLog(admin, "create textblock", String.format(formatPattern, formatParameter));
-					}
-				});
-				break;
-
-			case ACTION_DELETE_TEXTBLOCK:
-				formatParameter[1] = aForm.getContentID();
-				formatParameter[2] = "from";
-				
-				writeUserActivityLog(admin, "delete textblock", String.format(formatPattern, formatParameter));
-				break;
-
-			case ACTION_CHANGE_ORDER_UP:
-				formatParameter[1] = aForm.getContentID();
-				formatParameter[2] = "from";
-				
-				writeUserActivityLog(admin, "do move textblock up", String.format(formatPattern, formatParameter));
-				break;
-
-			case ACTION_CHANGE_ORDER_DOWN:
-				formatParameter[1] = aForm.getContentID();
-				formatParameter[2] = "from";
-				
-				writeUserActivityLog(admin, "do move textblock down", String.format(formatPattern, formatParameter));
-				break;
-
-			case ACTION_CHANGE_ORDER_TOP:
-				formatParameter[1] = aForm.getContentID();
-				formatParameter[2] = "from";
-				
-				writeUserActivityLog(admin, "do move textblock top", String.format(formatPattern, formatParameter));
-				break;
-
-			case ACTION_CHANGE_ORDER_BOTTOM:
-				formatParameter[1] = aForm.getContentID();
-				formatParameter[2] = "from";
-				
-				writeUserActivityLog(admin, "do move textblock bottom", String.format(formatPattern, formatParameter));
-				break;
-
-			case ACTION_SAVE_TEXTBLOCK:
-			case ACTION_SAVE_TEXTBLOCK_AND_BACK:
-				if (MapUtils.isNotEmpty(contentOld)) {
-					contentNew.forEach((index, blockNew) -> {
-						DynamicTagContent blockOld = contentOld.get(index);
-						if (blockOld != null && !StringUtils.equals(blockOld.getDynContent(), blockNew.getDynContent())) {
-							formatParameter[1] = blockNew.getId();
-							formatParameter[2] = "from";
-							
-							writeUserActivityLog(admin, "edit textblock content", String.format(formatPattern, formatParameter));
-						} else if(blockOld == null) {
-							formatParameter[1] = blockNew.getId();
-							formatParameter[2] = "in the";
-							
-							writeUserActivityLog(admin, "create textblock", String.format(formatPattern, formatParameter));
-						}
-					});
-				} else {
-					contentNew.forEach((index, block) -> {
-						if (MapUtils.isEmpty(contentOld) || !contentOld.containsKey(index)) {
-							formatParameter[1] = block.getId();
-							formatParameter[2] = "in the";
-							
-							writeUserActivityLog(admin, "create textblock", String.format(formatPattern, formatParameter));
-						}
-					});
-				}
-				
-				break;
+	protected boolean isMailingEditable(ComAdmin admin, ComMailingContentForm form) {
+		if (maildropService.isActiveMailing(form.getMailingID(), admin.getCompanyID())) {
+			return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
 		}
+		return true;
 	}
 
-	private void fixAngTagsQuotes(ComMailingContentForm aForm) {
-		Map<Integer, DynamicTagContent> content = aForm.getContent();
-		for (DynamicTagContent dynContent : content.values()) {
-			String text = dynContent.getDynContent();
-			String fixedText = AgnTagUtils.unescapeAgnTags(text);
-			dynContent.setDynContent(fixedText);
+	private boolean tryToLock(ComAdmin admin, ComMailingContentForm form) {
+		try {
+			return mailingService.tryToLock(admin, form.getMailingID());
+		} catch (MailingNotExistException e) {
+			// New mailing is always edited exclusively.
+			return true;
 		}
-	}
-
-	private void appendErrorsToList(List<String[]> errorReports, String blockName, StringBuffer templateReport) {
-		for (Entry<String, String> entry : PreviewHelper.getTagsWithErrors(templateReport).entrySet()) {
-			errorReports.add(new String[]{blockName, entry.getKey(), entry.getValue()});
-		}
-
-		for (String error : PreviewHelper.getErrorsWithoutATag(templateReport)) {
-			errorReports.add(new String[]{blockName, "", error});
-		}
-	}
-
-	private void appendErrorToList(List<String[]> errorReports, String blockName, String erroneousText, String errorDescription) {
-		errorReports.add(new String[]{ blockName, erroneousText, errorDescription });
 	}
 
 	private WebApplicationContext getApplicationContext(HttpServletRequest req) {
@@ -878,6 +403,11 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	@Required
+	public void setMailingService(MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	@Required
     public void setActionDao(EmmActionDao actionDao) {
         this.actionDao = actionDao;
     }
@@ -891,11 +421,6 @@ public class ComMailingContentAction extends StrutsActionBase {
 	public void setTagSyntaxChecker(TagSyntaxChecker tagSyntaxChecker) {
 		this.tagSyntaxChecker = tagSyntaxChecker;
 	}
-
-	@Required
-    public void setLinkService(LinkService linkService) {
-        this.linkService = linkService;
-    }
 	
 	@Required
 	public final void setMaildropService(final MaildropService service) {

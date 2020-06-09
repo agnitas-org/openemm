@@ -237,7 +237,7 @@
                     $('#progressOfUsedDates').addClass('hidden');
                 }
             });
-            $('#refreshProgressOfUsedDevices').click(function () {
+            $('#refreshProgressOfUsedDevices').on("click", function () {
                 loadDynamicStatistic();
             });
             isLargePreviousScreen = isLargeScreen();
@@ -270,7 +270,7 @@
                   updateRebuyChart(data['rebuyTitle'], data['rebuyRate'], data['notAvailable']);
                   updateRevenueChart(data['revenue'], data['notAvailable']);
                   loadImpressionStatistics(data);
-                  AGN.Initializers.Equalizer();
+                  AGN.Lib.CoreInitializer.run('equalizer');
                 }
             }
         });
@@ -296,7 +296,7 @@
             data: data,
             success: function (data) {
                 updateUsedDevicesCharts(data);
-                AGN.Initializers.Equalizer();
+                AGN.Lib.CoreInitializer.run('equalizer');
             }
         });
     }

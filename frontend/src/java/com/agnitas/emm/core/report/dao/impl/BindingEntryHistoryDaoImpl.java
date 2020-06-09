@@ -14,17 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-
 import javax.sql.DataSource;
-
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.impl.MailinglistDaoImpl;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.impl.ComBindingEntryDaoImpl;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
@@ -32,6 +22,14 @@ import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryHistoryImpl;
 import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryHistoryImpl;
 import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
 
 public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements BindingEntryHistoryDao {
 
@@ -167,14 +165,14 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
         private static final String DEFAULT_MAILING_LIST_PREFIX = "ml_";
 
         private final String columnPrefix;
-        private final MailinglistDaoImpl.MailinglistRowMapper mailinglistRowMapper;
+        private final MailinglistRowMapper mailinglistRowMapper;
 
         /**
          * Default constructor uses in case of your ResultSet contains default names of columns.
          */
         public CompositeRowMapperWithMailinglist() {
             columnPrefix = StringUtils.EMPTY;
-            mailinglistRowMapper = new MailinglistDaoImpl.MailinglistRowMapper(DEFAULT_MAILING_LIST_PREFIX);
+            mailinglistRowMapper = new MailinglistRowMapper(DEFAULT_MAILING_LIST_PREFIX);
         }
 
         /**
@@ -185,7 +183,7 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
          */
         public CompositeRowMapperWithMailinglist(String mailinglistColumnPrefix) {
             columnPrefix = StringUtils.EMPTY;
-            mailinglistRowMapper = new MailinglistDaoImpl.MailinglistRowMapper(mailinglistColumnPrefix);
+            mailinglistRowMapper = new MailinglistRowMapper(mailinglistColumnPrefix);
         }
 
         @Override

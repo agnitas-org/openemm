@@ -36,7 +36,7 @@
 
     // fix issues w/ element rerendering
     $(window).trigger('resize');
-    AGN.Initializers.Load();
+    AGN.Lib.CoreInitializer.run('load');
   }
 
 

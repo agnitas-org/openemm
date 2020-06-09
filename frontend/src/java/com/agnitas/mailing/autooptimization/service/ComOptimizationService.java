@@ -15,15 +15,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.beans.impl.SelectOption;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
 import net.sf.json.JSONArray;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.beans.impl.SelectOption;
 
 public interface ComOptimizationService {
 
@@ -32,6 +31,8 @@ public interface ComOptimizationService {
 	int save(ComOptimization optimization);
 
 	ComOptimization get(int optimizationID, @VelocityCheck int companyID);
+	
+	int getOptimizationIdByFinalMailing(int finalMailingId, @VelocityCheck int companyId);
 
 	/**
 	 * Retrieve all entities except ones created by workflow manager.
@@ -118,4 +119,14 @@ public interface ComOptimizationService {
 	 * @return final mailing ID
 	 */
     int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID);
+	
+	/**
+	 * Return final_mailing_id for the AutoOptimization
+	 * @param companyId
+	 * @param workflowId
+	 * @return
+	 */
+	int getFinalMailingId(@VelocityCheck int companyId, int workflowId);
+	
+	AutoOptimizationLight getOptimizationLight(@VelocityCheck int companyId, int workflowId);
 }

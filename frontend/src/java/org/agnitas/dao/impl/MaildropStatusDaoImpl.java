@@ -17,15 +17,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MaildropRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
+
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
 
 public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatusDao {
 	private static final transient Logger logger = Logger.getLogger( MaildropStatusDaoImpl.class);
@@ -42,13 +44,22 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		}
 		return false;
 	}
+	
+	@Override
+	public boolean delete(int companyId, int mailingId, MaildropStatus status, MaildropGenerationStatus generationStatus) {
+		final String sql = "DELETE FROM maildrop_status_tbl WHERE company_id=? AND mailing_id=? AND status_field=? AND genstatus=?";
+
+		final int deleted = update(logger, sql, companyId, mailingId, status.getCodeString(), generationStatus.getCode());
+
+		return deleted > 0;
+	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteUnsentWorldMailingEntries(int mailingID) {
 		String sql = "DELETE FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND status_field = ? AND mailing_id = ?";
 		try {
-			return update(logger, sql, MaildropEntry.GEN_SCHEDULED, MaildropEntry.GEN_NOW, MaildropStatus.WORLD.getCode(), mailingID);
+			return update(logger, sql, MaildropGenerationStatus.SCHEDULED.getCode(), MaildropGenerationStatus.NOW.getCode(), MaildropStatus.WORLD.getCode(), mailingID);
 		} catch (Exception e) {
 			logger.error("Error: " + e.getMessage(), e);
 			javaMailService.sendExceptionMail("sql: " + sql, e);
@@ -61,7 +72,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	public int deleteUnsentEntries(int mailingID) {
 		String sql = "DELETE FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND mailing_id = ?";
 		try {
-			return update(logger, sql, MaildropEntry.GEN_SCHEDULED, MaildropEntry.GEN_NOW, mailingID);
+			return update(logger, sql, MaildropGenerationStatus.SCHEDULED.getCode(), MaildropGenerationStatus.NOW.getCode(), mailingID);
 		} catch (Exception e) {
 			logger.error("Error: " + e.getMessage(), e);
 			javaMailService.sendExceptionMail("sql: " + sql, e);
@@ -91,13 +102,18 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	// Check whether or not an entry is allowed for removal
 	private boolean isDeletable(MaildropEntry entry) {
 		if (entry.getStatus() == MaildropStatus.WORLD.getCode()) {
-			switch (entry.getGenStatus()) {
-				case MaildropEntry.GEN_SCHEDULED:
-				case MaildropEntry.GEN_NOW:
+			final MaildropGenerationStatus generationStatusOrNull = MaildropGenerationStatus.fromCodeOrNull(entry.getGenStatus());
+			
+			if(generationStatusOrNull != null) {
+				switch(generationStatusOrNull) {
+				case SCHEDULED:
+				case NOW:
 					return true;
-
 				default:
 					return false;
+				}
+			} else {
+				return false;
 			}
 		} else {
 			return true;
@@ -158,7 +174,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	private void updateMaildropEntry(final MaildropEntry entry) {
 		final String sql = "UPDATE maildrop_status_tbl SET status_field = ?, senddate = ?, step = ?, blocksize = ?, gendate = ?, genstatus = ?, genchange = ?, max_recipients = ?, admin_test_target_id = ?, optimize_mail_generation = ? WHERE status_id = ? AND company_id = ? AND mailing_id = ?";
 		
-		this.update(logger, sql, 
+		this.update(logger, sql,
 				Character.toString(entry.getStatus()),
 				entry.getSendDate(),
 				entry.getStepping(),
@@ -178,7 +194,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		if (isOracleDB()) {
 			final int maildropStatusId = selectInt(logger, "SELECT maildrop_status_tbl_seq.NEXTVAL FROM DUAL");
 			
-			this.update(logger, "INSERT INTO maildrop_status_tbl (status_id, company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			update(logger, "INSERT INTO maildrop_status_tbl (status_id, company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 					maildropStatusId,
 					entry.getCompanyID(),
 					Character.toString(entry.getStatus()),

@@ -1,4 +1,4 @@
 <HelpBalloon>
 	<title>EMM action after import</title>
-	<content><![CDATA[If you want to automatically send a double opt-in e-mail to all new recipients after the import, select the appropriate action here.]]></content>
+	<content><![CDATA[If you want to automatically send a double opt-in e-mail to all new recipients after the import, select the appropriate action here.  This must include the steps "Add/Update recipients" and "Send action-based mailing".]]></content>
 </HelpBalloon>

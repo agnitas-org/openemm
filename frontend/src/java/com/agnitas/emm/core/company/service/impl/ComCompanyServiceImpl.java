@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.company.service.impl;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -26,19 +25,17 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComCompany;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
@@ -52,8 +49,8 @@ import com.agnitas.emm.core.company.form.CompanyCreateForm;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.premium.web.PremiumFeature;
 import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.web.ComAdminForm;
 import com.agnitas.web.mvc.Popups;
 
 public class ComCompanyServiceImpl implements ComCompanyService {
@@ -70,7 +67,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     private ConfigService configService;
     private AdminService adminService;
     protected ComCompanyDao companyDao;
-    private ComAdminDao adminDao;
 
     @Override
     public boolean initTables(int companyID) {
@@ -120,7 +116,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     @Override
     public PaginatedListImpl<CompanyInfoDto> getCompanyList(int companyID, String sort, String direction, int page, int rownums) {
-        PaginatedListImpl<CompanyEntry> companyList = companyDao.getCompanyListNew(companyID, sort, direction, page, rownums);
+        PaginatedListImpl<CompanyEntry> companyList = companyDao.getCompanyList(companyID, sort, direction, page, rownums);
         return conversionService.convertPaginatedList(companyList, CompanyEntry.class, CompanyInfoDto.class);
     }
 
@@ -132,11 +128,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     @Override
     public List<AdminEntry> getAdmins(int companyId) {
-        return ListUtils.emptyIfNull(adminDao.getAllAdminsByCompanyId(companyId));
+        return ListUtils.emptyIfNull(adminService.listAdminsByCompanyID(companyId));
     }
 
     @Override
-    public int save(ComAdmin admin, CompanyCreateForm form, Popups popups) throws Exception {
+    public int save(ComAdmin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception {
         ComCompany company = (ComCompany) companyFactory.newCompany();
         company.setCreatorID(admin.getCompanyID());
         company.setStatus(Company.STATUS_ACTIVE);
@@ -152,7 +148,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         saveConfigValues(admin, company.getId(), form.getCompanySettingsDto());
 
         // create new table for new admin
-        initTable(company);
+        initTableAndCopyTemplates(company, sessionId);
 
         // create new user for new company
         int executiveAdminId = createExecutiveAdmin(admin, form.getCompanyInfoDto(), form.getCompanyAdminDto(), company.getId(), popups);
@@ -177,14 +173,25 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         userActivityLogService.writeUserActivityLog(admin, companyChangesLog);
         return company.getId();
     }
+    
+    @Override
+    public String getStatus(int companyID) {
+    	ComCompany company = companyDao.getCompany(companyID);
+		return company.getStatus();
+    }
 
     @Override
     public boolean deleteCompany(int companyIdForRemove) {
-        ComCompany company = companyDao.getCompany(companyIdForRemove);
+        return false;
+    }
+    
+    @Override
+    public boolean deactivateCompany(int companyIdForDeactivation) {
+        ComCompany company = companyDao.getCompany(companyIdForDeactivation);
         if (Objects.nonNull(company)) {
             companyDao.deleteCompany(company);
             if (logger.isInfoEnabled()) {
-                logger.info("Company: " + companyIdForRemove + " deleted");
+                logger.info("Company: " + companyIdForDeactivation + " deactivated");
             }
             return true;
         }
@@ -201,23 +208,17 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         return StringUtils.isNotEmpty(shortname) && companyDao.isCompanyNameUnique(shortname);
     }
 
+    @Override
+    public boolean isCreatorId(@VelocityCheck int companyId, int creatorId) {
+        return companyId > 0 && companyDao.isCreatorId(companyId, creatorId);
+    }
+
     private void setupInfo(ComCompany company, CompanyInfoDto companyInfoDto) {
         company.setShortname(companyInfoDto.getName());
         company.setDescription(companyInfoDto.getDescription());
     }
 
     private void setupSettings(ComCompany company, CompanySettingsDto settingsDto) {
-        int statisticsExpireDays = settingsDto.getStatisticsExpireDays();
-        if (statisticsExpireDays > 0) {
-            if (statisticsExpireDays <= configService.getIntegerValue(ConfigValue.ExpireStatisticsMax)) {
-                company.setExpireStat(statisticsExpireDays);
-            } else {
-                company.setExpireStat(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));
-            }
-        } else {
-            company.setExpireStat(configService.getIntegerValue(ConfigValue.ExpireStatisticsDefault));
-        }
-        company.setExpireRecipient(settingsDto.getRecipientExpireDays());
         company.setSalutationExtended(BooleanUtils.toInteger(settingsDto.isHasExtendedSalutation()));
         company.setStatAdmin(settingsDto.getExecutiveAdministrator());
         company.setContactTech(settingsDto.getTechnicalContacts());
@@ -229,17 +230,9 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         } else {
             company.setExportNotifyAdmin(0);
         }
-        company.setMaxLoginFails(settingsDto.getMaxFailedLoginAttempts());
-        company.setLoginBlockTime(settingsDto.getBlockIpTime());
         company.setSecretKey(RandomStringUtils.randomAscii(32));
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
-        if (settingsDto.getMaxAdminMails() == 0) {
-        	company.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails));
-        } else {
-        	company.setMaxAdminMails(settingsDto.getMaxAdminMails());
-        }
-
     }
 
     private void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
@@ -289,34 +282,52 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         configService.writeOrDeleteIfDefaultBooleanValue(ConfigValue.SupervisorRequiresLoginPermission,
                 companyId,
                 settings.isHasActivatedAccessAuthorization());
+        
+        if (settings.getMaxAdminMails() != 0) {
+        	configService.writeOrDeleteIfDefaultValue(ConfigValue.MaxAdminMails, companyId, Integer.toString(settings.getMaxAdminMails()));
+        }
+        
+    	int expireMaximum = configService.getIntegerValue(ConfigValue.ExpireStatisticsMax);
+        if (settings.getStatisticsExpireDays() > 0) {
+        	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireStatistics, companyId, Integer.toString(Math.min(expireMaximum, settings.getStatisticsExpireDays())));
+        }
+        
+        configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireRecipient, companyId, Integer.toString(settings.getRecipientExpireDays()));
     }
 
-    private int initTable(ComCompany company) throws Exception {
-        if (initTables(company.getId())) {
-            logger.info("Company: " + company.getId() + " created");
+    private int initTableAndCopyTemplates(ComCompany company, String sessionId) throws Exception {
+        int companyId = company.getId();
+
+        if (initTables(companyId)) {
+            logger.info("Company: " + companyId + " created");
 
             if ("Inhouse".equalsIgnoreCase(configService.getValue(ConfigValue.System_License_Type))) {
-                if (StringUtils.isBlank(configService.getValue(ConfigValue.RecipientProfileFieldHistory, company.getId()))) {
+                if (StringUtils.isBlank(configService.getValue(ConfigValue.RecipientProfileFieldHistory, companyId))) {
                     // Setup RecipientProfileFieldHistory for inhouse instances only
-                    recipientProfileHistoryService.enableProfileFieldHistory(company.getId());
+                    recipientProfileHistoryService.enableProfileFieldHistory(companyId);
                 }
 
                 // Check Automation Package
-                if (company.getMailtracking() <= 0 || company.getExpireSuccess() <= 0) {
+                if (company.getMailtracking() <= 0) {
                     company.setMailtracking(1);
-                    company.setExpireSuccess(configService.getIntegerValue(ConfigValue.ExpireSuccessDefault));
                     companyDao.saveCompany(company);
                 }
-                companyDao.changeFeatureRights(Permission.FEATURENAME_AUTOMATIONPACKAGE, company.getId(), true);
+                companyDao.changeFeatureRights(PremiumFeature.AUTOMATION, companyId, true);
 
                 checkRetargeting(company);
             }
 
-            return company.getId();
+            generateMissingTemplateThumbnails(companyId, sessionId);
+
+            return companyId;
         }
 
-        logger.info("Cannot successfully create new company: " + company.getId());
+        logger.info("Cannot successfully create new company: " + companyId);
         return 0;
+    }
+
+    void generateMissingTemplateThumbnails(int companyId, String sessionId) {
+        // do nothing
     }
 
     void checkRetargeting(ComCompany company) {
@@ -324,7 +335,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     private int createExecutiveAdmin(ComAdmin admin, CompanyInfoDto companyInfo, CompanyAdminDto companyAdmin, int newCompanyID, Popups ppopups) {
-        ComAdminForm adminForm = new ComAdminForm();
+        AdminForm adminForm = new AdminForm();
         adminForm.setAdminID(0);
         adminForm.setCompanyID(newCompanyID);
         adminForm.setCompanyName(companyInfo.getName());
@@ -350,20 +361,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
         AdminSavingResult result = adminService.saveAdmin(adminForm, admin);
 
-
         if (result.isSuccess()) {
             ComAdmin savedAdmin = result.getResult();
             return savedAdmin.getAdminID();
         } else {
-            ActionMessages errors = result.getErrors();
-            @SuppressWarnings("unchecked")
-			Iterator<ActionMessage> iterator = errors.get();
-            while (iterator.hasNext()) {
-                ActionMessage message = iterator.next();
-                String key = message.getKey();
-                Object[] values = message.getValues();
-                ppopups.alert(key, values);
-            }
+            ppopups.alert(result.getError());
             return 0;
         }
     }
@@ -393,7 +395,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(")");
         }
 
-        int oldExpireStat = oldCompany.getExpireStat();
+        int oldExpireStat = configService.getIntegerValue(ConfigValue.ExpireStatistics, oldCompany.getId());
 
         if (oldExpireStat != newCompany.getCompanySettingsDto().getStatisticsExpireDays()) {
             description.append(" Expire Stat(")
@@ -403,7 +405,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(")");
         }
 
-        int oldExpireRecipient = oldCompany.getExpireRecipient();
+        int oldExpireRecipient = configService.getIntegerValue(ConfigValue.ExpireRecipient, oldCompany.getId());
 
         if (oldExpireRecipient != newCompany.getCompanySettingsDto().getRecipientExpireDays()) {
             description.append(" Expire Recipient(")
@@ -412,29 +414,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(newCompany.getCompanySettingsDto().getRecipientExpireDays())
                     .append(")");
         }
-
-        int oldMaxLoginFails = oldCompany.getMaxLoginFails();
-        oldMaxLoginFails = oldMaxLoginFails > 0 ? oldMaxLoginFails : 0;
-
-        if (oldMaxLoginFails != newCompany.getCompanySettingsDto().getMaxFailedLoginAttempts()) {
-            description.append(" Max Login Fails(")
-                    .append(oldMaxLoginFails)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().getMaxFailedLoginAttempts())
-                    .append(")");
-        }
-
-        int oldBlock = oldCompany.getLoginBlockTime();
-        oldBlock = oldBlock > 0 ? oldBlock : 0;
-
-        if (oldBlock != newCompany.getCompanySettingsDto().getBlockIpTime()) {
-            description.append(" Login Block Time(")
-                    .append(oldBlock)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().getBlockIpTime())
-                    .append(")");
-        }
-
+ 
         int oldSectorIndex = oldCompany.getSector();
         int newSectorIndex = newCompany.getCompanySettingsDto().getSector();
 
@@ -493,6 +473,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
         return new UserAction("edit company", description.toString());
     }
+    
+    @Override
+    public boolean createFrequencyFields(@VelocityCheck int companyID) {
+    	return companyDao.createFrequencyFields(companyID);
+    }
 
     @Required
     public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
@@ -524,13 +509,9 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         this.adminService = adminService;
     }
 
-    @Required
+	@Required
     public void setCompanyDao(ComCompanyDao companyDao) {
         this.companyDao = companyDao;
     }
 
-    @Required
-    public void setAdminDao(ComAdminDao adminDao) {
-        this.adminDao = adminDao;
-    }
 }

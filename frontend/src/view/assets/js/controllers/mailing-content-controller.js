@@ -4,7 +4,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
   var mailingContent;
   var preparedTableEntryTemplate;
-  var saveUrl;
+  var isMailingExclusiveLockingAcquired;
 
   var $tableBody;
 
@@ -12,7 +12,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     $tableBody = $('#table_body');
     preparedTableEntryTemplate = Template.prepare('mailing-content-table-entry-template');
 
-    saveUrl = this.config.saveUrl;
+    isMailingExclusiveLockingAcquired = this.config.isMailingExclusiveLockingAcquired;
     var dynTagsMap = this.config.dynTagsMap;
     var targetGroups = this.config.targetGroupList;
     var interestGroups = this.config.interestGroupList;
@@ -22,30 +22,48 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     initTableContent();
   });
 
-  this.addAction({click: 'createContentEditorModal'}, function () {
-    var dynTag = mailingContent.getDynTagById(parseInt(this.el.data('dyn-name-id')));
-    var isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
+  this.addAction({click: 'createContentEditorModal'}, function() {
+    var dynNameId = parseInt(this.el.data('dyn-name-id'));
 
-    var promise = Confirm.createFromTemplate({
-      dynTag: dynTag.clone(),
-      targetGroups: _.cloneDeep(mailingContent.targetGroups),
-      interestGroups: _.cloneDeep(mailingContent.interestGroups),
-      saveUrl: _.cloneDeep(saveUrl),
-      DynTagObject: DynTag,
-      isFullHtmlTags: dynTag.name == 'HTML-Version',
-      showHTMLEditor: isHtmlContentBlock
-    }, 'content-editor-template');
+    if (dynNameId > 0) {
+      $.ajax({
+        url: AGN.url('/mailingcontent/name/{id}/view.action'.replace('{id}', dynNameId.toString())),
+        method: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+          var dynTag = new DynTag(resp);
+          var isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
 
-    promise.done(function (dynBlock) {
-      mailingContent.setDynTag(dynBlock);
-      replaceTableContent(dynBlock);
-      updatePreview();
-    });
+          var promise = Confirm.createFromTemplate({
+            dynTag: dynTag,
+            targetGroups: _.cloneDeep(mailingContent.targetGroups),
+            interestGroups: _.cloneDeep(mailingContent.interestGroups),
+            saveUrl: AGN.url('/mailingcontent/save.action'),
+            DynTagObject: DynTag,
+            isFullHtmlTags: dynTag.name == 'HTML-Version',
+            showHTMLEditor: isHtmlContentBlock
+          }, 'content-editor-template');
+
+          promise.done(function(dynBlock) {
+            mailingContent.setDynTag(dynBlock);
+            replaceTableContent(dynBlock);
+            updatePreview();
+          });
+        },
+        statusCode: {
+          404: function() {
+            AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
+          }
+        }
+      });
+    }
   });
 
   var updatePreview = function () {
-    var $previewForm = $('#preview');
-    $previewForm.submit();
+    var form = AGN.Lib.Form.get($('#preview'));
+    form.setValue('reloadPreview', false);
+    form.setResourceSelectorOnce('#preview');
+    form.submit();
   };
 
   var initTableContent = function() {
@@ -68,7 +86,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
       return contentBlock.content.length > 35 ? contentBlock.content.substring(0, 35) + '...' : contentBlock.content;
     }, []);
 
-    return preparedTableEntryTemplate({id: dynTag.id, name: dynTag.name, targetGroups: targetGroups, contents: contents});
+    return preparedTableEntryTemplate({id: dynTag.id, name: dynTag.name, targetGroups: targetGroups, contents: contents, editable: !!isMailingExclusiveLockingAcquired});
   };
 
   var getTargetGroupName = function (dynContent) {
@@ -250,6 +268,10 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
         this.contentBlocks.splice(index, 1);
         recalculateIndexes(this.contentBlocks);
       }
+    };
+
+    this.removeAll = function() {
+      this.contentBlocks = [];
     };
 
     this.clone = function () {

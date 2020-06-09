@@ -35,7 +35,7 @@ public class Blackdata {
 	 * @param nGlobal sets the source for this entry, true it comes from a global blacklist, otherwise from a local one
 	 */
 	public Blackdata (String nEmail, boolean nGlobal) {
-		email = nEmail != null ? nEmail.toLowerCase () : null;
+		email = nEmail != null ? nEmail.toLowerCase ().trim () : null;
 		global = nGlobal;
 		iswildcard = (email != null) && ((email.indexOf ('_') != -1) || (email.indexOf ('%') != -1));
 	}

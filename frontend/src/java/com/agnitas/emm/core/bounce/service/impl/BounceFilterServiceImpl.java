@@ -10,13 +10,9 @@
 
 package com.agnitas.emm.core.bounce.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.service.BounceFilterService;
-import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
-import com.agnitas.service.ExtendedConversionService;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -25,10 +21,16 @@ import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-@Service("bounceFilterService")
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
+import com.agnitas.service.ExtendedConversionService;
+
+@Service("BounceFilterService")
 public class BounceFilterServiceImpl implements BounceFilterService {
 
     private MailloopDao mailloopDao;
@@ -57,10 +59,6 @@ public class BounceFilterServiceImpl implements BounceFilterService {
         
         if (StringUtils.isNotEmpty(mailloop.getForwardEmail()) && blacklistService.blacklistCheck(mailloop.getForwardEmail(), companyId)) {
             throw new BlacklistedForwardEmailException();
-        }
-        
-        if (StringUtils.isNotEmpty(mailloop.getArSender()) && blacklistService.blacklistCheck(mailloop.getArSender(), companyId)) {
-            throw new BlacklistedAutoResponderEmailException();
         }
         
         return mailloopDao.saveMailloop(mailloop);
@@ -97,5 +95,22 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     @Override
     public boolean deleteBounceFilter(int filterId, @VelocityCheck int companyId) {
         return mailloopDao.deleteMailloop(filterId, companyId);
+    }
+    
+	@Override
+	public boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId) {
+		if (companyId > 0 && mailingId > 0) {
+			return mailloopDao.isMailingUsedInBounceFilter(companyId, mailingId);
+		}
+		return false;
+	}
+    
+    @Override
+    public List<BounceFilterDto> getDependentBounceFiltersByMailing(@VelocityCheck int companyId, int mailingId) {
+        if (companyId <= 0 || mailingId <= 0) {
+            return Collections.emptyList();
+        }
+        List<MailloopEntry> filters = mailloopDao.getDependentBounceFilters(companyId, mailingId);
+        return conversionService.convert(filters, MailloopEntry.class, BounceFilterDto.class);
     }
 }

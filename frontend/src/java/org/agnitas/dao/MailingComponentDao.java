@@ -11,6 +11,7 @@
 package org.agnitas.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -98,6 +99,19 @@ public interface MailingComponentDao {
      * @return Vector of MailingComponents.
      */
     List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID);
+    
+    /**
+     * Loads all components identified by mailing id and company id.
+     *
+     * @param companyID
+     *          The companyID for mailing component.
+     * @param componentIds
+     *          The ids of the mailing components.
+     * @return Vector of MailingComponents.
+     */
+    List<MailingComponent> getMailingComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> componentIds);
+    
+    List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<Integer> type);
 
     /**
      * Loads all components identified by mailing id, company id.

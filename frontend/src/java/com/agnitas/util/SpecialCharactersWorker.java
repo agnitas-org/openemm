@@ -16,7 +16,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.agnitas.util.CaseInsensitiveSet;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class SpecialCharactersWorker {
     private static Map<String, String> SPECIAL_CHARACTERS_MAP1 = new HashMap<>();

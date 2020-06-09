@@ -28,7 +28,6 @@ public class BlockData implements Comparable <BlockData> {
 	public final static int	PDF = 8;
 	public final static int	MMS = 9;
 	public final static int	SMS = 10;
-	public final static int WHATSAPP = 11;
 
 	/** The index in the array in BlockCollection */
 	public int	id;

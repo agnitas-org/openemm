@@ -12,22 +12,66 @@ package com.agnitas.emm.core.departments.beans;
 
 import java.util.Objects;
 
+/**
+ * Information on a department.
+ */
 public final class Department {
 
+	/** ID of department. */
 	private final int id;
+	
+	/** Department slug. (Used for i18n, ...) */
 	private final String slug;
 	
-	public Department(final int id, final String slug) {
+	/** Flag, supervisor bindings to company ID 0 are respected. */
+	private final boolean supervisorBindingToCompany0Allowed;
+	
+	/** Flag, if login to users of same company without permission is allowed. */
+	private final boolean loginWithoutUserPermissionAllowed;
+	
+	/**
+	 * Creates a new department instance.
+	 * 
+	 * @param id department ID
+	 * @param slug department slug
+	 * @param supervisorBindingToCompany0Allowed flag if supervisor bindings to company ID 0 are respected
+	 */
+	public Department(final int id, final String slug, final boolean supervisorBindingToCompany0Allowed, final boolean loginWithoutUserPermissionAllowed) {
 		this.id = id;
 		this.slug = Objects.requireNonNull(slug, "Department slug cannot be null");
+		this.supervisorBindingToCompany0Allowed = supervisorBindingToCompany0Allowed;
+		this.loginWithoutUserPermissionAllowed = loginWithoutUserPermissionAllowed;
 	}
 
+	/**
+	 * Returns the department ID.
+	 * 
+	 * @return department ID
+	 */
 	public final int getId() {
 		return id;
 	}
 
+	/**
+	 * Returns the department slug.
+	 * 
+	 * @return department slug
+	 */
 	public final String getSlug() {
 		return slug;
+	}
+
+	/**
+	 * Returns the flag, if supervisor bindings to company ID 0 are respected.
+	 * 
+	 * @return flag, if supervisor bindings to company ID 0 are respected
+	 */
+	public final boolean isSupervisorBindingToCompany0Allowed() {
+		return supervisorBindingToCompany0Allowed;
+	}
+	
+	public final boolean isLoginWithoutUserPermissionAllowed() {
+		return this.loginWithoutUserPermissionAllowed;
 	}
 
 }

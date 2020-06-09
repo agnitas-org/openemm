@@ -63,11 +63,6 @@ public interface MailinglistApprovalService {
 	
 	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
 
-	/**
-     * Get all admins which have no access to mailinglist.
-     */
-	List<Integer> getAdminsDisallowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId);
-	
 	boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedRecipientIds, List<UserAction> userActions);
 
 }

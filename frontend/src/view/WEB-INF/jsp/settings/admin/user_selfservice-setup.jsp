@@ -22,7 +22,7 @@
 <c:set var="agnHelpKey" 			value="user_self-administration" 	scope="request" />
 
 <c:set var="agnSubtitleValue" scope="request">
-    <i class="icon icon-cog"></i> ${sessionScope['fullName']}
+    <i class="icon-fa5 icon-fa5-cog"></i> ${sessionScope['userName']}
 </c:set>
 
 <jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">

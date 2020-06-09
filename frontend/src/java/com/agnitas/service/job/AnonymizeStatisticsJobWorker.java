@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.AnonymizeStatisticsDao;

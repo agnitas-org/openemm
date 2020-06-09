@@ -14,7 +14,7 @@ name: form-inputs
 parent: form-directives
 ---
 
-It's very common behavior if a form gets submitted when user presses enter key. Inputs having `type="text"` or `type="password"` behave like that.
+It's very common behavior if a form gets submitted when user presses enter key. Inputs having `type="text"`, `type="password"` or `type="number"` behave like that.
 
 Sometimes a form itself is not needed since request is performed as custom ajax call or UI provide some client-side logic. In this case you can handle a custom `enterdown` event emitted by input element:
 
@@ -288,7 +288,7 @@ If the trigger for the directives cannot be placed inside the form, e.g. in case
   }
 
   Action.new({
-    'keydown': 'input[type="text"], input[type="password"]'
+    'keydown': 'input[type="text"], input[type="password"], input[type="number"]'
   }, function() {
     if (isEnterClickEvent(this.event)) {
       var event = $.Event('enterdown');

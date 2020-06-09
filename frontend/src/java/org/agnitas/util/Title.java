@@ -92,8 +92,9 @@ public class Title {
 	 */
 	public void requestFields (Set <String> predef, int ttype) {
 		predef.add ("gender");
-		if ((ttype == TITLE_ALL) || (ttype == TITLE_FIRST) || (ttype == TITLE_FULL))
+		if ((ttype == TITLE_ALL) || (ttype == TITLE_FIRST) || (ttype == TITLE_FULL)) {
 			predef.add ("firstname");
+		}
 		if ((ttype == TITLE_ALL) || (ttype == TITLE_DEFAULT) || (ttype == TITLE_FULL)) {
 			predef.add ("title");
 			predef.add ("lastname");
@@ -146,33 +147,35 @@ public class Title {
 			if (e.custom == null) {
 				if (gender != 2) {
 					switch (titleType) {
-					case TITLE_DEFAULT:
-					case TITLE_FULL:
-						String	custtitle = "";
-
-						if (isValid (title)) {
-							custtitle = title + " ";
-						}
-						if (titleType == TITLE_FULL) {
-							if (isValid (firstname)) {
-								if (isValid (lastname)) {
-									name = firstname + " " + lastname;
+						case TITLE_DEFAULT:
+						case TITLE_FULL:
+							String	custtitle = "";
+	
+							if (isValid (title)) {
+								custtitle = title + " ";
+							}
+							if (titleType == TITLE_FULL) {
+								if (isValid (firstname)) {
+									if (isValid (lastname)) {
+										name = firstname + " " + lastname;
+									}
+								} else if (isValid (lastname)) {
+									name = lastname;
+								}
+								if (name != null) {
+									name = custtitle + name;
 								}
 							} else if (isValid (lastname)) {
-								name = lastname;
+								name = custtitle + lastname;
 							}
-							if (name != null) {
-								name = custtitle + name;
+							break;
+						case TITLE_FIRST:
+							if (isValid (firstname)) {
+								name = firstname;
 							}
-						} else if (isValid (lastname)) {
-							name = custtitle + lastname;
-						}
-						break;
-					case TITLE_FIRST:
-						if (isValid (firstname)) {
-							name = firstname;
-						}
-						break;
+							break;
+						default:
+							break;
 					}
 					if (name == null) {
 						gender = 2;

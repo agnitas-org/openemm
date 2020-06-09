@@ -126,7 +126,7 @@
 	    <div class="tile">
 	        <div class="tile-header">
 	            <h2 class="headline">
-	                <mvc:message code="webserviceuser.permissionGroupss" />
+	                <mvc:message code="webserviceuser.permissionGroups" />
 	            </h2>
 	        </div>
 	    	
@@ -136,7 +136,7 @@
 						<li class="list-group-item">
 							<label class="checkbox-inline">
 								<mvc:checkbox path="permissionGroup[${group.id}]" value="true" />
-								${group.name}
+								<mvc:message code="webservice.permissiongroup.${group.name}" />
 							</label>
 						</li>
 					</c:forEach>

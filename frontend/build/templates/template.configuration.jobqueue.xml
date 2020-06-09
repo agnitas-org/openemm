@@ -57,8 +57,4 @@
 		<velocity_log>${HOME}/logs/velocity</velocity_log>
 		<component>${HOME}/components/</component>
 	</directory>
-	
-	<security>
-		<salt-file>${HOME}/conf/keys/emm.salt</salt-file>
-	</security>
 </properties>

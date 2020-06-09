@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -54,19 +54,18 @@ public abstract class GenericRuleConverter implements RuleConverter {
     protected String valueOfRule (QueryBuilderRuleNode node, DataType dataType) throws QueryBuilderToEqlConversionException {
         switch (dataType) {
             case NUMERIC:
-                if (StringUtils.isNumeric(node.getValue().toString())) {
-                    return node.getValue().toString();
+                String numericValue = QueryBuilderUtil.getRuleNodeValueAsString(node);
+                if (StringUtils.isNumeric(numericValue)) {
+                    return numericValue;
                 } else {
                 	 String message = String.format("Data type '%s' not handled'", dataType);
                      logger.error(message);
                      throw new QueryBuilderToEqlConversionException(message);
                 }
 		case TEXT:
-		        String value = "";
-		        if (node.getValue() != null) {
-		            value = node.getValue().toString();
-                }
-                return SINGLE_QUOTES + value + SINGLE_QUOTES;
+		    String value = QueryBuilderUtil.getRuleNodeValueAsString(node);
+            return SINGLE_QUOTES + value + SINGLE_QUOTES;
+            
             default:
                 String message = String.format("Data type '%s' not handled'", dataType);
                 logger.error(message);

@@ -63,9 +63,10 @@
 					<label class="control-label"><mvc:message code="report.numberRecipients"/></label>
 				</div>
 				<div class="col-sm-10">
-					<label class="inline-tile inline-tile-footer">${calculatedRecipients}</label>
+					<label id="calculateRecipientsLabel" class="inline-tile inline-tile-footer">${calculatedRecipients}</label>
 					<c:url var="calculateUrl" value="/recipient/calculate.action"/>
-					<button type="button" class="btn btn-regular" id="calculateBtn"
+					<button type="button" class="btn btn-regular"
+							data-action="calculateRecipients"
 							data-form-url="${calculateUrl}"
 							data-target-form="#recipientBulkForm">
 						<span><mvc:message code="button.Calculate"/></span>
@@ -138,23 +139,23 @@
 	</div>
 
 	<script type="text/javascript">
-		AGN.Lib.Action.new({'click': '#calculateBtn'}, function() {
-		    var btn = this.el;
-			var url = btn.data('form-url');
-			var form = AGN.Lib.Form.get($(btn.data('target-form')));
-			var label = $(btn).prev('label');
+		AGN.Lib.Action.new({'click': '[data-action="calculateRecipients"]'}, function() {
+          var label = $("#calculateRecipientsLabel");
+          var btn = this.el;
+          var form = AGN.Lib.Form.get($(btn.data('target-form')));
 
 			$.ajax({
-				url: url,
-				data: form.data()
-			}).success(function(data) {
-				var value = 0;
-				if(data.count) {
-					value = data.count;
+				url: btn.data('form-url'),
+				data: {
+				  "targetId": form.getValue("targetId"),
+				  "mailinglistId": form.getValue("mailinglistId")
 				}
-				label.html(value);
-			}).error(function(){
-				label.html(0);
+			}).always(function(data) {
+				var value = data.count || 0;
+				label.text(value);
+			}).fail(function(){
+				label.text('?');
+				AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
 			})
 		});
 	</script>

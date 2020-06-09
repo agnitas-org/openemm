@@ -10,14 +10,12 @@
 
 package com.agnitas.service;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.lowagie.text.DocumentException;
 import org.agnitas.beans.AdminEntry;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
-
 public interface ComPDFService {
-
-    void writeUsersPDF(List<AdminEntry> users, Document document) throws DocumentException;
+    byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users) throws DocumentException, IOException;
 }

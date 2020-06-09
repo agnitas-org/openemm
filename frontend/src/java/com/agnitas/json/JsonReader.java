@@ -19,7 +19,7 @@ import java.util.Stack;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.BasicReader;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class JsonReader extends BasicReader {
 	protected Object currentObject = null;
@@ -202,7 +202,7 @@ public class JsonReader extends BasicReader {
 			return false;
 		} else {
 			throw new Exception("Invalid data in line " + getReadLines() + " at overall index " + getReadCharacters());
-		} 
+		}
 	}
 	
 	/**
@@ -303,8 +303,8 @@ public class JsonReader extends BasicReader {
 	 * 
 	 * @param data
 	 * @return
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException 
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
 	 */
 	public static JsonNode readJsonItemString(String data) throws Exception {
 		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes("UTF-8"))) {
@@ -314,7 +314,7 @@ public class JsonReader extends BasicReader {
 		}
 	}
 	
-	protected void updateJsonPath(JsonToken jsonToken) {
+	protected void updateJsonPath(JsonToken jsonToken) throws Exception {
 		if (jsonToken != null) {
 			switch(jsonToken) {
 				case JsonArray_Open:
@@ -353,6 +353,8 @@ public class JsonReader extends BasicReader {
 						currentJsonPath.pop();
 					}
 					break;
+				default:
+					throw new Exception("Invalid JsonToken");
 			}
 		}
 	}

@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.target.impl.TargetOperatorImpl;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class TargetNode {
     public static final int CHAIN_OPERATOR_NONE = 0;

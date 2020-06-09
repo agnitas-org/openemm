@@ -87,6 +87,7 @@
 		<xs:complexType>
 			<xs:all>
 				<xs:element name="email" type="xs:string" />
+				<xs:element name="reason" type="xs:string" minOccurs="0"/>
 			</xs:all>
 		</xs:complexType>
 	</xs:element>

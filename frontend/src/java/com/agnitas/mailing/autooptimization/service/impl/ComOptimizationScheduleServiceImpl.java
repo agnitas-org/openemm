@@ -23,6 +23,7 @@ import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
@@ -35,7 +36,7 @@ import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.Tuple;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
@@ -161,7 +162,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 		MaildropEntry drop = new MaildropEntryImpl();
 
 		drop.setStatus(testRun ? MaildropStatus.TEST.getCode() : MaildropStatus.WORLD.getCode());
-		drop.setGenStatus(MaildropEntry.GEN_SCHEDULED);
+		drop.setGenStatus(MaildropGenerationStatus.SCHEDULED.getCode());
 		drop.setSendDate(sendDate);
 		drop.setGenDate(sendDate);
 		drop.setGenChangeDate(sendDate);

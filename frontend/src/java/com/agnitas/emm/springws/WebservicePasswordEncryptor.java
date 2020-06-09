@@ -24,9 +24,12 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Class to encrypt a webservice user password and get the password back from en encrypted base64 string.
@@ -41,7 +44,14 @@ public final class WebservicePasswordEncryptor {
 	private static final String ALGORITHM_VERSION_1 = "PBEWithMD5AndDES";
 	private static final String ALGORITHM_VERSION_2 = "PBEWithHmacSHA256AndAES_256";
 	
-	private final char[] encryptorPassword;
+	private char[] encryptorPasswordChars;
+	
+	private ConfigService configService;
+	
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
 	
 	/**
 	 * Only the files first line of text is used as password
@@ -49,26 +59,26 @@ public final class WebservicePasswordEncryptor {
 	 * @param passwordFile
 	 * @throws IOException
 	 */
-	public WebservicePasswordEncryptor(final File passwordFile) throws IOException {
-		@SuppressWarnings("unchecked")
-		final List<String> lines = FileUtils.readLines(passwordFile, "UTF-8");
-		final String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
-		encryptorPassword = encryptorPasswordString.toCharArray();
+	private char[] getEncryptorPasswordChars() throws IOException {
+		if (encryptorPasswordChars == null) {
+			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			@SuppressWarnings("unchecked")
+			final List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
+			final String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
+			encryptorPasswordChars = encryptorPasswordString.toCharArray();
+		}
+		return encryptorPasswordChars;
 	}
 	
-	public WebservicePasswordEncryptor(final char[] encryptorPassword) throws IOException {
-		this.encryptorPassword = encryptorPassword;
-	}
-	
-	public final String encrypt(final String username, final String password) throws GeneralSecurityException, UnsupportedEncodingException {
+	public final String encrypt(final String username, final String password) throws Exception {
 		return encryptVersion2(username, password);
 	}
 	
-	private final String encryptVersion2(final String username, final String password) throws GeneralSecurityException, UnsupportedEncodingException {
+	private final String encryptVersion2(final String username, final String password) throws Exception {
 		final byte[] saltBytes = create8ByteSalt(username);
 		
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_2);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
         final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_2);
         
         final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
@@ -78,39 +88,20 @@ public final class WebservicePasswordEncryptor {
         return AgnUtils.encodeBase64(pbeCipher.doFinal(password.getBytes("UTF-8")));
     }
 
-	/*
-	 *  This method is left for a quick fallback, if encryptVersion2() fails for some reason.
-	 *  Currently, this method is not active in code.
-	 *  
-	 *   Remove, if migration to stringer cipher is successfully completed.
-	 */
-//	@Deprecated
-//	private final String encryptVersion1(final String username, final String password) throws GeneralSecurityException, UnsupportedEncodingException {
-//		final byte[] saltBytes = create8ByteSalt(username);
-//		
-//        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_1);
-//        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
-//        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_1);
-//        pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));
-//        
-//        return AgnUtils.encodeBase64(pbeCipher.doFinal(password.getBytes("UTF-8")));
-//    }
-
-	public final String decrypt(final String username, final String encryptedPasswordBase64) throws GeneralSecurityException, UnsupportedEncodingException {
+	public final String decrypt(final String username, final String encryptedPasswordBase64) throws Exception {
 		try {
 			return decryptVersion2(username, encryptedPasswordBase64);
 		} catch(final GeneralSecurityException e) {
 			// Cannot decrypt with stronger cipher, falling back to old one
 			return decryptVersion1(username, encryptedPasswordBase64);
 		}
-		
     }
 	
-	private final String decryptVersion2(final String username, final String encryptedPasswordBase64) throws GeneralSecurityException, UnsupportedEncodingException {
+	private final String decryptVersion2(final String username, final String encryptedPasswordBase64) throws Exception {
 		final byte[] saltBytes = create8ByteSalt(username);
 		
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_2);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
         final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_2);
         
         final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
@@ -120,11 +111,11 @@ public final class WebservicePasswordEncryptor {
         return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedPasswordBase64)), "UTF-8");
 	}
 	
-	private final String decryptVersion1(final String username, final String encryptedPasswordBase64) throws GeneralSecurityException, UnsupportedEncodingException {
+	private final String decryptVersion1(final String username, final String encryptedPasswordBase64) throws Exception {
 		final byte[] saltBytes = create8ByteSalt(username);
 		
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_1);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(encryptorPassword));
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
         final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_1);
         
         pbeCipher.init(Cipher.DECRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));

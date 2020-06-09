@@ -21,20 +21,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
 
 /**
     <class name="org.agnitas.actions.impl.EmmActionImpl" entity-name="EmmAction" table="rdir_action_tbl">
@@ -231,6 +230,18 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 			return new ArrayList<>();
 		}
 	}
+	
+	@Override
+	public Map<Integer, String> getEmmActionNamesNew(int companyID, List<Integer> actionIds) {
+		Map<Integer, String> actionNames = new HashMap<>();
+		if (companyID > 0 && CollectionUtils.isNotEmpty(actionIds)) {
+			String sql = "SELECT action_id, shortname FROM rdir_action_tbl WHERE company_id = ? AND action_id IN (" +
+					StringUtils.join(actionIds, ",")
+					+ ")";
+			query(logger, sql, rs -> actionNames.put(rs.getInt("action_id"), rs.getString("shortname")),  companyID);
+		}
+		return actionNames;
+	}
 
 	@Override
 	public List<EmmAction> getEmmNotFormActions(@VelocityCheck int companyID) {
@@ -363,6 +374,17 @@ public class EmmActionDaoImpl extends BaseDaoImpl implements EmmActionDao {
 				"WHERE company_id = ? AND action_id IN (" + StringUtils.join(actionIds, ',') + ")";
 
 		update(logger, sqlSetActiveness, BooleanUtils.toInteger(active), companyId);
+	}
+
+	@Override
+	public List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId) {
+		String sqlGetActionsBySendMailingId = "SELECT ra.action_id, ra.company_id, ra.description, ra.shortname, "
+				+ "ra.action_type, ra.active "
+				+ "FROM rdir_action_tbl ra JOIN actop_tbl at ON ra.action_id = at.action_id "
+				+ "JOIN actop_send_mailing_tbl atsm ON atsm.action_operation_id = at.action_operation_id "
+				+ "WHERE atsm.mailing_id = ? AND ra.company_id = ?";
+
+		return select(logger, sqlGetActionsBySendMailingId, new EmmAction_RowMapper(), mailingId, companyId);
 	}
 
 	protected static class EmmAction_RowMapper implements RowMapper<EmmAction> {

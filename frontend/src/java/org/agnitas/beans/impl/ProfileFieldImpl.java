@@ -16,7 +16,7 @@ import org.agnitas.beans.ProfileField;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ProfileFieldImpl implements ProfileField, Serializable {
 	private static final long serialVersionUID = -6125451198749198856L;

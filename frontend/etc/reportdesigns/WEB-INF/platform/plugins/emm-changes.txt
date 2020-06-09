@@ -1,0 +1,4 @@
+1) ./org.eclipse.birt.report.engine.emitter.csv_1.0.0.jar
+- Changed encoding to UTF-8
+- Added BOM(byte order mark) to files
+- Removed replacement "," to " " in text

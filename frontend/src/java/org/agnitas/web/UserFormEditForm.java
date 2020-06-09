@@ -11,9 +11,10 @@
 package org.agnitas.web;
 
 import java.util.ArrayList;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.emm.core.Permission;
+import com.agnitas.web.ComUserFormEditAction;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.collections4.Factory;
@@ -22,9 +23,6 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.emm.core.Permission;
-import com.agnitas.web.ComAdminAction;
 
 /**
  * Implementation of <strong>Form</strong> that holds data for user forms.
@@ -91,7 +89,7 @@ public class UserFormEditForm extends StrutsFormBase{
                                              HttpServletRequest request) {
         ActionErrors errors = new ActionErrors();
 
-        if (action == ComAdminAction.ACTION_SAVE) {
+        if (action == ComUserFormEditAction.ACTION_SAVE) {
             if (AgnUtils.allowed(request, Permission.FORMS_CHANGE)) {
                 if (getFormName() == null || getFormName().trim().equals("") || getFormName().trim().length() < 3) {
                     errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.name.too.short"));

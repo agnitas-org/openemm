@@ -63,7 +63,6 @@ public class ComWorkflowStatisticsService {
 
 
 	public Map<Integer, List<String>> getWorkflowStats(int workflowId, int companyId, Locale locale) {
-		activationService.init(companyId, workflowId);
 		resultMap = new HashMap<>();
 
 		WorkflowGraph workflowGraph = new WorkflowGraph(workflowService.getIcons(workflowId, companyId));
@@ -87,6 +86,8 @@ public class ComWorkflowStatisticsService {
 							initialRecipients = workflowService.getReactedRecipients(reaction, false);
 							needsActiveBinding = workflowService.checkReactionNeedsActiveBinding(reaction);
 						}
+						break;
+					default:
 						break;
 				}
 			}
@@ -247,6 +248,26 @@ public class ComWorkflowStatisticsService {
             }
         }
         return finalMailingID;
+    }
+    
+    public int getFinalMailingID(int workflowId, int companyId){
+		if (isTotalStatisticAvailable(workflowId, companyId)) {
+			return optimizationService.getFinalMailingId(companyId, workflowId);
+		}
+
+        return 0;
+    }
+    
+	public boolean isTotalStatisticAvailable(int workflowId, int companyId) {
+		Workflow workflow = workflowService.getWorkflow(workflowId, companyId);
+		
+		return workflow != null &&
+				isTotalStatisticAvailable(workflow.getStatus(), workflow.getWorkflowIcons());
+    }
+    
+    public boolean isTotalStatisticAvailable(Workflow.WorkflowStatus status, List<WorkflowIcon> icons) {
+        return status == Workflow.WorkflowStatus.STATUS_COMPLETE &&
+                WorkflowUtils.isAutoOptWorkflow(icons);
     }
 
 	private void processStatisticsForRecipients(@VelocityCheck int companyId, WorkflowNode currentNode, List<Integer> currentRecipients, boolean allRecipientsAffected, boolean needsActiveBinding) {

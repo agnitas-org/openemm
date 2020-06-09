@@ -24,7 +24,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.UserActivityLogActions;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class UserActivityLogExportWorker extends GenericExportWorker {

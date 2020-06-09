@@ -3,7 +3,7 @@
   var truncate = AGN.Lib.Truncate.run;
   var breadcrumbs = AGN.Lib.Breadcrumbs.truncate;
 
-  AGN.Initializers.Truncate = function($scope) {
+  AGN.Lib.CoreInitializer.new('truncate', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -17,7 +17,6 @@
       });
 
     }, 50);
-
-  }
+  });
 
 })();

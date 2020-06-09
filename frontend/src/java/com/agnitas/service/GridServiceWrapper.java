@@ -11,6 +11,7 @@
 
 package com.agnitas.service;
 
+import java.util.Collection;
 import java.util.Map;
 
 import com.agnitas.beans.ComAdmin;
@@ -27,6 +28,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 public interface GridServiceWrapper {
     
     int getGridTemplateIdByMailingId(int mailingId);
+
+    Map<Integer, Integer> getGridTemplateIdsByMailingIds(@VelocityCheck int companyId, Collection<Integer> mailingIds);
     
     ComGridTemplate getGridTemplate(@VelocityCheck int companyId, int templateId);
     

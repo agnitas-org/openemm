@@ -18,6 +18,7 @@ public final class SupervisorLoginPermissionTableItem {
 	private final int permissionID;
 	private final Date granted;
 	private final Date expireDate;
+	@SuppressWarnings("unused")
 	private final boolean allDeparments;
 	private final String departmentSlugOrNull;
 	

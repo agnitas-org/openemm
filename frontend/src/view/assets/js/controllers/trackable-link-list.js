@@ -1,6 +1,5 @@
 AGN.Lib.Controller.new('trackable-link-list', function() {
-  var self = this,
-      scrollToElemId;
+  var scrollToElemId;
 
   this.addAction({'change': 'elem-edited'}, function() {
     scrollToElemId = this.el.attr('id');
@@ -45,15 +44,17 @@ AGN.Lib.Controller.new('trackable-link-list', function() {
   this.addAction({
     'click': 'delete-link'
   }, function(){
-    var linkId = this.el.data('link-id');
-    $(this.el).closest('[data-action="elem-edited"]').trigger('change');
+    var element = this.el;
+    var linkId = element.data('link-id');
+    $(element).closest('[data-action="elem-edited"]').trigger('change');
     $('#linkPropertyTable').find('#linkProperty_' + linkId).remove();
   });
 
   this.addAction({
     'click': 'delete-all-links'
   }, function(){
-    $('#linkPropertyTable').find('tbody tr').remove();
+    var $trList = $('#linkPropertyTable').find('tbody tr');
+    $trList.remove();
     $(this.el).closest('[data-action="elem-edited"]').trigger('change');
   });
 

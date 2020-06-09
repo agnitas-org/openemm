@@ -11,8 +11,8 @@
 package org.agnitas.util;
 
 import java.io.FileOutputStream;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
+//import java.nio.charset.Charset;
+//import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,14 +25,6 @@ import java.util.Set;
  * email pattern.
  */
 public class Blacklist {
-	private static Charset		digestCharset = null;
-	static {
-		try {
-			digestCharset = Charset.forName ("UTF-8");
-		} catch (Exception e) {
-			digestCharset = null;
-		}
-	}
 	/** used to detect and avoud double tnries */
 	private Set <String>		seen;
 	/** contains all non wildcard entries */
@@ -49,10 +41,6 @@ public class Blacklist {
 	private String			bouncelog;
 	/** optional logger */
 	private Log			log;
-	// available digest for all compariasions
-	private MessageDigest		digestSHA1;
-	// available comparation implementations
-	private Set <String>		robinsonAT;
 
 	/** Constructor for the class
 	 * 
@@ -71,8 +59,6 @@ public class Blacklist {
 
 		bouncelog = home + separator + "var" + separator + "spool" + separator + "log" + separator + "extbounce.log";
 		log = nLog;
-		digestSHA1 = null;
-		robinsonAT = null;
 	}
 	public Blacklist () {
 		this (null);
@@ -109,25 +95,6 @@ public class Blacklist {
 		}
 	}
 
-	/**
-	 * Set the by the austrian goverment provided binary list
-	 * of email SHA-1 hashes which are to be considered to
-	 * deny receiving of emails
-	 * 
-	 * @param list the raw byte list of the provied hashes
-	 */
-	public void addRobinsonAT (byte[] list) {
-		if (robinsonAT == null) {
-			robinsonAT = new HashSet<>();
-		}
-		for (int n = 0; n + 20 <= list.length; n += 20) {
-			byte[]	key = new byte[20];
-			
-			System.arraycopy (list, n, key, 0, 20);
-			robinsonAT.add (coded (key));
-		}
-	}
-
 	/** Returns wether an email is on the blacklist or not
 	 * @param email the email to check
 	 * @return the entry, if the email is blacklisted, null otherwise
@@ -135,35 +102,13 @@ public class Blacklist {
 	public Blackdata isBlackListed (String email) {
 		Blackdata rc = null;
 
-		email = email.toLowerCase ();
+		email = email.toLowerCase ().trim ();
 		rc = exact.get (email);
 		for (int n = 0; (rc == null) && (n < wcount); ++n) {
 			Blackdata	e = wildcards.get (n);
 
 			if (e.matches (email)) {
 				rc = e;
-			}
-		}
-		if ((rc == null) && (robinsonAT != null)) {
-			String	calc = calculateDigestSHA1 (email);
-			boolean	match;
-			
-			if (! (match = robinsonAT.contains (calc))) {
-				int	n;
-			
-				if ((n = email.indexOf ('@')) != -1) {
-					String	domain = email.substring (n);
-					calc = calculateDigestSHA1 (domain);
-					match = robinsonAT.contains (calc);
-				}
-			}
-			if (match) {
-				rc = new Blackdata (email, true) {
-					@Override
-					public String where () {
-						return "robinson at";
-					}
-				};
 			}
 		}
 		return rc;
@@ -173,7 +118,7 @@ public class Blacklist {
 	 * @return count
 	 */
 	public int globalCount () {
-		return globalCount + (robinsonAT != null ? robinsonAT.size () : 0);
+		return globalCount;
 	}
 
 	/** returns the number of entries on the local blacklist
@@ -198,32 +143,5 @@ public class Blacklist {
 				}
 			}
 		}
-	}
-
-	private String coded (byte[] i) {
-		char[]	code = new char[(i.length + 1) >> 1];
-		
-		for (int n = 0; n < i.length; n += 2) {
-			if (n + 1 < i.length) {
-				code[n >> 1] = (char) ((i[n] & 0xff << 8) | (i[n + 1] & 0xff));
-			} else {
-				code[n >> 1] = (char) (i[n] & 0xff);
-			}
-		}
-		return new String (code);
-	}
-	private String calculateDigest (MessageDigest how, String what) {
-		how.update (what.getBytes (digestCharset));
-		return coded (how.digest ());
-	}
-	private String calculateDigestSHA1 (String what) {
-		if (digestSHA1 == null) {
-			try {
-				digestSHA1 = MessageDigest.getInstance ("SHA-1");
-			} catch (java.security.NoSuchAlgorithmException e) {
-				digestSHA1 = null;
-			}
-		}
-		return calculateDigest (digestSHA1, what);
 	}
 }

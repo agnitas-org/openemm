@@ -20,9 +20,9 @@ import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 
 public final class HashTagRegistryImpl implements HashTagRegistry {
-	
 	/** The logger. */
-	private static final transient Logger LOGGER = Logger.getLogger(HashTagRegistryImpl.class);
+	@SuppressWarnings("unused")
+	private static final transient Logger logger = Logger.getLogger(HashTagRegistryImpl.class);
 
 	/** List of registered hash tags. */
 	private final List<HashTag> hashTagList;
@@ -48,5 +48,4 @@ public final class HashTagRegistryImpl implements HashTagRegistry {
 		
 		throw new NoMatchingHashTagException();
 	}
-
 }

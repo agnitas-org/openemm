@@ -22,11 +22,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.Mailing;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
+import com.agnitas.util.preview.PreviewImageGenerationQueue;
+import com.agnitas.util.preview.PreviewImageGenerationTask;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.ComMailingBaseAction;
+import cz.vutbr.web.css.MediaSpec;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
@@ -35,7 +43,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingSendAction;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.fit.cssbox.css.CSSNorm;
 import org.fit.cssbox.css.DOMAnalyzer;
@@ -47,15 +55,6 @@ import org.fit.cssbox.layout.BrowserCanvas;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.util.preview.PreviewImageGenerationQueue;
-import com.agnitas.util.preview.PreviewImageGenerationTask;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.ComMailingBaseAction;
-
-import cz.vutbr.web.css.MediaSpec;
 
 public class PreviewImageServiceImpl implements PreviewImageService {
     /** The logger */
@@ -71,6 +70,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 
     protected ConfigService configService;
     private ComRecipientDao recipientDao;
+    private MediaTypesService mediaTypesService;
     private MailingComponentDao mailingComponentDao;
     protected PreviewImageGenerationQueue queue;
 
@@ -81,8 +81,9 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 
 
         int customerId = recipientDao.getPreviewRecipient(companyId, mailingId);
+        MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(companyId, mailingId);
         if (customerId > 0) {
-            queue.enqueue(new MailingPreviewTask(sessionId, companyId, mailingId, customerId), async);
+            queue.enqueue(new MailingPreviewTask(sessionId, companyId, mailingId, customerId, activeMediaType), async);
         } else {
             logger.error("Cannot create mailing preview: no test or admin recipient found");
         }
@@ -91,8 +92,9 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     @Override
     public void generateMailingPreview(ComAdmin admin, String sessionId, int mailingId, boolean async) {
         int customerId = recipientDao.getPreviewRecipient(admin.getCompanyID(), mailingId);
+        MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
         if (customerId > 0) {
-            queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId), async);
+            queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType), async);
         } else {
             logger.error("Cannot create mailing preview: no test or admin recipient found");
         }
@@ -340,23 +342,30 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     public void setPreviewImageGenerationQueue(PreviewImageGenerationQueue previewImageGenerationQueue) {
         this.queue = previewImageGenerationQueue;
     }
-
+    
+    @Required
+    public void setMediaTypesService(MediaTypesService mediaTypesService) {
+        this.mediaTypesService = mediaTypesService;
+    }
+    
     private class MailingPreviewTask implements PreviewImageGenerationTask {
         private String sessionId;
         private int companyId;
         private int mailingId;
         private int customerId;
+        private MediaTypes mediaType;
 
-        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId) {
+        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, MediaTypes mediaType) {
             this.sessionId = sessionId;
             this.companyId = companyId;
             this.mailingId = mailingId;
             this.customerId = customerId;
+            this.mediaType = mediaType;
         }
 
         @Override
         public String getId() {
-            return "MAILING#" + companyId + "#" + mailingId + "#" + customerId;
+            return "MAILING#" + companyId + "#" + mailingId + "#" + customerId + "#" + mediaType;
         }
 
         @Override
@@ -402,12 +411,12 @@ public class PreviewImageServiceImpl implements PreviewImageService {
             String baseUrl = configService.getValue(ConfigValue.PreviewUrl);
 
             if (StringUtils.isBlank(baseUrl)) {
-                baseUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
+                baseUrl = configService.getValue(ConfigValue.SystemUrl);
             }
 
             return baseUrl + "/mailingsend.do" + ";jsessionid=" + sessionId + "?action=" + MailingSendAction.ACTION_PREVIEW +
                     "&mailingID=" + mailingId +
-                    "&previewFormat=" + Mailing.INPUT_TYPE_HTML +
+                    "&previewFormat=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1) +
                     "&previewCustomerID=" + customerId +
                     "&previewDay=0" +
                     "&previewMonth=0" +

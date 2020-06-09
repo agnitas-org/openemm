@@ -34,7 +34,7 @@ import org.agnitas.util.CsvReader;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.importvalues.ImportMode;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.web.ComImportWizardForm;
@@ -519,59 +519,63 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 							valueList.add(null);
 						} else {
 							switch (aInfo.getType()) {
-							case CsvColInfo.TYPE_CHAR:
-								valueList.add(SafeString.cutByteLength(aValue,aInfo.getLength()));
-								break;
-
-							case CsvColInfo.TYPE_NUMERIC:
-								try {
-									valueList.add(Double.valueOf(aValue));
-								} catch (Exception e) {
-									if (aInfo.getName().equalsIgnoreCase(ComImportWizardForm.GENDER_KEY) && !columnMapping.containsKey(ComImportWizardForm.GENDER_KEY+"_dummy")) {
-										if (aValue.equalsIgnoreCase("Herr")	|| aValue.equalsIgnoreCase("Herrn") || aValue.equalsIgnoreCase("m")) {
-											valueList.add(Double.valueOf(0));
-										} else if (aValue.equalsIgnoreCase("Frau") || aValue.equalsIgnoreCase("w")) {
-											valueList.add(Double.valueOf(1));
+								case CsvColInfo.TYPE_CHAR:
+									valueList.add(SafeString.cutByteLength(aValue,aInfo.getLength()));
+									break;
+	
+								case CsvColInfo.TYPE_NUMERIC:
+									try {
+										valueList.add(Double.valueOf(aValue));
+									} catch (Exception e) {
+										if (aInfo.getName().equalsIgnoreCase(ComImportWizardForm.GENDER_KEY) && !columnMapping.containsKey(ComImportWizardForm.GENDER_KEY+"_dummy")) {
+											if (aValue.equalsIgnoreCase("Herr")	|| aValue.equalsIgnoreCase("Herrn") || aValue.equalsIgnoreCase("m")) {
+												valueList.add(Double.valueOf(0));
+											} else if (aValue.equalsIgnoreCase("Frau") || aValue.equalsIgnoreCase("w")) {
+												valueList.add(Double.valueOf(1));
+											} else {
+												valueList.add(Double.valueOf(2));
+											}
+										} else if (aInfo.getName().equalsIgnoreCase(ComImportWizardForm.MAILTYPE_KEY) && !columnMapping.containsKey(ComImportWizardForm.MAILTYPE_KEY+"_dummy")) {
+											if (aValue.equalsIgnoreCase("text")	|| aValue.equalsIgnoreCase("txt")) {
+												valueList.add(Double.valueOf(0));
+											} else if (aValue.equalsIgnoreCase("html")) {
+												valueList.add(Double.valueOf(1));
+											} else if (aValue.equalsIgnoreCase("offline")) {
+												valueList.add(Double.valueOf(2));
+											}
 										} else {
-											valueList.add(Double.valueOf(2));
+	                                        if(addErrors) {
+	                                            setError(ImportErrorType.NUMERIC_ERROR,	StringUtils.join(inputData, " ") + ";"+ SafeString.getLocaleString("import.error.NumberFormat",locale)
+	                                                            + aInfo.getName() + "\n");
+	                                        }
+	                                        if(logger.isInfoEnabled()) {
+	                                        	logger.info("Numberformat error: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+	                                        }
+											return null;
 										}
-									} else if (aInfo.getName().equalsIgnoreCase(ComImportWizardForm.MAILTYPE_KEY) && !columnMapping.containsKey(ComImportWizardForm.MAILTYPE_KEY+"_dummy")) {
-										if (aValue.equalsIgnoreCase("text")	|| aValue.equalsIgnoreCase("txt")) {
-											valueList.add(Double.valueOf(0));
-										} else if (aValue.equalsIgnoreCase("html")) {
-											valueList.add(Double.valueOf(1));
-										} else if (aValue.equalsIgnoreCase("offline")) {
-											valueList.add(Double.valueOf(2));
+									}
+									break;
+	
+								case CsvColInfo.TYPE_DATE:
+									try {
+										Date tmpDate = aDateFormat.parse(aValue);
+										if (!checkDateHas4Digits(tmpDate)) {
+											throw new Exception("Incorrect Date Format. The Date must have 4 Digits.");
 										}
-									} else {
-                                        if(addErrors) {
-                                            setError(ImportErrorType.NUMERIC_ERROR,	StringUtils.join(inputData, " ") + ";"+ SafeString.getLocaleString("import.error.NumberFormat",locale)
-                                                            + aInfo.getName() + "\n");
-                                        }
-                                        if(logger.isInfoEnabled()) {
-                                        	logger.info("Numberformat error: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
-                                        }
+										valueList.add(tmpDate);
+									} catch (Exception e) {
+	                                    if(addErrors) {
+	                                        setError(ImportErrorType.DATE_ERROR, StringUtils.join(inputData, " ") + ";" + SafeString.getLocaleString("import.error.DateFormat", locale) + aInfo.getName() + "\n");
+	                                    }
+	                                    if(logger.isInfoEnabled()) {
+	                                    	logger.info("Dateformat error: " + StringUtils.join(inputData, " "));						// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+	                                    }
 										return null;
 									}
-								}
-								break;
-
-							case CsvColInfo.TYPE_DATE:
-								try {
-									Date tmpDate = aDateFormat.parse(aValue);
-									if (!checkDateHas4Digits(tmpDate)) {
-										throw new Exception("Incorrect Date Format. The Date must have 4 Digits.");
-									}
-									valueList.add(tmpDate);
-								} catch (Exception e) {
-                                    if(addErrors) {
-                                        setError(ImportErrorType.DATE_ERROR, StringUtils.join(inputData, " ") + ";" + SafeString.getLocaleString("import.error.DateFormat", locale) + aInfo.getName() + "\n");
-                                    }
-                                    if(logger.isInfoEnabled()) {
-                                    	logger.info("Dateformat error: " + StringUtils.join(inputData, " "));						// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
-                                    }
-									return null;
-								}
+									break;
+									
+								default:
+									break;
 							}
 						}
 					}
@@ -979,7 +983,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 			logger.debug("--- getLinesOKFromFile start in service ---");
 		}
 		
-		int linesOK = 0;
+		int linesOkInFile = 0;
 		getUniqueValues().clear();
 		
 		char separator = status.getSeparator();
@@ -1000,14 +1004,14 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 			List<String> nextCsvData;
 			while ((nextCsvData = csvReader.readNextCsvLine()) != null) {
 				if (parseLine(nextCsvData) != null) {
-					linesOK++;
+					linesOkInFile++;
 				}
 			}
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("--- getLinesOKFromFile end in service---");
 		}
-		return linesOK;
+		return linesOkInFile;
 	}
 
 	/* (non-Javadoc)

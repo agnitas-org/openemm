@@ -13,11 +13,14 @@ package com.agnitas.emm.core.commons.intelliad;
 import java.util.Map;
 
 import org.agnitas.beans.Mediatype;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.MediatypeEmail;
 
@@ -28,37 +31,48 @@ public class IntelliAdMailingSettingsCacheImpl implements IntelliAdMailingSettin
 	private static final transient Logger logger = Logger.getLogger( IntelliAdMailingSettingsCacheImpl.class);
 	
 	private MediatypesDao mediatypesDao;
+	private ConfigService configService;
 	private TimeoutLRUMap<Integer, IntelliAdMailingSettings> cache;
 	
 	@Override
 	public IntelliAdMailingSettings getIntelliAdSettings( @VelocityCheck int companyId, int mailingId) {
-		IntelliAdMailingSettings data = cache.get( mailingId);
+		IntelliAdMailingSettings data = getCache().get( mailingId);
 		
 		if( data == null) {
 			data = createIntelliAdSettings( companyId, mailingId);
 			
-			cache.put( mailingId, data);
+			getCache().put( mailingId, data);
 		}
 
 		return data;
 	}
 	
+	private TimeoutLRUMap<Integer, IntelliAdMailingSettings> getCache() {
+		if (cache == null) {
+			cache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.MailgunMaxCache), configService.getLongValue(ConfigValue.MailgunMaxCacheTimeMillis));
+		}
+		
+		return cache;
+	}
+
 	private IntelliAdMailingSettings createIntelliAdSettings( int companyId, int mailingId) {
 		try {
 			Map<Integer, Mediatype> map = this.mediatypesDao.loadMediatypes( mailingId, companyId);
 			Mediatype mediatype = map.get( 0);
 			
 			if( mediatype != null) {
-				if( logger.isInfoEnabled())
+				if( logger.isInfoEnabled()) {
 					logger.info( "Found media type email for mailing " + mailingId);
+				}
 
 				boolean enabled = ((MediatypeEmail) mediatype).isIntelliAdEnabled();
 				String trackingString = ((MediatypeEmail) mediatype).getIntelliAdString();
 				
 				return new IntelliAdMailingSettings( enabled, trackingString);
 			} else {
-				if( logger.isInfoEnabled())
+				if( logger.isInfoEnabled()) {
 					logger.info( "Found no media type email for mailing " + mailingId);
+				}
 				
 				// Return settings saying IntelliAd is disabled, no tracking string
 				return new IntelliAdMailingSettings( false, null);
@@ -77,16 +91,13 @@ public class IntelliAdMailingSettingsCacheImpl implements IntelliAdMailingSettin
 	 * 
 	 * @param mediatypesDao instance of MediatypesDao
 	 */
-	public void setMediatypesDao( MediatypesDao mediatypesDao) {
+	@Required
+	public void setMediatypesDao(MediatypesDao mediatypesDao) {
 		this.mediatypesDao = mediatypesDao;
 	}
-
-	/**
-	 * Setter for cache structure.
-	 * 
-	 * @param cache cache structure
-	 */
-	public void setCache( TimeoutLRUMap<Integer, IntelliAdMailingSettings> cache) {
-		this.cache = cache;
+	
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 }

@@ -23,15 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.beans.TrackableLinkListItem;
-import com.agnitas.beans.impl.ComTrackableLinkImpl;
-import com.agnitas.dao.ComTrackableLinkDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -42,11 +33,21 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.beans.TrackableLinkListItem;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
+import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackableLinkDao {
 	
@@ -129,7 +130,19 @@ public class ComTrackableLinkDaoImpl extends BaseDaoImpl implements ComTrackable
 		}
     }
 
-	@Override
+    @Override
+    public List<ComTrackableLink> getTrackableLinks(int companyID, List<Integer> urlIds) {
+        if (CollectionUtils.isEmpty(urlIds)) {
+			return new ArrayList<>();
+		}
+		
+		String sql = "SELECT * FROM rdir_url_tbl WHERE " + makeBulkInClauseForInteger("url_id", urlIds) + " AND company_id = ? AND deleted <= 0";
+		List<ComTrackableLink> links = select(logger, sql, new ComTrackableLink_RowMapper(), companyID);
+		links.forEach(link -> link.setProperties(getLinkProperties(link)));
+		return links;
+    }
+    
+    @Override
 	@DaoUpdateReturnValueCheck
 	public int saveTrackableLink(TrackableLink link) {
 		if (link == null || link.getCompanyID() <= 0) {

@@ -12,7 +12,7 @@ package com.agnitas.messages;
 
 import java.util.Locale;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
@@ -51,7 +51,7 @@ public class DBMessageSource implements MessageSource {
         String defaultMessage = resolvable.getDefaultMessage();
 
         if (defaultMessage == null) {
-            throw new NoSuchMessageException(ArrayUtils.isEmpty(codes) ? null : codes[codes.length - 1], locale);
+            throw new NoSuchMessageException(codes == null || ArrayUtils.isEmpty(codes) ? null : codes[codes.length - 1], locale);
         }
 
         return defaultMessage;

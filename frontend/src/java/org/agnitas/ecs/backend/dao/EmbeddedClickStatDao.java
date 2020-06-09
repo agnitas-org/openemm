@@ -28,7 +28,7 @@ public interface EmbeddedClickStatDao {
 	 * @param companyId id of company
 	 * @return collection of {@link ClickStatColor} beans for companyId
 	 */
-	public List<ClickStatColor> getClickStatColors(@VelocityCheck int companyId);
+	List<ClickStatColor> getClickStatColors(@VelocityCheck int companyId);
 
 	/**
 	 * Gets click statistics for the mailing for certain ecs mode
@@ -39,5 +39,7 @@ public interface EmbeddedClickStatDao {
 	 * @return click statistics for links of the mailing
 	 * @throws Exception 
 	 */
-	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode) throws Exception;
+	ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode) throws Exception;
+
+	ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode, int deviceClass) throws Exception;
 }

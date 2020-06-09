@@ -76,10 +76,9 @@ public class ProfileFieldEncryptor {
 	 * @param customerId customer ID (for informational purpose only)
 	 * 
 	 * @return encrypted data
-	 * 
-	 * @throws ProfileFieldEncryptorException on errors encrypting data
+	 * @throws Exception 
 	 */
-	public String encryptToBase64(final String data, final int companyId, final int customerId) throws ProfileFieldEncryptorException {
+	public String encryptToBase64(final String data, final int companyId, final int customerId) throws Exception {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(ENCRYPTION_IDENTIFIER0);
 		buffer.append(SEPARATOR);
@@ -118,10 +117,9 @@ public class ProfileFieldEncryptor {
 	 * @param companyId company ID
 	 * 
 	 * @return decrypted data (no additional data like IDs)
-	 * 
-	 * @throws ProfileFieldEncryptorException on errors decrypting data
+	 * @throws Exception 
 	 */
-	public String decryptFromBase64(final String data, final int companyId) throws ProfileFieldEncryptorException {
+	public String decryptFromBase64(final String data, final int companyId) throws Exception {
 		byte[] encryptedBytes;
 		try {
 			encryptedBytes = Base64.getDecoder().decode(data);
@@ -171,13 +169,9 @@ public class ProfileFieldEncryptor {
 	 * @param mode encryption or decryption mode
 	 * 
 	 * @return initialized {@link Cipher}
-	 * 
-	 * @throws NoSuchAlgorithmException on errors setting up Cipher instance
-	 * @throws NoSuchPaddingException  on errors setting up Cipher instance
-	 * @throws InvalidKeyException on errors setting up Cipher instance
-	 * @throws InvalidAlgorithmParameterException on errors setting up Cipher instance
+	 * @throws Exception 
 	 */
-	private Cipher createCipher(int mode) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+	private Cipher createCipher(int mode) throws Exception {
 		SecretKey key = new SecretKeySpec(this.keyProvider.getEncryptionKey(), "DES");
 		
 		IvParameterSpec ivectorSpecv = new IvParameterSpec(keyProvider.getEncryptionKey());

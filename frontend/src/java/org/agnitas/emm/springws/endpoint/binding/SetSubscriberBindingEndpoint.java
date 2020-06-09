@@ -20,7 +20,6 @@ import org.agnitas.emm.springws.jaxb.SetSubscriberBindingRequest;
 import org.agnitas.emm.springws.jaxb.SetSubscriberBindingResponse;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class SetSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

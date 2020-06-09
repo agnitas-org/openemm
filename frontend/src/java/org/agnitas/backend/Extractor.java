@@ -125,21 +125,33 @@ public class Extractor implements ResultSetExtractor <Object> {
 
 		long	cid = rset.getLong (1);
 
-		if (hasVirtualData && (! data.useRecord (cid)))
+		if (hasVirtualData && (! data.useRecord (cid))) {
 			return;
+		}
 
-		for (int n = 0; n < metacount; ++n)
-			if (rmap[n] != null) {
-				rmap[n].set (rset, n + 1);
+		if (data.maildropStatus.isPreviewMailing () && data.previewClearData) {
+			cid = 0;
+			for (int n = 0; n < metacount; ++n) {
+				if (rmap[n] != null) {
+					rmap[n].clr ();
+				}
 			}
+		} else {
+			for (int n = 0; n < metacount; ++n) {
+				if (rmap[n] != null) {
+					rmap[n].set (rset, n + 1);
+				}
+			}
+		}
 		
 		int	count = 3;
 			
 		for (EMMTag tmpTag : tagNames.values ()) {
 			if ((! tmpTag.globalValue) && (! tmpTag.fixedValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
-				tmpTag.mTagValue = null;
 				if ((rmap[count] != null) && (! rmap[count].getIsnull ())) {
-					tmpTag.mTagValue = rmap[count].get ();
+					tmpTag.setTagValue (rmap[count].get ());
+				} else {
+					tmpTag.setTagValue (null);
 				}
 				++count;
 			}
@@ -147,7 +159,7 @@ public class Extractor implements ResultSetExtractor <Object> {
 		if (hasVirtualData) {
 			for (EMMTag tmpTag : tagNames.values ()) {
 				if (hasVirtualData && (tmpTag.tagType == EMMTag.TAG_INTERNAL) && (tmpTag.tagSpec == EMMTag.TI_DBV)) {
-					tmpTag.mTagValue = data.virtualData (tmpTag.mSelectString.toLowerCase ());
+					tmpTag.setTagValue (data.virtualData (tmpTag.mSelectString.toLowerCase ()));
 				}
 			}
 		}
@@ -186,7 +198,7 @@ public class Extractor implements ResultSetExtractor <Object> {
 			for (int n = 0; n < emailCount; ++n) {
 				EMMTag	etag = emailTags.get (n);
 
-				etag.mTagValue = cinfo.getMediaFieldContent (data.mediaEMail);
+				etag.setTagValue (cinfo.getMediaFieldContent (data.mediaEMail));
 			}
 
 			if (! data.maildropStatus.isPreviewMailing ()) {
@@ -222,7 +234,7 @@ public class Extractor implements ResultSetExtractor <Object> {
 				int	targetGroupValuesStartIndex = data.useControlColumns (cinfo, rset, usecount + 1) - 1;
 				int	pos = 0;
 				
-				for (Target t : data.targetExpression.resolveByDatabase ()) {
+				for (@SuppressWarnings("unused") Target t : data.targetExpression.resolveByDatabase ()) {
 					Column	c = null;
 					
 					if (targetGroupValuesStartIndex < metacount) {
@@ -244,9 +256,9 @@ public class Extractor implements ResultSetExtractor <Object> {
 					if ((email != null) && (email.length () > 3) && (email.indexOf ('@') != -1)) {
 						cinfo.setSampleEmail (email);
 						for (int n = 0; n < emailCount; ++n) {
-							emailTags.get (n).mTagValue = email;
+							emailTags.get (n).setTagValue (email);
 						}
-						for (int n = 0; (n < Const.Mailtype.HTML_OFFLINE) && (n < data.masterMailtype); ++n) {
+						for (int n = 0; (n < Const.Mailtype.HTML_OFFLINE) && (n <= data.masterMailtype); ++n) {
 							try {
 								mailer.writeMail (cinfo, mcount + 1, n, 0, Media.typeName (Media.TYPE_EMAIL), tagNames);
 								mailer.writeContent (cinfo, 0, tagNames, rmap);
@@ -258,7 +270,7 @@ public class Extractor implements ResultSetExtractor <Object> {
 				}
 				cinfo.setSampleEmail (null);
 				for (int n = 0; n < emailCount; ++n) {
-					emailTags.get (n).mTagValue = cinfo.getMediaFieldContent (data.mediaEMail);
+					emailTags.get (n).setTagValue (cinfo.getMediaFieldContent (data.mediaEMail));
 				}
 				needSamples = false;
 			}
@@ -297,8 +309,9 @@ public class Extractor implements ResultSetExtractor <Object> {
 	 * @return mediatypes
 	 */
 	private String getMediaTypes (long cid) {
-		if (data.maildropStatus.isPreviewMailing ())
+		if (data.maildropStatus.isPreviewMailing ()) {
 			return mmap.getActive ();
+		}
 		return mmap.get (cid);
 	}
 

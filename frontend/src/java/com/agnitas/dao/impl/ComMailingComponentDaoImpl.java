@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingComponent;
@@ -33,7 +34,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
@@ -124,6 +125,16 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
+    public List<MailingComponent> getMailingComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> componentIds) {
+		String sqlGetComponents = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp, emmblock, binblock " +
+				"FROM component_tbl " +
+				"WHERE company_id = ? AND mailing_id = ? AND " + makeBulkInClauseForInteger("component_id", componentIds) +
+				"ORDER BY compname ASC";
+		
+		return select(logger, sqlGetComponents, new MailingComponentRowMapper(true), companyID, mailingID);
+    }
+    
+    @Override
 	public MailingComponent getMailingComponent(int compID, @VelocityCheck int companyID) {
 		if (companyID == 0) {
 			return null;

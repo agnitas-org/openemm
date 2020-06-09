@@ -21,13 +21,12 @@ import org.agnitas.emm.springws.jaxb.GetContentBlockResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class GetContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private DynamicTagContentService dynamicTagContentService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

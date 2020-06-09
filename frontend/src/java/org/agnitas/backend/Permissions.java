@@ -45,24 +45,26 @@ public class Permissions {
 				Set <String>	target = null;
 				
 				switch (state) {
-				case 0:
-					query = "SELECT security_token FROM admin_group_permission_tbl " +
-						"WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE company_id IN (0, :companyID))";
-					table = "admin_group_permission_tbl";
-					target = group;
-					break;
-				case 1:
-					query = "SELECT security_token FROM admin_permission_tbl " +
-						"WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id IN (0, :companyID))";
-					table = "admin_permission_tbl";
-					target = admin;
-					break;
-				case 2:
-					query = "SELECT security_token FROM company_permission_tbl " +
-						"WHERE company_id IN (0, :companyID)";
-					table = "company_permission_tbl";
-					target = company;
-					break;
+					case 0:
+						query = "SELECT security_token FROM admin_group_permission_tbl " +
+							"WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE company_id IN (0, :companyID))";
+						table = "admin_group_permission_tbl";
+						target = group;
+						break;
+					case 1:
+						query = "SELECT security_token FROM admin_permission_tbl " +
+							"WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id IN (0, :companyID))";
+						table = "admin_permission_tbl";
+						target = admin;
+						break;
+					case 2:
+						query = "SELECT security_token FROM company_permission_tbl " +
+							"WHERE company_id IN (0, :companyID)";
+						table = "company_permission_tbl";
+						target = company;
+						break;
+					default:
+						break;
 				}
 				if ((target != null) && (table != null) && data.dbase.tableExists (table)) {
 					rq = data.dbase.query (jdbc, query, "companyID", data.company.id ());

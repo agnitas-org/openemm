@@ -18,6 +18,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.beans.ComTarget;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
@@ -26,15 +30,10 @@ import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
 	
@@ -44,8 +43,8 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	protected static final Set<String> SORTABLE_FIELDS = new HashSet<>(Arrays.asList("mailinglist_id", "shortname", "description", "creation_date", "change_date"));
 
 	protected static final MailinglistEntryRowMapper MAILING_LIST_ENTRY_ROW_MAPPER = new MailinglistEntryRowMapper();
-	
-	protected static final Mailinglist_RowMapper MAILINGLIST_ROW_MAPPER = new Mailinglist_RowMapper();
+
+	protected static final org.agnitas.dao.impl.mapper.MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new org.agnitas.dao.impl.mapper.MailinglistRowMapper();
 
 	/** DAO accessing target groups. */
 	private ComTargetDao targetDao;
@@ -75,7 +74,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			return null;
 		} else {
 			return selectObjectDefaultNull(logger,
-					"SELECT mailinglist_id, company_id, shortname, description, creation_date, change_date FROM mailinglist_tbl " +
+					"SELECT " + getMailinglistSqlFieldsForSelect() + " FROM mailinglist_tbl " +
 							"WHERE mailinglist_id = ? AND deleted = 0 AND company_id = ?",
 					MAILINGLIST_ROW_MAPPER, listID, companyId);
 		}
@@ -104,52 +103,12 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 				
 				// Execute insert
 				if (isOracleDB()) {
-					int newID = selectInt(logger, "SELECT mailinglist_tbl_seq.NEXTVAL FROM DUAL");
-					int touchedLines = update(
-						logger, 
-						"INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?, ?)",
-						newID,
-						list.getCompanyID(),
-						list.getShortname(),
-						list.getDescription(),
-						list.getCreationDate(),
-						list.getChangeDate()
-					);
-					
-					if (touchedLines == 1) {
-						list.setId(newID);
-					}
-					
-					return list.getId();
+					return performInsertForOracle(list.getCompanyID(), list);
 				} else {
-					String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?)";
-					int newID = insertIntoAutoincrementMysqlTable(logger, "mailinglist_id", insertStatement,
-						list.getCompanyID(),
-						list.getShortname(),
-						list.getDescription(),
-						list.getCreationDate(),
-						list.getChangeDate());
-					list.setId(newID);
-					return list.getId();
+					return performInsertForMySql(list.getCompanyID(), list);
 				}
 			} else {
-				//execute update
-				int touchedLines = update(
-					logger, 
-					"UPDATE mailinglist_tbl SET shortname = ?, description = ?, creation_date = ?, change_date = ? WHERE mailinglist_id = ? AND deleted=0 AND company_id = ?",
-					list.getShortname(),
-					list.getDescription(),
-					list.getCreationDate(),
-					list.getChangeDate(),
-					list.getId(),
-					list.getCompanyID()
-				);
-				
-				if (touchedLines == 1) {
-					return list.getId();
-				} else {
-					return 0;
-				}
+				return performUpdate(list.getCompanyID(), list);
 			}
 		}
 	}
@@ -164,37 +123,11 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		list.setChangeDate(new Date());
 		list.setCreationDate(new Date());
 
-
-		int touchedLines = 0;
 		// Execute insert
 		if (isOracleDB()) {
-			int newID = selectInt(logger, "SELECT mailinglist_tbl_seq.NEXTVAL FROM DUAL");
-			touchedLines = update(
-				logger,
-				"INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?, ?)",
-				newID,
-				companyId,
-				list.getShortname(),
-				list.getDescription(),
-				list.getCreationDate(),
-				list.getChangeDate()
-			);
-
-			if (touchedLines == 1) {
-				list.setId(newID);
-			}
-
-			return list.getId();
+			return performInsertForOracle(companyId, list);
 		} else {
-			String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?)";
-			int newID = insertIntoAutoincrementMysqlTable(logger, "mailinglist_id", insertStatement,
-				companyId,
-				list.getShortname(),
-				list.getDescription(),
-				list.getCreationDate(),
-				list.getChangeDate());
-			list.setId(newID);
-			return list.getId();
+			return performInsertForMySql(companyId, list);
 		}
 	}
 
@@ -207,18 +140,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 
 		list.setChangeDate(new Date());
 
-		//execute update
-		int touchedLines = update(
-				logger,
-				"UPDATE mailinglist_tbl SET shortname = ?, description = ?, change_date = ? WHERE mailinglist_id = ? AND deleted=0 AND company_id = ?",
-				list.getShortname(),
-				list.getDescription(),
-				list.getChangeDate(),
-				list.getId(),
-				companyId
-		);
-
-		return touchedLines == 1 ? list.getId() : 0;
+		return performUpdate(companyId, list);
 	}
 
 
@@ -258,7 +180,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	@Override
 	public List<Mailinglist> getMailinglists(@VelocityCheck int companyId) {
 		return select(logger,
-				"SELECT mailinglist_id, company_id, shortname, description, creation_date, change_date FROM mailinglist_tbl " +
+				"SELECT " + getMailinglistSqlFieldsForSelect() + " FROM mailinglist_tbl " +
 						"WHERE deleted = 0 AND company_id = ? ORDER BY LOWER(shortname) ASC",
 				MAILINGLIST_ROW_MAPPER, companyId);
 	}
@@ -360,51 +282,58 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE deleted=0 AND company_id = ? AND mailinglist_id = ?", companyId, mailinglistId) > 0;
 	}
 
-	public static class MailinglistRowMapper implements RowMapper<Mailinglist> {
+    protected String getMailinglistSqlFieldsForSelect() {
+        final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date"};
+        return StringUtils.join(fields, ", ");
+    }
 
-		private final String columnPrefix;
+    protected int performInsertForOracle(final int companyId, final Mailinglist mailinglist) {
+        final int newID = selectInt(logger, "SELECT mailinglist_tbl_seq.NEXTVAL FROM DUAL");
+        final int touchedLines = update(
+                logger,
+                "INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?, ?)",
+                newID,
+                companyId,
+                mailinglist.getShortname(),
+                mailinglist.getDescription(),
+                mailinglist.getCreationDate(),
+                mailinglist.getChangeDate());
 
-		public MailinglistRowMapper() {
-			this.columnPrefix = StringUtils.EMPTY;
-		}
+        if (touchedLines == 1) {
+            mailinglist.setId(newID);
+        }
 
-		public MailinglistRowMapper(String columnPrefix) {
-			this.columnPrefix = StringUtils.defaultString(columnPrefix, StringUtils.EMPTY);
-		}
+        return mailinglist.getId();
+    }
 
-		@Override
-		public Mailinglist mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-			Mailinglist mailinglist = new MailinglistImpl();
+    protected int performInsertForMySql(final int companyId, final Mailinglist mailinglist) {
+        final String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date) VALUES (?, ?, ?, ?, ?)";
+        final int newID = insertIntoAutoincrementMysqlTable(logger, "mailinglist_id", insertStatement,
+                companyId,
+                mailinglist.getShortname(),
+                mailinglist.getDescription(),
+                mailinglist.getCreationDate(),
+                mailinglist.getChangeDate());
+        mailinglist.setId(newID);
+        return mailinglist.getId();
+    }
 
-			mailinglist.setId(resultSet.getInt(columnPrefix + "mailinglist_id"));
-			mailinglist.setCompanyID(resultSet.getInt(columnPrefix + "company_id"));
-			mailinglist.setShortname(resultSet.getString(columnPrefix + "shortname"));
-			mailinglist.setDescription(resultSet.getString(columnPrefix + "description"));
-			mailinglist.setCreationDate(resultSet.getTimestamp(columnPrefix + "creation_date"));
-			mailinglist.setChangeDate(resultSet.getTimestamp(columnPrefix + "change_date"));
-			mailinglist.setRemoved(resultSet.getBoolean(columnPrefix + "deleted"));
+    protected int performUpdate(final int companyId, final Mailinglist mailinglist){
+        //execute update
+        final int touchedLines = update(
+                logger,
+                "UPDATE mailinglist_tbl SET shortname = ?, description = ?, change_date = ? WHERE mailinglist_id = ? AND deleted=0 AND company_id = ?",
+                mailinglist.getShortname(),
+                mailinglist.getDescription(),
+                mailinglist.getChangeDate(),
+                mailinglist.getId(),
+                companyId
+        );
 
-			return mailinglist;
-		}
-	}
+        return touchedLines == 1 ? mailinglist.getId() : 0;
+    }
 
-	protected static class Mailinglist_RowMapper implements RowMapper<Mailinglist> {
-		@Override
-		public Mailinglist mapRow(ResultSet resultSet, int row) throws SQLException {
-			Mailinglist readItem = new MailinglistImpl();
-			
-			readItem.setId(resultSet.getInt("mailinglist_id"));
-			readItem.setCompanyID(resultSet.getInt("company_id"));
-			readItem.setShortname(resultSet.getString("shortname"));
-			readItem.setDescription(resultSet.getString("description"));
-			readItem.setCreationDate(resultSet.getTimestamp("creation_date"));
-			readItem.setChangeDate(resultSet.getTimestamp("change_date"));
-			
-			return readItem;
-		}
-	}
-
-	protected class MailingListNames_RowMapper implements RowMapper<Mailinglist> {
+	public static class MailingListNames_RowMapper implements RowMapper<Mailinglist> {
 		@Override
 		public Mailinglist mapRow(ResultSet resultSet, int i) throws SQLException {
 			Mailinglist mailing = new MailinglistImpl();
@@ -416,7 +345,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		}
 	}
 
-	private static class MailinglistEntryRowMapper implements RowMapper<MailinglistEntry> {
+    public static class MailinglistEntryRowMapper implements RowMapper<MailinglistEntry> {
 
 		@Override
 		public MailinglistEntry mapRow(ResultSet resultSet, int i) throws SQLException {

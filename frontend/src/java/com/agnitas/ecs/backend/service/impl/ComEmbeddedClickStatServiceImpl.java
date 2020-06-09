@@ -10,15 +10,13 @@
 
 package com.agnitas.ecs.backend.service.impl;
 
-import java.util.Objects;
-
 import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import org.agnitas.ecs.backend.service.UrlMaker;
 import org.agnitas.ecs.backend.service.impl.EmbeddedClickStatServiceImpl;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.preview.PreviewImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -26,16 +24,10 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class ComEmbeddedClickStatServiceImpl extends EmbeddedClickStatServiceImpl {
 	private ConfigService configService;
-	private ExtensibleUIDService uidService;
 
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
-	}
-	
-	@Required
-	public final void setExtensibleUidService(final ExtensibleUIDService service) {
-		this.uidService = Objects.requireNonNull(service, "UID service cannot be null");
 	}
 
 	@Override
@@ -43,13 +35,12 @@ public class ComEmbeddedClickStatServiceImpl extends EmbeddedClickStatServiceImp
 		PreviewImpl preview = (PreviewImpl) previewFactory.createPreview();
 		String proxy = configService.getValue(ConfigValue.HeatmapProxy);
 		String output = preview.makePreviewForHeatmap(mailingId, recipientId, proxy);
-		String content = output == null ? "" : output;
 		preview.done();
-		return content;
+		return StringUtils.defaultString(output);
 	}
 
     @Override
     public UrlMaker getURLMaker(String program, int mailingId, String option) throws Exception {
-        return new UrlMaker(mailingId);
+        return new UrlMaker();
     }
 }

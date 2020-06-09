@@ -3,23 +3,22 @@ package com.agnitas.emm.core.supervisor.dao.impl;
 import java.util.List;
 
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SortCriterion;
-import com.agnitas.emm.core.supervisor.common.SortDirection;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
+import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
+import com.agnitas.emm.util.SortDirection;
 
 /**
  * Dummy implementation of {@link ComSupervisorDao }
  */
 public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
-	
 	 @Override
     public Supervisor getSupervisor(String supervisorName, String password) throws SupervisorException {
         return null;
     }
     
     @Override
-    public List<Supervisor> listAllSupervisors(SortCriterion criterion, SortDirection direction) throws SupervisorException {
+    public List<Supervisor> listAllSupervisors(SupervisorSortCriterion criterion, SortDirection direction) throws SupervisorException {
         return null;
     }
     
@@ -30,7 +29,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void setSupervisorPassword(int id, String password) throws SupervisorException {
-    
+		// nothing to do
     }
     
     @Override
@@ -60,7 +59,7 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void setAllowedCompanyIds(int id, List<Integer> allowedCompanyIds) throws SupervisorException {
-    
+		// nothing to do
     }
     
     @Override
@@ -75,11 +74,16 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
     
     @Override
     public void cleanupUnusedSupervisorBindings(int daysBeforeInactive) {
-    
+		// nothing to do
     }
     
     @Override
     public boolean deleteSupervisor(int supervisorId) {
         return false;
     }
+
+	@Override
+	public boolean existsSupervisor(String supervisorName) {
+		return false;
+	}
 }

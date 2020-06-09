@@ -10,35 +10,56 @@
 
 package com.agnitas.emm.core.loginmanager.entity;
 
-public class BlockedAddressData {
+import java.util.Objects;
+import java.util.Optional;
+
+import org.agnitas.emm.core.logintracking.LoginStatus;
+import org.agnitas.emm.core.logintracking.bean.LoginData;
+
+public final class BlockedAddressData {
 	
-	private int id;
+	private final int trackingId;
 	
-	private String ipAddress;
+	private final String ipAddress;
 	
-	private String username;
+	private final Optional<String> username;
 	
-	public int getId() {
-		return id;
+	public BlockedAddressData(final int trackingId, final String ipAddress, final String usernameOrNull) {
+		this.trackingId = trackingId;
+		this.ipAddress = Objects.requireNonNull(ipAddress, "IP address is null");
+		this.username = Optional.ofNullable(usernameOrNull);
 	}
-	
-	public void setId(int id) {
-		this.id = id;
+
+	public static Optional<BlockedAddressData> fromLoginData(final LoginData loginData) {
+		if(loginData != null && loginData.getLoginStatus() == LoginStatus.SUCCESS_BUT_BLOCKED) {
+			final String username = loginData.getUsername().orElse(null);
+			
+			return Optional.of(new BlockedAddressData(loginData.getLoginTrackId(), loginData.getLoginIP(), username));
+		} else {
+			return Optional.empty();
+		}
+	}
+
+	public int getTrackingId() {
+		return this.trackingId;
 	}
 	
 	public String getIpAddress() {
 		return ipAddress;
 	}
-	
-	public void setIpAddress(String ipAddress) {
-		this.ipAddress = ipAddress;
-	}
-	
-	public String getUsername() {
+
+	public Optional<String> getUsername() {
 		return username;
 	}
 	
-	public void setUsername(String username) {
-		this.username = username;
+	public String getUsernameOrNull() {
+		return username.orElse(null);
+	}
+
+	@Override
+	public final String toString() {
+		return username.isPresent()
+				? String.format("blocked-ip(id=%d, ip=%s, user=%s)", trackingId, ipAddress, username.get())
+				: String.format("blocked-ip(id=%d, ip=%s)", trackingId, ipAddress);
 	}
 }

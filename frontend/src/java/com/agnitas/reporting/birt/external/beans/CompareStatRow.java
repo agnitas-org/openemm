@@ -10,6 +10,8 @@
 
 package com.agnitas.reporting.birt.external.beans;
 
+import java.util.Date;
+
 public class CompareStatRow {
 
 	private String category = "";
@@ -23,6 +25,7 @@ public class CompareStatRow {
     private int targetGroupIndex;
 	private int count;
     private double rate;
+    private Date sendDate;
 
     public String getMailingName() {
         return mailingName;
@@ -110,7 +113,15 @@ public class CompareStatRow {
 	public void setRate(double rate) {
 		this.rate = rate;
 	}
-
+    
+    public Date getSendDate() {
+        return sendDate;
+    }
+    
+    public void setSendDate(Date sendDate) {
+        this.sendDate = sendDate;
+    }
+    
     @Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder("CompareStatRow : \n");

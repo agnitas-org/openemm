@@ -11,7 +11,7 @@
 package org.agnitas.beans.impl;
 
 import org.agnitas.beans.ColumnMapping;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ColumnMappingImpl implements ColumnMapping {
 	protected int id;

@@ -1002,12 +1002,11 @@ allTargets</expression>
                                                                     <structure>
                                                                         <property name="linkType">hyperlink</property>
                                                                         <expression name="uri" type="javascript">params["targetbaseurl"].value &#13;
-+"/mailing_stat.do"+";jsessionid="+params["emmsession"].value+"?urlID="+data["URL_ID"]&#13;
++"/statistics/mailing/"+params["mailingID"].value+"/view.action"+";jsessionid="+params["emmsession"].value
++"?urlID="+data["URL_ID"]&#13;
 +"&amp;reportFormat=html"&#13;
 +"&amp;reportName=mailing_single_linkclicks_progress.rptdesign"&#13;
 +"&amp;showReport=true"&#13;
-+"&amp;companyID="+params["companyID"].value&#13;
-+"&amp;mailingID="+params["mailingID"].value&#13;
 +"&amp;selectedTargets="+params["selectedTargets"].value&#13;
 +"&amp;dateSelectMode=LAST_MONTH"&#13;
 +"&amp;viewChart=true"</expression>
@@ -1784,12 +1783,11 @@ allTargets</expression>
                                                                     <structure>
                                                                         <property name="linkType">hyperlink</property>
                                                                         <expression name="uri" type="javascript">params["targetbaseurl"].value &#13;
-+"/mailing_stat.do"+";jsessionid="+params["emmsession"].value+"?urlID="+data["URL_ID"]&#13;
++"/statistics/mailing/"+params["mailingID"].value+"/view.action"+";jsessionid="+params["emmsession"].value
++"?urlID="+data["URL_ID"]&#13;
 +"&amp;reportFormat=html"&#13;
 +"&amp;reportName=mailing_single_linkclicks_progress.rptdesign"&#13;
 +"&amp;showReport=true"&#13;
-+"&amp;companyID="+params["companyID"].value&#13;
-+"&amp;mailingID="+params["mailingID"].value&#13;
 +"&amp;selectedTargets="+params["selectedTargets"].value&#13;
 +"&amp;dateSelectMode=LAST_MONTH"&#13;
 +"&amp;viewChart=true"</expression>

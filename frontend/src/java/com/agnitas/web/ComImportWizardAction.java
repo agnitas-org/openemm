@@ -30,22 +30,13 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.upload.bean.UploadData;
-import com.agnitas.emm.core.upload.dao.ComUploadDao;
-import com.agnitas.messages.I18nString;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
@@ -81,7 +72,7 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -90,6 +81,17 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.emm.core.upload.bean.UploadData;
+import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import com.agnitas.messages.I18nString;
 
 /**
  * Classic Import
@@ -874,7 +876,6 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		}
 
 		switch (form.getAction()) {
-
 			case ComImportWizardAction.ACTION_START:
 				if (form.getImportWizardHelper() == null ) {
 					form.setImportWizardHelper(importWizardService.createHelper());
@@ -973,6 +974,8 @@ public final class ComImportWizardAction extends StrutsActionBase {
 				if (form.getImportWizardHelper().getPreviewOffset() < 0) {
 					form.getImportWizardHelper().setPreviewOffset(0);
 				}
+				break;
+			default:
 				break;
 		}
 		return errors;

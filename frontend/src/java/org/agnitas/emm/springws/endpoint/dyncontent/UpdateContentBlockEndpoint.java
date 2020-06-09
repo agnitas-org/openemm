@@ -25,7 +25,6 @@ import org.agnitas.emm.springws.jaxb.UpdateContentBlockResponse;
 import org.agnitas.service.UserActivityLogService;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class UpdateContentBlockEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

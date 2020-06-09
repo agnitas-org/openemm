@@ -12,7 +12,7 @@
 package com.agnitas.emm.core.recipientsreport.service.impl;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 
 public final class RecipientReportUtils {

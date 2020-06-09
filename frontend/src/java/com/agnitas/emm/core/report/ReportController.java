@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.report;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,7 +32,6 @@ import com.agnitas.emm.core.report.dto.RecipientMailingHistoryDto;
 import com.agnitas.emm.core.report.dto.RecipientRetargetingHistoryDto;
 import com.agnitas.emm.core.report.dto.RecipientStatusHistoryDto;
 import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.emm.core.report.generator.factory.TableGeneratorFactory;
 import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
 import com.agnitas.messages.I18nString;
@@ -56,7 +55,6 @@ public class ReportController {
     private static final String RECIPIENT_REPORT_RIGHTOFACCESS = "recipient.report.rightOfAccess";
 
     private final RecipientReportService recipientReportService;
-    private final TableGenerator textTableGenerator;
 
     @javax.annotation.Resource
     private RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
@@ -76,9 +74,11 @@ public class ReportController {
     @javax.annotation.Resource
     private RecipientEntityDtoPrinter recipientEntityDtoPrinter;
 
-    public ReportController(RecipientReportService recipientReportService, TableGeneratorFactory tableGeneratorFactory) {
+    @javax.annotation.Resource(name = "txtTableGenerator")
+    private TableGenerator txtTableGenerator;
+
+    public ReportController(RecipientReportService recipientReportService) {
         this.recipientReportService = recipientReportService;
-        textTableGenerator = tableGeneratorFactory.getGenerator(TableGenerator.TXT_GENERATOR);
     }
 
     @PermissionMapping("recipients")
@@ -96,22 +96,22 @@ public class ReportController {
         // Status History
         List<ComRecipientHistory> statusHistory = recipientReportService.getStatusHistory(recipientId, companyId);
         List<RecipientStatusHistoryDto> statusHistoryDto = recipientStatusHistoryConverter.convert(statusHistory, locale);
-        String statusHistoryTable = textTableGenerator.generate(statusHistoryDto, locale);
+        String statusHistoryTable = txtTableGenerator.generate(statusHistoryDto, locale);
 
         // Mailing History
         List<ComRecipientMailing> mailingHistory = recipientReportService.getMailingHistory(recipientId, companyId);
         List<RecipientMailingHistoryDto> mailingHistoryDto = recipientMailingHistoryDtoConverter.convert(mailingHistory, locale);
-        String mailingHistoryTable = textTableGenerator.generate(mailingHistoryDto, locale);
+        String mailingHistoryTable = txtTableGenerator.generate(mailingHistoryDto, locale);
 
         // Deep Tracking (Retargeting) History
         List<WebtrackingHistoryEntry> trackingHistory = recipientReportService.getRetargetingHistory(recipientId, companyId);
         List<RecipientRetargetingHistoryDto> trackingHistoryDto = recipientRetargetingHistoryDtoConverter.convert(trackingHistory);
-        String trackingHistoryTable = textTableGenerator.generate(trackingHistoryDto, locale);
+        String trackingHistoryTable = txtTableGenerator.generate(trackingHistoryDto, locale);
 
         // Device history
         List<ComRecipientReaction> deviceHistory = recipientReportService.getDeviceHistory(recipientId, companyId);
         List<RecipientDeviceHistoryDto> deviceHistoryDto = recipientDeviceHistoryDtoConverter.convert(deviceHistory, locale);
-        String deviceHistoryTable = textTableGenerator.generate(deviceHistoryDto, locale);
+        String deviceHistoryTable = txtTableGenerator.generate(deviceHistoryDto, locale);
 
         // Union of report parts
         StringBuilder report = new StringBuilder();
@@ -121,7 +121,7 @@ public class ReportController {
         report.append(trackingHistoryTable);
         report.append(deviceHistoryTable);
 
-        byte[] byteResource = report.toString().getBytes(Charset.forName("UTF-8"));
+        byte[] byteResource = report.toString().getBytes(StandardCharsets.UTF_8);
         ByteArrayResource resource = new ByteArrayResource(byteResource);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + makeReportFileName(recipientEntity.getEmail(), admin.getLocale()))

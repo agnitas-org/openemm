@@ -324,6 +324,8 @@ public class JsonWriter implements Closeable {
 					break;
 				case Object_Value:
 					break;
+				default:
+					throw new Exception("Invalid JsonStackItem");
 			}
 		}
 	}

@@ -14,16 +14,12 @@ import org.agnitas.beans.Company;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class CompanyImpl implements Company {
-	private static final long serialVersionUID = -3486669974391290220L;
-
 	private int companyID;
 	private int creatorID;
 	private String shortname;
 	private String description;
 	private String status;
 	private int mailtracking;
-	private int maxLoginFails;
-	private int loginBlockTime;
 	private Number minimumSupportedUIDVersion;
 	private int maxRecipients = 10000;
 	private String rdirDomain;
@@ -88,26 +84,6 @@ public class CompanyImpl implements Company {
 	@Override
 	public void setMailtracking(int tracking) {
 		this.mailtracking = tracking;
-	}
-
-	@Override
-	public int getMaxLoginFails() {
-		return maxLoginFails;
-	}
-
-	@Override
-	public void setMaxLoginFails(int maxLoginFails) {
-		this.maxLoginFails = maxLoginFails;
-	}
-
-	@Override
-	public int getLoginBlockTime() {
-		return loginBlockTime;
-	}
-
-	@Override
-	public void setLoginBlockTime(int loginBlockTime) {
-		this.loginBlockTime = loginBlockTime;
 	}
 
 	@Override

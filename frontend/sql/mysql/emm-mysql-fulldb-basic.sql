@@ -23,6 +23,16 @@ CREATE TABLE agn_dbversioninfo_tbl (
 	PRIMARY KEY (version_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores already executed (SQL-) updates to auto-check consistence of data structure';
 
+CREATE TABLE prevent_table_drop (
+	customer_id                INTEGER UNSIGNED COMMENT 'Referenced unsigned integer id for customer_id',
+	text                       VARCHAR(100) COMMENT 'Referenced text',
+	mailinglist_id             INTEGER UNSIGNED COMMENT 'Referenced unsigned integer id for mailinglist_id',
+	id                         INTEGER UNSIGNED COMMENT 'Referenced unsigned integer id',
+	signed_id                  INTEGER COMMENT 'Referenced signed integer id, deprecated',
+	change_date                TIMESTAMP NULL COMMENT 'Referenced timestamp key',
+	mediatype                  INTEGER UNSIGNED COMMENT 'Referenced mediatype integer'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'saves important tables from inadvertently dropping by FK-Constraints';
+
 CREATE TABLE auto_optimization_tbl (
 	company_id                 INT(11) DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
 	campaign_id                INT(11) DEFAULT 0 COMMENT 'ID of the mailing-archive',
@@ -118,8 +128,7 @@ CREATE TABLE workflow_reaction_out_tbl (
 	UNIQUE (case_id, step_id, reaction_id, company_id, customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT 'contains recipients produced (filtered) by a particular action-based campaign execution step (mailing sending, decision calculation)';
-create index wfrot$datecustrea$idx on workflow_reaction_out_tbl (customer_id, reaction_id, step_date);
-
+CREATE INDEX wfrot$datecustrea$idx ON workflow_reaction_out_tbl (customer_id, reaction_id, step_date);
 
 CREATE TABLE workflow_reaction_step_tbl (
 	case_id                    INT(11) NOT NULL COMMENT 'an identifier used to isolate prepared execution plans (and recipients) generated on different initial trigger events',
@@ -176,7 +185,8 @@ CREATE TABLE workflow_report_schedule_tbl (
 	company_id                 INT(10) COMMENT 'tenant - ID (company_tbl)',
 	report_id                  INT(10) COMMENT 'report to be generated and sent - ID (birtreport_tbl)',
 	send_date                  TIMESTAMP COMMENT 'calculated date when report should be generated and sent',
-	sent                       INT(1) DEFAULT 0 COMMENT 'whether or not scheduled report is sent, 1 = yes, 0 = no'
+	sent                       INT(1) DEFAULT 0 COMMENT 'whether or not scheduled report is sent, 1 = yes, 0 = no',
+	workflow_id                INT(10) DEFAULT 0 NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores scheduled reports managed by workflow';
 
 CREATE TABLE workflow_tbl (
@@ -253,8 +263,6 @@ CREATE TABLE admin_tbl (
 	company_name               VARCHAR(100) COMMENT '[private_data] EMM-tenant name, shown in GUI',
 	email                      VARCHAR(200) COMMENT 'Email of this admin',
 	secure_password_hash       VARCHAR(200) COMMENT 'Secured hash of admins password',
-	lastPopUp                  TIMESTAMP NULL COMMENT 'When was the last popup shown to this admin',
-	lastmessageoftheday        TIMESTAMP NULL COMMENT 'Date of the last shown message of the day',
 	firstname                  VARCHAR(100) DEFAULT '' COMMENT 'Admins firstname',
 	gender                     INT DEFAULT 2 COMMENT 'Admins gender (0=male, 1=female, 0=unknown)',
 	title                      VARCHAR(300) COMMENT 'Admins optional title',
@@ -320,13 +328,14 @@ CREATE TABLE auto_import_tbl (
 	intervalpattern            TEXT NULL COMMENT 'defines execution times',
 	nextStart                  TIMESTAMP NULL COMMENT 'next run timestamp',
 	lasthostname               VARCHAR(64) NULL COMMENT 'last host on wich the job was executed',
-	emailOnError               VARCHAR(64) NULL COMMENT '[private_data] email - recipient for any error-reports',
+	emailOnError               VARCHAR(512) NULL COMMENT '[private_data] email - recipient for any error-reports',
 	alwaysimportfile           INTEGER COMMENT 'Always import found same files (by date and size), even if they have been imported before',
 	importmultiplefiles        INTEGER COMMENT 'allows to import more than one file, identified by name pattern',
 	retrycount                 INTEGER DEFAULT 0 COMMENT 'Current retry of errorneous import',
 	maximum_retries            INTEGER DEFAULT 0 COMMENT 'Maximum number of retries of errorneous import',
 	interval_as_json           TEXT COMMENT 'JSON format of interval pattern',
 	timezone                   VARCHAR(48) COMMENT 'Timezone to be used for calculation of next start by interval pattern',
+	emptyfileallowed           INTEGER DEFAULT 0 COMMENT 'Defines wether an empty import file is an error',
 	PRIMARY KEY (auto_import_id),
 	KEY company_id (company_id),
 	KEY admin_id (admin_id),
@@ -419,6 +428,7 @@ CREATE TABLE company_info_tbl (
 	description                VARCHAR(250) DEFAULT '' COMMENT 'Description for a configuration entry',
 	creation_date              TIMESTAMP NULL COMMENT 'Creation date of this configuration entry',
 	timestamp                  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Change date of this configuration entry',
+	hostname                   VARCHAR(100),
 	PRIMARY KEY (company_id, cname)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'tenant settings / global settings, e.g. MIA or success-log';
 
@@ -433,7 +443,6 @@ CREATE TABLE company_tbl (
 	mailerset                  INT(11) DEFAULT 0 COMMENT 'default mailerset - id, references serverset_tbl, 0 = not specified',
 	customer_type              VARCHAR(50) NOT NULL DEFAULT 'UNKNOWN' COMMENT 'legacy, PROJ-711',
 	pricing_id                 INT(11) COMMENT 'legacy, PROJ-711',
-	xor_key                    INT(11) COMMENT 'legacy (for generating first version agnUIDs)',
 	send_immediately           INT(11) DEFAULT 0 COMMENT 'if set to a value != 0 then sending out of mailings starts immediately during generating and not when the mail generation is finished',
 	offpeak                    INT(11) DEFAULT 0 COMMENT 'legacy, PROJ-711',
 	notification_email         VARCHAR(100) COMMENT '[private_data] mailadress set to get system-notifications from EMM',
@@ -489,7 +498,7 @@ CREATE TABLE component_tbl (
 	description                VARCHAR(200) COMMENT 'component description',
 	validity_start_date        TIMESTAMP NULL COMMENT 'for compoments, that should be used for a terminated period only',
 	validity_end_date          TIMESTAMP NULL COMMENT 'for compoments, that should be used for a terminated period only',
-	cdn_id                     VARCHAR(32),
+	cdn_id                     VARCHAR(32) COMMENT 'Unique ID for Content Delivery Network usage',
 	PRIMARY KEY (component_id),
 	KEY component$coid_mid$idx (company_id, mailing_id),
 	KEY component$compname$idx (compname),
@@ -506,7 +515,8 @@ CREATE UNIQUE INDEX component$cdn_id$uq ON component_tbl (cdn_id);
 CREATE TABLE config_tbl (
 	class                      VARCHAR(32),
 	name                       VARCHAR(64),
-	value                      TEXT
+	value                      TEXT,
+	hostname                   VARCHAR(100)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE cust1_ban_tbl (
@@ -527,11 +537,6 @@ CREATE TABLE customer_1_tbl (
 	datasource_id              INT(11) DEFAULT 0 COMMENT 'references datasource_description_tbl.datasource_id - marks the origin of any reciepient, should be filled always!',
 	timestamp                  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'entry last change, default: sysdate',
 	creation_date              TIMESTAMP NULL COMMENT 'entry creation date, default: sysdate',
-	facebook_status            INT(1) COMMENT 'Legacy facebook status',
-	foursquare_status          INT(1) COMMENT 'Legacy foursquare status',
-	google_status              INT(1) COMMENT 'Legacy Google+ status',
-	twitter_status             INT(1) COMMENT 'Legacy twitter status',
-	xing_status                INT(1) COMMENT 'Legacy Xing status',
 	lastopen_date              TIMESTAMP NULL COMMENT 'last registered opening of this recipient, daily filled / updated by job-queue-based job',
 	lastclick_date             TIMESTAMP NULL COMMENT 'last registered click of this recipient, daily filled / updated by job-queue-based job',
 	latest_datasource_id       INT(11) COMMENT 'latest souce of changes on recipient data, should be filled always!',
@@ -554,6 +559,7 @@ CREATE TABLE customer_1_binding_tbl (
 	creation_date              TIMESTAMP NULL COMMENT 'binding creation date',
 	mediatype                  INT(10) UNSIGNED DEFAULT 0 COMMENT 'mediatype: 0 = Email, 1 = Fax, 2 = Print, 3 = MMS, 4 = SMS',
 	referrer                   VARCHAR(4000) COMMENT 'Http referrer header value if set in subscription request',
+	entry_mailing_id           INT(10) UNSIGNED COMMENT 'MailingID of subscription',
 	UNIQUE KEY cust_1_bind_un (customer_id, mailinglist_id, mediatype)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'n:m releation between reciepients and mailinglists';
 CREATE INDEX cust1b$cuid_ustat_mlid$idx ON customer_1_binding_tbl (customer_id, user_status, mailinglist_id);
@@ -572,7 +578,8 @@ CREATE TABLE hst_customer_1_binding_tbl (
 	timestamp_change           TIMESTAMP NULL COMMENT 'timestamp of update / delete that is overwriting deleting this dataset',
 	client_info                VARCHAR(150) COMMENT 'client who made this changes, e.g. console (frontend)',
 	email                      VARCHAR(100) COMMENT '[private_data] recipients email in order to trace deleted recipients',
-	referrer                   VARCHAR(4000)
+	referrer                   VARCHAR(4000) COMMENT 'Http referrer header value if set in subscription request',
+	entry_mailing_id           INT(10) UNSIGNED COMMENT 'MailingID of subscription'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[private_data] stores history for recipient - mailinglist - relation, any values are stored as a copy of values BEFORE latest change';
 CREATE INDEX hstcb1$email$idx ON hst_customer_1_binding_tbl (email);
 CREATE INDEX hstcb1$mlidcidl$idx ON hst_customer_1_binding_tbl (mailinglist_id, customer_id);
@@ -931,7 +938,7 @@ CREATE TABLE login_track_tbl (
 	login_track_id             INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID, use login_track_tbl_seq',
 	ip_address                 VARCHAR(20) COMMENT '[secret_data] address where login-request came from',
 	creation_date              TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'login-request timestamp',
-	login_status               INT(11) COMMENT '10 = successfull, 20 = failed, 40 = successfull but while IP is locked',
+	login_status               INT(11) COMMENT '10 = successfull, 20 = failed, 30 = unlock blocked IP, 40 = successfull but while IP is locked',
 	username                   VARCHAR(200) COMMENT '[secret_data] emm-user name used in request',
 	PRIMARY KEY (login_track_id),
 	KEY logtrck$ip_cdate_stat$idx (ip_address, creation_date, login_status)
@@ -949,7 +956,7 @@ CREATE TABLE maildrop_status_tbl (
 	blocksize                  INT(11) COMMENT 'max recipients per generated block',
 	status_id                  INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID, use maildrop_status_tbl_seq',
 	company_id                 INT(11) NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
-	status_field               VARCHAR(10) NOT NULL DEFAULT '' COMMENT 'A=Admin, T=Test, W= World, E=Event (action), R=Rule (date) (C, X - deprecated), V=Verification',
+	status_field               VARCHAR(10) NOT NULL DEFAULT '' COMMENT 'A=Admin, T=Test, W= World, E=Event (action), R=Rule (date) (C, X - deprecated), V=Verification (inbox preview)',
 	mailing_id                 INT(11) NOT NULL DEFAULT 0 COMMENT 'references mailing (mailing_tbl)',
 	senddate                   TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'timestamp to send out mailing',
 	step                       INT(11) COMMENT 'timeintervall (in min) between sending 2 blocks',
@@ -1035,7 +1042,6 @@ CREATE TABLE mailing_tbl (
 	description                TEXT COMMENT 'comment on mailing',
 	shortname                  VARCHAR(200) DEFAULT '' COMMENT 'mailing name',
 	company_id                 INT(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
-	xor_key                    INT(10) UNSIGNED DEFAULT 0 COMMENT 'key - value to encode mensurable links',
 	auto_url                   VARCHAR(200) COMMENT 'basic link URL (from mailinglist-settings)',
 	mailing_type               INT(10) UNSIGNED DEFAULT 0 COMMENT '0=world-mailing, 1=event-based, 3=rule-based, 4=follow up',
 	action_id                  INT(10) UNSIGNED DEFAULT 0 COMMENT 'legacy PROJ-711',
@@ -1048,7 +1054,6 @@ CREATE TABLE mailing_tbl (
 	creation_date              TIMESTAMP NULL COMMENT 'mailing creation date',
 	change_date                TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'mailing last change',
 	cms_has_classic_content    INT(1) DEFAULT 0 COMMENT 'compatibility mode',
-	trackable_link_extension   VARCHAR(1024) COMMENT 'link-extension parameter(s)',
 	dynamic_template           INT(11) COMMENT '1 = yes(for templates: modifications of this template will be published to mailings, for mailings: published template modifications will be adapted), 0/NULL = no/off',
 	openaction_id              INT(11) DEFAULT 0 COMMENT 'references action to execute if mailing is opened, e.g. to count up a recipient profile field (interest counter)',
 	clickaction_id             INT(11) DEFAULT 0 COMMENT 'references action to execute if mailing is clicked',
@@ -1058,6 +1063,7 @@ CREATE TABLE mailing_tbl (
 	content_type               VARCHAR(20) COMMENT 'Content type description for this mailing. Allowed values transaction or advertising',
 	is_text_version_required   TINYINT(1) DEFAULT 1 NOT NULL COMMENT 'If set to 1, mailing must have a text version (otherwise it cannot be sent, see GWUA-3991)',
 	is_prioritization_allowed  TINYINT(1) DEFAULT 1 NOT NULL COMMENT 'If set to 1, then prioritization for this mailing will be applied see mailing priority for more details',
+	statmail_onerroronly       INTEGER COMMENT 'If true(1), the report email on delivery statistics is only sent in errorneous cases',
 	PRIMARY KEY (mailing_id),
 	KEY mailingtbl$mlid$idx (mailinglist_id),
 	KEY mailing_tbl$mid_mlid$idx (mailing_id, mailinglist_id)
@@ -1201,7 +1207,7 @@ CREATE TABLE rdir_url_tbl (
 	shortname                  VARCHAR(1000) COMMENT 'url-name',
 	alt_text                   VARCHAR(200) COMMENT 'shown alternative Text for a link in statistic',
 	creation_date              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'entry creation date',
-	extend_url                 INT(10) NOT NULL DEFAULT 0 COMMENT 'additional parameters (mailing_tbl.trackable_link_extension)',
+	extend_url                 INT(10) NOT NULL DEFAULT 0 COMMENT 'additional parameters',
 	admin_link                 INT(11) DEFAULT 0 COMMENT '0=no, 1=yes - set e.g. for fullview - links or other administrative links',
 	from_mailing               INT(11) COMMENT 'If this is 1, then the URL had been added from the mailing content, otherwise a 3rd party process had added this and should not be removed',
 	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT '0=no, 1=yes',
@@ -1348,6 +1354,7 @@ CREATE TABLE tag_tbl (
 	company_id                 INT(10) NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
 	description                TEXT COMMENT 'comment on tag',
 	change_date                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'tag creation / last change date',
+	deprecated                 INTEGER  DEFAULT 0 COMMENT 'If true(1), the tag is not shown in WYSIWYG editor and should not be used anymore',
 	PRIMARY KEY (tag_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=87 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores / provides dynamic tags wich could be used in mailings';
 
@@ -1361,7 +1368,7 @@ CREATE TABLE timestamp_tbl (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'primary used for dataAgents, stores last run of a special service in order to provide diff - selections since last run';
 
 CREATE TABLE title_gender_tbl (
-	title_id                   INT(11) NOT NULL DEFAULT 0 COMMENT 'title-type (references title_tbl.title_id)',
+	title_id                   INTEGER UNSIGNED NOT NULL DEFAULT 0 COMMENT 'title-type (references title_tbl.title_id)',
 	gender                     INT(11) NOT NULL DEFAULT 0 COMMENT 'gender as used in customer_xxx_tbl: 0-male, 1-female, 2-unknown, 5-company',
 	title                      VARCHAR(150) NOT NULL DEFAULT '' COMMENT 'title value for this specific type and gender',
 	PRIMARY KEY (title_id, gender)
@@ -1418,7 +1425,8 @@ CREATE TABLE undo_dyn_content_tbl (
 	company_id                 INT(11) COMMENT 'Referenced tennant',
 	undo_id                    INT(11) NOT NULL COMMENT 'Reference key',
 	change_date                TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Change date of content',
-	KEY undodyncontent$mid$idx (mailing_id)
+	KEY undodyncontent$mid$idx (mailing_id),
+	KEY undodync$uid$idx (undo_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'copies entries in dyn_content_tbl (plus undo - ID) to provide undo function, for column description see dyn_content_tbl';
 
 CREATE TABLE undo_id_seq (
@@ -1431,7 +1439,8 @@ CREATE TABLE undo_mailing_tbl (
 	undo_id                    INT(11) NOT NULL COMMENT 'unique ID, use undo_id_seq',
 	undo_creation_date         TIMESTAMP NOT NULL COMMENT 'entry creation date',
 	undo_admin_id              INT(11) NOT NULL COMMENT 'admin who made changes to EMC mailing and caused undo entry creation - ID (admin_tbl)',
-	KEY undomailing$mid$idx (mailing_id)
+	KEY undomailing$mid$idx (mailing_id),
+	KEY undomailing$uid$idx (undo_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'copies entries in mailing_tbl (plus undo - ID) to provide undo function, for column description see mailing_tbl';
 
 CREATE TABLE upload_tbl (
@@ -1464,7 +1473,6 @@ CREATE TABLE userform_tbl (
 	success_template           LONGTEXT NOT NULL COMMENT 'script to execute or site to show on successfull startaction execution (velocity)',
 	error_template             LONGTEXT NOT NULL COMMENT 'script to execute or site to show on non-successfull startaction execution (velocity)',
 	creation_date              TIMESTAMP NULL COMMENT 'form creation date',
-	trackable_link_extension   VARCHAR(200) COMMENT 'addional parameter(s) to extend URL',
 	success_url                VARCHAR(500) COMMENT 'URL called after successfull form execution',
 	error_url                  VARCHAR(500) COMMENT 'URL called after non-successfull form execution',
 	error_use_url              INT(1) DEFAULT 0 COMMENT '1=use error_url',
@@ -1719,7 +1727,7 @@ CREATE TABLE auto_export_tbl (
 	intervalpattern            TEXT NULL COMMENT 'defines execution times',
 	nextstart                  TIMESTAMP NULL COMMENT 'next run timestamp',
 	lasthostname               VARCHAR(64) NULL COMMENT 'last host on wich the job was executed',
-	emailonerror               VARCHAR(64) NULL COMMENT '[private_data] email - recipient for any error-reports',
+	emailonerror               VARCHAR(512) NULL COMMENT '[private_data] email - recipient for any error-reports',
 	mailing_id                 INTEGER COMMENT 'Mailing this export is linked to for execution after delivery',
 	hidden                     INT(1) DEFAULT 0 COMMENT 'Hide this special autoexport from GUI, so noone may change its configuration',
 	interval_as_json           TEXT COMMENT 'interval pattern as json data',
@@ -1899,9 +1907,7 @@ CREATE TABLE admin_use_tbl (
 	feature                    VARCHAR(100) NOT NULL COMMENT 'Feature used by this admin',
 	use_count                  INTEGER DEFAULT 0 NOT NULL COMMENT 'Times of usage',
 	last_use                   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Latest usage',
-	last_hint                  TIMESTAMP NULL COMMENT 'legacy',
-	CONSTRAINT pk_adminuse PRIMARY KEY (admin_id, feature),
-	CONSTRAINT adminuse$admin$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id) ON DELETE CASCADE
+	CONSTRAINT pk_adminuse PRIMARY KEY (admin_id, feature)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Logging of admin usage of EMM';
 
 CREATE TABLE csv_imexport_mapping_tbl (
@@ -1930,9 +1936,9 @@ CREATE TABLE cust_temporary_tbl (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Temp table for save customer id and continue use them for lock before update';
 
 CREATE TABLE test_recipients_tbl (
-    maildrop_status_id         INT(11) NOT NULL COMMENT 'Reference to maildrop_status_tbl.status_id',
-    customer_id                INTEGER UNSIGNED NOT NULL COMMENT 'Reference to customer_xx_tbl.customer_id',
-    PRIMARY KEY (maildrop_status_id, customer_id)
+	maildrop_status_id         INT(11) NOT NULL COMMENT 'Reference to maildrop_status_tbl.status_id',
+	customer_id                INTEGER UNSIGNED NOT NULL COMMENT 'Reference to customer_xx_tbl.customer_id',
+	PRIMARY KEY (maildrop_status_id, customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'If maildrop_status_tbl.selected_test_recipients=1, then the recpients for this test run are taken from this table';
 
 CREATE TABLE pending_email_change_tbl (
@@ -1961,15 +1967,6 @@ CREATE TABLE import_profile_mlist_bind_tbl (
 	CONSTRAINT import_profile_mlist_ibfk_2 FOREIGN KEY (mailinglist_id) REFERENCES mailinglist_tbl (mailinglist_id),
 	CONSTRAINT import_profile_mlist_ibfk_3 FOREIGN KEY (company_id) REFERENCES company_tbl (company_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'allows n:m relation between import profiles and mailinglists';
-
-CREATE TABLE rdir_traffic_amount_tbl (
-	company_id                 INTEGER COMMENT 'CompanyID of acquired data object',
-	mailing_id                 INTEGER COMMENT 'MailingID of acquired data object, 0 for Mediapool data',
-	content_name               VARCHAR(3000) COMMENT 'Name of data object',
-	content_size               INTEGER COMMENT 'Size of data object',
-	demand_date                DATE COMMENT 'Date of data transfer',
-	amount                     INTEGER COMMENT 'Number of calls for same data object'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Stores data amount for billing';
 
 CREATE TABLE webservice_user_tbl (
 	username                   VARCHAR(200) NOT NULL COMMENT '(unique) username',
@@ -2008,9 +2005,9 @@ CREATE TABLE birtreport_tbl (
 	shortname                  VARCHAR(300) COMMENT 'Shortname for this report',
 	description                VARCHAR(1000) COMMENT 'Description for this report',
 	active                     INT(10) UNSIGNED DEFAULT 0 COMMENT 'Is this report activated',
-	report_type                INT(10) UNSIGNED DEFAULT 0 COMMENT 'Report type like mailing report or recipients report',
+	report_type                INT(10) UNSIGNED DEFAULT 0 COMMENT '0 = DAILY, 1 = WEEKLY, 2 = BIWEEKLY, 3 = MONTHLY_FIRST, 4 = MONTHLY_15TH, 5 = MONTHLY_LAST, 6 = AFTER_MAILING_24HOURS, 7 = AFTER_MAILING_48HOURS, 8 = AFTER_MAILING_WEEK',
 	send_days                  VARCHAR(10) COMMENT 'Weekdays to send this report',
-	format                     INT(10) UNSIGNED DEFAULT 0 COMMENT 'Data format like pdf or csv',
+	format                     INT(10) UNSIGNED DEFAULT 0 COMMENT 'Data format (0 = pdf, 1 = csv)',
 	email                      VARCHAR(200) COMMENT 'Emailaddress to send this report to',
 	email_subject              VARCHAR(200) COMMENT 'Email subject',
 	email_description          VARCHAR(1000) COMMENT 'Email text',
@@ -2038,7 +2035,7 @@ CREATE TABLE birtreport_parameter_tbl (
 	report_id                  INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Referenced birtreport',
 	parameter_name             VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'Parameter name',
 	parameter_value            VARCHAR(4000) NOT NULL DEFAULT '' COMMENT 'Parameter value',
-	report_type                INT(11) COMMENT 'Report type like mailing report or recipients report',
+	report_type                INT(11) COMMENT '1 = COMPARISON, 2 = MAILING, 3 = RECIPIENT, 4 = TOP_DOMAIN',
 	change_date                TIMESTAMP NULL,
 	KEY report_id (report_id),
 	CONSTRAINT birtreport_parameter_tbl_ibfk_1 FOREIGN KEY (report_id) REFERENCES birtreport_tbl (report_id)
@@ -2054,6 +2051,86 @@ CREATE TABLE mimetype_whitelist_tbl (
 	description                VARCHAR(100) COMMENT 'Optional description',
 	creation_date              TIMESTAMP NOT NULL COMMENT 'Timestamp of creating record'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Whitelist for Mimetypes supported for uploads';
+
+CREATE TABLE license_tbl (
+	name                       VARCHAR(100) NOT NULL COMMENT 'License data entry name',
+	data                       LONGBLOB COMMENT 'License Blob data'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'License data';
+
+CREATE TABLE permission_tbl (
+	permission_name            VARCHAR(64) NOT NULL COMMENT 'Name of permission, a.k.a security_token',
+	category                   VARCHAR(32) NOT NULL COMMENT 'Category this permission is sorted in',
+	sub_category               VARCHAR(32) DEFAULT NULL COMMENT 'Sub-Category this permission is sorted in (optional)',
+	sort_order                 INTEGER DEFAULT 0 COMMENT 'Sorting order of this permission within its category',
+	feature_package            VARCHAR(32) DEFAULT NULL COMMENT 'Feature package this permission is contained in (optional)',
+	creation_date              TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date of creation'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'All available permissions';
+ALTER TABLE permission_tbl ADD CONSTRAINT perm$name$pk PRIMARY KEY (permission_name);
+
+CREATE TABLE admin_blacklist_tbl (
+	username                   VARCHAR(100) NOT NULL COMMENT 'Username not to be used anymore'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Usernames not to be used anymore';
+ALTER TABLE admin_blacklist_tbl ADD CONSTRAINT admblack$name$pk PRIMARY KEY (username);
+
+CREATE TABLE webservice_permission_tbl (
+	username                   VARCHAR(200) NOT NULL COMMENT 'Name of webservice user',
+	endpoint                   VARCHAR(200) NOT NULL COMMENT 'Name of granted endpoint'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Granted webservice endpoints';
+CREATE INDEX wsperm$username$idx ON webservice_permission_tbl(username);
+
+CREATE TABLE webservice_perm_group_tbl (
+	id                         INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'ID of permission group',
+	name                       VARCHAR(200) NOT NULL COMMENT 'Name of permission group'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'List of webservice permission groups';
+ALTER TABLE webservice_perm_group_tbl ADD UNIQUE INDEX wsprmgrp$name$uq (name);
+
+CREATE TABLE webservice_perm_group_perm_tbl (
+	group_ref                  INTEGER UNSIGNED NOT NULL COMMENT 'ID of permission group',
+	endpoint                   VARCHAR(200) NOT NULL COMMENT 'Name of granted endpoint'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'List of webservice permission groups';
+ALTER TABLE webservice_perm_group_perm_tbl ADD CONSTRAINT wspermgrpperm$grp$fk foreign key (group_ref) references webservice_perm_group_tbl(id);
+ALTER TABLE webservice_perm_group_perm_tbl ADD UNIQUE INDEX wspermgrpperm$grpendp$uq (group_ref,endpoint);
+
+CREATE TABLE webservice_user_group_tbl (
+	username                   VARCHAR(200) NOT NULL COMMENT 'Name of webservice user',
+	group_ref                  INTEGER UNSIGNED NOT NULL COMMENT 'ID of permission group'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'List of webservice permission groups';
+ALTER TABLE webservice_user_group_tbl ADD CONSTRAINT wsusergrp$grp$fk foreign key (group_ref) references webservice_perm_group_tbl(id);
+ALTER TABLE webservice_user_group_tbl ADD UNIQUE INDEX wsusergrp$usrgrp$uq (username, group_ref);
+
+CREATE TABLE webservice_permissions_tbl (
+	endpoint                   VARCHAR(200) NOT NULL PRIMARY KEY COMMENT 'Name of granted endpoint',
+	category                   VARCHAR(200) COMMENT 'Category of endpoint (like Subscribers oder Target groups, null if uncategorized)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Available webservice permissions and categories';
+
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_group_tbl FOREIGN KEY (signed_id) REFERENCES admin_group_tbl (admin_group_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_group_perm_tbl FOREIGN KEY (signed_id) REFERENCES admin_group_permission_tbl (admin_group_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_tbl FOREIGN KEY (signed_id) REFERENCES admin_tbl (admin_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_perm_tbl FOREIGN KEY (signed_id) REFERENCES admin_permission_tbl (admin_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$company_tbl FOREIGN KEY (id) REFERENCES company_tbl (company_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$auto_opt_tbl FOREIGN KEY (signed_id) REFERENCES auto_optimization_tbl (optimization_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$company_info_tbl FOREIGN KEY (signed_id) REFERENCES company_info_tbl (company_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$component_tbl FOREIGN KEY (id) REFERENCES component_tbl (component_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$customer_field_tbl FOREIGN KEY (signed_id) REFERENCES customer_field_tbl (company_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$datasource_descr_tbl FOREIGN KEY (signed_id) REFERENCES datasource_description_tbl (datasource_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$dyn_content_tbl FOREIGN KEY (id) REFERENCES dyn_content_tbl (dyn_content_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$dyn_name_tbl FOREIGN KEY (id) REFERENCES dyn_name_tbl (dyn_name_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$dyn_target_tbl FOREIGN KEY (id) REFERENCES dyn_target_tbl (target_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$import_profile_tbl FOREIGN KEY (id) REFERENCES import_profile_tbl (id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$import_col_map_tbl FOREIGN KEY (id) REFERENCES import_column_mapping_tbl (id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$import_gen_map_tbl FOREIGN KEY (id) REFERENCES import_gender_mapping_tbl (id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$import_log_tbl FOREIGN KEY (id) REFERENCES import_log_tbl (log_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$maildrop_status_tbl FOREIGN KEY (signed_id) REFERENCES maildrop_status_tbl (status_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$mailing_account_tbl FOREIGN KEY (signed_id) REFERENCES mailing_account_tbl (mailing_account_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$mailing_tbl FOREIGN KEY (id) REFERENCES mailing_tbl (mailing_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$mailing_mt_tbl FOREIGN KEY (mailinglist_id) REFERENCES mailing_mt_tbl (mailing_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$rdir_action_tbl FOREIGN KEY (id) REFERENCES rdir_action_tbl (action_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$rdir_url_tbl FOREIGN KEY (id) REFERENCES rdir_url_tbl (url_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$tag_tbl FOREIGN KEY (id) REFERENCES tag_tbl (tag_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$title_tbl FOREIGN KEY (signed_id) REFERENCES title_tbl (title_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock2$title_gender_tbl FOREIGN KEY (id, signed_id) REFERENCES title_gender_tbl (title_id, gender);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$trackpoint_def_tbl FOREIGN KEY (signed_id) REFERENCES trackpoint_def_tbl (trackpoint_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$userform_tbl FOREIGN KEY (id) REFERENCES userform_tbl (form_id);
 
 DELIMITER ;;
 CREATE PROCEDURE emm_log_db_errors(IN p_error_message VARCHAR(255), IN p_company_id INT(11), IN p_module_name VARCHAR(255))
@@ -2107,9 +2184,330 @@ END;;
 DELIMITER ;
 
 INSERT INTO config_tbl (class, name, value) VALUES ('system', 'url', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('system', 'defaultRdirDomain', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('system', 'defaultMailloopDomain', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('system', 'licence', NULL);
+INSERT INTO config_tbl (class, name, value) VALUES ('system', '<hostname>[to be defined].IsActive', 1);
+INSERT INTO config_tbl (class, name, value) VALUES ('mailloop', 'actionbased_autoresponder_ui', 'enabled');
 INSERT INTO config_tbl (class, name, value) VALUES ('expire', 'SuccessDef', '180');
 INSERT INTO config_tbl (class, name, value) VALUES ('logon', 'iframe.url.en', 'https://www.agnitas.de/en/openemm-login/');
 INSERT INTO config_tbl (class, name, value) VALUES ('logon', 'iframe.url.de', 'https://www.agnitas.de/openemm-login/');
+INSERT INTO config_tbl (class, name, value) VALUES ('birt', 'url', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('birt', 'drilldownurl', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('birt', 'privatekey', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('birt', 'publickey', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('webservices', 'url', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'bounce', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'error', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'feature_support', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'frontend', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'replyto', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'report_archive', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'sender', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'support', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'upload.database', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailaddress', 'upload.support', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.account_logfile', '${home}/log/account.log');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.blocksize', '1000');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.boundary', 'AGNITAS');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.default_charset', 'ISO-8859-1');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.default_encoding', 'quoted-printable');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.directdir', '${home}/var/spool/DIRECT');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.domain', '[to be defined]');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.eol', 'LF');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.loglevel', 'ERROR');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.mailer', 'Agnitas EMM');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.mail_log_number', '400');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.metadir', '${home}/var/spool/META');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.xmlback', '${home}/bin/xmlback');
+INSERT INTO config_tbl (class, name, value) VALUES ('mailout', 'ini.xmlvalidate', 'False');
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('company.force.sending', 'Account', NULL, 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.ActivateDoubleOptIn', 'Actions', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.ContentView', 'Actions', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.ExecuteScript', 'Actions', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.GetArchiveList', 'Actions', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.GetArchiveMailing', 'Actions', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.GetCustomer', 'Actions', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.IdentifyCustomer', 'Actions', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.SendMailing', 'Actions', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.ServiceMail', 'Actions', NULL, 9, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.SubscribeCustomer', 'Actions', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.UnsubscribeCustomer', 'Actions', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('action.op.UpdateCustomer', 'Actions', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.change', 'Actions', NULL, 13, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.delete', 'Actions', NULL, 14, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.show', 'Actions', NULL, 15, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.change', 'Administration', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.delete', 'Administration', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('adminlog.show', 'Administration', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.new', 'Administration', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setgroup', 'Administration', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setpermission', 'Administration', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.show', 'Administration', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.change', 'Administration', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.delete', 'Administration', NULL, 13, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.show', 'Administration', NULL, 14, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.change', 'Administration', NULL, 15, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.delete', 'Administration', NULL, 17, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.show', 'Administration', NULL, 18, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.change', 'Campaigns', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.delete', 'Campaigns', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.show', 'Campaigns', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.autoopt', 'Campaigns', NULL, 1, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.change', 'Forms', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.delete', 'Forms', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.import', 'Forms', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.show', 'Forms', NULL, 5, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('calendar.show', 'General', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('charset.use.iso_8859_15', 'General', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('charset.use.utf_8', 'General', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('workflow.activate', 'General', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('workflow.delete', 'General', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('workflow.edit', 'General', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('workflow.show', 'General', NULL, 13, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mailinglist.without', 'ImportExport', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.add', 'ImportExport', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.add_update', 'ImportExport', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.blacklist', 'ImportExport', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.bounce', 'ImportExport', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.bouncereactivate', 'ImportExport', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.doublechecking', 'ImportExport', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.duplicates', 'ImportExport', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.only_update', 'ImportExport', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.reactivateSuspended', 'ImportExport', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.unsubscribe', 'ImportExport', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.preprocessing', 'ImportExport', NULL, 13, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.change.bulk', 'ImportExport', NULL, 14, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.export', 'ImportExport', NULL, 15, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.import', 'ImportExport', NULL, 16, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.importclassic', 'ImportExport', NULL, 17, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailinglist.change', 'Mailinglist', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailinglist.delete', 'Mailinglist', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailinglist.recipients.delete', 'Mailinglist', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailinglist.show', 'Mailinglist', NULL, 5, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.attachments.show', 'Mailing', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.can_allow', 'Mailing', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.can_send_always', 'Mailing', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.change', 'Mailing', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.components.change', 'Mailing', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.components.show', 'Mailing', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.show', 'Mailing', NULL, 9, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.showExcludedTargetgroups', 'Mailing', NULL, 0, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.contentsource.date.limit', 'Mailing', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.delete', 'Mailing', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.envelope_address', 'Mailing', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.extend_trackable_links', 'Mailing', NULL, 14, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.import', 'Mailing', NULL, 16, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.send.admin.options', 'Mailing', NULL, 19, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.send.admin.target', 'Mailing', NULL, 20, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.send.show', 'Mailing', NULL, 21, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.send.world', 'Mailing', NULL, 22, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.setmaxrecipients', 'Mailing', NULL, 23, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.show', 'Mailing', NULL, 24, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.show.types', 'Mailing', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.email', 'Mailing', NULL, 29, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.gender.extended', 'Mailing', NULL, 30, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('salutation.change', 'Mailing', NULL, 31, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('salutation.delete', 'Mailing', NULL, 32, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('salutation.show', 'Mailing', NULL, 33, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.editor.trimmed', 'NegativePermissions', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.settings.hide', 'NegativePermissions', NULL, 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.history.mailing', 'Premium', 'AutomationPackage', 3, 'Automation Package');
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.customerid', 'Premium', 'ImportExport', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mapping.auto', 'Premium', 'ImportExport', 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.add_update_exclusive', 'Premium', 'ImportExport', 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.import.encrypted', 'Premium', 'ImportExport', 19, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('grid.change', 'Premium', 'LayoutPackage', 1, 'Layout Package');
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('grid.css.default.edit', 'Premium', 'LayoutPackage', 10, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.trackablelinks.url.change', 'Premium', 'Mailing', 3, 'Mailing');
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.components.sftp', 'Premium', 'Mailing', 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.disableLinkExtension', 'Premium', 'Mailing', 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.parameter.change', 'Premium', 'Mailing', 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.parameter.show', 'Premium', 'Mailing', 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.trackablelinks.nocleanup', 'Premium', 'Mailing', 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.trackablelinks.static', 'Premium', 'Mailing', 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.trackablelinks.url.edit', 'Premium', 'Mailing', 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.fax', 'Premium', 'Mailing', 13, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.mms', 'Premium', 'Mailing', 14, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.print', 'Premium', 'Mailing', 15, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.sms', 'Premium', 'Mailing', 16, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mediatype.whatsapp', 'Premium', 'Mailing', 17, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('pluginmanager.change', 'Premium', 'others', 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('pluginmanager.show', 'Premium', 'others', 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.profileField.html.allowed', 'Premium', 'others', 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.individual.show', 'Premium', 'others', 6, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('deeptracking', 'Premium', 'RetargetingPackage', 1, 'Retargeting Package');
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('trackpoint.new', 'Premium', 'RetargetingPackage', 15, 'Retargeting Package');
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.load.specific', 'Statistics', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.softbounces.show', 'Statistics', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.domains', 'Statistics', NULL, 9, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.ecs', 'Statistics', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.mailing', 'Statistics', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.month', 'Statistics', NULL, 12, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.show', 'Statistics', NULL, 15, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.userform', 'Statistics', NULL, 17, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.mailing.compare.migration', 'Statistics', null, 18, null);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('blacklist', 'Subscriber-Editor', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('profileField.show', 'Subscriber-Editor', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('profileField.visible', 'Subscriber-Editor', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.change', 'Subscriber-Editor', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.create', 'Subscriber-Editor', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.delete', 'Subscriber-Editor', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.history', 'Subscriber-Editor', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.show', 'Subscriber-Editor', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.tracking.veto', 'Subscriber-Editor', NULL, 12, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('clear.cache', 'System', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('company.authentication', 'System', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.change.always', 'System', NULL, 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.expire', 'System', NULL, 8, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.companies.show', 'System', NULL, 9, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('masterlog.show', 'System', NULL, 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.show', 'System', NULL, 11, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('restful.allowed', 'System', NULL, 17, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('server.status', 'System', NULL, 18, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('update.show', 'System', NULL, 23, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('user.xpress', 'System', NULL, 24, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.change', 'System', NULL, 25, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.create', 'System', NULL, 26, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.show', 'System', NULL, 27, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.alpha', 'System', NULL, 28, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.beta', 'System', NULL, 29, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.gamma', 'System', NULL, 30, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.dumont', 'System', NULL, 31, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipientsreport.migration', 'System', NULL, 32, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('user.activity.log.rollback', 'System', NULL, 33, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('content_tab_migration', 'System', NULL, 34, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.recipient.migration', 'System', null, 35, null);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.change', 'Target-Groups', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.createml', 'Target-Groups', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.delete', 'Target-Groups', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.eql.edit', 'Target-Groups', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.lock', 'Target-Groups', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.show', 'Target-Groups', NULL, 6, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.change', 'Template', NULL, 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.delete', 'Template', NULL, 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.show', 'Template', NULL, 3, NULL);
+
+-- Permissions of category "attachment"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetAttachment', 'attachment');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListAttachments', 'attachment');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddAttachment', 'attachment');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateAttachment', 'attachment');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteAttachment', 'attachment');
+
+-- Permissions of category "blacklist"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddBlacklist', 'blacklist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetBlacklistItems', 'blacklist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteBlacklist', 'blacklist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('CheckBlacklist', 'blacklist');
+
+-- Permissions of category "contentBlock"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetContentBlock', 'contentBlock');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteContentBlock', 'contentBlock');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListContentBlocks', 'contentBlock');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateContentBlock', 'contentBlock');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListContentBlockNames', 'contentBlock');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddContentBlock', 'contentBlock');
+
+-- Permissions of category "mailing"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ImportMailingContent', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('CopyMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetMailingStatus', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SendServiceMail', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListMailings', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SendMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddMailingFromTemplate', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteMailing', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetFullviewUrl', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetMailingContent', 'mailing');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateMailingContent', 'mailing');
+
+-- Permissions of category "mailinglist"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListMailinglists', 'mailinglist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetMailinglist', 'mailinglist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListMailingsInMailinglist', 'mailinglist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteMailinglist', 'mailinglist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateMailinglist', 'mailinglist');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddMailinglist', 'mailinglist');
+
+-- Permissions of category "pushNotification"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SetPushNotificationPlanDate', 'pushNotification');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SendPushNotification', 'pushNotification');
+
+-- Permissions of category "statistics"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('MailingSummaryStatisticJob', 'statistics');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('MailingSummaryStatisticResult', 'statistics');
+
+-- Permissions of category "subscriber"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('FindSubscriber', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddSubscriberBulk', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateSubscriberBulk', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateSubscriber', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteSubscriberBulk', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddSubscriber', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListSubscribers', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteSubscriber', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetSubscriberBulk', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListSubscriberMailings', 'subscriber');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetSubscriber', 'subscriber');
+
+-- Permissions of category "subscriberBinding"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetSubscriberBinding', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteSubscriberBindingBulk', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SetSubscriberBinding', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteSubscriberBinding', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListSubscriberBindingBulk', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SetSubscriberBindingBulk', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('SetSubscriberBindingWithAction', 'subscriberBinding');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListSubscriberBinding', 'subscriberBinding');
+
+-- Permissions of category "targetgroup"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateTargetGroup', 'targetgroup');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddTargetGroup', 'targetgroup');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListTargetgroups', 'targetgroup');
+
+-- Permissions of category "template"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddTemplate', 'template');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetTemplate', 'template');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DeleteTemplate', 'template');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateTemplate', 'template');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListTemplates', 'template');
+
+-- Permissions of category "trackableLinks"
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetTrackableLinkSettings', 'trackableLinks');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('UpdateTrackableLinkSettings', 'trackableLinks');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListTrackableLinks', 'trackableLinks');
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('DecryptLinkData', 'trackableLinks');
+
+-- Uncategorized permissions
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('CreateDataSource', null);
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ImportStatus', null);
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('StartImport', null);
+INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddMailingImage', null);
 
 INSERT INTO sourcegroup_tbl (sourcegroup_id, sourcegroup_type, description, timestamp, creation_date) VALUES
 	(1, 'A', 'Subscriber Interface', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -2119,8 +2517,8 @@ INSERT INTO sourcegroup_tbl (sourcegroup_id, sourcegroup_type, description, time
 	(5, 'DD', 'default datasource for companies', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 	(6, 'WS', 'Webservices 2.0 - Spring', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO company_tbl (company_id, rdir_domain, shortname, description, status, mailtracking, creator_company_id, mailerset, customer_type, pricing_id, xor_key, send_immediately, offpeak, notification_email, mailloop_domain, expire_stat, max_fields, stat_admin, expire_bounce, expire_onepixel, expire_cookie, creation_date, timestamp, max_login_fails, login_block_time, sector, business_field, secret_key, mails_per_day, uid_version, expire_recipient, max_recipients, auto_mailing_report_active, salutation_extended, enabled_uid_version, expire_upload, maxadminmails, export_notify)
-	VALUES (1, 'http://[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 1, 1, 0, 'UNKNOWN', NULL, 12345, 0, 0, NULL, '[to be defined]', 1100, 0, 0, 0, 1100, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 3, 300, NULL, NULL, 'SecretKeyToBeDefined', NULL, NULL, 30, 10000, 0, 0, 3, 14, 100, 0);
+INSERT INTO company_tbl (company_id, rdir_domain, shortname, description, status, mailtracking, creator_company_id, mailerset, customer_type, pricing_id, send_immediately, offpeak, notification_email, mailloop_domain, expire_stat, max_fields, stat_admin, expire_bounce, expire_onepixel, expire_cookie, creation_date, timestamp, max_login_fails, login_block_time, sector, business_field, secret_key, mails_per_day, uid_version, expire_recipient, max_recipients, auto_mailing_report_active, salutation_extended, enabled_uid_version, expire_upload, maxadminmails, export_notify)
+	VALUES (1, 'http://[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 1, 1, 0, 'UNKNOWN', NULL, 0, 0, NULL, '[to be defined]', 1100, 0, 0, 0, 1100, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 3, 300, NULL, NULL, 'SecretKeyToBeDefined', NULL, NULL, 30, 10000, 0, 0, 3, 14, 100, 0);
 
 INSERT INTO admin_tbl (admin_id, username, company_id, admin_group_id, admin_lang, admin_country) VALUES (1, 'emm-master', 1, 1, 'en', 'US');
 
@@ -2149,6 +2547,7 @@ INSERT INTO actop_tbl (company_id, type, action_id)
 	VALUES (1, 'GetArchiveMailing', (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1));
 INSERT INTO actop_get_archive_mailing_tbl (action_operation_id, expire_day, expire_month, expire_year)
 	VALUES ((SELECT action_operation_id FROM actop_tbl WHERE company_id = 1 AND action_id = (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1)), 0, 0, 0);
+	
 INSERT INTO userform_tbl (company_id, formname, description, startaction_id, endaction_id, success_template, error_template,  creation_date, success_url, error_url, error_use_url, success_use_url)
 	VALUES (1, 'webview_SAMPLE', 'Shows email in browser', (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1), 0, '$archiveHtml', 'An error occured - we cannot show you the email in the browser.', NULL, NULL, NULL, (SELECT action_id FROM rdir_action_tbl WHERE company_id = 1 AND shortname = 'GetArchiveMailing'), 0);
 
@@ -2181,16 +2580,17 @@ INSERT INTO date_tbl (type, format) VALUES
 	(7, 'yyyy/MM/dd'),
 	(8, 'yyyy-MM-dd');
 
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('image/*', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/pdf', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('text/plain', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('text/csv', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/zip', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/vnd.ms-excel', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/x-zip-compressed', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/msword', CURRENT_TIMESTAMP);
-INSERT INTO mimetype_whitelist_tbl (mimetype, creation_date) VALUES ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('image/*', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/pdf', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/plain', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/csv', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/zip', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/vnd.ms-excel', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/x-zip-compressed', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/msword', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', NULL, CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/calendar', 'iCalendar (.ics, .ifb, .iCal, .iFBf)', CURRENT_TIMESTAMP);
 
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('importStep2', 'assigning_the_csv_columns_to_t.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('userRights', 'assigning_user_rights.htm');
@@ -2397,6 +2797,26 @@ INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('Recipient_Insights', 'i
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('supervisor-permissions', 'supervisor-permissions.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('push_global_statistics', 'push_statistics.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('push_notification_view', 'shipping_settings_and_statistics_for_push_notification.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingBase', 'base_settings.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingAttachments', 'sending_normal_file_attachment.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingLinks', 'using_trackable_links.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingPreview', 'preview_-_for_in-depth_checkin.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingsCheck', 'sending_out_test_mails.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingGridContent', 'creating_content_by_using_the_.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingGridTextContent', 'fill_in_building_blocks_by_usi.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingGeneralOptions', 'entering_basic_mailing_data1.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingArchive', 'what_are_archives_.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailingPrioritisation', 'mailing-priorisierung.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('importGeneral', 'import_dialog_structure.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('statisticMailing', 'mailing_statistics.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('mailinglistCreate', 'creating_a_mailing_list.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('formImages', 'using_images_in_forms.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('formStatistic', 'form_statistics.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('clientCreate', 'creating_a_new_client.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('pluginManagerGeneral', 'Plugin_Manager.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('tablesVoucherCreate', 'create_new_voucher_code_table.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('layoutbuilderTemplateContent', 'adding_content.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('layoutbuilderTemplateEditCss', 'editing_css_files.htm');
 
 INSERT INTO dyn_target_tbl (target_id, company_id, mailinglist_id, target_shortname, target_sql, target_description, target_representation, deleted, change_date, creation_date, admin_test_delivery, locked) VALUES
 	(1, 0, 0, '__listsplit_050505050575_1', 'mod(cust.CUSTOMER_ID, 20) = 0', NULL, NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 1),
@@ -2491,43 +2911,45 @@ INSERT INTO mailinglist_tbl (company_id, description, shortname, auto_url, remov
 	VALUES (1, 'Default, please do not delete!', 'Default-Mailinglist', NULL, '0', NULL, NULL, NULL);
 
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES
-	('agnFIRSTNAME', 'cust.firstname', 'SIMPLE', 0, ''),
-	('agnLASTNAME', 'cust.lastname', 'SIMPLE', 0, ''),
-	('agnAUTOURL', 'cust.mailtype', 'COMPLEX', 0, ''),
-	('agnEMAIL', '', 'SIMPLE', 0, ''),
-	('agnCUSTOMERID', 'cust.customer_id', 'SIMPLE', 0, ''),
-	('agnITAS', '''Hello World''', 'SIMPLE', 0, ''),
-	('agnMAILTYPE', 'cust.mailtype', 'SIMPLE', 0, ''),
-	('agnPROFILE', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN=profile&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-profile-form'),
-	('agnUNSUBSCRIBE', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN=unsubscribe&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-unsubscribe-form'),
-	('agnDATE', '', 'SIMPLE', 0, 'Dummy Tag for Preview'),
-	('agnTITLE', 'title1({type}, [company-id], cust.customer_id)', 'COMPLEX', 0, 'shows title - print out title, lastname - by tw'),
-	('agnTITLEFULL', '', 'COMPLEX', 0, 'shows title - print out title, firstname, lastname - by tw'),
-	('agnFORM', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN={name}&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-form'),
+	('agnDATE', '{base}', 'SIMPLE', 0, 'Dummy Tag for Preview'),
 	('agnDB', '', 'COMPLEX', 0, 'Selects a generic column from DB'),
-	('agnSUBSCRIBERCOUNT', '', 'SIMPLE', 0, 'Dummy-Tag for Preview'),
+	('agnDVALUE', 'agnDVALUE textComponent {name}', 'FLOW', 0, 'agnDVALUE-Tag works only with agnDYN'),
+	('agnDYN', 'agnDYN textComponent {name}', 'FLOW', 0, 'agnDYN-Tag works optionally with agnDVALUE'),
+	('agnEMAIL', '', 'SIMPLE', 0, ''),
+	('agnFORM', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN={name}&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-form'),
 	('agnIMAGE', '', 'COMPLEX', 0, 'Generates URL for hosted images'),
 	('agnIMGLINK', '', 'COMPLEX', 0, ''),
-	('agnALTER', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns years from column value until now'),
-	('agnDATEDB', 'to_char(cust.{column}, ''{format}'')', 'COMPLEX', 0, 'returns date value in column custom formatted'),
-	('agnCUSTOMDATE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date'),
-	('agnDATEDB_DE', 'rtrim(ltrim(to_char(cust.{column}, ''{format}'', ''nls_date_language = german'')))', 'COMPLEX', 0, 'Returns date in column custom formatted in german lang'),
-	('agnCUSTOMDATE_DE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date in german lang'),
-	('agnTITLE_SHORT', 'title_short({type}, cust.gender)', 'COMPLEX', 0, 'Returns title without Names'),
-	('agnDBV', '', 'COMPLEX', 0, 'Selects a virtual column not existing in DB'),
+	('agnMAILTYPE', 'cust.mailtype', 'SIMPLE', 0, ''),
+	('agnMESSAGEID', '''''', 'SIMPLE', 0, 'Dummy content replaced by merger'),
+	('agnPROFILE', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN=profile&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-profile-form'),
+	('agnSUBSCRIBERCOUNT', '', 'SIMPLE', 0, 'Dummy-Tag for Preview'),
+	('agnTITLE', 'title1({type}, [company-id], cust.customer_id)', 'COMPLEX', 0, 'shows title - print out title, lastname - by tw'),
 	('agnTITLEFIRST', '', 'COMPLEX', 0, 'shows title - print out firstname'),
-	('agnDAYS_UNTIL', 'DATEDIFF(cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns days until endday (endday MUST lie in future!!!)'),
-	('agnNULL', '''''', 'FUNCTION', 0, 'Created by script-tag'),
-	('agnCALC', 'cust.{column} {op} {value}', 'COMPLEX', 0, 'calculate with NUM-Field'),
-	('agnCALC2', '{value} {op} cust.{column}', 'COMPLEX', 0, 'Calculate with NUM-Fields'),
-	('agnDYN', 'agnDYN textComponent {name}', 'FLOW', 0, 'agnDYN-Tag works optionally with agnDVALUE'),
-	('agnDVALUE', 'agnDVALUE textComponent {name}', 'FLOW', 0, 'agnDVALUE-Tag works only with agnDYN'),
-	('agnALTERCALC', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP) {op} {value}', 'COMPLEX', 0, 'like agnALTER with operator and value'),
-	('agnDATEDB_LANG', 'to_char(cust.{column}, ''{format}'', ''nls_date_language = {lang}'')', 'COMPLEX', 0, 'Returns date in column custom formatted in given language'),
-	('agnYEARCALC', 'to_char (cust.{field}, ''YYYY'') {op} {value}', 'COMPLEX', 0, 'to calculate with column'),
-	('agnYEARCALC_F', 'to_char (cust.{column}, ''{format}'') {op} {value}', 'COMPLEX', 0, 'like agnYEARCALC with formating the date'),
+	('agnTITLEFULL', '', 'COMPLEX', 0, 'shows title - print out title, firstname, lastname - by tw'),
 	('agnUID', '''''', 'SIMPLE', 0, 'agnUID'),
-	('agnMESSAGEID', '''''', 'SIMPLE', 0, 'Dummy content replaced by merger');
+	('agnUNSUBSCRIBE', '''[rdir-domain]/form.do?agnCI=[company-id]&agnFN=unsubscribe&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-unsubscribe-form');
+
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES
+	('agnALTER', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns years from column value until now', 1),
+	('agnALTERCALC', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP) {op} {value}', 'COMPLEX', 0, 'like agnALTER with operator and value', 1),
+	('agnAUTOURL', 'cust.mailtype', 'COMPLEX', 0, '', 1),
+	('agnCALC', 'cust.{column} {op} {value}', 'COMPLEX', 0, 'calculate with NUM-Field', 1),
+	('agnCALC2', '{value} {op} cust.{column}', 'COMPLEX', 0, 'Calculate with NUM-Fields', 1),
+	('agnCUSTOMDATE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date', 1),
+	('agnCUSTOMDATE_DE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date in german lang', 1),
+	('agnCUSTOMERID', 'cust.customer_id', 'SIMPLE', 0, '', 1),
+	('agnDATEDB', 'to_char(cust.{column}, ''{format}'')', 'COMPLEX', 0, 'returns date value in column custom formatted', 1),
+	('agnDATEDB_DE', 'rtrim(ltrim(to_char(cust.{column}, ''{format}'', ''nls_date_language = german'')))', 'COMPLEX', 0, 'Returns date in column custom formatted in german lang', 1),
+	('agnDATEDB_LANG', 'to_char(cust.{column}, ''{format}'', ''nls_date_language = {lang}'')', 'COMPLEX', 0, 'Returns date in column custom formatted in given language', 1),
+	('agnDAYS_UNTIL', 'DATEDIFF(cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns days until endday (endday MUST lie in future!!!)', 1),
+	('agnDBV', '', 'COMPLEX', 0, 'Selects a virtual column not existing in DB', 1),
+	('agnFIRSTNAME', 'cust.firstname', 'SIMPLE', 0, '', 1),
+	('agnITAS', '''Hello World''', 'SIMPLE', 0, '', 1),
+	('agnLASTNAME', 'cust.lastname', 'SIMPLE', 0, '', 1),
+	('agnNULL', '''''', 'FUNCTION', 0, 'Created by script-tag', 1),
+	('agnTITLE_SHORT', 'title_short({type}, cust.gender)', 'COMPLEX', 0, 'Returns title without Names', 1),
+	('agnYEARCALC', 'to_char (cust.{field}, ''YYYY'') {op} {value}', 'COMPLEX', 0, 'to calculate with column', 1),
+	('agnYEARCALC_F', 'to_char (cust.{column}, ''{format}'') {op} {value}', 'COMPLEX', 0, 'like agnYEARCALC with formating the date', 1);
 
 INSERT INTO title_gender_tbl (title_id, gender, title) VALUES
 	(1, 0, 'Sehr geehrter Herr'),
@@ -2642,7 +3064,6 @@ END;
 DELIMITER ;
 CALL createIndices;
 DROP PROCEDURE createIndices;
-
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('18.00.004', CURRENT_USER, CURRENT_TIMESTAMP);
@@ -2867,12 +3288,76 @@ INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timesta
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('19.01.303', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-    VALUES ('19.01.432', CURRENT_USER, CURRENT_TIMESTAMP);
+	VALUES ('19.01.432', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('19.01.433', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('19.01.550', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-    VALUES ('19.01.634', CURRENT_USER, CURRENT_TIMESTAMP);
+	VALUES ('19.01.634', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.156', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.300', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.378', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.405', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.491', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.492', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.557', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.568', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.04.580', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.007', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.174', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.215', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.217', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.232', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.235', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.283', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.325', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.355', current_user, current_timestamp);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.359', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.369', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.371', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.383', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.387', current_user, current_timestamp);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.388', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.410', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.420', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.478', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.501', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.503', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.506', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('19.07.559', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

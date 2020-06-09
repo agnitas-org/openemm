@@ -39,14 +39,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -94,13 +92,14 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.ui.Model;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -223,7 +222,7 @@ public class AgnUtils {
 	 */
 	public static String getStackTraceString(Throwable t) {
 		StringBuilder traceStringBuilder = new StringBuilder();
-
+		
 		if (t != null) {
 			StackTraceElement[] stackTraceElements = t.getStackTrace();
 			if (stackTraceElements != null && stackTraceElements.length > 0) {
@@ -269,153 +268,6 @@ public class AgnUtils {
 	}
 
 	/**
-	 * Returns a date format.
-	 * Used only by BSH-Interpreter
-	 */
-	public static String formatDate(Date aDate, String pattern) {
-		if (aDate == null) {
-			return null;
-		}
-		SimpleDateFormat aFormat = new SimpleDateFormat(pattern);
-		return aFormat.format(aDate);
-	}
-
-	public static SimpleDateFormat getLocaleDateFormat(HttpServletRequest request) {
-		return (SimpleDateFormat) SimpleDateFormat.getDateInstance(DateFormat.MEDIUM, getLocale(request));
-	}
-
-	public static SimpleDateFormat getLocaleDateTimeFormat(HttpServletRequest request) {
-		return getLocaleDateTimeFormat(getLocale(request));
-	}
-	public static DateTimeFormatter getDateTimeFormat(Locale locale){
-		return DateTimeFormatter.ofPattern(getLocaleDateFormatSpecific(locale).toPattern());
-	}
-
-	public static DateTimeFormatter getDateFormat(HttpServletRequest request){
-		return DateTimeFormatter.ofPattern(getLocaleDateFormat(request).toPattern());
-	}
-
-	public static SimpleDateFormat getLocaleDateTimeFormat(Locale locale) {
-		return (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
-	}
-
-    public static SimpleDateFormat getLocaleDateFormatSpecific(HttpServletRequest req) {
-    	ComAdmin admin = getAdmin(req);
-        Locale locale = (admin == null) ? Locale.getDefault() : admin.getLocale();
-        return getLocaleDateFormatSpecific(locale);
-    }
-
-	public static SimpleDateFormat getLocaleDateFormatSpecific(Locale locale) {
-		if (Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) {
-			return new SimpleDateFormat("MM/dd/yyyy");
-		}
-		else {
-			return (SimpleDateFormat) SimpleDateFormat.getDateInstance(DateFormat.MEDIUM, locale);
-		}
-	}
-
-	/**
-	 * Get locale-dependent timezone-aware date/time format using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * See also {@link #getDateTimeFormat(int, com.agnitas.beans.ComAdmin)}.
-	 *
-	 * @param dateStyle the given date formatting style.
-	 * @param timeStyle the given time formatting style.
-	 * @param admin an admin to take locale and timezone from.
-	 * @return a locale-dependent timezone-aware date format object.
-	 */
-	public static SimpleDateFormat getDateTimeFormat(int dateStyle, int timeStyle, ComAdmin admin) {
-		return DateUtilities.getDateTimeFormat(dateStyle, timeStyle, admin.getLocale(), getTimeZone(admin));
-	}
-
-	/**
-	 * Get locale-dependent date/time format using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * See also {@link #getDateTimeFormatPattern(int, com.agnitas.beans.ComAdmin)}.
-	 *
-	 * @param dateStyle the given date formatting style.
-	 * @param timeStyle the given time formatting style.
-	 * @param admin an admin to take locale from.
-	 * @return a locale-dependent date format pattern string.
-	 */
-	public static String getDateTimeFormatPattern(int dateStyle, int timeStyle, ComAdmin admin) {
-		return DateUtilities.getDateTimeFormatPattern(dateStyle, timeStyle, admin.getLocale());
-	}
-
-	/**
-	 * Get locale-dependent timezone-aware date/time format using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * See also {@link #getDateTimeFormat(int, int, com.agnitas.beans.ComAdmin)}.
-	 *
-	 * @param style the given date and time formatting style.
-	 * @param admin an admin to take locale and timezone from.
-	 * @return a locale-dependent timezone-aware date format object.
-	 */
-	public static SimpleDateFormat getDateTimeFormat(int style, ComAdmin admin) {
-		return getDateTimeFormat(style, style, admin);
-	}
-
-	/**
-	 * Get locale-dependent date/time format using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * See also {@link #getDateTimeFormatPattern(int, int, com.agnitas.beans.ComAdmin)}.
-	 *
-	 * @param style the given date and time formatting style.
-	 * @param admin an admin to take locale from.
-	 * @return a locale-dependent date format pattern string.
-	 */
-	public static String getDateTimeFormatPattern(int style, ComAdmin admin) {
-		return getDateTimeFormatPattern(style, style, admin);
-	}
-
-	/**
-	 * Get locale-dependent timezone-aware date (without time) format using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * @param style the given date and time formatting style.
-	 * @param admin an admin to take locale and timezone from.
-	 * @return a locale-dependent timezone-aware date format object.
-	 */
-	public static SimpleDateFormat getDateFormat(int style, ComAdmin admin) {
-		return DateUtilities.getDateFormat(style, admin.getLocale(), getTimeZone(admin));
-	}
-
-	/**
-	 * Get locale-dependent date (without time) format pattern using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * @param style the given date formatting style.
-	 * @param admin an admin to take locale from.
-	 * @return a locale-dependent date format pattern string.
-	 */
-	public static String getDateFormatPattern(int style, ComAdmin admin) {
-		return DateUtilities.getDateFormatPattern(style, admin.getLocale());
-	}
-
-	/**
-	 * Get locale-dependent date format to be used for date picker controls. Make sure to set {@code false} to
-	 * {@code useAdminTimezone} parameter in order to use UTC timezone when you are going to format or parse
-	 * date that should be the same for any user (when hour:minutes part is not passed as separate values
-	 * but missing at all).
-	 *
-	 * @param admin an admin to take locale (and timezone if {@code useAdminTimezone == true}) from.
-	 * @param useAdminTimezone if {@code true} - use admin timezone (if available), otherwise - use UTC timezone.
-	 * @return date format representation.
-	 */
-	public static SimpleDateFormat getDatePickerFormat(ComAdmin admin, boolean useAdminTimezone) {
-		if (useAdminTimezone) {
-			return DateUtilities.getDatePickerFormat(admin.getLocale(), getTimeZone(admin));
-		} else {
-			return DateUtilities.getDatePickerFormat(admin.getLocale(), DateUtilities.UTC);
-		}
-	}
-
-
-	/**
 	 * Get year for statistics overview from which should starts year list
 	 *
 	 * @param admin
@@ -443,16 +295,6 @@ public class AgnUtils {
         startDate.setTime(creationDate);
 
         return Math.max(startDate.get(Calendar.YEAR) - 1, initialYear);
-	}
-
-	/**
-	 * Get locale-dependent date format pattern to be used for date picker controls.
-	 *
-	 * @param admin an admin to take locale from.
-	 * @return date format pattern string.
-	 */
-	public static String getDatePickerFormatPattern(ComAdmin admin) {
-		return DateUtilities.getDatePickerFormatPattern(admin.getLocale());
 	}
 
 	public static String getRedirectDomain(Company company) {
@@ -581,7 +423,18 @@ public class AgnUtils {
 	}
 
 	public static int getAdminId(HttpServletRequest request) {
-		return getAdmin(request).getAdminID();
+		try {
+			ComAdmin admin = getAdmin(request);
+			if (admin == null) {
+				logger.error("AgnUtils: getAdminId - no adminID found (admin is null)");
+				return 0;
+			} else {
+				return admin.getAdminID();
+			}
+		} catch (Exception e) {
+			logger.error("AgnUtils: getAdminId - no adminID found for request", e);
+			return 0;
+		}
 	}
 
 	public static void setAdmin(HttpServletRequest request, ComAdmin admin) {
@@ -759,7 +612,10 @@ public class AgnUtils {
 	}
 
 	public static boolean isMailTrackingAvailable(ComAdmin admin) {
-		Company company = getCompany(admin);
+		return isMailTrackingAvailable(getCompany(admin));
+	}
+	
+	public static boolean isMailTrackingAvailable(Company company) {
 		return company != null && company.getMailtracking() == 1;
 	}
 
@@ -927,7 +783,7 @@ public class AgnUtils {
 				final Object value = entry.getValue();
 
 				if (value != null) {
-					result.put(entry.getKey(), StringEscapeUtils.escapeHtml(value.toString()));
+					result.put(entry.getKey(), StringEscapeUtils.escapeHtml4(value.toString()));
 				} else {
 					result.put(entry.getKey(), null);
 
@@ -1060,7 +916,7 @@ public class AgnUtils {
 			result += ", column " + ((ParseErrorException) e).getColumnNumber()
 					+ ": ";
 			String error = e.getMessage();
-			result += StringEscapeUtils.escapeHtml(error.split("\n")[0]);
+			result += StringEscapeUtils.escapeHtml4(error.split("\n")[0]);
 			ff = true;
 		}
 		if (e instanceof MethodInvocationException) {
@@ -1068,13 +924,12 @@ public class AgnUtils {
 			result += ", column "
 					+ ((MethodInvocationException) e).getColumnNumber() + ": ";
 			String error = e.getMessage();
-			result += StringEscapeUtils.escapeHtml(error.split("\n")[0]);
+			result += StringEscapeUtils.escapeHtml4(error.split("\n")[0]);
 			ff = true;
 		}
 		if (e instanceof ResourceNotFoundException) {
 			result += "Template not found. \n";
-			result += StringEscapeUtils
-					.escapeHtml(e.getMessage().split("\n")[0]);
+			result += StringEscapeUtils.escapeHtml4(e.getMessage().split("\n")[0]);
 			ff = true;
 		}
 		if (e instanceof IOException) {
@@ -1089,10 +944,14 @@ public class AgnUtils {
 	}
 
 	public static String getAttributeFromParameterString(String params, String attributeName) {
-		String attribute = "";
+		if (StringUtils.isEmpty(params) || StringUtils.isEmpty(attributeName)) {
+			return null;
+		}
+
+		String attribute = null;
 
 		// split the parameters
-		String paramArray[] = params.split(",");
+		String[] paramArray = params.split(",");
 
 		// loop over every entry
 		for (String item : paramArray) {
@@ -1415,13 +1274,9 @@ public class AgnUtils {
 	 */
 	public static String getHostName() {
 		if (HOSTNAME == null) {
-			String homeDir = System.getProperty("user.home");
-			if (homeDir != null && homeDir.endsWith(File.separator)) {
-				homeDir = homeDir.substring(0, homeDir.length() - 1);
-			}
-			String confDir = homeDir + File.separator + "conf";
+			String confDir = getUserHomeDir() + File.separator + "conf";
 			if (!new File(confDir).exists()) {
-				confDir = homeDir + File.separator + "tomcat" + File.separator + "conf";
+				confDir = getUserHomeDir() + File.separator + "tomcat" + File.separator + "conf";
 			}
 
 			if (StringUtils.isBlank(confDir) || !new File(confDir).exists()) {
@@ -1455,6 +1310,18 @@ public class AgnUtils {
 		}
 
 		return HOSTNAME;
+	}
+	
+	/**
+	 * Some systems have a defined $HOME variable with a fileseparator character at the end.
+	 * This must be removed.
+	 */
+	public static String getUserHomeDir() {
+		String homeDir = System.getProperty("user.home");
+		if (homeDir != null && homeDir.endsWith(File.separator)) {
+			homeDir = homeDir.substring(0, homeDir.length() - 1);
+		}
+		return homeDir;
 	}
 
 	/**
@@ -1974,6 +1841,31 @@ public class AgnUtils {
 	public static boolean isEmailValid(String email) {
 		return email != null && AgnitasEmailValidator.getInstance().isValid(email) && email.equals(email.trim());
 	}
+	
+	/**
+	 * Checks, if given address is a valid bounce-filter address.
+	 * This must be either a valid email address or a domain starting with &quot;@&quot;.
+	 * 
+	 * @param address filter filter address
+	 * 
+	 * @return <code>true</code> if address is valid
+	 */
+	public static final boolean isValidBounceFilterAddress(final String address) {
+		if(address == null || !address.equals(address.trim())) {
+			return false;
+		}
+		
+		final AgnitasEmailValidator validator = AgnitasEmailValidator.getInstance();
+		if(validator.isValid(address)) {
+			return true;
+		} else if(address.startsWith("@")) {
+			final String domain = address.substring(1);
+			
+			return validator.isValidDomain(domain);
+		}
+		
+		return false;
+	}
 
 	public static boolean isEmailsListValid(String emails) {
 		return isEmailsListValid(emails, true);
@@ -2042,11 +1934,11 @@ public class AgnUtils {
 	public static String getMailVersion() {
 		String sendmailVersion = getSendMailVersion();
 		if (StringUtils.isNotBlank(sendmailVersion)) {
-			return "Sendmail " + sendmailVersion;
+			return "Sendmail " + sendmailVersion.trim();
 		} else {
 			String postfixVersion = getPostfixVersion();
 			if (StringUtils.isNotBlank(postfixVersion)) {
-				return "Postfix " + postfixVersion;
+				return "Postfix " + postfixVersion.trim();
 			} else {
 				return "None";
 			}
@@ -2148,6 +2040,15 @@ public class AgnUtils {
 		
 		return 0;
 	}
+	
+	public static int getCompanyMaxRecipients(ComAdmin admin) {
+		Company company = AgnUtils.getCompany(admin);
+		if (company != null) {
+			return company.getMaxRecipients();
+		}
+		
+		return 0;
+	}
 
 	public static String makeCloneName(Locale locale, String originName) {
 		return makeCloneName(locale, originName, 0);
@@ -2179,6 +2080,15 @@ public class AgnUtils {
 
 		return uniqueName;
     }
+    
+    public static String getUserFormUrlPattern(ComAdmin admin) {
+		if (admin == null || admin.getCompany() == null) {
+			return "";
+		}
+		
+		return String.format("%s/form.do?agnCI=%d&agnFN={user-form-name}",
+				admin.getCompany().getRdirDomain(), admin.getCompanyID());
+	}
 
     public static class TimeIgnoringComparator implements Comparator<Calendar> {
 		@Override
@@ -2602,7 +2512,7 @@ public class AgnUtils {
 	}
 
 	/**
-	 * @deprecated please use {@link org.apache.commons.lang.StringUtils#startsWithIgnoreCase(String, String)} instead.
+	 * @deprecated please use {@link org.apache.commons.lang3.StringUtils#startsWithIgnoreCase(String, String)} instead.
 	 */
 	@Deprecated
 	public static boolean startsWithIgnoreCase(String str, String prefix) {
@@ -2828,7 +2738,6 @@ public class AgnUtils {
 	 *  This method replaces the String[]-values with their last element
 	 * @param formMap
 	 */
-	@SuppressWarnings("cast")
 	public static Map<String, String> repairFormMap(Map<String, String> formMap) {
 		Map<String, String> resultMap = new HashMap<>();
 		for (Map.Entry<String,String> entry : formMap.entrySet()) {
@@ -3348,15 +3257,37 @@ public class AgnUtils {
 
 	public static String replaceHomeVariables(String value) {
 		if (StringUtils.isNotBlank(value)) {
-			String homeDir = System.getProperty("user.home");
-			if (homeDir != null && homeDir.endsWith(File.separator)) {
-				homeDir = homeDir.substring(0, homeDir.length() - 1);
-			}
-			return value.replace("~", homeDir).replace("$HOME", homeDir).replace("${HOME}", homeDir);
+			String homeDir = getUserHomeDir();
+			return value.replace("~", homeDir).replace("$HOME", homeDir).replace("${HOME}", homeDir).replace("$home", homeDir).replace("${home}", homeDir);
 		} else {
 			return value;
 		}
 	}
+	
+	public static String replaceVersionPlaceholders(String value, Version applicationVersion) throws Exception {
+		if (StringUtils.isEmpty(value)) {
+			return value;
+		}
+
+        try {
+        	if (applicationVersion == null) {
+				return value.replace("${ApplicationVersion}", "UnknownApplicationVersion")
+				        .replace("${ApplicationMajorVersion}", "UnknownMajorVersion")
+				        .replace("${ApplicationMinorVersion}", "UnknownMinorVersion")
+				        .replace("${ApplicationMicroVersion}", "UnknownMicroVersion")
+				        .replace("${ApplicationHotfixVersion}", "UnknownHotfixVersion");
+        	} else {
+				return value.replace("${ApplicationVersion}", applicationVersion.toString())
+				        .replace("${ApplicationMajorVersion}", Integer.toString(applicationVersion.getMajorVersion()))
+				        .replace("${ApplicationMinorVersion}", Integer.toString(applicationVersion.getMinorVersion()))
+				        .replace("${ApplicationMicroVersion}", Integer.toString(applicationVersion.getMicroVersion()))
+				        .replace("${ApplicationHotfixVersion}", Integer.toString(applicationVersion.getHotfixVersion()));
+        	}
+		} catch (Exception e) {
+			logger.error("Error in replacing placeholders of value: '" + value + "'");
+			throw e;
+		}
+    }
 
 	public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> collection) {
 		List<T> list = new ArrayList<>(collection);
@@ -3401,6 +3332,8 @@ public class AgnUtils {
 
 	/**
 	 * JSP example:
+	 * <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+	 * ...
 	 * <fmt:formatDate value="${change_date}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
 	 */
 	public static void setAdminDateTimeFormatPatterns(HttpServletRequest request) {
@@ -3419,6 +3352,30 @@ public class AgnUtils {
 
 			SimpleDateFormat dateTimeFormatWithSeconds = admin.getDateTimeFormatWithSeconds();
 	        request.setAttribute("adminDateTimeFormatWithSeconds", dateTimeFormatWithSeconds.toPattern());
+		}
+    }
+
+	/**
+	 * JSP example:
+	 * <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+	 * ...
+	 * <fmt:formatDate value="${change_date}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
+	 */
+	public static void setAdminDateTimeFormatPatterns(ComAdmin admin, Model model) {
+		if (admin != null) {
+	        model.addAttribute("adminTimeZone", admin.getAdminTimezone());
+
+			SimpleDateFormat dateTimeFormat = admin.getDateTimeFormat();
+	        model.addAttribute("adminDateTimeFormat", dateTimeFormat.toPattern());
+
+			SimpleDateFormat dateFormat = admin.getDateFormat();
+	        model.addAttribute("adminDateFormat", dateFormat.toPattern());
+
+			SimpleDateFormat timeFormat = admin.getTimeFormat();
+	        model.addAttribute("adminTimeFormat", timeFormat.toPattern());
+
+			SimpleDateFormat dateTimeFormatWithSeconds = admin.getDateTimeFormatWithSeconds();
+	        model.addAttribute("adminDateTimeFormatWithSeconds", dateTimeFormatWithSeconds.toPattern());
 		}
     }
 
@@ -3456,6 +3413,14 @@ public class AgnUtils {
 		} else {
 			return text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\r\n");
 		}
+	}
+
+	public static boolean equalsIgnoreLineBreaks(String s1, String s2) {
+		if (s1 == null || s2 == null) {
+			return s1 == s2;
+		}
+
+		return normalizeTextLineBreaks(s1).equals(normalizeTextLineBreaks(s2));
 	}
 
 	public static <T extends Enum<T>> T getEnum(Class<T> clz, String name) {
@@ -3660,4 +3625,33 @@ public class AgnUtils {
 	}
 
 	private enum PhoneNumberToken { BEGIN, PLUS, DIGIT, SEPARATOR, LPAREN, RPAREN }
+    
+	public static List<String> removeObsoleteItemsFromList(List<String> list) {
+		if (list == null) {
+			return null;
+		} else {
+			List<String> returnList = new ArrayList<>();
+			for (String item : list) {
+				if (item != null) {
+					item = item.trim();
+					if (StringUtils.isNotBlank(item) && !returnList.contains(item)) {
+						returnList.add(item);
+					}
+				}
+			}
+			return returnList;
+		}
+	}
+
+	public static boolean isLatinCharacter(int code) {
+		return Character.UnicodeScript.of(code) == Character.UnicodeScript.LATIN;
+	}
+	
+	public static TimeZone getSystemTimeZone() {
+		return Calendar.getInstance().getTimeZone();
+	}
+	
+	public static ZoneId getSystemTimeZoneId() {
+		return getSystemTimeZone().toZoneId();
+	}
 }

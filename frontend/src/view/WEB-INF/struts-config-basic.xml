@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "https://struts.apache.org/dtds/struts-config_1_1.dtd">
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "src/view/WEB-INF/struts-config_1_1.dtd">
 <struts-config>
 	<!-- ========== Form Bean Definitions =================================== -->
 	<form-beans type="org.apache.struts.action.ActionFormBean">
@@ -13,8 +13,6 @@
 		<form-bean name="optimizationScheduleForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationScheduleForm" />
 
 		<form-bean name="recipientForm" type="com.agnitas.web.ComRecipientForm" />
-
-		<form-bean name="recipientsReportForm" type="com.agnitas.emm.core.recipientsreport.web.RecipientsReportForm"/>
 
 		<form-bean name="salutationForm" type="org.agnitas.web.SalutationForm" />
 
@@ -37,8 +35,6 @@
 		<form-bean name="mailingSendForm" type="com.agnitas.web.ComMailingSendForm" />
 
 		<form-bean name="mailingWizardForm" type="org.agnitas.web.MailingWizardForm" />
-
-		<form-bean name="compareMailingForm" type="com.agnitas.web.ComCompareMailingForm" />
 
 		<form-bean name="trackableLinkForm" type="com.agnitas.web.ComTrackableLinkForm" />
 
@@ -65,15 +61,10 @@
 
 		<form-bean name="exportWizardForm" type="org.agnitas.web.forms.ExportWizardForm" />
 
-		<form-bean name="birtStatForm" type="com.agnitas.web.forms.ComBirtStatForm" />
-
 		<form-bean name="newsForm" type="com.agnitas.web.ComNewsForm" />
-
-		<form-bean name="mailingBIRTStatForm" type="com.agnitas.reporting.birt.web.forms.ComMailingBIRTStatForm" />
 
 		<form-bean name="supportForm" type="com.agnitas.web.ComSupportForm" />
 		
-
 		<form-bean name="previewMailingImageGeneratorForm" type="com.agnitas.web.ComPreviewMailingImageGeneratorForm" />
 
 		<form-bean name="calendarForm" type="org.agnitas.web.forms.StrutsFormBase" />
@@ -154,12 +145,13 @@
 			<forward name="mailing_templates" path="mailing_view_templates"/>
 			<forward name="importMailing" path="mailing_import"/>
 			<forward name="importTemplate" path="template_import"/>
+			<forward name="importView" path="import_view"/>
+			<forward name="messages" path="messages"/>
 		</action>
 
 		<!-- Process a mailing content request -->
 		<action path="/mailingcontent" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingContentForm" scope="request" input="mailing_content_list">
 			<forward name="list" path="mailing_content_list" />
-			<forward name="view" path="mailing_content_view" />
 		</action>
 
 		<!-- Process MailingComponents -->
@@ -167,6 +159,8 @@
 			<forward name="list" path="mailing_components" />
 			<forward name="component_edit" path="mailing_components_upload_ajax" />
             <forward name="delete" path="mailing_components_delete_ajax" />
+            <forward name="bulk_delete_confirm" path="mailing_components_bulk_delete" />
+            <forward name="messages" path="messages" />
 		</action>
 
 		<!-- Process a mailing attachment request -->
@@ -313,12 +307,10 @@
 			<forward name="bulk_delete_confirm" path="recipient_bulk_delete_ajax" />
 			<forward name="recipient_webtracking_history" path="recipient_webtracking_history" />
 			<forward name="reactions_history" path="recipient_reactions_history" />
+			<forward name="mailing_delivery_info" path="mailing_delivery_info"/>
+			<forward name="messages" path="messages" />
 		</action>
 
-		<action path="/recipientsreport" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="method" name="recipientsReportForm" scope="request">
-			<forward name="list" path="recipient_reports"/>
-			<forward name="view" path="recipient_report_view"/>
-		</action>
 
 		<action path="/recipient_chart" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="method"/>
 
@@ -379,30 +371,8 @@
 			<forward name="loading" path="settings_salutation_loading" />
 		</action>
 
-		<!-- mailing statistics with BIRT -->
-		<action path="/mailing_stat" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingBIRTStatForm" scope="session" input="stats_mailing_stats">
-			<forward name="list" path="stats_mailing_stats" />
-			<forward name="mailing_stat" path="/mailing_stat2.do" />
-		</action>
-
-		<!-- Display Mailing Statistics -->
-		<action path="/mailing_stat2" type="org.springframework.web.struts.DelegatingActionProxy" name="birtStatForm" scope="request">
-			<forward name="stat" path="stats_birt_mailing_stat" />
-			<forward name="list" path="stats_mailing_stats" />
-		</action>
-
-		<!-- Display Recipient Statistics -->
-		<action path="/recipient_stats" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="birtStatForm" scope="request" input="stats_birt_recipient_stat">
-			<forward name="stat" path="stats_birt_recipient_stat" />
-		</action>
-
 		<action path="/followupstats" parameter="method" type="org.springframework.web.struts.DelegatingActionProxy" scope="request">
 			<forward name="resultsAjax" path="mailing_predelivery_list" />
-		</action>
-
-		<!--  BIRT plugin list -->
-		<action path="/mailing_stat_plugins" type="org.springframework.web.struts.DelegatingActionProxy">
-			<forward name="list" path="stats_birt_mailing_plugin_list" />
 		</action>
 
 		<!-- Process target groups -->
@@ -419,13 +389,12 @@
 			<forward name="back_mailingwizard" path="/mwSubject.do?action=subject" />
 			<forward name="bulk_delete_confirm" path="targets_bulk_delete_ajax" />
 			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
-			<forward name="view_mailings" path="targets_querybuilder_view_mailings" />
-            <forward name="messages" path="messages" />
+			<forward name="messages" path="messages" />
 		</action>
 		
 		<action path="/targetQB" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" parameter="method" scope="request">
 			<forward name="view" path="targets_querybuilder_view" />
-			<forward name="view_mailings" path="targets_querybuilder_view_mailings" />
+			<forward name="dependents_list" path="targets_querybuilder_dependents_list" />
 			<forward name="list" path="/target.do?action=1" />
 			<forward name="messages" path="messages" />
 		</action>
@@ -442,6 +411,7 @@
 			<forward name="bulk_delete_confirm" path="userform_bulk_delete_ajax" />
 			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
 			<forward name="import" path="userform_import" />
+			<forward name="importView" path="import_view" />
 		</action>
 
 		<!-- Process FormComponents -->
@@ -477,20 +447,6 @@
 			<forward name="view_forms" path="actions_view_forms"/>
 		</action>
 
-		<!-- Process an admin -->
-		<action path="/admin" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="adminForm" scope="request" input="/admin.do?action=9">
-			<forward name="failure" path="settings_admin_view" />
-			<forward name="view" path="settings_admin_view" />
-			<forward name="list" path="settings_admin_list" />
-			<forward name="delete" path="settings_admin_delete_ajax" />
-			<forward name="rights" path="settings_admin_rights" />
-			<forward name="loading" path="settings_admin_loading" />
-            <forward name="ajax_list" path="settings_admin_list_ajax" />
-			<forward name="ajax_loading" path="settings_admin_loading_ajax" />
-			<forward name="view_mailinglists" path="settings_admin_mailinglists" />
-		</action>
-
-
 		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />
 		</action>
@@ -502,12 +458,6 @@
         <action path="/sendMailloopAutoresponder" type="org.springframework.web.struts.DelegatingActionProxy" scope="request" name="sendMailloopAutoresponderMailForm">
             <!-- Currently no forwards defined -->
         </action>
-        
-		<!-- compare two up to n mailing response statistics -->
-		<action path="/mailing_compare" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="compareMailingForm" input="/mailing_compare.do?action=1" scope="request">
-			<forward name="list" path="stats_mailing_comp_select" />
-			<forward name="compare" path="stats_mailing_comp_view" />
-		</action>
 
 		<!-- Temporary action to convert EMM actions -->
 		<action path="/convert_actions" type="org.springframework.web.struts.DelegatingActionProxy" />
@@ -519,6 +469,26 @@
 		
 		<action path="/error" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="error">
 			<forward name="error" path="error" />
+		</action>
+
+		<!-- Process an optimization -->
+		<action path="/optimize" type="org.springframework.web.struts.DelegatingActionProxy" name="optimizationForm" scope="request" input="/optimize.do?method=view" parameter="method">
+			<set-property property="cancellable" value="true" />
+			<forward name="list" path="campaign_autooptimization_list" />
+			<forward name="view" path="campaign_autooptimization_view" />
+			<forward name="confirmDelete" path="campaign_autooptimization_confirm_delete_ajax"/>
+		</action>
+
+		<action path="/optimize_ajax" type="org.springframework.web.struts.DelegatingActionProxy" scope="request"
+				name="optimizationAjaxForm" parameter="method">
+			<forward name="stats"
+					 path="/WEB-INF/jsp/campaign/autooptimization/autooptimization-stats.jsp" />
+		</action>
+
+		<action path="/optimize_schedule" type="org.springframework.web.struts.DelegatingActionProxy" validate="true" scope="request" name="optimizationScheduleForm" input="/optimize_schedule.do?method=showSchedule"
+				parameter="method">
+			<forward name="schedule" path="campaign_autooptimization_schedule" />
+			<forward name="unscheduleSuccess" path="/optimize.do?method=view" />
 		</action>
 	</action-mappings>
 

@@ -33,8 +33,8 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
@@ -84,7 +84,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	private static final String SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGSORT = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_SORT + " IS NOT NULL AND " + FIELD_SORT + " < " + MAX_SORT_INDEX + " ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
 	private static final String SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGINTEREST = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_ISINTEREST + " IS NOT NULL AND " + FIELD_ISINTEREST + " >= 1 ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
 	private static final String SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)";
-	private static final String SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_SHORTNAME + " = ?";
+	private static final String SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME = "SELECT " + StringUtils.join(FIELD_NAMES, ", ") + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_SHORTNAME + ") = LOWER(?)";
     
     protected static final String DELETE_PROFILEFIELD_BY_COLUMNNAME = "DELETE FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)";
 
@@ -1089,6 +1089,16 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			return DbUtilities.getColumnDataType(getDataSource(), recipientTable, columnName);
 		} catch (Exception e) {
 			return null;
+		}
+	}
+
+	@Override
+	public boolean isColumnIndexed(@VelocityCheck int companyId, String column) {
+		String recipientTable = getRecipientTableName(companyId);
+		try {
+			return DbUtilities.checkForIndex(getDataSource(), recipientTable, Collections.singletonList(column));
+		} catch (Exception e) {
+			return false;
 		}
 	}
 }

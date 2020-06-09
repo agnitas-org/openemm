@@ -13,8 +13,6 @@ package org.agnitas.dao.impl;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -25,6 +23,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	
@@ -45,12 +44,8 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 		return "INSERT INTO " + getOnepixellogTableName(companyId) + " (company_id, mailing_id, customer_id, ip_adr, open_count, mobile_count, timestamp, first_open, last_open) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 	}
 	
-	private static String getSqlUpdateString_Oracle(@VelocityCheck int companyId) {
-		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = NVL(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE company_id = ? AND mailing_id = ? AND customer_id = ?";
-	}
-
-	private static String getSqlUpdateString_MySql(@VelocityCheck int companyId) {
-		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = IFNULL(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE company_id = ? AND mailing_id = ? AND customer_id = ?";
+	private static String getSqlUpdateString(@VelocityCheck int companyId) {
+		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = COALESCE(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE company_id = ? AND mailing_id = ? AND customer_id = ?";
 	}
 	
 	private static String getSqlDeviceInsertString(int companyId) {
@@ -86,12 +81,7 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
         		mobileCountDelta = 1;
         	}
         	
-    		int touchedLines;
-    		if (isOracleDB()) {
-    			touchedLines = update(logger, getSqlUpdateString_Oracle(companyID), mobileCountDelta, companyID, mailingID, recipientID);
-    		} else {
-    			touchedLines = update(logger, getSqlUpdateString_MySql(companyID), mobileCountDelta, companyID, mailingID, recipientID);
-    		}
+    		int touchedLines = update(logger, getSqlUpdateString(companyID), mobileCountDelta, companyID, mailingID, recipientID);
     		
         	if (touchedLines == 0) {
 				// Insert new entry

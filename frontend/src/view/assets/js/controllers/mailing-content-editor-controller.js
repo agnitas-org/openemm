@@ -47,7 +47,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     initInterestGroup(currentDynTag.interestGroup);
     if (currentDynTag.contentBlocks.length > 0) {
       var firstContentBlock = currentDynTag.contentBlocks[0];
-      selectContentBlock(firstContentBlock);
+      selectContentBlock(firstContentBlock, false);
     } else {
       createNewTag();
     }
@@ -56,6 +56,8 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
 
     var saveToStorage = function() {
       var contentStorage = Array();
+
+      getEditorsContent();
       var contentBlocks = currentDynTag.contentBlocks;
 
       Array.prototype.forEach.call(contentBlocks, function(block) {
@@ -71,12 +73,10 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     var readFromStorage = function (contentStorage) {
       var lastContentBlock;
 
-      if(contentStorage.length > 0) {
-        currentDynTag.remove(getSelectedContentBlockId());
-        getSelectedContentBlock().remove();
-      }
+      currentDynTag.removeAll();
+      removeAllContentsBlock();
 
-      Array.prototype.forEach.call(contentStorage,function(contentBlockStorage) {
+      Array.prototype.forEach.call(contentStorage, function(contentBlockStorage) {
         var $orderedStub = $orderedArea.find('.l-stub');
         var contentBlock = currentDynTag.createNewContentBlock();
 
@@ -99,7 +99,16 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
 
     };
 
-    AutoSave.initialize('mailing-components/' + currentDynTag.mailingId + '/' + currentDynTag.id, saveToStorage, null, readFromStorage, 0);
+    var checkIsStorageAdded = function (bundleValues) {
+      return bundleValues.length !== currentDynTag.contentBlocks.length
+        || !currentDynTag.contentBlocks.every(function(block) {
+          return bundleValues.some(function(bundle) {
+            return bundle.targetGroupId === block.targetId && bundle.content === block.content;
+          })
+        });
+    };
+
+    AutoSave.initialize('mailing-components/' + currentDynTag.mailingId + '/' + currentDynTag.id, saveToStorage, checkIsStorageAdded, readFromStorage, 0);
   });
 
   this.addAction({
@@ -311,11 +320,11 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
 
     var tabLink = $('[data-toggle-tab$="' + editorType + '"]');
     if (tabLink) {
-      tabLink.click();
+      tabLink.trigger("click");
     }
   };
 
-  var setEditorsContent = function (content) {
+  var setEditorsContent = function (content, selectAll) {
     var $wysiwygEditorBlock = $('#tab-content-wysiwyg');
     var $htmlEditorBlock = $('#contentEditor');
     if ($wysiwygEditorBlock.is(":visible")) {
@@ -329,7 +338,13 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       }
     }
     if ($htmlEditorBlock.is(":visible")) {
-      ace.edit("contentEditor").setValue(content);
+      var cursorPos;
+      if(selectAll === false) {
+        cursorPos = 1; // move cursor to the end
+      } else {
+        cursorPos = null; // select all
+      }
+      ace.edit("contentEditor").setValue(content, cursorPos);
     }
   };
 
@@ -405,6 +420,10 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   var getSelectedContentBlock = function(){
     return $orderedArea.find(CONTENT_BLOCK_SELECTOR + '.selected');
   };
+  
+  var removeAllContentsBlock = function() {
+    $orderedArea.find(CONTENT_BLOCK_SELECTOR).remove();
+  };
 
   var getSelectedContentBlockId = function () {
     var $selectedDynTag = getSelectedContentBlock();
@@ -440,12 +459,12 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     $('.modal').modal('toggle');
   };
 
-  var selectContentBlock = function(contentBlock) {
+  var selectContentBlock = function(contentBlock, selectAll) {
     getEditorsContent();
 
     if (contentBlock !== undefined) {
       markSelected(contentBlock.uniqueId);
-      setEditorsContent(contentBlock.content);
+      setEditorsContent(contentBlock.content, selectAll);
       initTargetGroup(contentBlock.targetId);
     } else {
       setEditorsContent('');

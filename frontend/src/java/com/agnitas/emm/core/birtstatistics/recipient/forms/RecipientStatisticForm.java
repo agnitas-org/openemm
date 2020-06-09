@@ -10,11 +10,12 @@
 
 package com.agnitas.emm.core.birtstatistics.recipient.forms;
 
+import org.agnitas.web.forms.FormDate;
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.web.forms.BirtStatisticForm;
-import org.agnitas.web.forms.FormDate;
-import org.apache.commons.lang.StringUtils;
 
 public class RecipientStatisticForm extends BirtStatisticForm {
     

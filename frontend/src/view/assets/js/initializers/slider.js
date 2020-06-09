@@ -9,7 +9,7 @@
 
   var Helpers = AGN.Lib.Helpers;
 
-  AGN.Initializers.Slider = function($scope) {
+  AGN.Lib.CoreInitializer.new('slider', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -23,7 +23,7 @@
         handle: 'round',
         min: 0,
         max: 101
-      }
+      };
 
       options = _.merge({},
         baseOptions,
@@ -33,6 +33,6 @@
       $el.slider(options);
     });
 
-  }
+  });
 
 })();

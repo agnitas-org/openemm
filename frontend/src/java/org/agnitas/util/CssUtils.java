@@ -24,13 +24,17 @@ import com.helger.css.decl.CSSMediaExpression;
 import com.helger.css.decl.CSSMediaQuery;
 import com.helger.css.decl.CSSMediaRule;
 import com.helger.css.decl.CSSNamespaceRule;
+import com.helger.css.decl.CSSSelector;
+import com.helger.css.decl.CSSSelectorMemberNot;
+import com.helger.css.decl.CSSSelectorSimpleMember;
 import com.helger.css.decl.CSSStyleRule;
 import com.helger.css.decl.CascadingStyleSheet;
+import com.helger.css.decl.ICSSSelectorMember;
 import com.helger.css.decl.ICSSTopLevelRule;
 import com.helger.css.reader.CSSReader;
 import com.helger.css.writer.CSSWriterSettings;
 import org.apache.commons.collections4.IterableUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CssUtils {
     private static final String DEFAULT_INDENT = "    ";
@@ -70,7 +74,57 @@ public class CssUtils {
 
     private static void stripEmbeddableRules(CascadingStyleSheet styles) {
         // Remove all media-independent style rules.
-        styles.removeRules(CSSStyleRule.class::isInstance);
+        styles.removeRules(rule -> {
+            if (rule instanceof CSSStyleRule) {
+                CSSStyleRule styleRule = (CSSStyleRule) rule;
+                stripButPseudoSelectors(styleRule);
+                return !styleRule.hasSelectors();
+            } else {
+                return false;
+            }
+        });
+    }
+
+    private static void stripButPseudoSelectors(CSSStyleRule rule) {
+        for (int i = 0; i < rule.getSelectorCount(); i++) {
+            CSSSelector selector = rule.getSelectorAtIndex(i);
+
+            if (selector != null && !hasPseudoSelectors(selector)) {
+                rule.removeSelector(i);
+                i--;
+            }
+        }
+    }
+
+    private static boolean hasPseudoSelectors(CSSSelector selector) {
+        for (int i = 0; i < selector.getMemberCount(); i++) {
+            ICSSSelectorMember member = selector.getMemberAtIndex(i);
+
+            if (hasPseudoSelectors(member)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean hasPseudoSelectors(ICSSSelectorMember member) {
+        if (member instanceof CSSSelectorSimpleMember) {
+            CSSSelectorSimpleMember simpleMember = (CSSSelectorSimpleMember) member;
+            return simpleMember.isPseudo();
+        } else if (member instanceof CSSSelectorMemberNot) {
+            CSSSelectorMemberNot negationMember = (CSSSelectorMemberNot) member;
+
+            for (int i = 0; i < negationMember.getSelectorCount(); i++) {
+                CSSSelector selector = negationMember.getSelectorAtIndex(i);
+
+                if (selector != null && hasPseudoSelectors(selector)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void stripMediaType(CascadingStyleSheet styles, String useType) {

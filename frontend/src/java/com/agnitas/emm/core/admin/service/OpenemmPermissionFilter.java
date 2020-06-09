@@ -23,6 +23,7 @@ public final class OpenemmPermissionFilter implements PermissionFilter {
 		return permission != null && permission.isVisible();
 	}
 	
+	@Override
 	public Set<Permission> getAllVisiblePermissions() {
 		return Permission.getAllPermissionsAndCategories().keySet().stream()
 				.filter(this::isVisible).collect(Collectors.toSet());

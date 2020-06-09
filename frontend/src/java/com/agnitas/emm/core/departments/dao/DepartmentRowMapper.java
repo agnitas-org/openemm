@@ -17,6 +17,9 @@ import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.emm.core.departments.beans.Department;
 
+/**
+ * Rowmapper for table <i>department_tbl</i>.
+ */
 public final class DepartmentRowMapper implements RowMapper<Department> {
 
 	@Override
@@ -24,7 +27,10 @@ public final class DepartmentRowMapper implements RowMapper<Department> {
 		final int id = rs.getInt("department_id");
 		final String slug = rs.getString("slug");
 		
-		return new Department(id, slug);
+		final boolean cid0Allowed = rs.getBoolean("cid_0_allowed");
+		final boolean loginWithoutPermissionAllowed = rs.getBoolean("no_permission_required");
+		
+		return new Department(id, slug, cid0Allowed, loginWithoutPermissionAllowed);
 	}
 
 }

@@ -10,25 +10,34 @@
 
 package com.agnitas.emm.core.userform.service.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.emm.core.userform.service.UserFormFilter;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.userform.bean.UserForm;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.impl.UserformServiceImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.userform.bean.UserForm;
-
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
 
 public class ComUserformServiceImpl extends UserformServiceImpl implements ComUserformService {
 
+    private EmmActionDao emmActionDao;
+    private ExtendedConversionService conversionService;
+    
     @Override
 	public void bulkDelete(Set<Integer> userformIds, @VelocityCheck int companyId) {
         for (int userformId : userformIds)
@@ -94,5 +103,59 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         }
 
         return null;
+    }
+    
+	@Override
+    public PaginatedListImpl<UserFormDto> getUserFormsWithActionData(ComAdmin admin, String sort,
+			String order, int page, int numberOfRows, UserFormFilter filter) {
+        
+        PaginatedListImpl<UserForm> userForms = userFormDao
+                .getUserFormsWithActionIdsNew(sort, order, page, numberOfRows, filter == null ? UserFormFilter.NONE : filter, admin.getCompanyID());
+        
+        //collect action ID which are used by forms
+        List<Integer> usedActionIds = new ArrayList<>();
+        for (UserForm userForm : userForms.getList()) {
+            int actionId = userForm.getStartActionID();
+            if (actionId > 0) {
+                usedActionIds.add(actionId);
+            }
+            actionId = userForm.getEndActionID();
+            if (actionId > 0) {
+                usedActionIds.add(actionId);
+            }
+        }
+        
+        PaginatedListImpl<UserFormDto> convertedList = conversionService
+                .convertPaginatedList(userForms, UserForm.class, UserFormDto.class);
+        
+        //set action names
+        Map<Integer, String> actionNames = emmActionDao.getEmmActionNamesNew(admin.getCompanyID(), usedActionIds);
+        for (UserFormDto dto : convertedList.getList()) {
+            int actionId = dto.getSuccessSettings().getStartActionId();
+            dto.setActionName(actionNames.get(actionId));
+            actionId = dto.getSuccessSettings().getFinalActionId();
+            dto.setActionName(actionNames.get(actionId));
+        }
+        
+        return convertedList;
+	}
+
+	@Override
+	public UserFormDto getUserForm(@VelocityCheck int companyId, int formId) throws Exception {
+        UserForm userForm = userFormDao.getUserForm(formId, companyId);
+        if (userForm == null) {
+            return new UserFormDto();
+        }
+        return conversionService.convert(userForm, UserFormDto.class);
+	}
+	
+	@Required
+    public void setEmmActionDao(EmmActionDao emmActionDao) {
+        this.emmActionDao = emmActionDao;
+    }
+    
+    @Required
+    public void setConversionService(ExtendedConversionService conversionService) {
+        this.conversionService = conversionService;
     }
 }

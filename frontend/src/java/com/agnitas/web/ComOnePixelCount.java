@@ -29,6 +29,7 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -38,10 +39,10 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 public class ComOnePixelCount extends HttpServlet {
 	private static final long serialVersionUID = 9217593068580606726L;
@@ -183,16 +184,24 @@ public class ComOnePixelCount extends HttpServlet {
 		}
 
 		ComExtensibleUID uid = null;
-		String param = request.getParameter("uid");
-		if (param == null) {
+		String agnUidString = request.getParameter("uid");
+		if (StringUtils.isBlank(agnUidString)) {
+        	String[] uriParts = StringUtils.strip(request.getRequestURI(), "/").split("/");
+			if (uriParts.length >= 2 && "g.html".equals(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 2].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 2];
+			} else if (uriParts.length >= 1 && StringUtils.isNotBlank(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 1].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 1];
+			}
+        }
+		if (agnUidString == null) {
 			logger.error("OnepixelLog: no uid set");
 		} else {
 			try {
 				// Validate uid
 				try {
-					uid = uidService.parse(param);
+					uid = uidService.parse(agnUidString);
 				} catch (UIDParseException e) {
-					logger.warn("OnepixelLog: Error parsing UID: " + param + " (" + e.getMessage() + ")");
+					logger.warn("OnepixelLog: Error parsing UID: " + agnUidString + " (" + e.getMessage() + ")");
 					logger.debug(e);
 				}
 	
@@ -239,7 +248,7 @@ public class ComOnePixelCount extends HttpServlet {
 	 *            request parameter
 	 * @param req
 	 *            HTTP request
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected void executeMailingOpenAction(final ComExtensibleUID uid, final HttpServletRequest req) throws Exception {
 		int companyID = uid.getCompanyID();

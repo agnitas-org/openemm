@@ -11,7 +11,6 @@
 package com.agnitas.emm.extension.impl;
 
 import org.agnitas.emm.extension.PluginInstaller;
-import org.agnitas.emm.extension.dao.PluginDao;
 import org.agnitas.emm.extension.impl.DatabaseScriptExecutor;
 import org.agnitas.emm.extension.impl.ExtensionSystemBuilder;
 import org.agnitas.emm.extension.impl.ExtensionSystemConfiguration;
@@ -46,7 +45,7 @@ public class ComExtensionSystemBuilder extends ExtensionSystemBuilder {
 	}
 	
 	@Override
-	protected ExtensionSystemImpl createInstance( ExtensionSystemConfiguration configuration, JspRestoreUtil jspRestoreUtil, PluginInstaller pluginInstaller, PluginDao pluginDao) {
+	protected ExtensionSystemImpl createInstance( ExtensionSystemConfiguration configuration, JspRestoreUtil jspRestoreUtil, PluginInstaller pluginInstaller) {
 		return new ComExtensionSystemImpl(configuration, jspRestoreUtil, pluginInstaller, pluginDao);
 	}
 
@@ -57,10 +56,10 @@ public class ComExtensionSystemBuilder extends ExtensionSystemBuilder {
 	
 	@Override
 	protected ExtensionSystemConfiguration createExtensionSystemConfiguration() {
-		return new ComExtensionSystemConfiguration( 
-				getSystemPluginBaseDirectory(), 
-				getPluginBaseDirectory(), 
-				getJspBaseDirectory(), 
+		return new ComExtensionSystemConfiguration(
+				getSystemPluginBaseDirectory(),
+				getPluginBaseDirectory(),
+				getJspBaseDirectory(),
 				getDatabaseName(),
 				birtHost,
 				birtHostUser,

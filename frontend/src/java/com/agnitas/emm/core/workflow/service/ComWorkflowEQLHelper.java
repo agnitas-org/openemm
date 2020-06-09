@@ -33,8 +33,8 @@ import org.agnitas.target.impl.TargetNodeNumeric;
 import org.agnitas.target.impl.TargetNodeString;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

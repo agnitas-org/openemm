@@ -86,7 +86,7 @@ For a modal with custom content, you can use mustache syntax on the template . T
   $(document).on('hidden.bs.modal', '.modal',function() {
     var $modal = $(this);
 
-    $modal.trigger('modal:close')
+    $modal.trigger('modal:close');
 
     setTimeout(function() {
       $modal.remove();

@@ -11,7 +11,9 @@
 package org.agnitas.service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -48,8 +50,8 @@ import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 public class GenericExportWorker implements Callable<GenericExportWorker> {
@@ -114,7 +116,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 		// Create the default date and time format
 		dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, dateAndDecimalLocale);
-		((SimpleDateFormat) dateTimeFormat).applyPattern(((SimpleDateFormat) dateTimeFormat).toPattern().replaceFirst("y+", "yyyy"));
+		((SimpleDateFormat) dateTimeFormat).applyPattern(((SimpleDateFormat) dateTimeFormat).toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 	}
 
 	/**
@@ -122,7 +124,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	 * If empty, we use the selected sql column names.
 	 * If set to null, we don't write any csv column names.
 	 **/
-	private List<String> csvFileHeaders = new ArrayList<>();
+	protected List<String> csvFileHeaders = new ArrayList<>();
 
 	public Date getStartTime() {
 		return startTime;
@@ -261,8 +263,9 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	}
 
 	public void setDateAndDecimalLocale(Locale dateAndDecimalLocale) {
-		dateFormat = SimpleDateFormat.getDateInstance(SimpleDateFormat.MEDIUM, dateAndDecimalLocale);
-		dateTimeFormat = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.MEDIUM, SimpleDateFormat.MEDIUM, dateAndDecimalLocale);
+		dateFormat = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, dateAndDecimalLocale);
+		dateTimeFormat = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.MEDIUM, dateAndDecimalLocale);
+		((SimpleDateFormat) dateTimeFormat).applyPattern(((SimpleDateFormat) dateTimeFormat).toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		dateFormatter = null;
 		dateTimeFormatter = null;
 		decimalFormat = DecimalFormat.getNumberInstance(dateAndDecimalLocale);
@@ -320,8 +323,6 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				}
 			}
 			
-			@SuppressWarnings("resource")
-			OutputStream outputStream = null;
 			try (Connection connection = dataSource.getConnection()) {
 				if (maximumExportLineLimit >= 0) {
 					try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM (" + selectStatement + (isOracleDB() ? ")" : ") subselect"))) {
@@ -350,29 +351,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 			    		}
 					}
 				}
-				
-				if (zipped && StringUtils.isEmpty(zipPassword)) {
-					outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
-					if (StringUtils.isBlank(zippedFileName) ) {
-						zippedFileName = exportFile;
-					}
-					if (zippedFileName.contains(File.separator)) {
-						zippedFileName = zippedFileName.substring(zippedFileName.lastIndexOf(File.separatorChar) + 1);
-					}
-					if (zippedFileName.toLowerCase().endsWith(".zip")) {
-						zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
-					}
-					if (!zippedFileName.toLowerCase().endsWith(".csv")) {
-						zippedFileName += ".csv";
-					}
-					ZipEntry entry = new ZipEntry(zippedFileName);
-					entry.setTime(new Date().getTime());
-					((ZipOutputStream) outputStream).putNextEntry(entry);
-				} else {
-					outputStream = new FileOutputStream(new File(exportFile));
-				}
 
-				try (CsvWriter csvWriter = new CsvWriter(outputStream, encoding, delimiter, stringQuote)) {
+				try (CsvWriter csvWriter = new CsvWriter(getExportOutputStream(), encoding, delimiter, stringQuote)) {
 					csvWriter.setAlwaysQuote(alwaysQuote);
 					exportedLines = 0;
 					
@@ -458,10 +438,6 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		    } catch (Exception e) {
 		        logger.error("Error during export: " + e.getMessage(), e);
 		        throw e;
-		    } finally {
-		    	if (outputStream != null) {
-		    		outputStream.close();
-		    	}
 		    }
 			
 			if (zipped && StringUtils.isNotEmpty(zipPassword) ) {
@@ -500,6 +476,30 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
         return this;
     }
+
+	private OutputStream getExportOutputStream() throws IOException, FileNotFoundException {
+		if (zipped && StringUtils.isEmpty(zipPassword)) {
+			OutputStream outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
+			if (StringUtils.isBlank(zippedFileName) ) {
+				zippedFileName = exportFile;
+			}
+			if (zippedFileName.contains(File.separator)) {
+				zippedFileName = zippedFileName.substring(zippedFileName.lastIndexOf(File.separatorChar) + 1);
+			}
+			if (zippedFileName.toLowerCase().endsWith(".zip")) {
+				zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
+			}
+			if (!zippedFileName.toLowerCase().endsWith(".csv")) {
+				zippedFileName += ".csv";
+			}
+			ZipEntry entry = new ZipEntry(zippedFileName);
+			entry.setTime(new Date().getTime());
+			((ZipOutputStream) outputStream).putNextEntry(entry);
+			return outputStream;
+		} else {
+			return new FileOutputStream(new File(exportFile));
+		}
+	}
 	
 	public Object convertValue(ResultSetMetaData metaData, ResultSet resultSet, int columnIndex) throws Exception {
 		int columnTypeCode = metaData.getColumnType(columnIndex);

@@ -17,20 +17,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
-import com.agnitas.beans.ComMailing.MailingContentType;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingLightVO;
-import com.agnitas.web.ComMailingBaseAction;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mediatype;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
@@ -38,14 +30,24 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.web.MailingBaseAction;
 import org.agnitas.web.forms.MailingBaseForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.upload.FormFile;
+
+import com.agnitas.beans.ComMailing.MailingContentType;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.web.ComMailingBaseAction;
 
 /**
  * Implementation of <strong>Form</strong> that handles Mailings
@@ -54,6 +56,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComMailingBaseForm.class);
+	private int adminID;
 
 	public final int getCompanyID() {
 		return companyID;
@@ -126,6 +129,8 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	private String targetExpression;
 	private int scrollTop;
 	private boolean changeMailing;
+	private boolean frequencyCounterDisabled;
+	private boolean mailingListFrequencyCountEnabled;
 
 	public boolean isChangeMailing() {
 		return changeMailing;
@@ -162,7 +167,6 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	/** Holds value of property showMtypeOptions. */
 	private int activeMedia = 0;
-	private String[] mediaTypeLabels = { "Email", "Fax", "Print", "MMS", "SMS", "WhatsApp" };	// TODO Remove that from FormBean
 	private String[] mediaTypeLabelsLowerCase = null;	// TODO Remove that from FormBean
 
 	private boolean wmSplit;
@@ -335,28 +339,9 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		this.followUpMailingType = followUpMailingType;
 	}
 
-	// get a sorted list from the Helper Class ComMailingLightVO
-	public List<LightweightMailing> getMailings() {
-		// get dietMails via Spring :-) Look into applicationContext for mapping of this bean.
-		ComMailingLightVO dietMails = (ComMailingLightVO) getWebApplicationContext().getBean("MailingLightService");
-		List<LightweightMailing> mailings = dietMails.getSnowflakeMailings(getCompanyID());
-
-		if (parentMailing > 0 && parentMailing != getMailingID()) {
-			boolean parentNotInList = true;
-
-			for (LightweightMailing mailing : mailings) {
-				if (parentMailing == mailing.getMailingID()) {
-					parentNotInList = false;
-					break;
-				}
-			}
-
-			if (parentNotInList) {
-				mailings.add(dietMails.getSnowflakeMailing(parentMailing));
-			}
-		}
-
-		return mailings;
+	public List<LightweightMailingWithMailingList> getMailings() {
+		ComMailingLightService dietMails = (ComMailingLightService) getWebApplicationContext().getBean("MailingLightService");
+		return dietMails.getLightweightMailings(getCompanyID(), getAdminID(), parentMailing, getMailingID());
 	}
 
 	/**
@@ -401,6 +386,8 @@ public class ComMailingBaseForm extends MailingBaseForm {
 	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
 		// set company ID
 		setCompanyID(AgnUtils.getCompanyID(request));
+		// set admin ID of current user
+		setAdminID(AgnUtils.getAdminId(request));
 
 		ActionErrors actionErrors = new ActionErrors();
 
@@ -417,9 +404,9 @@ public class ComMailingBaseForm extends MailingBaseForm {
 				actionErrors.add("description", new ActionMessage("error.description.too.long"));
 			}
 
-            Integer workflowId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+            Integer currentWorkflowId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
 			if (mailinglistID == 0) {
-				if (workflowId == null || workflowId == 0) {
+				if (currentWorkflowId == null || currentWorkflowId == 0) {
 					actionErrors.add("global", new ActionMessage("error.mailing.noMailinglist"));
 				} else {
 					actionErrors.add("global", new ActionMessage("error.mailing.noMailinglistSetWithCampaignEditor"));
@@ -518,7 +505,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
         }
 
 		// check if we have a follow-Up mailing. If not, reset the follow-Up parameters
-		if (mailingType != Mailing.TYPE_FOLLOWUP) {
+		if (mailingType != MailingTypes.FOLLOW_UP.getCode()) {
 			parentMailing = 0;
 			followUpMailingType = "";
 			followMailing = "";
@@ -687,10 +674,11 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public String[] getMediaTypeLabelsLowerCase() {
 		if (mediaTypeLabelsLowerCase == null) {
-			mediaTypeLabelsLowerCase = new String[mediaTypeLabels.length];
-			for (int i = 0; i < mediaTypeLabels.length; i++) {
-				mediaTypeLabelsLowerCase[i] = mediaTypeLabels[i].toLowerCase();
+			List<String> mediaTypeLabelsLowerCaseList = new ArrayList<>();
+			for (MediaTypes mediaType : MediaTypes.valuesSortedByCode()) {
+				mediaTypeLabelsLowerCaseList.add(mediaType.name().toLowerCase());
 			}
+			mediaTypeLabelsLowerCase = mediaTypeLabelsLowerCaseList.toArray(new String[0]);
 		}
 		return mediaTypeLabelsLowerCase;
 	}
@@ -930,23 +918,26 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	@Override
 	public void setDynamicTemplateString(String dynamicTemplateString) {
-		if (dynamicTemplateString == null)
+		if (dynamicTemplateString == null) {
 			dynamicTemplate = false;
-		else
+		} else {
 			dynamicTemplate = dynamicTemplateString.equals("on") || dynamicTemplateString.equals("on") || dynamicTemplateString.equals("true");
+		}
 	}
 
 	@Override
 	public String getDynamicTemplateString() {
-		if (dynamicTemplate)
+		if (dynamicTemplate) {
 			return "on";
-		else
+		} else {
 			return "";
+		}
 	}
 
 	public void setBulkID(int id, String value) {
-		if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true")))
+		if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true"))) {
 			bulkIDs.add(id);
+		}
 	}
 
 	public String getBulkID(int id) {
@@ -1258,5 +1249,29 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	public void setMailingContentTypeAdvertising(boolean mailingContentTypeAdvertising) {
 		mailingContentType = mailingContentTypeAdvertising ? MailingContentType.advertising : MailingContentType.transaction;
+	}
+	
+	public void setAdminID(int adminID) {
+		this.adminID = adminID;
+	}
+	
+	public int getAdminID() {
+		return adminID;
+	}
+
+	public boolean isFrequencyCounterDisabled() {
+		return frequencyCounterDisabled;
+	}
+
+	public void setFrequencyCounterDisabled(boolean frequencyCounterDisabled) {
+		this.frequencyCounterDisabled = frequencyCounterDisabled;
+	}
+
+	public boolean isMailingListFrequencyCountEnabled() {
+		return mailingListFrequencyCountEnabled;
+	}
+
+	public void setMailingListFrequencyCountEnabled(boolean mailingListFrequencyCountEnabled) {
+		this.mailingListFrequencyCountEnabled = mailingListFrequencyCountEnabled;
 	}
 }

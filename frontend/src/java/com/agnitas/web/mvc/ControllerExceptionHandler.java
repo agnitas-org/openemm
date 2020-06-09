@@ -12,6 +12,8 @@ package com.agnitas.web.mvc;
 
 import org.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -29,5 +31,16 @@ public class ControllerExceptionHandler {
     public String onNoPreviewImageException() {
         // Use redirect (not forward) to allow browser to use cache.
         return "redirect:" + HttpUtils.IMAGE_PATH_NO_PREVIEW;
+    }
+
+    @ExceptionHandler(BindException.class)
+    public String onBindException(final BindException e, final Popups popups) {
+        final FieldError fieldError = e.getFieldError();
+        if (fieldError != null && fieldError.getRejectedValue() != null) {
+            popups.alert("GWUA.error.invalidInputValue", e.getFieldError().getRejectedValue());
+        } else {
+            popups.alert("Error");
+        }
+        return "messages";
     }
 }

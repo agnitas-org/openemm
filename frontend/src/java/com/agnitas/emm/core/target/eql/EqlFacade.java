@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
+import com.agnitas.emm.core.target.eql.ast.analysis.RequireMailtrackingSyntaxTreeAnalyzer;
+import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerator;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.beanshell.BeanShellCodeGeneratorCallback;
@@ -26,8 +28,6 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveExc
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallback;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeGeneratorCallbackFactory;
-import com.agnitas.emm.core.target.eql.codegen.sql.SqlDialect;
-import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConverter;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConverterFactory;
@@ -51,13 +51,7 @@ public class EqlFacade {
 
 	/** Converter for {@link TargetRepresentation} to EQL code. */
 	private TargetRepresentationToEqlConverter legacyToEqlConverter;
-	
-	/** Validator for mailing IDs. */
-	private MailingIdValidator mailingIdValidator;
-	
-	/** SQL dialect used for code generation and conversion. */
-	private SqlDialect sqlDialect;
-	
+		
 	private final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory;
 	private final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory;
 	
@@ -84,7 +78,12 @@ public class EqlFacade {
 	 * @throws TargetRepresentationToEqlConversionException on errors during conversion
 	 */
 	public String convertTargetRepresentationToEql(ComTarget target) throws TargetRepresentationToEqlConversionException {
-		return convertTargetRepresentationToEql(target.getTargetStructure(), target.getCompanyID());
+		int companyId = target.getCompanyID();
+		if (companyId == 0) {
+			// Migrate listsplit targetgroups available for all clients
+			companyId = 1;
+		}
+		return convertTargetRepresentationToEql(target.getTargetStructure(), companyId);
 	}
 	
 	/**
@@ -158,10 +157,28 @@ public class EqlFacade {
 	 * @throws ReferenceTableResolveException on errors resolving reference tables
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
-	public SqlCode convertEqlToSql(String eql, int companyId) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+	public SqlCode convertEqlToSql(final String eql, final int companyId) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+		return convertEqlToSql(eql, companyId, CodeGenerationFlags.DEFAULT_FLAGS);
+	}
+	
+	/**
+	 * Converts the given EQL code to SQL. Given flags controls behavior.
+	 * 
+	 * @param eql EQL code to convert
+	 * @param companyId company ID
+	 * @param flags flags to alter code generation behavior
+	 * 
+	 * @return SQL code
+	 * 
+	 * @throws EqlParserException on errors parsing the EQL code
+	 * @throws CodeGeneratorException on errors generating SQL code
+	 * @throws ReferenceTableResolveException on errors resolving reference tables
+	 * @throws ProfileFieldResolveException on errors resolving profile fields
+	 */
+	public SqlCode convertEqlToSql(final String eql, final int companyId, final CodeGenerationFlags flags) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		SimpleReferenceCollector referencedItems = new SimpleReferenceCollector();
 		
-		return convertEqlToSql(eql, companyId, referencedItems);
+		return convertEqlToSql(eql, companyId, referencedItems, flags);
 	}
 	
 	/**
@@ -179,12 +196,31 @@ public class EqlFacade {
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
 	public final SqlCode convertEqlToSql(final String eql, final int companyId, final ReferenceCollector referenceCollector) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+		return convertEqlToSql(eql, companyId, referenceCollector, CodeGenerationFlags.DEFAULT_FLAGS);
+	}
+		
+	/**
+	 * Converts the given EQL code to SQL.
+	 * 
+	 * @param eql EQL code to convert
+	 * @param companyId company ID
+	 * @param referenceCollector collector for referenced items
+	 * @param flags flags to alter code generation behavior
+	 * 
+	 * @return SQL code
+	 * 
+	 * @throws EqlParserException on errors parsing the EQL code
+	 * @throws CodeGeneratorException on errors generating SQL code
+	 * @throws ReferenceTableResolveException on errors resolving reference tables
+	 * @throws ProfileFieldResolveException on errors resolving profile fields
+	 */
+	public final SqlCode convertEqlToSql(final String eql, final int companyId, final ReferenceCollector referenceCollector, final CodeGenerationFlags flags) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
 		
 		node.collectReferencedItems(referenceCollector);
 		
 		final SqlCodeGeneratorCallback callback = this.sqlCodeGeneratorCallbackFactory.newCodeGeneratorCallback(companyId);
-		this.codeGenerator.generateCode(node, callback);
+		this.codeGenerator.generateCode(node, callback, flags);
 
 		return callback.getSqlCode();
 	}
@@ -192,7 +228,7 @@ public class EqlFacade {
 	/**
 	 * Converts the given EQL code to BeanShell.
 	 * 
-	 * @param target target group 
+	 * @param target target group
 	 * 
 	 * @return BeanShell code
 	 * 
@@ -209,6 +245,17 @@ public class EqlFacade {
 		return callback.getBeanShellCode();
 	}
 	
+
+	public EqlAnalysisResult analyseEql(final String eql) throws EqlParserException {
+		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
+		
+		final RequireMailtrackingSyntaxTreeAnalyzer mailtrackingAnalyzer = new RequireMailtrackingSyntaxTreeAnalyzer();
+		node.traverse(mailtrackingAnalyzer);
+		
+		return new EqlAnalysisResult(mailtrackingAnalyzer.isMailtrackingRequired());
+	}
+
+	
 	// -------------------------------------------------------------------------------------------------------------------------------------- Dependency Injection
 	/**
 	 * Sets the {@link TargetRepresentation}-to-EQL-converter.
@@ -219,25 +266,4 @@ public class EqlFacade {
 	public void setTargetRepresentationToEqlConverter(TargetRepresentationToEqlConverter converter) {
 		this.legacyToEqlConverter = converter;
 	}
-	
-	/**
-	 * Sets the validator for mailing IDs.
-	 * 
-	 * @param validator validator for mailing IDs.
-	 */
-	@Required
-	public void setMailingIdValidator(MailingIdValidator validator) {
-		this.mailingIdValidator = validator;
-	}
-
-	/**
-	 * Sets the SQL dialect used for code generation and conversion.
-	 * 
-	 * @param dialect SQL dialect
-	 */
-	@Required
-	public void setSqlDialect(SqlDialect dialect) {
-		this.sqlDialect = dialect;
-	}
-
 }

@@ -6,15 +6,11 @@
   height: 60px;
   z-index: 1001;
 
-  padding: 0 20px 0 0;
+  padding: 0 20px 0 70px;
 
   background-color: $c-blue-27;
 
   .menu-is-active & {
-    padding-left: 240px;
-  }
-
-  @media (min-width:$screen-md-min) {
     padding-left: 240px;
   }
 
@@ -106,4 +102,8 @@
     }
   }
 
+}
+
+body.wide-sidebar .l-header {
+  padding-left: 245px;
 }

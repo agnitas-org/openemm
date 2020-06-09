@@ -34,6 +34,7 @@ public class CompanyDaoCache extends AbstractDaoCache<ComCompany> {
 	 * 
 	 * @param companyDao company DAO
 	 */
+	@Required
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}

@@ -10,132 +10,124 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-
-import javax.servlet.http.HttpSession;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingBirtStatForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.BirtStatForm;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
-import com.agnitas.reporting.birt.external.dataset.CommonKeys;
-import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
-import com.agnitas.reporting.birt.service.ComMailingBIRTStatService;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingSendStatus;
-import org.agnitas.dao.AdminPreferencesDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.web.MailingAdditionalColumn;
-import org.agnitas.web.forms.FormDate;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.agnitas.web.forms.FormDateTime;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.context.request.RequestContextHolder;
 
-@Controller
-@RequestMapping("/mailing_stat")
-@PermissionMapping("mailing_stat_new")
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+
 public class MailingBirtStatController {
 
     private static final transient Logger logger = Logger.getLogger(MailingBirtStatController.class);
 
-    private static final String BIRT_PARAMS_DATE_FORMAT = BIRTDataSet.DATE_PARAMETER_FORMAT;
-
-    private static final List<String> ALLOWED_STATISTIC = Arrays.asList(
-            "mailing_summary.rptdesign",
-            "mailing_linkclicks.rptdesign",
-            "mailing_delivery_progress.rptdesign",
-            "mailing_net_and_gross_openings_progress.rptdesign",
-            "mailing_linkclicks_progress.rptdesign",
-            "top_domains.rptdesign",
-            "mailing_bounces.rptdesign"
+    private static final List<StatisticType> ALLOWED_STATISTIC = Arrays.asList(
+            SUMMARY,
+            SUMMARY_AUTO_OPT,
+            CLICK_STATISTICS_PER_LINK,
+            PROGRESS_OF_DELIVERY,
+            PROGRESS_OF_OPENINGS,
+            PROGRESS_OF_CLICKS,
+            TOP_DOMAINS,
+            BOUNCES
     );
 
-    private static final String DEFAULT_REPORT_NAME = "mailing_summary.rptdesign";
+    protected ComMailingBaseService mailingBaseService;
+    protected MailinglistApprovalService mailinglistApprovalService;
+    protected WebStorage webStorage;
+    protected ConversionService conversionService;
+    protected UserActivityLogService userActivityLogService;
+    protected AdminService adminService;
+    protected GridServiceWrapper gridServiceWrapper;
+    protected BirtStatisticsService birtStatisticsService;
+    protected CompanyService companyService;
+    protected ComTargetService targetService;
+    protected ComBirtReportService birtReportService;
+    protected ComOptimizationService optimizationService;
 
-
-    private static final Map<String, DateMode> reportWithPeriods;
-
-    static {
-        reportWithPeriods = new HashMap<>();
-        reportWithPeriods.put("mailing_tracking_point_week_overview.rptdesign", DateMode.LAST_TENHOURS);
-        reportWithPeriods.put("mailing_num_tracking_point_week_overview.rptdesign", DateMode.LAST_TENHOURS);
-        reportWithPeriods.put("mailing_summary.rptdesign", DateMode.SELECT_MONTH);
-    }
-
-
-    private final ComMailingBaseService mailingBaseService;
-    private final ComMailinglistService mailingListService;
-    private final ComMailingBIRTStatService birtService;
-    private final ComTargetService targetGroupService;
-    private final WebStorage webStorage;
-    private final ConversionService conversionService;
-    private final UserActivityLogService userActivityLogService;
-    private final AdminPreferencesDao adminPreferencesDao;
-    private final GridServiceWrapper gridServiceWrapper;
-    private final BirtStatisticsService birtStatisticsService;
-    private final ComMailingDao mailingDao;
-    private final ComCompanyDao companyDao;
-    private final ComTargetService targetService;
-
-    public MailingBirtStatController(final ComMailingBaseService mailingBaseService, final ComMailinglistService mailingListService,
-                                     final ComMailingBIRTStatService birtService, final ComTargetService targetGroupService,
-                                     final WebStorage webStorage, final ConversionService conversionService,
-                                     final UserActivityLogService userActivityLogService, final AdminPreferencesDao adminPreferencesDao,
-                                     final GridServiceWrapper gridServiceWrapper,
-                                     final BirtStatisticsService birtStatisticsService, final ComMailingDao mailingDao,
-                                     final ComCompanyDao companyDao, final ComTargetService targetService) {
+    public MailingBirtStatController(
+            ComMailingBaseService mailingBaseService,
+    		MailinglistApprovalService mailinglistApprovalService,
+			WebStorage webStorage,
+			ConversionService conversionService,
+			UserActivityLogService userActivityLogService,
+			AdminService adminService,
+			GridServiceWrapper gridServiceWrapper,
+			BirtStatisticsService birtStatisticsService,
+			CompanyService companyService,
+			ComTargetService targetService,
+			ComBirtReportService birtReportService,
+            ComOptimizationService optimizationService) {
         this.mailingBaseService = mailingBaseService;
-        this.mailingListService = mailingListService;
-        this.birtService = birtService;
-        this.targetGroupService = targetGroupService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
         this.webStorage = webStorage;
         this.conversionService = conversionService;
         this.userActivityLogService = userActivityLogService;
-        this.adminPreferencesDao = adminPreferencesDao;
+        this.adminService = adminService;
         this.gridServiceWrapper = gridServiceWrapper;
         this.birtStatisticsService = birtStatisticsService;
-        this.mailingDao = mailingDao;
-        this.companyDao = companyDao;
+        this.companyService = companyService;
         this.targetService = targetService;
+        this.birtReportService = birtReportService;
+        this.optimizationService = optimizationService;
     }
 
     @RequestMapping("/list.action")
-    public String list(final ComAdmin admin, final MailingBirtStatForm form, final Model model, final Popups popups) {
+    public String list(ComAdmin admin, MailingStatatisticListForm form, Model model, Popups popups) {
         if(!validate(form, popups)){
             return "messages";
         }
@@ -143,55 +135,75 @@ public class MailingBirtStatController {
         syncFormProps(form);
 
         // init search properties;
-        final MailingsListProperties props = getMailingsListProperties(form);
+        MailingsListProperties props = getMailingsListProperties(form);
 
         model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
-        model.addAttribute("mailingStatisticList", birtService.getMailingStats(admin.getCompanyID(), props));
+        model.addAttribute("mailingStatisticList", mailingBaseService.getPaginatedMailingsData(admin, props));
         model.addAttribute("availableAdditionalFields", MailingAdditionalColumn.values());
-        model.addAttribute("availableMailingLists", mailingListService.getAllMailingListsNames(admin.getCompanyID()));
-        model.addAttribute("availableTargetGroups", targetGroupService.getTargetLights(admin.getCompanyID()));
+        model.addAttribute("availableMailingLists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
+        model.addAttribute("availableTargetGroups", targetService.getTargetLights(admin.getCompanyID()));
 
-        return "stats_mailing_stats_new";
+        return "stats_mailing_list";
     }
 
-    @RequestMapping("/view.action")
-    public String view(final ComAdmin admin, final BirtStatForm form, final Model model,
-                       final HttpSession session, final Popups popups) throws Exception {
+    @RequestMapping("/{mailingId:\\d+}/view.action")
+    public String view(ComAdmin admin, Model model, @PathVariable int mailingId, MailingStatisticForm form, Popups popups) throws Exception {
+        if(!validate(admin, form, popups)){
+            return "messages";
+        }
+        
+        Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
 
-        final int companyID = admin.getCompanyID();
-        final SimpleDateFormat localeFormat = AgnUtils.getDatePickerFormat(admin, true);
-        final Date mailingStartDate = birtService.getMailingStartDate(form.getMailingID());
-        final Mailing mailing = mailingDao.getMailing(form.getMailingID(), admin.getCompanyID());
+    
+        if (mailing == null) {
+            return "/statistics/mailing/list.action";
+        }
+    
+        Date mailingStartDate = mailingBaseService.getMailingLastSendDate(mailingId);
+        form.setMailingID(mailingId);
+        form.setShortname(mailing.getShortname());
+        setDefaultValues(admin, form);
+        setDefaultDates(admin, form, mailingStartDate);
 
-        setDefaultValues(admin, form, mailingStartDate, mailing);
+        MailingStatisticDto mailingStatisticDto = convertFormToDto(form, admin);
 
+        mailingStatisticDto.setMailingStartDate(mailingStartDate);
+        mailingStatisticDto.setDescription(mailing.getDescription());
+        form.setTemplateId(gridServiceWrapper.getGridTemplateIdByMailingId(mailing.getId()));
+        
+        if (form.getStatisticType() == SUMMARY && admin.permissionAllowed(Permission.TEMP_BETA)) {
+            int optimizationId = optimizationService.getOptimizationIdByFinalMailing(form.getMailingID(), admin.getCompanyID());
+            if (optimizationId > 0) {
+                mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
+                mailingStatisticDto.setDateMode(DateMode.NONE);
+                mailingStatisticDto.setOptimizationId(optimizationId);
+                
+                model.addAttribute("isTotalAutoOpt", true);
+            }
+        }
+        
+        if (mailingStatisticDto.getType() == TOP_DOMAINS) {
+            processMailingInfo(admin, form.getMailingID(), mailingStatisticDto, model);
+        }
+
+        processStatisticView(admin, model, mailingStatisticDto, form);
+
+        userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + mailingId + ")" + " active tab - statistics", logger);
+
+        return "stats_mailing_view";
+    }
+
+    private MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final ComAdmin admin) {
         final MailingStatisticDto mailingStatisticDto = conversionService.convert(form, MailingStatisticDto.class);
-        if (mailing != null) {
-            mailingStatisticDto.setDescription(mailing.getDescription());
-        }
-        if (mailingStatisticDto.getType() == StatisticType.TOP_DOMAINS) {
-            processMailingInfo(companyID, form.getMailingID(), mailingStatisticDto, model);
-        }
+        final DateTimeFormatter dateFormatter = admin.getDateFormatter();
 
-        final String birtUrl = birtStatisticsService.getMailingStatisticUrl(admin, session.getId(), mailingStatisticDto);
-        final String birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
+        mailingStatisticDto.setStartDate(form.getStartDate().get(dateFormatter));
+        mailingStatisticDto.setEndDate(form.getEndDate().get(dateFormatter));
 
-        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, form.getMailingID()));
-        model.addAttribute("isMailingGrid", gridServiceWrapper.getGridTemplateIdByMailingId(form.getMailingID()) > 0);
-        model.addAttribute("targetlist", targetService.getTargetLights(companyID));
-        model.addAttribute("monthlist", AgnUtils.getMonthList());
-        model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStartDate)));
-        model.addAttribute("localDatePattern", localeFormat.toPattern());
-        model.addAttribute("workflowId", mailingDao.getWorkflowId(form.getMailingID()));
-        model.addAttribute("birtUrl", birtUrl);
-        model.addAttribute("downloadBirtUrl", birtDownloadUrl);
-
-        userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + form.getMailingID() + ")" + " active tab - statistics", logger);
-
-        return "stats_birt_mailing_stat_new";
+        return mailingStatisticDto;
     }
 
-    private MailingsListProperties getMailingsListProperties(final MailingBirtStatForm statForm) {
+    private MailingsListProperties getMailingsListProperties(MailingStatatisticListForm statForm) {
         boolean hasTargetGroups = statForm.getAdditionalFieldsSet()
                 .contains(MailingAdditionalColumn.TARGET_GROUPS.getSortColumn());
 
@@ -213,45 +225,63 @@ public class MailingBirtStatController {
         return props;
     }
 
-    private boolean isMailingSummaryStatistic(String reportName) {
-        return StringUtils.equals("mailing_summary.rptdesign", reportName);
+    protected void processStatisticView(ComAdmin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form) throws Exception {
+        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
+        String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
+        String birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
+        SimpleDateFormat localeFormat = admin.getDateFormat();
+
+        model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingStatisticDto.getMailingId()));
+        model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
+        model.addAttribute("targetlist", targetService.getTargetLights(admin.getCompanyID()));
+        model.addAttribute("monthlist", AgnUtils.getMonthList());
+        model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStatisticDto.getMailingStartDate())));
+        model.addAttribute("localDatePattern", localeFormat.toPattern());
+        model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingStatisticDto.getMailingId(), admin.getCompanyID()));
+        model.addAttribute("birtUrl", birtUrl);
+        model.addAttribute("downloadBirtUrl", birtDownloadUrl);
     }
 
-    private String getBirtReportName(String reportNameParam, int statisticLoadType) {
-        if (StringUtils.isNotBlank(reportNameParam) && isAllowedStatistic(reportNameParam)) {
-            return reportNameParam;
+    protected String getBirtUrl(ComAdmin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) throws Exception {
+        if(mailingStatisticDto.getType() == null) {
+            return null;
         }
 
-        if (statisticLoadType == ComAdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
-            return "";
+        return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, mailingStatisticDto);
+    }
+
+    private StatisticType getReportType(StatisticType statisticType, ComAdminPreferences adminPreferences) {
+        if (statisticType != null && isAllowedStatistic(statisticType)) {
+            return statisticType;
+        
         }
 
-        return DEFAULT_REPORT_NAME;
+        if (adminPreferences.getStatisticLoadType() == ComAdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
+            return null;
+        }
+
+        return StatisticType.SUMMARY;
     }
 
-    private boolean isAllowedStatistic(String reportNameParam) {
-        return ALLOWED_STATISTIC.contains(reportNameParam);
+    protected boolean isAllowedStatistic(StatisticType statisticType) {
+        return ALLOWED_STATISTIC.contains(statisticType);
     }
 
-    private DateMode getDateMode(String reportName, int mailingId) {
-        if (reportWithPeriods.containsKey(reportName)) {
-            if (isMailingSummaryStatistic(reportName)) {
-                int mailingType = mailingDao.getMailingType(mailingId);
-                if ((mailingType != Mailing.TYPE_ACTIONBASED) &&
-                        (mailingType != Mailing.TYPE_DATEBASED) &&
-                        (mailingType != Mailing.TYPE_INTERVAL)) {
-                    return DateMode.NONE;
-                }
+    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) {
+        DateMode dateMode = statisticType != null ? statisticType.getDateMode() : DateMode.NONE;
+        if (dateMode != DateMode.NONE && SUMMARY == statisticType) {
+            int mailingType = mailingBaseService.getMailingType(mailingId);
+            if ((mailingType != MailingTypes.ACTION_BASED.getCode()) &&
+                    (mailingType != MailingTypes.DATE_BASED.getCode()) &&
+                    (mailingType != MailingTypes.INTERVAL.getCode())) {
+                return DateMode.NONE;
             }
-            return reportWithPeriods.get(reportName);
-        } else if (reportName.endsWith("_progress.rptdesign")) {
-            return DateMode.LAST_TENHOURS;
-        } else {
-            return DateMode.NONE;
         }
+        
+        return DateMode.NONE == oldDateMode || DateMode.NONE == dateMode ? dateMode : oldDateMode;
     }
 
-    private void syncFormProps(final MailingBirtStatForm form){
+    private void syncFormProps(MailingStatatisticListForm form){
         webStorage.access(ComWebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0) {
                 storage.setRowsCount(form.getNumberOfRows());
@@ -263,28 +293,27 @@ public class MailingBirtStatController {
         });
     }
 
-    private boolean validate(final MailingBirtStatForm form, final Popups popups) {
-        boolean result = true;
+    private boolean validate(MailingStatatisticListForm form, Popups popups) {
         if (form.isSearchNameChecked() || form.isSearchDescriptionChecked()) {
             for (String error : DbUtilities.validateFulltextSearchQueryText(form.getSearchQueryText())) {
                 popups.field("invalid_search_query", error);
-                result = false;
             }
         }
 
-        return result;
+        return !popups.hasFieldPopups();
     }
 
-    private boolean validate(final Locale locale, final BirtStatForm form, final Popups popups) {
-        return validateDates(locale, form.getStartDate(), form.getEndDate(), popups);
+    private boolean validate(ComAdmin admin, MailingStatisticForm form, Popups popups) {
+        return validateDates(admin, form.getStartDate(), form.getEndDate(), popups);
     }
 
-    private boolean validateDates(final Locale locale, final FormDate startDate, final FormDate endDate, final Popups popups) {
-        if((startDate == null || StringUtils.isBlank(startDate.getDate())) && (endDate == null || StringUtils.isBlank(endDate.getDate()))){
+    private boolean validateDates(ComAdmin admin, FormDateTime startDate, FormDateTime endDate, Popups popups) {
+        if((startDate == null || StringUtils.isBlank(startDate.getDate())) &&
+                (endDate == null || StringUtils.isBlank(endDate.getDate()))){
             return true;
         }
 
-        String pattern = AgnUtils.getLocaleDateFormatSpecific(locale).toPattern();
+        String pattern = admin.getDateFormat().toPattern();
         if (startDate != null && !AgnUtils.isDateValid(startDate.getDate(), pattern)) {
             popups.alert("error.date.format");
             return false;
@@ -293,7 +322,8 @@ public class MailingBirtStatController {
             popups.alert("error.date.format");
             return false;
         }
-        if (startDate != null && StringUtils.isNotBlank(startDate.getDate()) && endDate != null && StringUtils.isNotBlank(endDate.getDate())
+        if (startDate != null && StringUtils.isNotBlank(startDate.getDate())
+                && endDate != null && StringUtils.isNotBlank(endDate.getDate())
                 &&!AgnUtils.isDatePeriodValid(startDate.getDate(), endDate.getDate(), pattern)) {
             popups.alert("error.period.format");
             return false;
@@ -301,96 +331,98 @@ public class MailingBirtStatController {
         return true;
     }
 
-    private void processMailingInfo(final int companyID, final int mailingId, final MailingStatisticDto mailingStatisticDto,
-                                     final Model model){
-        final MailingSendStatus status = mailingDao.getMailingSendStatus(mailingId, companyID);
-        final boolean isEverSent = status.getHasMailtracks();
-        final boolean isMailtrackingActive = companyDao.isMailtrackingActive(companyID);
+    private void processMailingInfo(ComAdmin admin, int mailingId, MailingStatisticDto mailingStatisticDto,
+                                    Model model){
+        MailingSendStatus status = mailingBaseService.getMailingSendStatus(mailingId, admin.getCompanyID());
+        boolean isEverSent = status.getHasMailtracks();
+        boolean isMailtrackingActive = AgnUtils.isMailTrackingAvailable(admin);
 
         mailingStatisticDto.setMailtrackingActive(isMailtrackingActive);
         model.addAttribute("isMailtrackingActive", isMailtrackingActive);
         model.addAttribute("isEverSent", isEverSent);
 
-        if (isEverSent) {
-            if (status.getHasMailtrackData()) {
-                mailingStatisticDto.setMailtrackingExpired(true);
-                model.addAttribute("mailtrackingExpired", true);
-            } else {
-                mailingStatisticDto.setMailtrackingExpired(false);
-                model.addAttribute("mailtrackingExpired", false);
-                model.addAttribute("mailtrackingExpirationDays", status.getExpirationDays());
-            }
+        boolean mailTrackingExpired = isEverSent && status.getHasMailtrackData();
+        mailingStatisticDto.setMailtrackingExpired(mailTrackingExpired);
+        model.addAttribute("mailtrackingExpired", mailTrackingExpired);
+    
+        if (!mailTrackingExpired) {
+            model.addAttribute("mailtrackingExpirationDays", status.getExpirationDays());
         }
     }
 
-    private int getStartYear(final Date mailingStartDate){
+    private int getStartYear(Date mailingStartDate) {
         if (mailingStartDate != null) {
-            final GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTime(mailingStartDate);
-            return calendar.get(Calendar.YEAR);
+            return DateUtilities.getYear(mailingStartDate);
         } else {
-            return new GregorianCalendar().get(Calendar.YEAR); // fallback is current year
+            return Year.now().getValue(); // fallback is current year
         }
     }
 
-    private void setDefaultValues(final ComAdmin admin, final BirtStatForm form, final Date mailingStartDate, final Mailing mailing){
-
-        final ComAdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
-        form.setReportName(getBirtReportName(form.getReportName(), adminPreferences.getStatisticLoadType()));
-
-        final DateMode newDateMode = getDateMode(form.getReportName(), form.getMailingID());
-        if (null == form.getDateMode() || DateMode.NONE == form.getDateMode() || DateMode.NONE == newDateMode) {
-            form.setDateMode(newDateMode);
-        }
-
-
-        if (mailing != null) {
-            form.setShortname(mailing.getShortname());
-        }
-
-        setDefaultDates(form, mailingStartDate, admin);
+    private void setDefaultValues(ComAdmin admin, MailingStatisticForm form){
+        ComAdminPreferences adminPreferences = adminService.getAdminPreferences(admin.getAdminID());
+        form.setStatisticType(getReportType(form.getStatisticType(), adminPreferences));
+        form.setDateMode(getDateMode(form.getStatisticType(), form.getMailingID(), form.getDateMode()));
     }
 
-    private void setDefaultDates(final BirtStatForm form, final Date mailingStartDate, final ComAdmin admin) {
-        final Calendar mailingCalendar = GregorianCalendar.getInstance();
-        final Calendar currentDateCalendar = GregorianCalendar.getInstance();
-        final SimpleDateFormat localeFormat = AgnUtils.getDatePickerFormat(admin, true);
+    private void setDefaultDates(ComAdmin admin, MailingStatisticForm form, Date mailingStartDate) {
+        LocalDateTime mailingStart = LocalDateTime.now();
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        int currentYear = currentTime.getYear();
+        Month currentMonth = currentTime.getMonth();
+        if (form.getMonth() == -1) {
+            form.setMonth(currentMonth);
+        }
+        if (form.getYear() == 0) {
+            form.setYear(currentYear);
+        }
 
         if (mailingStartDate != null) {
-            mailingCalendar.setTime(mailingStartDate);
+            mailingStart = DateUtilities.toLocalDateTime(mailingStartDate, AgnUtils.getZoneId(admin));
         }
-
-        if (form.getDateMode() == DateMode.LAST_TENHOURS) {
-            form.getStartDate().set(mailingCalendar.getTime(), localeFormat);
-            mailingCalendar.add(Calendar.HOUR_OF_DAY, 10);
-            form.getEndDate().set(mailingCalendar.getTime(), localeFormat);
-        } else if (form.getDateMode() == DateMode.SELECT_DAY) {
-            if(StringUtils.isBlank(form.getSelectDay().getDate())){
-                form.getSelectDay().set(currentDateCalendar.getTime(), localeFormat);
-            }
-            form.setStartDate(form.getSelectDay());
-            form.setEndDate(form.getSelectDay());
-        } else if (form.getDateMode() == DateMode.SELECT_MONTH) {
-            if (form.getMonth() == null) {
-                form.setMonth(currentDateCalendar.get(Calendar.MONTH));
-            }
-            if (form.getYear() == null) {
-                form.setYear(currentDateCalendar.get(Calendar.YEAR));
-            }
-            mailingCalendar.set(form.getYear(), form.getMonth(), 1);
-            form.getStartDate().set(mailingCalendar.getTime(), localeFormat);
-            mailingCalendar.set(Calendar.DAY_OF_MONTH, mailingCalendar.getActualMaximum(Calendar.DAY_OF_MONTH));
-            form.getEndDate().set(mailingCalendar.getTime(), localeFormat);
-        } else if(form.getDateMode() == DateMode.SELECT_PERIOD ){
-            if(StringUtils.isBlank(form.getEndDate().getDate())){
-                form.getEndDate().set(currentDateCalendar.getTime(), localeFormat);
-            }
-            if(StringUtils.isBlank(form.getStartDate().getDate())){
-                currentDateCalendar.set(Calendar.DAY_OF_MONTH, 1);
-                form.getStartDate().set(currentDateCalendar.getTime(), localeFormat);
-            }
+        
+        SimpleDateFormat adminDateFormat = admin.getDateFormat();
+        DateTimeFormatter dateFormatter = admin.getDateFormatter();
+    
+        DateMode dateMode = form.getDateMode();
+        FormDateTime startDate = form.getStartDate();
+        FormDateTime endDate = form.getEndDate();
+        switch (dateMode) {
+            case LAST_TENHOURS:
+                startDate.set(mailingStart, dateFormatter);
+                endDate.set(mailingStart.plusHours(10), dateFormatter);
+                break;
+            case SELECT_DAY:
+                FormDateTime selectDay = form.getSelectDay();
+                if(StringUtils.isBlank(selectDay.getDate())){
+                    selectDay.getFormDate().set(currentTime.toLocalDate(), dateFormatter);
+                }
+    
+                Date selectDate = selectDay.get(adminDateFormat);
+                startDate.set(selectDate, adminDateFormat);
+                endDate.set(selectDate, adminDateFormat);
+                break;
+                
+            case LAST_MONTH:
+                startDate.getFormDate().set(currentTime.toLocalDate().with(firstDayOfMonth()), dateFormatter);
+                endDate.getFormDate().set(currentTime.toLocalDate().with(lastDayOfMonth()), dateFormatter);
+                break;
+            case SELECT_MONTH:
+                LocalDate selectedYear = currentTime.toLocalDate().withYear(form.getYear());
+                LocalDate selectedMonth = selectedYear.withMonth(form.getMonthValue().getValue());
+                startDate.getFormDate().set(selectedMonth.with(firstDayOfMonth()), dateFormatter);
+                endDate.getFormDate().set(selectedMonth.with(lastDayOfMonth()), dateFormatter);
+                break;
+            case SELECT_PERIOD:
+                if(StringUtils.isBlank(endDate.getDate())){
+                    endDate.getFormDate().set(currentTime.toLocalDate(), dateFormatter);
+                }
+                if(StringUtils.isBlank(startDate.getDate())){
+                    startDate.getFormDate().set(currentTime.toLocalDate().with(firstDayOfMonth()), dateFormatter);
+                }
+                break;
+                default:
+                    //do nothing
         }
-
     }
-
 }

@@ -152,6 +152,9 @@ public class Systemconfig {
 		for (String line : content.split ("(\r?\n)+")) {
 			if (multiLineName != null) {
 				if (line.equals ("}")) {
+					if (multiLineContent == null) {
+						throw new RuntimeException("Unexpected empty multiLineContent");
+					}
 					cfg.put (multiLineName, multiLineContent.trim ());
 					multiLineName = null;
 				} else {

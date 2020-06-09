@@ -13,15 +13,14 @@ package com.agnitas.dao.impl;
 import javax.sql.DataSource;
 
 import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.dao.LoginTrackDao;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.RdirTrafficAmountDao;
+import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
 import org.agnitas.service.ImportModeHandlerFactory;
 import org.agnitas.web.ProfileImportReporter;
 
 import com.agnitas.dao.AnonymizeStatisticsDao;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
@@ -42,12 +41,12 @@ public abstract class DaoLookupFactory {
 	abstract public DataSource getBeanDataSource();
 	abstract public ComDatasourceDescriptionDao getBeanDatasourceDescriptionDao();
 	abstract public ComCompanyDao getBeanCompanyDao();
-	abstract public ComAdminDao getBeanAdminDao();
 	abstract public DynamicTagDao getBeanDynamicTagDao();
 	abstract public ComMailingDao getBeanMailingDao();
 	abstract public MaildropStatusDao getBeanMaildropStatusDao();
 	abstract public ComMailingParameterDao getBeanMailingParameterDao();
-	abstract public LoginTrackDao getBeanLoginTrackDao();
+	abstract public LoginTrackDao getBeanGuiLoginTrackDao();
+	abstract public LoginTrackDao getBeanWsLoginTrackDao();
 	abstract public ComUndoMailingDao getBeanUndoMailingDao();
 	abstract public ComUndoMailingComponentDao getBeanUndoMailingComponentDao();
 	abstract public ComUndoDynContentDao getBeanUndoDynContentDao();

@@ -2,7 +2,7 @@
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="agnNavigationKey" 		value="ImportProfile" 			scope="request" />
 <c:set var="agnTitleKey" 			value="import.ImportProfile"	scope="request" />

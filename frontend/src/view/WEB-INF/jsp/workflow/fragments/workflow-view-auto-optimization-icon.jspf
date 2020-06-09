@@ -1,1 +1,6 @@
-<%-- This file was left empty intentionally. --%>
+
+                        <emm:ShowByPermission token="campaign.autoopt" ignoreException="true">
+                            <div id="scABTestButton" class="toolbarButton toolbarButtonLeft draggableButton" type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
+                            <div class="leftMenuLabel"><bean:message key="workflow.sampleCampaign.ABTest"/></div>
+                        </emm:ShowByPermission>
+ 

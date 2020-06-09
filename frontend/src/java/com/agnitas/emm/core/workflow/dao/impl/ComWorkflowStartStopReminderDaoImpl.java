@@ -33,7 +33,7 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -320,23 +320,26 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
             Locale locale = new Locale(reminder.getLang());
 
             switch (reminderType) {
-            case MISSING_START:
-                if (StringUtils.isEmpty(reminder.getMessage())) {
-                    reminder.setMessage(str(STR_MISSING_START_MESSAGE, locale, reminder.getSenderName(), workflowName, startDate));
-                }
-                reminder.setTitle(str(STR_MISSING_START_TITLE, locale, reminder.getSenderName(), workflowName, startDate));
-                break;
-
-            case START:
-                if (StringUtils.isEmpty(reminder.getMessage())) {
-                    reminder.setMessage(str(STR_START_MESSAGE, locale, reminder.getSenderName(), workflowName, startDate));
-                }
-                reminder.setTitle(str(STR_START_TITLE, locale, reminder.getSenderName(), workflowName, startDate));
-                break;
-
-            case STOP:
-                reminder.setTitle(str(STR_STOP_TITLE, locale, reminder.getSenderName(), workflowName, stopDate));
-                break;
+	            case MISSING_START:
+	                if (StringUtils.isEmpty(reminder.getMessage())) {
+	                    reminder.setMessage(str(STR_MISSING_START_MESSAGE, locale, reminder.getSenderName(), workflowName, startDate));
+	                }
+	                reminder.setTitle(str(STR_MISSING_START_TITLE, locale, reminder.getSenderName(), workflowName, startDate));
+	                break;
+	
+	            case START:
+	                if (StringUtils.isEmpty(reminder.getMessage())) {
+	                    reminder.setMessage(str(STR_START_MESSAGE, locale, reminder.getSenderName(), workflowName, startDate));
+	                }
+	                reminder.setTitle(str(STR_START_TITLE, locale, reminder.getSenderName(), workflowName, startDate));
+	                break;
+	
+	            case STOP:
+	                reminder.setTitle(str(STR_STOP_TITLE, locale, reminder.getSenderName(), workflowName, stopDate));
+	                break;
+	                
+				default:
+					break;
             }
         }
 

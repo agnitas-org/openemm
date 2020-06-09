@@ -9,11 +9,11 @@
 <c:set var="agnNavigationKey"		value="FormsOverview" 			scope="request" />
 <c:set var="agnTitleKey" 			value="workflow.panel.forms"	scope="request" />
 <c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 	scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 			scope="request" />
+<c:set var="sidemenu_active" 		value="Forms"		 			scope="request" />
 <c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 	scope="request" />
 <c:set var="agnHighlightKey" 		value="default.Overview" 		scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="SiteActions" 			scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="Forms" 					scope="request" />
 <c:set var="agnHelpKey" 			value="formsImport" 			scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

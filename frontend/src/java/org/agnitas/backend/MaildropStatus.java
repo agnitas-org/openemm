@@ -10,6 +10,13 @@
 
 package org.agnitas.backend;
 
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ACTION_BASED;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ADMIN;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.DATE_BASED;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.ON_DEMAND;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.TEST;
+import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
+
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -17,16 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.backend.dao.MaildropStatusDAO;
-import org.agnitas.util.Config;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
-
-import static com.agnitas.emm.core.maildrop.MaildropStatus.ACTION_BASED;
-import static com.agnitas.emm.core.maildrop.MaildropStatus.ADMIN;
-import static com.agnitas.emm.core.maildrop.MaildropStatus.DATE_BASED;
-import static com.agnitas.emm.core.maildrop.MaildropStatus.ON_DEMAND;
-import static com.agnitas.emm.core.maildrop.MaildropStatus.TEST;
-import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 
 public class MaildropStatus {
 	/** refrence to global configuration				*/
@@ -51,6 +50,7 @@ public class MaildropStatus {
 	private boolean			selectedTestRecipients;
 	/** generic send date handling					*/
 	private Map <String, String>	genericSendDateCache;
+	@SuppressWarnings("unused")
 	private Date			genericSendDate;
 	
 	public MaildropStatus (Data nData) {
@@ -154,6 +154,7 @@ public class MaildropStatus {
 	 * @param cfg the configuration
 	 */
 	public void configure (Config cfg) {
+		// nothing to do
 	}
 
 	/**
@@ -211,7 +212,7 @@ public class MaildropStatus {
 	 * @return true, if campaign mail
 	 */
 	public boolean isCampaignMailing () {
-		return isVerificationMailing () || ACTION_BASED.getCodeString().equals(statusField);
+		return ACTION_BASED.getCodeString().equals(statusField);
 	}
 
 	/** if this is a date based mailing

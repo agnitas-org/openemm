@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao.ReminderType;
 
@@ -84,11 +84,11 @@ public final class WorkflowReminder {
 
         private Builder() {}
 
-        public Builder recipients(List<WorkflowReminderRecipient> recipients) {
-            if (recipients == null) {
+        public Builder recipients(List<WorkflowReminderRecipient> recipientsToUse) {
+            if (recipientsToUse == null) {
                 this.recipients = null;
             } else {
-                this.recipients = new ArrayList<>(recipients);
+                this.recipients = new ArrayList<>(recipientsToUse);
             }
             return this;
         }
@@ -109,21 +109,21 @@ public final class WorkflowReminder {
             return this;
         }
 
-        public Builder type(ReminderType type) {
-            this.type = type;
+        public Builder type(ReminderType typeToUse) {
+            this.type = typeToUse;
             return this;
         }
 
-        public Builder message(String message) {
-            this.message = message;
+        public Builder message(String messageToUse) {
+            this.message = messageToUse;
             return this;
         }
 
-        public Builder date(Date date) {
-            if (date == null) {
+        public Builder date(Date dateToUse) {
+            if (dateToUse == null) {
                 this.date = null;
             } else {
-                this.date = new Date(date.getTime());
+                this.date = new Date(dateToUse.getTime());
             }
             return this;
         }

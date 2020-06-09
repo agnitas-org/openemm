@@ -21,24 +21,20 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import org.agnitas.dao.impl.mapper.DateRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.StringUtils;
 
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+
 public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
     
     private static final Logger logger = Logger.getLogger(MailingDeliveryTimeBasedDataSet.class);
     
-    private static final SimpleDateFormat DATE_FORMAT_WITH_SECOND = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_SECOND);
-    private static final SimpleDateFormat DATE_FORMAT_WITH_HOUR = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_HOUR);
-    private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(DATE_PARAMETER_FORMAT);
-    
     public static String getDateWithoutTime(String dateString) throws Exception {
         Date deliveryDate = getDeliveryDate(dateString);
-        return DEFAULT_DATE_FORMAT.format(deliveryDate);
+        return new SimpleDateFormat(DATE_PARAMETER_FORMAT).format(deliveryDate);
     }
     
     public List<TimeBasedDeliveryStatRow> getData(int mailingID, @VelocityCheck int companyID, String language, String startDateString, String endDateString) throws Exception {
@@ -47,7 +43,7 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
         Date endDate = getDeliveryDate(endDateString);
 
         int mailingType = selectInt(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", mailingID);
-        boolean isDateBasedMailing = mailingType == LightMailing.TYPE_DATE_BASED;
+        boolean isDateBasedMailing = mailingType == MailingType.DATE_BASED.getCode();
         if (isOracleDB()) {
             String sendHourSQL = isDateBasedMailing ?
                     "SUBSTR(to_char(timestamp , 'yyyy-mm-dd hh24:mi'), 1, 10)" :
@@ -68,24 +64,19 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
         DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, new Locale(language));
         return select(logger, query, new TimeBasedDelivery_RowMapper(dateFormat, isDateBasedMailing), startDate, endDate, mailingID, companyID);
     }
-
-    private Date getStartDate(int mailingID, @VelocityCheck int companyID) {
-        String sql = "SELECT max(timestamp) AS start_date FROM mailing_account_tbl WHERE mailing_id =? AND company_id = ? AND status_field='W'";
-        return selectObjectDefaultNull(logger, sql, new DateRowMapper(), mailingID, companyID);
-    }
     
     private static Date getDeliveryDate(String dateString) throws Exception {
         Date startDate;
         try {
             Calendar startDateCalendar = new GregorianCalendar();
             if (dateString.contains(".") && StringUtils.countOccurrencesOf(dateString, ":") > 1) {
-                startDate = DATE_FORMAT_WITH_SECOND.parse(dateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_SECOND).parse(dateString);
                 startDateCalendar.setTime(startDate);
             } else if (dateString.contains(":")) {
-                startDate = DATE_FORMAT_WITH_HOUR.parse(dateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT_WITH_HOUR).parse(dateString);
                 startDateCalendar.setTime(startDate);
             } else {
-                startDate = DEFAULT_DATE_FORMAT.parse(dateString);
+                startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(dateString);
                 startDateCalendar.setTime(startDate);
                 startDateCalendar.set(Calendar.HOUR_OF_DAY, 0);
             }

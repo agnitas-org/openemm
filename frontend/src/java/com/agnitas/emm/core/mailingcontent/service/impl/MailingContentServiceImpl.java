@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.mailingcontent.service.impl;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +26,10 @@ import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 import com.agnitas.beans.ComAdmin;
@@ -36,23 +40,28 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
 
 @Service
 public class MailingContentServiceImpl implements MailingContentService {
 
     private DynamicTagContentFactory dynamicTagContentFactory;
     private ComMailingBaseService mailingBaseService;
+    private ConversionService conversionService;
     private ApplicationContext applicationContext;
     private ComMailingDao mailingDao;
     private EmmActionDao actionDao;
 
     public MailingContentServiceImpl(DynamicTagContentFactory dynamicTagContentFactory,
                                      ComMailingBaseService mailingBaseService,
+                                     ConversionService conversionService,
                                      ApplicationContext applicationContext,
                                      ComMailingDao mailingDao,
                                      EmmActionDao actionDao) {
         this.dynamicTagContentFactory = dynamicTagContentFactory;
         this.mailingBaseService = mailingBaseService;
+        this.conversionService = conversionService;
         this.applicationContext = applicationContext;
         this.mailingDao = mailingDao;
         this.actionDao = actionDao;
@@ -70,23 +79,41 @@ public class MailingContentServiceImpl implements MailingContentService {
         });
     }
 
-    @Override
-    public List<UserAction> updateDynContent(Mailing mailing, DynTagDto dynTagDto, ComAdmin admin) throws Exception {
+	@Override
+    public ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, ComAdmin admin) throws Exception {
         DynamicTag oldDynamicTag = mailing.getDynamicTagById(dynTagDto.getId());
         DynamicTag newDynamicTag = convertDynTagDtoToDynamicTag(admin.getCompanyID(), oldDynamicTag, dynTagDto);
 
         mailing.getDynTags().replace(newDynamicTag.getDynName(), newDynamicTag);
         List<EmmAction> actions = actionDao.getEmmActions(admin.getCompanyID());
         mailing.setPossibleActions(actions);
-        mailing.buildDependencies(false, applicationContext);
-
+        final ActionMessages errors = new ActionMessages();
+        mailing.buildDependencies(false, null, applicationContext, null, errors, admin);
+        if(!errors.isEmpty()) {
+            final List<Message> messages = new ArrayList<>();
+            @SuppressWarnings("unchecked")
+			Iterator<ActionMessage> iterator = errors.get();
+			iterator.forEachRemaining(err-> messages.add(Message.of(err.getKey(), err.getValues())));
+            return ServiceResult.error(messages);
+        }
         boolean hasNoCleanPermission = admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP);
         mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), hasNoCleanPermission);
         mailingDao.updateStatus(mailing.getId(), "edit");
 
         List<UserAction> userActions = getUserActions(oldDynamicTag, newDynamicTag, mailing);
         removeAbsentDynContent(oldDynamicTag, newDynamicTag);
-        return userActions;
+        return ServiceResult.success(userActions);
+    }
+
+    @Override
+    public DynTagDto getDynTag(@VelocityCheck int companyId, int dynNameId) {
+        DynamicTag tag = mailingBaseService.getDynamicTag(companyId, dynNameId);
+
+        if (tag == null) {
+            return null;
+        }
+
+        return conversionService.convert(tag, DynTagDto.class);
     }
 
     private List<Integer> getIdForRemoving(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {

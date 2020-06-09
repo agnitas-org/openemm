@@ -46,8 +46,9 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.web.forms.WorkflowParameters;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
 import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
@@ -329,7 +330,16 @@ public class WorkflowUtils {
 		
 		AgnUtils.saveWorkflowForwardParamsToSession(request, workflowParameters, true);
 	}
-
+	
+	public static boolean isAutoOptWorkflow(List<WorkflowIcon> workflowIcons) {
+		for (WorkflowIcon icon: workflowIcons) {
+			if (WorkflowUtils.isAutoOptimizationIcon(icon)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public static final class Deadline {
 		public static boolean equals(Deadline d1, Deadline d2) {
 			if (d1 == d2) {
@@ -420,15 +430,15 @@ public class WorkflowUtils {
 
 		public Deadline add(Deadline deadline) {
 			if (deadline.isRelative()) {
-				int hours = deadline.getHours();
-				int minutes = deadline.getMinutes();
+				int deadlineHours = deadline.getHours();
+				int deadlineMinutes = deadline.getMinutes();
 
-				if (hours == -1 && minutes == -1) {
-					hours = this.hours;
-					minutes = this.minutes;
+				if (deadlineHours == -1 && deadlineMinutes == -1) {
+					deadlineHours = this.hours;
+					deadlineMinutes = this.minutes;
 				}
 
-				return new Deadline(isRelative, ms + deadline.getValue(), hours, minutes);
+				return new Deadline(isRelative, ms + deadline.getValue(), deadlineHours, deadlineMinutes);
 			} else if (isRelative) {
 				return new Deadline(deadline);
 			} else {

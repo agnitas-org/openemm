@@ -16,7 +16,7 @@ import java.io.Serializable;
 
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class TargetNodeDate extends TargetNode implements Serializable {
 
@@ -63,15 +63,15 @@ public class TargetNodeDate extends TargetNode implements Serializable {
 
     public static TargetOperator[] getValidOperators() {
     	return new TargetOperator[] {
-            	OPERATOR_EQ, 
-            	OPERATOR_NEQ, 
-            	OPERATOR_GT, 
-            	OPERATOR_LT, 
-            	null, 
-            	null, 
-            	null, 
-            	OPERATOR_IS, 
-            	OPERATOR_LT_EQ, 
+            	OPERATOR_EQ,
+            	OPERATOR_NEQ,
+            	OPERATOR_GT,
+            	OPERATOR_LT,
+            	null,
+            	null,
+            	null,
+            	OPERATOR_IS,
+            	OPERATOR_LT_EQ,
             	OPERATOR_GT_EQ,
             	null,
             	null,
@@ -86,21 +86,6 @@ public class TargetNodeDate extends TargetNode implements Serializable {
     protected void initializeOperatorLists() {
         typeOperators = TargetNodeDate.getValidOperators();
     }
-    
-	/**
-	 * returns a date string
-	 */
-	private String sqlDateString(boolean isOracleDB, String field, String format) {
-		if (isOracleDB) {
-			return "TO_CHAR(" + field + ", '" + format + "')";
-		} else {
-			format = format.replaceAll("yyyy", "%Y");
-			format = format.replaceAll("yy", "%y");
-			format = format.replaceAll("mm", "%m");
-			format = format.replaceAll("dd", "%d");
-			return "DATE_FORMAT(" + field + ", '" + format + "')";
-		}
-	}
 
     @Override
     public String generateBsh() {
@@ -144,7 +129,7 @@ public class TargetNodeDate extends TargetNode implements Serializable {
                 tmpBsh.append("\"), \"");
                 tmpBsh.append(this.dateFormat.replace('m', 'M'));
                 tmpBsh.append("\") ");
-            } 
+            }
             
             else {
                 tmpBsh.append(" \"");
@@ -181,26 +166,33 @@ public class TargetNodeDate extends TargetNode implements Serializable {
 
     @Override
     public void setPrimaryOperator(int primOp) {
-        if(primOp==TargetNode.OPERATOR_LIKE.getOperatorCode())
-            primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_LIKE.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_NLIKE.getOperatorCode())
-            primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_NLIKE.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_CONTAINS.getOperatorCode())
-            primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_CONTAINS.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode())
-            primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_NOT_CONTAINS.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_STARTS_WITH.getOperatorCode())
-            primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_STARTS_WITH.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode())
-            primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_NOT_STARTS_WITH.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_NEQ.getOperatorCode();
+		}
 
-        if(primOp==TargetNode.OPERATOR_MOD.getOperatorCode())
-            primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+        if(primOp==TargetNode.OPERATOR_MOD.getOperatorCode()) {
+			primOp=TargetNode.OPERATOR_EQ.getOperatorCode();
+		}
 
         this.primaryOperator=primOp;
     }

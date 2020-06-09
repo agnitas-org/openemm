@@ -1,5 +1,4 @@
-CKEDITOR.plugins.add('emm',
-{
+CKEDITOR.plugins.add('emm', {
     beforeInit: function(editor) {
         var dataProcessor = editor.dataProcessor;
 
@@ -9,38 +8,9 @@ CKEDITOR.plugins.add('emm',
             dataProcessor.toHtml = function(data) {
                 data = data.replace(
                     //regex for searching agntags in HTML file. Note that agn tags can be within html-tag's attribute
-                    /=\s*('|")(\S{0,1000}|\s{0,1000})\[(agn[^\s\]\/]+)(\s*(?:[^'"\]]|'.*?'|".*?")*)([\/]?)]\s*\1/gi,
-                    function(whole, equote, beforeTag, name, attributes, close) {
-                        if (attributes) {
-                            attributes = attributes.replace(
-                                /\s*([^\s\]\/=]+)\s*(?:=\s*([^\s\]\/='"][^\s\]\/=]*|'.*?'|".*?"))/g,
-                                function(whole, name, value) {
-                                    // Remove quotation marks
-                                    name = name.replace(/'"/g, '');
-                                    if (value) {
-                                        // Trim embracing quotation marks
-                                        value = value.replace(/^('|")(.*?)\1$/, "$2");
-                                        // Escape double quotation marks within
-                                        value = value.replace(/"/g, '&quot;');
-                                        // Remove single quotation marks
-                                        value = value.replace(/'/g, '');
-                                        // Embrace with single quotation marks
-                                        return " " + name + "='" + value + "'";
-                                    } else {
-                                        return " " + name;
-                                    }
-                                }
-                            );
-                        } else {
-                            attributes = '';
-                        }
-
-                        if (!close) {
-                            close = '';
-                        }
-
-                        // Embrace with double quotation marks
-                        return '="' + beforeTag + '[' + name + attributes + close + ']"';
+                    /\[agn[A-Z0-9]+(?:[^'"\]]|'.*?'|".*?")+]/g,
+                    function(whole) {
+                      return _.escape(whole);
                     }
                 );
                 arguments[0] = data;
@@ -50,26 +20,40 @@ CKEDITOR.plugins.add('emm',
             dataProcessor.toDataFormat = function () {
                 var content = toDataMethod.apply(this, arguments);
                 var substring = '<body></body>';
-                if (content.indexOf(substring) != -1) {
-                    content = "";
+
+                if (content.indexOf(substring) !== -1) {
+                    return "";
+                } else {
+                  return content.replace(
+                    //regex for searching agntags in HTML file. Note that agn tags can be within html-tag's attribute
+                    /\[agn[A-Z0-9]+(?:(?!&#39;|&quot;)[^'"\]]|&#39;.*?&#39;|&quot;.*?&quot;)*]/g,
+                    function(whole) {
+                      return _.unescape(whole);
+                    }
+                  );
                 }
-                return content;
             };
         }
     },
 
     init: function(editor) {
-        var pluginName = 'emm';
+        var commandName = 'showAgnTags';
 
-        CKEDITOR.dialog.add(pluginName, this.path + 'dialogs/emm.js');
+        editor.addCommand(commandName, {
+            exec: function(editor) {
+                AGN.Lib.Confirm.request(AGN.url('/wysiwyg/dialogs/agn-tags.action')).done(function(code) {
+                    if (code) {
+                        editor.insertHtml(code);
+                    }
+                });
+            }
+        });
 
-        editor.addCommand(pluginName, new CKEDITOR.dialogCommand(pluginName));
-        editor.ui.addButton('AGNTag',
-            {
-                label: agntagDialogTooltip,
-                command: pluginName,
-                icon: CKEDITOR.plugins.getPath(pluginName) + 'emm.gif'
-            });
+        editor.ui.addButton('AGNTag', {
+            label: t('wysiwyg.dialogs.agn_tags.tooltip'),
+            command: commandName,
+            icon: this.path + 'emm.gif'
+        });
 
         var HREF = "href";
         var filteringRule = {

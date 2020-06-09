@@ -19,6 +19,9 @@ public enum LoginStatus {
 	
 	/** Failed login. */
 	FAIL(20),
+	
+	/** Unlocking of IP address. */
+	UNLOCKED(30),
 
 	/** Successful login, but blocked due to security restrictions. */
 	SUCCESS_BUT_BLOCKED(40);
@@ -29,10 +32,10 @@ public enum LoginStatus {
 	/**
 	 * Creates a new login status. 
 	 * 
-	 * @param statusCode code of login status
+	 * @param code code of login status
 	 */
-	LoginStatus( int statusCode) {
-		this.statusCode = statusCode;
+	LoginStatus(final int code) {
+		this.statusCode = code;
 	}
 	
 	/**
@@ -52,7 +55,7 @@ public enum LoginStatus {
 	 * 
 	 * @return LoginStatus or null
 	 */
-	public static LoginStatus getLoginStatusFromStatusCode( int code) {
+	public static LoginStatus getLoginStatusFromStatusCode(final int code) {
 		for( LoginStatus status : LoginStatus.values())
 			if( status.getStatusCode() == code)
 				return status;

@@ -12,6 +12,8 @@ package com.agnitas.emm.core.target.eql.ast;
 
 import java.util.Optional;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
+import com.agnitas.emm.core.target.eql.ast.traversal.TraversalUtil;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -67,6 +69,15 @@ public final class BooleanExpressionTargetRuleEqlNode extends AbstractEqlNode {
 	@Override
 	public final CodeLocation getStartLocation() {
 		return this.codeLocation;
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		if(child.isPresent()) {
+			TraversalUtil.traverse(child.get(), visitor);
+		}
+		visitor.leavingNode(this);
 	}
 
 }

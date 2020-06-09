@@ -40,6 +40,7 @@ public class DeliveryStat {
     private int lastGenerated;
     private Date lastDate;
     private String optimizeMailGeneration;
+    private boolean resumable;
 
     public int getTotalMails() {
         return totalMails;
@@ -166,4 +167,11 @@ public class DeliveryStat {
     public void setOptimizeMailGeneration(String optimizeMailGeneration) {
         this.optimizeMailGeneration = optimizeMailGeneration;
     }
+	public void setResumable(boolean resumable) {
+		this.resumable = resumable;
+	}
+	
+	public boolean isResumable() {
+		return this.resumable;
+	}
 }

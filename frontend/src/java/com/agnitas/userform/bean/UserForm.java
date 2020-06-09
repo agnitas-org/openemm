@@ -98,9 +98,9 @@ public interface UserForm {
 	int getStartActionID();
 
 	/**
-	 * Getter for property sucessTemplate.
+	 * Getter for property successTemplate.
 	 * 
-	 * @return Value of property sucessTemplate.
+	 * @return Value of property successTemplate.
 	 */
 	String getSuccessTemplate();
 
@@ -177,7 +177,7 @@ public interface UserForm {
 	void setStartActionID(int startActionID);
 
 	/**
-	 * Setter for property sucessTemplate.
+	 * Setter for property successTemplate.
 	 * 
 	 * @param successTemplate
 	 */

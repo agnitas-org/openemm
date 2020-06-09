@@ -21,6 +21,10 @@ import com.agnitas.emm.core.hashtag.AbstractColonHashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
+/**
+ * Md5ProfileFieldHashTag may still use MD5-Encoder.
+ */
+@SuppressWarnings("deprecation")
 public final class Md5ProfileFieldHashTag extends AbstractColonHashTag {
 
 	/** The logger. */

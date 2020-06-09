@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -28,12 +26,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.web.DispatchBaseAction;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -103,7 +100,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 	
 	public ActionForward list(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ActionMessages errors = new ActionMessages();
-    	ActionMessages messages = new ActionMessages();
+    	ActionMessages actionMessages = new ActionMessages();
     	
     	if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -121,15 +118,15 @@ public class FormComponentsAction extends DispatchBaseAction {
 
 			loadImagesData(actionForm, request);
 
-			// Set overwrite default value (is reseted in form when sending 
+			// Set overwrite default value (is reseted in form when sending
 	        actionForm.setOverwriteExisting(true);
         }
 		
 		if (!errors.isEmpty()) {
             saveErrors(request, errors);
         }
-        if (!messages.isEmpty()) {
-        	saveMessages(request, messages);
+        if (!actionMessages.isEmpty()) {
+        	saveMessages(request, actionMessages);
         }
 
 		loadFormData(actionForm, request);
@@ -141,7 +138,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 	
 	public ActionForward upload(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ActionMessages errors = new ActionMessages();
-    	ActionMessages messages = new ActionMessages();
+    	ActionMessages actionMessages = new ActionMessages();
 
     	if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -152,10 +149,10 @@ public class FormComponentsAction extends DispatchBaseAction {
 		if (!AgnUtils.allowed(request, Permission.MAILING_COMPONENTS_CHANGE)) {
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
         } else {
-            saveComponents(actionForm, request, messages, errors);
+            saveComponents(actionForm, request, actionMessages, errors);
 
             // Always show "changes saved"
-        	messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+        	actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
 
 			loadImagesData(actionForm, request);
 
@@ -166,8 +163,8 @@ public class FormComponentsAction extends DispatchBaseAction {
 		if (!errors.isEmpty()) {
             saveErrors(request, errors);
         }
-        if (!messages.isEmpty()) {
-        	saveMessages(request, messages);
+        if (!actionMessages.isEmpty()) {
+        	saveMessages(request, actionMessages);
         }
 
 		loadFormData(actionForm, request);
@@ -188,7 +185,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 
 	public ActionForward deleteconfirm(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ActionMessages errors = new ActionMessages();
-    	ActionMessages messages = new ActionMessages();
+    	ActionMessages actionMessages = new ActionMessages();
     	
     	if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -201,9 +198,9 @@ public class FormComponentsAction extends DispatchBaseAction {
         } else {
     		boolean success = componentService.deleteFormComponent(actionForm.getFormID(), AgnUtils.getCompanyID(request), actionForm.getFilename());
         	if (!success) {
-        		messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("changes_not_saved"));
+        		actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("changes_not_saved"));
         	} else {
-        		messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
+        		actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
         	}
         	
 			loadImagesData(actionForm, request);
@@ -212,8 +209,8 @@ public class FormComponentsAction extends DispatchBaseAction {
 		if (!errors.isEmpty()) {
             saveErrors(request, errors);
         }
-        if (!messages.isEmpty()) {
-        	saveMessages(request, messages);
+        if (!actionMessages.isEmpty()) {
+        	saveMessages(request, actionMessages);
         }
 
 		loadFormData(actionForm, request);
@@ -225,7 +222,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 
 	public ActionForward uploadArchive(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ActionMessages errors = new ActionMessages();
-    	ActionMessages messages = new ActionMessages();
+    	ActionMessages actionMessages = new ActionMessages();
 
     	if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -240,7 +237,7 @@ public class FormComponentsAction extends DispatchBaseAction {
         	if (!errorneousFiles.isEmpty()) {
         		errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("FilesWithError", StringUtils.join(errorneousFiles, ", ")));
         	} else {
-        		messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+        		actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
         	}
 
 			loadImagesData(actionForm, request);
@@ -252,8 +249,8 @@ public class FormComponentsAction extends DispatchBaseAction {
 		if (!errors.isEmpty()) {
             saveErrors(request, errors);
         }
-        if (!messages.isEmpty()) {
-        	saveMessages(request, messages);
+        if (!actionMessages.isEmpty()) {
+        	saveMessages(request, actionMessages);
         }
 
 		loadFormData(actionForm, request);
@@ -265,7 +262,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 
 	public ActionForward downloadArchive(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ActionMessages errors = new ActionMessages();
-    	ActionMessages messages = new ActionMessages();
+    	ActionMessages actionMessages = new ActionMessages();
 
     	if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -283,8 +280,8 @@ public class FormComponentsAction extends DispatchBaseAction {
 		if (!errors.isEmpty()) {
             saveErrors(request, errors);
         }
-        if (!messages.isEmpty()) {
-        	saveMessages(request, messages);
+        if (!actionMessages.isEmpty()) {
+        	saveMessages(request, actionMessages);
         }
 
 		loadFormData(actionForm, request);
@@ -294,7 +291,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 		return mapping.findForward("list");
 	}
 
-	private void saveComponents(FormComponentsForm actionForm, HttpServletRequest request, ActionMessages messages, ActionMessages errors) throws Exception {
+	private void saveComponents(FormComponentsForm actionForm, HttpServletRequest request, ActionMessages actionMessages, ActionMessages errors) throws Exception {
 		int companyID = AgnUtils.getCompanyID(request);
 		
 		// check if a given filename is valid
@@ -346,21 +343,33 @@ public class FormComponentsAction extends DispatchBaseAction {
 	private List<String> getInvalidFilenames(FormComponentsForm actionForm) {
 		ArrayList<String> invalidFilenames = new ArrayList<>();
 
-		// Characters from a-z, A-Z, 0-9, "_", "." and "-" are allowed.
-		Pattern validFilenamePattern = Pattern.compile("[a-zA-Z0-9_\\.\\-]*");
-
-		for (Map.Entry<Integer, FormFile> entry : actionForm.getAllNewFiles().entrySet()) {
-			String filename = entry.getValue().getFileName();
+		for (FormFile formFile : actionForm.getAllNewFiles().values()) {
+			String filename = formFile.getFileName();
 			// Skip empty entries
 			if (StringUtils.isNotBlank(filename)) {
-				Matcher matcher = validFilenamePattern.matcher(filename);
-				if (!matcher.matches()) {
+				if (filename.chars().anyMatch(this::isInvalidFilenameCharacter)) {
 					invalidFilenames.add(filename);
 				}
 			}
 		}
 
 		return invalidFilenames;
+	}
+
+	private boolean isInvalidFilenameCharacter(int character) {
+		if (AgnUtils.isLatinCharacter(character) || Character.isDigit(character)) {
+			return false;
+		}
+
+		switch (character) {
+			case '_':
+			case '.':
+			case '-':
+				return false;
+
+			default:
+				return true;
+		}
 	}
 
 	private List<String> getDuplicateFilenames(FormComponentsForm actionForm) {
@@ -409,7 +418,7 @@ public class FormComponentsAction extends DispatchBaseAction {
 			imageDataItem.put("standardRdirUrl", ShowFormImageServlet.getFormImageLink(rdirDomain, companyID, actionForm.getFormID(), formComponent.getName(), false));
 			imageDataItem.put("nocacheUrl", ShowFormImageServlet.getFormImageLink("", companyID, actionForm.getFormID(), formComponent.getName(), true));
 			imageDataItem.put("thumbnailUrl", ShowFormImageServlet.getFormImageThumbnailLink("", companyID, actionForm.getFormID(), formComponent.getName()));
-			imageDataItem.put("changeDate", DateUtilities.formatLocalized(formComponent.getCreationDate(), request.getLocale()));
+			imageDataItem.put("changeDate", AgnUtils.getAdmin(request).getDateTimeFormat().format(formComponent.getCreationDate()));
 			imageDataItem.put("fileSize", AgnUtils.getHumanReadableNumber(formComponent.getDataSize(), "B", false, request.getLocale()));
 			imageDataItem.put("description", formComponent.getDescription());
 			imageData.put(formComponent.getId(), imageDataItem);

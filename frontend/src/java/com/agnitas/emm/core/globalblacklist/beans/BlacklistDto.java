@@ -15,11 +15,13 @@ import java.util.Date;
 import com.agnitas.emm.core.report.generator.TextColumn;
 import com.agnitas.emm.core.report.generator.TextTable;
 
-@TextTable(order = {"EMAIL_KEY", "DATE_KEY"})
+@TextTable(order = {"EMAIL_KEY", "REASON_KEY", "DATE_KEY"})
 public class BlacklistDto {
-
     @TextColumn(translationKey = "mailing.MediaType.0", defaultValue = "Email", key = "EMAIL_KEY")
     private String email;
+
+    @TextColumn(translationKey = "blacklist.reason", defaultValue = "Reason", key = "REASON_KEY")
+    private String reason;
 
     @TextColumn(translationKey = "Date", defaultValue = "Date", key = "DATE_KEY")
     private Date date;
@@ -30,6 +32,14 @@ public class BlacklistDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public Date getDate() {

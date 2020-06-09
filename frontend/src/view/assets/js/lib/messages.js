@@ -37,6 +37,9 @@
     $message = toastr[type](messageHead, messageContent, {timeOut: timeout, extendedTimeOut: timeout, onCloseClick: onClose, newestOnTop: newestOnTop});
     $message.data('message-head', messageHead);
     $message.data('message-content', messageContent);
+
+    AGN.Lib.Controller.init($message);
+    AGN.runAll($message);
   };
 
   var displayMessages = function(title, messages, type) {

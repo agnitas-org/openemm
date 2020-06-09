@@ -6,20 +6,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<!-- implementation unclear -->
-<script src="<%=request.getContextPath()%>/js/lib/tablecolumnresize.js" type="text/javascript"></script>
-<script type="text/javascript">
-    var prevX = -1;
-    var tableID = 'optimization';
-    var columnindex = 0;
-    var dragging = false;
-
-    document.onmousemove = drag;
-    document.onmouseup = dragstop;
-    window.onload = onPageLoad;
-</script>
-<!-- implementation unclear END -->
-
 <div class="tile">
     <div class="tile-header">
         <h2 class="headline">
@@ -44,7 +30,7 @@
                 <display:column headerClass="js-table-sort" titleKey="mailing.autooptimization" property="shortname" />
                 <display:column headerClass="js-table-sort" titleKey="default.description" property="description" />
 
-                <display:column>
+                <display:column headerClass="squeeze-column">
                     <emm:ShowByPermission token="campaign.change">
                         <html:link styleClass="hidden js-row-show" titleKey="mailing.autooptimization.edit"
                                page="/optimize.do?method=view&optimizationID=${optimization.id}"/>

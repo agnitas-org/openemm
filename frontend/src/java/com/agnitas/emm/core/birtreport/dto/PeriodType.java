@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.birtreport.dto;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public enum PeriodType {
     DATE_RANGE_WEEK(6),

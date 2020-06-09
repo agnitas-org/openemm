@@ -77,4 +77,7 @@ public interface MailloopDao {
      */
     PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(@VelocityCheck int companyId, String sortColumn, String direction, int pageNumber, int pageSize);
 
+    boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId);
+    
+    List<MailloopEntry> getDependentBounceFilters(@VelocityCheck int companyId, int mailingId);
 }

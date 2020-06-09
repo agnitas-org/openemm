@@ -10,76 +10,97 @@
 
 package org.agnitas.emm.core.mailing.beans;
 
+import java.util.Optional;
+
 import org.agnitas.beans.Mailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Light-weight mailing containing only data used in lists, tables, etc.
  */
-public interface LightweightMailing {
+public class LightweightMailing {
+
+	/** ID of mailing. */
+	private final int mailingID;
+	
+	/** ID of company of mailing. */
+	private final int companyID;
+	
+	/** Description of mailing. */
+	private final String description;
+	
+	/** Name of mailing. */
+	private final String shortname;
+	
+	/** Mailing type. */
+	private final int mailingType;
+	
+	private final Optional<String> workStatus;
+	
+	public LightweightMailing(final int companyID, final int mailingID, final String shortname, final String description, final int mailingType, final String workStatusOrNull) {
+		this.companyID = companyID;
+		this.mailingID = mailingID;
+		this.shortname = shortname;
+		this.description = description;
+		this.mailingType = mailingType;
+		this.workStatus = Optional.ofNullable(workStatusOrNull);
+	}
 	
 	/**
-	 * Set ID of mailing.
+	 * Transfer data from heavy-weight mailing object to the light-weight mailing
+	 * object.
 	 * 
-	 * @param mailingID ID of mailing
+	 * @param mailing heavy-weight mailing object
 	 */
-	public void setMailingID(Integer mailingID);
+	public LightweightMailing(final Mailing mailing) {
+		this(mailing.getCompanyID(), mailing.getId(), mailing.getShortname(), mailing.getDescription(), mailing.getMailingType(), null);
+	}
 	
 	/**
 	 * Returns ID of mailing.
 	 * 
 	 * @return ID of mailing
 	 */
-	public Integer getMailingID();
-	
-	/**
-	 * Set company ID of mailing.
-	 * 
-	 * @param companyID company ID of mailing
-	 */
-	public void setCompanyID(@VelocityCheck Integer companyID);
+	public int getMailingID() {
+		return this.mailingID;
+	}
 	
 	/**
 	 * Returns company ID of mailing.
 	 * 
 	 * @return company ID of mailing
 	 */
-	public Integer getCompanyID();
-	
-	/**
-	 * Set description of mailing.
-	 * 
-	 * @param mailingDescription description of mailing
-	 */
-	public void setMailingDescription(String mailingDescription);
+	public int getCompanyID() {
+		return this.companyID;
+	}
 	
 	/**
 	 * Return description of mailing.
 	 * 
 	 * @return description of mailing
 	 */
-	public String getMailingDescription();	
-	
-	/**
-	 * Set name of mailing.
-	 * 
-	 * @param shortname name of mailing.
-	 */
-	public void setShortname(String shortname);
+	public String getMailingDescription() {
+		return this.description;
+	}
 	
 	/**
 	 * Return name of mailing.
 	 * 
 	 * @return name of mailing
 	 */
-	public String getShortname();
+	public String getShortname() {
+		return this.shortname;
+	}
 
 	/**
-	 * Transfer data from heavy-weight mailing object to the light-weight mailing
-	 * object.
+	 * Returns the mailing type.
 	 * 
-	 * @param tmpMailing heavy-weight mailing object
+	 * @return mailing type
 	 */
-	public void compressMailingInfo( Mailing tmpMailing);	
-
+	public int getMailingType() {
+		return this.mailingType;
+	}
+	
+	public Optional<String> getWorkStatus() {
+		return this.workStatus;
+	}
 }

@@ -1,26 +1,18 @@
-<%@ page import="com.agnitas.web.ComAdminAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib uri="http://displaytag.sf.net"               prefix="display" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 
-<%--@elvariable id="adminForm" type="com.agnitas.web.ComAdminForm"--%>
-
-<c:set var="ACTION_LIST" value="<%= ComAdminAction.ACTION_LIST%>"/>
-
-<html:form action="/admin.do" styleClass="form-vertical">
-    <html:hidden property="action" value="${ACTION_LIST}"/>
-    <html:hidden property="numberOfRowsChanged"/>
-    <html:hidden property="export_action" styleId="export_action" value=""/>
+<%--@elvariable id="adminListForm" type="com.agnitas.emm.core.admin.form.AdminListForm"--%>
+<mvc:form servletRelativeAction="/admin/list.action"
+          modelAttribute="adminListForm"
+          cssClass="form-vertical">
 
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "admin-overview": {
-                "rows-count": ${adminForm.numberOfRows}
+                "rows-count": ${adminListForm.numberOfRows}
             }
         }
     </script>
@@ -29,46 +21,38 @@
         <div class="tile-header">
             <a class="headline" href="#" data-toggle-tile="#tile-basicSearch">
                 <i class="icon tile-toggle icon-angle-up"></i>
-                <bean:message key="Search"/>
+                <mvc:message code="Search"/>
             </a>
-            <ul class="tile-header-actions">
-                <li>
-                    <button class="btn btn-primary btn-regular" type="button" data-form-submit>
-                        <i class="icon icon-search"></i>
-                        <bean:message key="Search"/>
-                    </button>
-                </li>
-            </ul>
         </div>
-        <div id="tile-basicSearch" class="tile-content tile-content-forms">
+        <div id="tile-basicSearch" class="tile-content tile-content-forms" style="padding-bottom: 0">
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="searchFirstName" class="control-label"><bean:message key="Firstname"/></label>
+                            <label for="searchFirstName" class="control-label"><mvc:message code="Firstname"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:text styleClass="form-control" property="searchFirstName" styleId="searchFirstName"/>
+                            <mvc:text path="searchFirstName" id="searchFirstName" cssClass="form-control"/>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="searchLastName" class="control-label"><bean:message key="Lastname"/></label>
+                            <label for="searchLastName" class="control-label"><mvc:message code="Lastname"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:text styleClass="form-control" property="searchLastName" styleId="searchLastName"/>
+                            <mvc:text cssClass="form-control" path="searchLastName" id="searchLastName"/>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="searchEmail" class="control-label"><bean:message key="mailing.MediaType.0"/></label>
+                            <label for="searchEmail" class="control-label"><mvc:message code="mailing.MediaType.0"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:text styleClass="form-control" property="searchEmail" styleId="searchEmail"/>
+                            <mvc:text cssClass="form-control" path="searchEmail" id="searchEmail"/>
                         </div>
                     </div>
                 </div>
@@ -77,70 +61,75 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="filterCompanyId" class="control-label"><bean:message key="settings.Company"/></label>
+                            <label for="filterCompanyId" class="control-label"><mvc:message code="settings.Company"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:select styleId="filterCompanyId" property="filterCompanyId" size="1" styleClass="form-control js-select">
-                                <html:option value="" key="default.All"/>
-                                <c:forEach var="company" items="${adminForm.companies}">
-                                    <html:option value="${company.id}">
-                                        ${company.shortname}
-                                    </html:option>
-                                </c:forEach>
-                            </html:select>
+                            <mvc:select id="filterCompanyId" path="filterCompanyId" size="1" cssClass="form-control js-select">
+                                <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                                <mvc:options itemValue="id" itemLabel="shortname" items="${adminListForm.companies}"/>
+                            </mvc:select>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="filterMailinglistId" class="control-label"><bean:message key="Mailinglist"/></label>
+                            <label for="filterMailinglistId" class="control-label"><mvc:message code="Mailinglist"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:select styleId="filterMailinglistId" property="filterMailinglistId" size="1" styleClass="form-control js-select">
-                                <html:option value="" key="default.All"/>
-                                <c:forEach var="mailinglist" items="${adminForm.mailinglists}">
-                                    <html:option value="${mailinglist.id}">
-                                        ${mailinglist.shortname}
-                                    </html:option>
-                                </c:forEach>
-                            </html:select>
+                            <mvc:select id="filterMailinglistId" path="filterMailinglistId" size="1" cssClass="form-control js-select">
+                                <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                                <mvc:options itemValue="id" itemLabel="shortname" items="${adminListForm.mailinglists}"/>
+                            </mvc:select>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label class="control-label"><bean:message key="settings.Usergroup"/></label>
+                            <label class="control-label"><mvc:message code="settings.Usergroup"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:select property="filterAdminGroupId" styleClass="form-control js-select">
-                                <html:option value="" key="default.All"/>
-                                <c:forEach var="adminGroup" items="${adminForm.adminGroups}">
-                                    <html:option value="${adminGroup.groupID}">
-                                        ${adminGroup.shortname}
-                                    </html:option>
-                                </c:forEach>
-                            </html:select>
+                            <mvc:select path="filterAdminGroupId" cssClass="form-control js-select">
+                                <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                                <mvc:options itemValue="groupID" itemLabel="shortname" items="${adminListForm.adminGroups}"/>
+                            </mvc:select>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="language" class="control-label"><bean:message key="Language"/></label>
+                            <label for="language" class="control-label"><mvc:message code="Language"/></label>
                         </div>
                         <div class="col-md-12">
-                            <html:select property="filterLanguage" size="1" styleId="language" styleClass="form-control">
-                                <html:option value="" key="default.All"/>
-                                <html:option value="de"><bean:message key="settings.German"/></html:option>
-                                <html:option value="en"><bean:message key="settings.English"/></html:option>
-                                <html:option value="fr"><bean:message key="settings.French"/></html:option>
-                                <html:option value="es"><bean:message key="settings.Spanish"/></html:option>
-                                <html:option value="pt"><bean:message key="settings.Portuguese"/></html:option>
-                                <html:option value="nl"><bean:message key="settings.Dutch"/></html:option>
-                                <html:option value="it"><bean:message key="settings.Italian"/></html:option>
-                            </html:select>
+                            <mvc:select path="filterLanguage" size="1" id="language" cssClass="form-control">
+                                <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                                <mvc:option value="de"><mvc:message code="settings.German"/></mvc:option>
+                                <mvc:option value="en"><mvc:message code="settings.English"/></mvc:option>
+                                <mvc:option value="fr"><mvc:message code="settings.French"/></mvc:option>
+                                <mvc:option value="es"><mvc:message code="settings.Spanish"/></mvc:option>
+                                <mvc:option value="pt"><mvc:message code="settings.Portuguese"/></mvc:option>
+                                <mvc:option value="nl"><mvc:message code="settings.Dutch"/></mvc:option>
+                                <mvc:option value="it"><mvc:message code="settings.Italian"/></mvc:option>
+                            </mvc:select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-regular" type="button" data-form-set="resetSearchParams:true" data-form-submit>
+                                    <mvc:message code="button.search.reset"/>
+                                </button>
+                                <button class="btn btn-primary btn-regular" type="button" data-form-submit>
+                                    <i class="icon icon-search"></i>
+                                    <mvc:message code="Search"/>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -149,38 +138,35 @@
     </div>
     <div class="tile">
         <div class="tile-header">
-            <h2 class="headline"><bean:message key="default.Overview"/></h2>
+            <h2 class="headline"><mvc:message code="default.Overview"/></h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-eye"></i>
-                        <span class="text"><bean:message key="default.View"/></span>
+                        <span class="text"><mvc:message code="default.View"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="listSize"/></li>
+                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
                         <li>
                             <label class="label">
-                                <html:radio property="numberOfRows" value="20"/>
+                                <mvc:radiobutton path="numberOfRows" value="20"/>
                                 <span class="label-text">20</span>
                             </label>
                             <label class="label">
-                                <html:radio property="numberOfRows" value="50"/>
+                                <mvc:radiobutton path="numberOfRows" value="50"/>
                                 <span class="label-text">50</span>
                             </label>
                             <label class="label">
-                                <html:radio property="numberOfRows" value="100"/>
+                                <mvc:radiobutton path="numberOfRows" value="100"/>
                                 <span class="label-text">100</span>
                             </label>
-                            <logic:iterate collection="${adminForm.columnwidthsList}" indexId="i" id="width">
-                                <html:hidden property="columnwidthsList[${i}]"/>
-                            </logic:iterate>
                         </li>
                         <li class="divider"></li>
                         <li>
                             <p>
                                 <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
-                                    <i class="icon icon-refresh"></i><span class="text"><bean:message key="button.Show"/></span>
+                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
                                 </button>
                             </p>
                         </li>
@@ -189,19 +175,21 @@
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-cloud-download"></i>
-                        <span class="text"><bean:message key="export"/></span>
+                        <span class="text"><mvc:message code="export"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="statistics.exportFormats"/></li>
+                        <li class="dropdown-header"><mvc:message code="statistics.exportFormats"/></li>
                         <li>
-                            <a href="#" tabindex="-1" data-form-set="export_action:export_csv" data-form-submit-static>
+                            <c:url var="exportCsvUrl" value="/admin/list/export/csv.action"/>
+                            <a href="${exportCsvUrl}" tabindex="-1" data-prevent-load="">
                                 <i class="icon icon-file-excel-o"></i>
-                                <bean:message key="user.export.csv"/>
+                                <mvc:message code="user.export.csv"/>
                             </a>
-                            <a href="#" tabindex="-1" data-form-set="export_action:export_pdf" data-form-submit-static>
+                            <c:url var="exportPdfUrl" value="/admin/list/export/pdf.action"/>
+                            <a href="${exportPdfUrl}" tabindex="-1" data-prevent-load="">
                                 <i class="icon icon-file-pdf-o"></i>
-                                <bean:message key="user.export.pdf"/>
+                                <mvc:message code="user.export.pdf"/>
                             </a>
                         </li>
                     </ul>
@@ -211,58 +199,58 @@
         <div class="tile-content" ><%--data-form-content--%>
             <div class="table-wrapper">
                 <display:table class="table table-bordered table-striped table-hover js-table"
-                               pagesize="${adminForm.numberOfRows}"
+                               pagesize="${adminListForm.numberOfRows}"
                                id="admin"
                                name="adminEntries"
-                               requestURI="/admin.do?action=${ACTION_LIST}&numberOfRows=${adminForm.numberOfRows}&__fromdisplaytag=true"
+                               requestURI="/admin/list.action?numberOfRows=${adminListForm.numberOfRows}&__fromdisplaytag=true"
                                excludedParams="*"
                                size="${adminEntries.fullListSize}"
                                partialList="true">
-                    <display:column titleKey="logon.username" sortProperty="username" sortable="true" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.username} </html:link>
-                    </display:column>
-                    <display:column sortProperty="firstname" titleKey="recipient.Firstname" sortable="true" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.firstname} </html:link>
-                    </display:column>
-                    <display:column titleKey="recipient.Lastname" sortable="true" sortProperty="fullname" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.fullname} </html:link>
-                    </display:column>
-                    <display:column titleKey="mailing.MediaType.0" sortable="true" property="email"  sortProperty="email" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.email} </html:link>
-                    </display:column>
-                    <display:column titleKey="default.creationDate" sortable="true" format="{0,date,yyyy-MM-dd}" property="creationDate" sortProperty="creation_date" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.creationDate} </html:link>
-                    </display:column>
-                    <display:column titleKey="default.changeDate" sortable="true" format="{0,date,yyyy-MM-dd}" property="changeDate" sortProperty="timestamp" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.changeDate} </html:link>
-                    </display:column>
-                    <display:column titleKey="admin.login.last" sortable="true" format="{0,date,yyyy-MM-dd}" property="loginDate" sortProperty="last_login" headerClass="js-table-sort">
-                        <html:link page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}">${admin.loginDate} </html:link>
-                    </display:column>
+
+                    <c:url var="adminDeleteUrl" value="/admin/${admin.id}/confirmDelete.action"/>
+                    <c:url var="adminViewUrl" value="/admin/${admin.id}/view.action"/>
+
+                    <display:column titleKey="logon.username" sortProperty="username" sortable="true"
+                                    headerClass="js-table-sort" value="${admin.username}"/>
+
+                    <display:column sortProperty="firstname" titleKey="recipient.Firstname" sortable="true"
+                                    headerClass="js-table-sort" value="${admin.firstname}"/>
+
+                    <display:column titleKey="recipient.Lastname" sortable="true" sortProperty="fullname"
+                                    headerClass="js-table-sort" value="${admin.fullname}"/>
+
+                    <display:column titleKey="mailing.MediaType.0" sortable="true" property="email" sortProperty="email"
+                                    headerClass="js-table-sort" value="${admin.email}"/>
+
+                    <display:column titleKey="default.creationDate" sortable="true" property="creationDate" sortProperty="creation_date"
+                                    headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.creationDate}"/>
+
+                    <display:column titleKey="default.changeDate" sortable="true" property="changeDate" sortProperty="timestamp"
+                                    headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.changeDate}"/>
+
+                    <display:column titleKey="admin.login.last" sortable="true" property="loginDate" sortProperty="last_login"
+                                    headerClass="js-table-sort" format="{0, date, ${adminDateFormat}}" value="${admin.loginDate}"/>
+
                     <display:column class="table-actions">
-                        <html:link styleClass="js-row-show hidden" titleKey="settings.admin.edit" page="/admin.do?action=${ACTION_VIEW}&adminID=${admin.id}"></html:link>
-						<emm:ShowByPermission token="admin.delete">                       
-                        	<c:choose>
-                        		<c:when test="${admin.passwordExpired}">
-                        			<c:set var="adminBanMessage" scope="page">
-                                		<bean:message key="settings.admin.ban.tooltip" />
-                            		</c:set>
-                        			<agn:agnLink styleClass="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminBanMessage}" page="/admin.do?action=${ACTION_CONFIRM_DELETE}&adminID=${admin.id}">
-                                		<i class="icon icon-ban"></i>
-                        			</agn:agnLink>
-                        		</c:when>
-                        	</c:choose>    
-                        
-                            <c:set var="adminDeleteMessage" scope="page">
-                                <bean:message key="settings.admin.delete" />
-                            </c:set>
-                            <agn:agnLink styleClass="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminDeleteMessage}" page="/admin.do?action=${ACTION_CONFIRM_DELETE}&adminID=${admin.id}">
+                        <a href="${adminViewUrl}" class="js-row-show hidden" title="<mvc:message code='settings.admin.edit'/> "></a>
+                        <emm:ShowByPermission token="admin.delete">
+                            <c:choose>
+                                <c:when test="${admin.passwordExpired}">
+                                    <mvc:message var="adminBanMessage" code="settings.admin.ban.tooltip" />
+                                    <a href="${adminDeleteUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminBanMessage}">
+                                        <i class="icon icon-ban"></i>
+                                    </a>
+                                </c:when>
+                            </c:choose>
+
+                            <mvc:message var="adminDeleteMessage" code="settings.admin.delete" />
+                            <a href="${adminDeleteUrl}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${adminDeleteMessage}">
                                 <i class="icon icon-trash-o"></i>
-                            </agn:agnLink>
+                            </a>
                         </emm:ShowByPermission>
                     </display:column>
                 </display:table>
             </div>
         </div>
     </div>
-</html:form>
+</mvc:form>

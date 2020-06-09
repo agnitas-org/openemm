@@ -24,9 +24,11 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -35,9 +37,12 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
+import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
+import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
 /**
@@ -50,11 +55,26 @@ public class ComRdirUserForm extends HttpServlet {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
+	private ConfigService configService;
 	private UserFormDao userFormDao;
 	private ExtensibleUIDService extensibleUIDService;
 	private ComRecipientDao comRecipientDao;
 	private ComDeviceService comDeviceService;
 	private ClientService clientService;
+	private MailingContentTypeCache mailingContentTypeCache;
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	private ConfigService getConfigService() {
+		if (configService == null) {
+			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+			configService = (ConfigService) applicationContext.getBean("ConfigService");
+		}
+		return configService;
+	}
 
 	public void setUserFormDao(UserFormDao userFormDao) {
 		this.userFormDao = userFormDao;
@@ -115,6 +135,19 @@ public class ComRdirUserForm extends HttpServlet {
 		}
 		return clientService;
 	}
+	
+	@Required
+	public void setMailingContentTypeCache(MailingContentTypeCache mailingContentTypeCache) {
+		this.mailingContentTypeCache = mailingContentTypeCache;
+	}
+
+	private MailingContentTypeCache getMailingContentTypeCache() {
+		if (mailingContentTypeCache == null) {
+			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+			mailingContentTypeCache = (MailingContentTypeCache) applicationContext.getBean("MailingContentTypeCache");
+		}
+		return mailingContentTypeCache;
+	}
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
@@ -123,17 +156,17 @@ public class ComRdirUserForm extends HttpServlet {
 	 * Service-Method, gets called every time a User calls the servlet
 	 */
 	@Override
-	public void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse res) throws IOException, ServletException {
 		logger.debug("Starting ComRdirUserForm");
 
 		// url_id in rdir_url_userform_tbl
-		String paramLinkID = req.getParameter("lid");
+		String paramLinkID = request.getParameter("lid");
 		if (paramLinkID == null) {
 			logger.error("ComRdirUserForm: link id is null");
 			return;
 		}
 		
-		String userAgentParam = StringUtils.trimToEmpty(req.getHeader("User-Agent"));
+		String userAgentParam = StringUtils.trimToEmpty(request.getHeader("User-Agent"));
 		int deviceID = getDeviceService().getDeviceId(userAgentParam);
 		int clientID = getClientService().getClientId(userAgentParam);
 
@@ -146,7 +179,7 @@ public class ComRdirUserForm extends HttpServlet {
 		
 		ComExtensibleUID uid = null;
 
-		String paramUid = req.getParameter("uid");
+		String paramUid = request.getParameter("uid");
 
 		if (StringUtils.isNotBlank(paramUid)) {
 			try {
@@ -172,6 +205,7 @@ public class ComRdirUserForm extends HttpServlet {
 				customerIdInt = uid.getCustomerID();
 			}
 		}
+		
 
 		ComTrackableUserFormLink comTrackableUserFormLink;
 		try {
@@ -185,7 +219,15 @@ public class ComRdirUserForm extends HttpServlet {
 			if (comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES
 					|| comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES_WITH_MAILING_INFO
 					|| comTrackableUserFormLink.getUsage() == ComTrackableUserFormLink.TRACKABLE_YES_WITH_MAILING_AND_USER_INFO) {
-				getUserFormDao().logUserFormTrackableLinkClickInDB(comTrackableUserFormLink, customerIdInt, mailingIdInt, req.getRemoteAddr(), deviceClass, deviceID, clientID);
+				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, getConfigService(), getMailingContentTypeCache());
+				String remoteAddr;
+				if (trackingLevel == TrackingLevel.ANONYMOUS) {
+					customerIdInt = 0;
+					remoteAddr = null;
+				} else {
+					remoteAddr = request.getRemoteAddr();
+				}
+				getUserFormDao().logUserFormTrackableLinkClickInDB(comTrackableUserFormLink, customerIdInt, mailingIdInt, remoteAddr, deviceClass, deviceID, clientID);
 			}
 		}
 

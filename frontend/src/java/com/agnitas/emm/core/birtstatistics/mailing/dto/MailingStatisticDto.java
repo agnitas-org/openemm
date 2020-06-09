@@ -10,22 +10,19 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.dto;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import org.apache.commons.lang.StringUtils;
 
 public class MailingStatisticDto {
-    private String reportName;
     private int mailingId;
     private String shortname;
     private String description;
     private String[] selectedTargets;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private boolean hourScale;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private DateMode dateMode;
     private StatisticType type;
     private boolean showNetto;
@@ -34,14 +31,10 @@ public class MailingStatisticDto {
     private boolean topLevelDomain;
     private int maxDomains;
     private Date mailingStartDate;
-
-    public String getReportName() {
-        return reportName;
-    }
-
-    public void setReportName(String reportName) {
-        this.reportName = reportName;
-    }
+    private int sector;
+    private boolean allowBenchmark;
+    private int linkId;
+    private int optimizationId;
 
     public int getMailingId() {
         return mailingId;
@@ -75,32 +68,24 @@ public class MailingStatisticDto {
         this.selectedTargets = selectedTargets;
     }
 
-    public String getСoncatenatedSelectedTargets(){
-        return StringUtils.defaultIfEmpty(StringUtils.join(selectedTargets, ","), "");
-    }
-
-    public LocalDate getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public LocalDate getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
     public boolean isHourScale() {
-        return hourScale;
-    }
-
-    public void setHourScale(boolean hourScale) {
-        this.hourScale = hourScale;
+        return dateMode == DateMode.LAST_TENHOURS || dateMode == DateMode.SELECT_DAY;
     }
 
     public DateMode getDateMode() {
@@ -165,5 +150,37 @@ public class MailingStatisticDto {
 
     public void setMailingStartDate(Date mailingStartDate) {
         this.mailingStartDate = mailingStartDate;
+    }
+
+    public int getSector() {
+        return sector;
+    }
+
+    public void setSector(int sector) {
+        this.sector = sector;
+    }
+
+    public boolean isAllowBenchmark() {
+        return allowBenchmark;
+    }
+
+    public void setAllowBenchmark(boolean allowBenchmark) {
+        this.allowBenchmark = allowBenchmark;
+    }
+    
+    public void setLinkId(int linkId) {
+        this.linkId = linkId;
+    }
+    
+    public int getLinkId() {
+        return linkId;
+    }
+    
+    public int getOptimizationId() {
+        return optimizationId;
+    }
+    
+    public void setOptimizationId(int optimizationId) {
+        this.optimizationId = optimizationId;
     }
 }

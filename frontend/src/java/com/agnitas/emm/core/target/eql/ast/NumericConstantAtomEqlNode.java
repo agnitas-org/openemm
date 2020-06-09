@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.ast;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -61,5 +62,11 @@ public class NumericConstantAtomEqlNode extends AbstractAtomEqlNode {
 	@Override	
 	public void collectReferencedItems(ReferenceCollector collector) {
 		// Numeric constants are never IDs (according to grammar spec.)
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		visitor.leavingNode(this);
 	}
 }

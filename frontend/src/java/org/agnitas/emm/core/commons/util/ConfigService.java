@@ -13,12 +13,14 @@ package org.agnitas.emm.core.commons.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URL;
-import java.security.GeneralSecurityException;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.security.PublicKey;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -49,9 +51,9 @@ import org.agnitas.util.Tuple;
 import org.agnitas.util.XmlUtilities;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
@@ -69,6 +71,7 @@ import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.LicenseError;
 import com.agnitas.util.CryptographicUtilities;
+import com.agnitas.util.Version;
 
 /**
  * ConfigurationService for EMM
@@ -93,6 +96,7 @@ public class ConfigService {
     
     /** Application startup timestamp **/
     private static final Date STARTUP_TIME = new Date();
+    private static Version applicationVersion = null;
     
     private static ConfigService instance;
 
@@ -106,7 +110,7 @@ public class ConfigService {
 	protected ComCompanyDao companyDao;
 	
 	/** DAO for access admin table. */
-	protected ComAdminDao adminDao;
+	protected ComAdminDao adminDao; // TODO Replace by AdminService
 	
 	/** DAO for access webservice user table. */
 	protected WebserviceUserDao webserviceUserDao;
@@ -124,9 +128,9 @@ public class ConfigService {
 	protected ComServerMessageDao serverMessageDao;
 
 	private static Boolean IS_ORACLE_DB = null;
-	private static Map<ConfigKey, String> LICENSE_VALUES = null;
-	private static Map<ConfigKey, String> EMM_PROPERTIES_VALUES = null;
-	private static Map<ConfigKey, String> CONFIGURATIONVALUES = null;
+	private static Map<String, Map<Integer, String>> LICENSE_VALUES = null;
+	private static Map<String, Map<Integer, String>> EMM_PROPERTIES_VALUES = null;
+	private static Map<String, Map<Integer, String>> CONFIGURATIONVALUES = null;
 	private static Date LASTREFRESHTIME = null;
 	private static Calendar EXPIRATIONTIME = null;
 		
@@ -290,7 +294,7 @@ public class ConfigService {
 		CONFIGURATIONVALUES = null;
 	}
 	
-	protected void refreshValues() {
+	protected synchronized void refreshValues() {
 		try {
 			if (IS_ORACLE_DB == null && configTableDao != null) {
 				// On ConfigService startup check db vendor
@@ -308,6 +312,11 @@ public class ConfigService {
 			if (EMM_PROPERTIES_VALUES == null) {
 				// On ConfigService startup read emm.properties file
 				EMM_PROPERTIES_VALUES = readEmmPropertiesFile();
+				try {
+					applicationVersion = new Version(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()).get(0));
+				} catch (Exception e) {
+					// The version sign is not valid. Maybe it is text like 'Unknown'.
+				}
 			}
 			
 			if (CONFIGURATIONVALUES == null || EXPIRATIONTIME == null || GregorianCalendar.getInstance().after(EXPIRATIONTIME)) {
@@ -326,23 +335,20 @@ public class ConfigService {
 				
 				LASTREFRESHTIME = now;
 				
-				Map<ConfigKey, String> newValues = new HashMap<>(EMM_PROPERTIES_VALUES);
+				Map<String, Map<Integer, String>> newValues = new HashMap<>();
+				joinConfigValues(newValues, EMM_PROPERTIES_VALUES);
 
 				if (configTableDao != null) {
-					for (Entry<ConfigKey, String> entry : configTableDao.getAllEntries().entrySet()) {
-						newValues.put(entry.getKey(), AgnUtils.replaceHomeVariables(entry.getValue()));
-					}
+					joinConfigValues(newValues, configTableDao.getAllEntriesForThisHost());
 				}
 
 				if (companyInfoDao != null) {
-					for (Entry<ConfigKey, String> entry : companyInfoDao.getAllEntries().entrySet()) {
-						newValues.put(entry.getKey(), AgnUtils.replaceHomeVariables(entry.getValue()));
-					}
+					joinConfigValues(newValues, companyInfoDao.getAllEntriesForThisHost());
 				}
 
 				int minutes;
-				if (newValues.containsKey(new ConfigKey(ConfigValue.ConfigurationExpirationMinutes.toString(), 0, null))) {
-					minutes = NumberUtils.toInt(newValues.get(new ConfigKey(ConfigValue.ConfigurationExpirationMinutes.toString(), 0, null)));
+				if (newValues.containsKey(ConfigValue.ConfigurationExpirationMinutes.toString())) {
+					minutes = NumberUtils.toInt(newValues.get(ConfigValue.ConfigurationExpirationMinutes.toString()).get(0));
 				} else {
 					minutes = NumberUtils.toInt(ConfigValue.ConfigurationExpirationMinutes.getDefaultValue());
 				}
@@ -355,7 +361,7 @@ public class ConfigService {
 					EXPIRATIONTIME = null;
 				}
 				
-				newValues.putAll(LICENSE_VALUES);
+				joinConfigValues(newValues, LICENSE_VALUES);
 				
 				if (CONFIGURATIONVALUES == null) {
 					logger.info("Initialized ConfigService with " + newValues.size() + " values");
@@ -377,13 +383,31 @@ public class ConfigService {
 		}
 	}
 
-	private Map<ConfigKey, String> readEmmPropertiesFile() throws Exception {
+	private void joinConfigValues(Map<String, Map<Integer, String>> basicValues, Map<String, Map<Integer, String>> additionalValues) throws Exception {
+		for (Entry<String, Map<Integer, String>> configEntry : additionalValues.entrySet()) {
+			Map<Integer, String> configValuesMap = basicValues.get(configEntry.getKey());
+			if (configValuesMap == null) {
+				configValuesMap = new HashMap<>();
+				basicValues.put(configEntry.getKey(), configValuesMap);
+			}
+			for (Entry<Integer, String> companyEntry : configEntry.getValue().entrySet()) {
+				configValuesMap.put(companyEntry.getKey(), AgnUtils.replaceVersionPlaceholders(AgnUtils.replaceHomeVariables(companyEntry.getValue()), applicationVersion));
+			}
+		}
+	}
+
+	private Map<String, Map<Integer, String>> readEmmPropertiesFile() throws Exception {
 		try {
-			Map<ConfigKey, String> emmPropertiesMap = new HashMap<>();
+			Map<String, Map<Integer, String>> emmPropertiesMap = new HashMap<>();
 			Properties properties = new Properties();
 			properties.load(getClass().getClassLoader().getResourceAsStream("emm.properties"));
 			for (String key : properties.stringPropertyNames()) {
-				emmPropertiesMap.put(new ConfigKey(key, 0, null), AgnUtils.replaceHomeVariables(properties.getProperty(key)));
+				Map<Integer, String> configValueMap = emmPropertiesMap.get(key);
+				if (configValueMap == null) {
+					configValueMap = new HashMap<>();
+					emmPropertiesMap.put(key, configValueMap);
+				}
+				configValueMap.put(0, AgnUtils.replaceHomeVariables(properties.getProperty(key)));
 			}
 			return emmPropertiesMap;
 		} catch (Exception e) {
@@ -391,63 +415,94 @@ public class ConfigService {
 		}
 	}
 	
-	private Map<ConfigKey, String> readLicenseData() throws Exception {
-		byte[] licenseDataArray;
-		byte[] licenseSignatureDataArray;
-		
-		if (licenseDao.hasLicenseData()) {
-			licenseDataArray = licenseDao.getLicenseData();
-			licenseSignatureDataArray = licenseDao.getLicenseSignatureData();
-		} else {
-			ClassLoader classLoader = ConfigService.class.getClassLoader();
+	private Map<String, Map<Integer, String>> readLicenseData() throws Exception {
+		ClassLoader classLoader = ConfigService.class.getClassLoader();
+		URL licenseURL = classLoader.getResource("emm.license.xml");
+		if (licenseURL != null) {
+			Date licenseDate = null;
+			if (licenseURL.toString().startsWith("file:")) {
+				String licenseFilePath = URLDecoder.decode(licenseURL.toString().substring(5), "UTF-8");
+				BasicFileAttributes fileAttributes = Files.readAttributes(Paths.get(licenseFilePath), BasicFileAttributes.class);
+				FileTime licenseFileTime = fileAttributes.lastModifiedTime();
+				if (licenseFileTime == null) {
+					licenseFileTime = fileAttributes.creationTime();
+				}
+				if (licenseFileTime != null) {
+					licenseDate = new Date(licenseFileTime.toMillis());
+				}
+			}
+			byte[] licenseDataArray;
 			try (InputStream licenseStream = classLoader.getResourceAsStream("emm.license.xml")) {
 				licenseDataArray = IOUtils.toByteArray(licenseStream);
 			}
-			if (classLoader.getResource("emm.license.xml.sig") != null) {
-				try (InputStream signatureStream = classLoader.getResourceAsStream("emm.license.xml.sig")) {
-					licenseSignatureDataArray = IOUtils.toByteArray(signatureStream);
-				}
+
+			byte[] licenseSignatureDataArray;
+			try (InputStream signatureStream = classLoader.getResourceAsStream("emm.license.xml.sig")) {
+				licenseSignatureDataArray = IOUtils.toByteArray(signatureStream);
+			} catch(Exception e) {
+				licenseSignatureDataArray = null;
+			}
 			
+			if (licenseSignatureDataArray != null) {
 				PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
 				boolean success = CryptographicUtilities.verifyData(licenseDataArray, publicKey, licenseSignatureDataArray);
 				if (success) {
-					licenseDao.storeLicenseData(licenseDataArray);
-					licenseDao.storeLicenseSignatureData(licenseSignatureDataArray);
+					licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, licenseDate);
 				}
 			} else {
-				licenseSignatureDataArray = null;
+				// OpenEMM has no license signature
+				licenseDao.storeLicense(licenseDataArray, null, licenseDate);
 			}
 		}
-
-		Map<ConfigKey, String> licenseData = new HashMap<>();
-		Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(licenseDataArray, "UTF-8", null);
-		Map<String, String> licenseDataFromXml = XmlUtilities.getSimpleValuesOfNode(licenseDocument.getElementsByTagName("emm.license").item(0));
-		for (Entry<String, String> entry : licenseDataFromXml.entrySet()) {
-			licenseData.put(new ConfigKey(entry.getKey(), 0, null), entry.getValue());
-		}
-
-		// Handle different names
-		licenseData.put(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null), licenseData.get(new ConfigKey("licenseID", 0, null)));
-		licenseData.remove(new ConfigKey("licenseID", 0, null));
-
-		int licenseID = Integer.parseInt(licenseData.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
 		
-		if (licenseID == 0) {
-			// OpenEMM: No signature check, but remove all data for company_id > 1
-			if (companyDao != null) {
-				companyDao.deactivateExtendedCompanies();
+		if (licenseDao.hasLicenseData()) {
+			byte[] licenseDataArray = licenseDao.getLicenseData();
+
+			Map<String, Map<Integer, String>> licenseData = new HashMap<>();
+			Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(licenseDataArray, "UTF-8", null);
+			Map<String, String> licenseDataFromXml = XmlUtilities.getSimpleValuesOfNode(licenseDocument.getElementsByTagName("emm.license").item(0));
+			for (Entry<String, String> entry : licenseDataFromXml.entrySet()) {
+				Map<Integer, String> configValueMap = licenseData.get(entry.getKey());
+				if (configValueMap == null) {
+					configValueMap = new HashMap<>();
+					licenseData.put(entry.getKey(), configValueMap);
+				}
+				configValueMap.put(0, entry.getValue());
 			}
-		} else if (licenseSignatureDataArray != null) {
-			PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
-			boolean success = CryptographicUtilities.verifyData(licenseDataArray, publicKey, licenseSignatureDataArray);
-			if (!success) {
-				throw new Exception("LicenseSignature is invalid");
+	
+			// Handle different names
+			Map<Integer, String> licenseIdValueMap = licenseData.get(ConfigValue.System_Licence.toString());
+			if (licenseIdValueMap == null) {
+				licenseIdValueMap = new HashMap<>();
+				licenseData.put(ConfigValue.System_Licence.toString(), licenseIdValueMap);
 			}
+			licenseIdValueMap.put(0, licenseData.get("licenseID").get(0));
+			licenseData.remove("licenseID");
+	
+			int licenseID = Integer.parseInt(licenseData.get(ConfigValue.System_Licence.toString()).get(0));
+			
+			if (licenseID == 0) {
+				// OpenEMM: No signature check, but remove all data for company_id > 1
+				if (companyDao != null) {
+					companyDao.deactivateExtendedCompanies();
+				}
+			} else {
+				byte[] licenseSignatureDataArray = licenseDao.getLicenseSignatureData();
+				if (licenseSignatureDataArray == null) {
+					throw new Exception("LicenseSignature is missing");
+				} else {
+					PublicKey publicKey = CryptographicUtilities.getPublicKeyFromString(PUBLIC_LICENSE_KEYSTRING);
+					boolean success = CryptographicUtilities.verifyData(licenseDataArray, publicKey, licenseSignatureDataArray);
+					if (!success) {
+						throw new Exception("LicenseSignature is invalid");
+					}
+				}
+			}
+			
+			return licenseData;
 		} else {
-			throw new Exception("LicenseSignature is missing");
+			throw new Exception("Missing license data");
 		}
-		
-		return licenseData;
 	}
 	
 	private void checkLicenseData() throws Exception {
@@ -458,45 +513,45 @@ public class ConfigService {
 		}
 		
 		if (configTableDao != null) {
-			if (NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null))) > 0) {
+			if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
 				// Check or set license ID in DB
 				try {
-					String storedLicenseID = configTableDao.getAllEntries().get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null));
+					String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
 					if (StringUtils.isBlank(storedLicenseID)) {
-						configTableDao.storeEntry("system", "licence", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
-						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)));
-					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)))) {
-						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)), storedLicenseID);
+						configTableDao.storeEntry("system", "licence", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
+						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
 					}
-				} catch (SQLException e) {
+				} catch (Exception e) {
 					throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
 				}
 			
 				// Check license ID in licence.cfg file, if exists
 				String	licenceCfgLicenseId = (new Systemconfig ()).get ("licence");
 				
-				if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null))))) {
-					throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_Licence.toString(), 0, null)), licenceCfgLicenseId);
+				if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
+					throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
 				}
 			}
 		}
 		
 		// Check validity time limit
 		Date validUntil;
-		if (StringUtils.isNotBlank(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)))) {
+		if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
 			try {
-				validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)) + " 23:59:59");
+				validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
 			} catch (ParseException e) {
 				throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
 			}
 			if (new Date().after(validUntil)) {
-				throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_ExpirationDate.toString(), 0, null)), EMM_PROPERTIES_VALUES.get(new ConfigKey(ConfigValue.Mailaddress_Support.toString(), 0, null)));
+				throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()).get(0));
 			}
 		}
 
 		if (companyDao != null) {
 			// Check maximum number of companies
-			int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfCompanies.toString(), 0, null)));
+			int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
 			if (maximumNumberOfCompanies >= 0) {
 				int numberOfCompanies = companyDao.getNumberOfCompanies();
 				if (numberOfCompanies > maximumNumberOfCompanies) {
@@ -507,7 +562,7 @@ public class ConfigService {
 
 		if (adminDao != null) {
 			// Check maximum number of admins
-			int maximumNumberOfAdmins = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfAdmins.toString(), 0, null)));
+			int maximumNumberOfAdmins = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAdmins.toString()).get(0));
 			if (maximumNumberOfAdmins >= 0) {
 				int numberOfAdmins = adminDao.getNumberOfAdmins();
 				if (numberOfAdmins > maximumNumberOfAdmins) {
@@ -518,7 +573,7 @@ public class ConfigService {
 
 		if (webserviceUserDao != null) {
 			// Check maximum number of admins
-			int maximumNumberOfWebserviceUsers = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString(), 0, null)));
+			int maximumNumberOfWebserviceUsers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString()).get(0));
 			if (maximumNumberOfWebserviceUsers >= 0) {
 				int numberOfWebserviceUsers = webserviceUserDao.getNumberOfWebserviceUsers();
 				if (numberOfWebserviceUsers > maximumNumberOfWebserviceUsers) {
@@ -529,7 +584,7 @@ public class ConfigService {
 
 		if (supervisorDao != null) {
 			// Check maximum number of supervisors
-			int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfSupervisors.toString(), 0, null)));
+			int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
 			if (maximumNumberOfSupervisors >= 0) {
 				int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
 				if (numberOfSupervisors > maximumNumberOfSupervisors) {
@@ -540,7 +595,7 @@ public class ConfigService {
 
 		if (companyDao != null) {
 			// Check maximum number of customers
-			int maximumNumberOfCustomers = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfCustomers.toString(), 0, null)));
+			int maximumNumberOfCustomers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCustomers.toString()).get(0));
 			if (maximumNumberOfCustomers >= 0) {
 				int numberOfCustomers = companyDao.getMaximumNumberOfCustomers();
 				if (numberOfCustomers > maximumNumberOfCustomers) {
@@ -549,7 +604,7 @@ public class ConfigService {
 			}
 		
 			// Check maximum number of profile fields
-			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_MaximumNumberOfProfileFields.toString(), 0, null)));
+			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfProfileFields.toString()).get(0));
 			if (maximumNumberOfProfileFields >= 0) {
 				int numberOfProfileFields;
 				try {
@@ -563,7 +618,7 @@ public class ConfigService {
 			}
 		
 			// Check allowed premium features
-			String allowedPremiumFeaturesData = LICENSE_VALUES.get(new ConfigKey(ConfigValue.System_License_AllowedPremiumFeatures.toString(), 0, null));
+			String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(0);
 			Set<String> allowedPremiumFeatures = new HashSet<>();
 			Set<String> unAllowedPremiumFeatures = new HashSet<>();
 			for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
@@ -572,10 +627,8 @@ public class ConfigService {
 				}
 			}
 			if (!allowedPremiumFeatures.contains("all") && !allowedPremiumFeatures.contains("ALL")) {
-				List<String> premiumCategories = Arrays.asList(Permission.ORDERED_PREMIUM_RIGHT_CATEGORIES);
 				for (Entry<Permission, String> permissionEntry : Permission.getAllPermissionsAndCategories().entrySet()) {
-					String category = permissionEntry.getValue();
-					if (premiumCategories.contains(category) && !allowedPremiumFeatures.contains(permissionEntry.getKey().toString())) {
+					if (permissionEntry.getKey().isPremium() && !allowedPremiumFeatures.contains(permissionEntry.getKey().toString())) {
 						unAllowedPremiumFeatures.add(permissionEntry.getKey().toString());
 					}
 				}
@@ -655,7 +708,14 @@ public class ConfigService {
 	public String getValue(ConfigValue configurationValueID) {
 		try {
 			refreshValues();
-			String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
+			
+			String value = null;
+			
+			Map<Integer, String> companyValueMap = CONFIGURATIONVALUES.get(configurationValueID.toString());
+			if (companyValueMap != null) {
+				value = companyValueMap.get(0);
+			}
+			
 			if (value == null) {
 				value = configurationValueID.getDefaultValue();
 			}
@@ -663,8 +723,8 @@ public class ConfigService {
 		} catch (LicenseError e) {
 			if (ConfigValue.SupportEmergencyUrl.equals(configurationValueID))  {
 				try {
-					return configTableDao.getAllEntries().get(new ConfigKey(ConfigValue.SupportEmergencyUrl.toString(), 0, null));
-				} catch (SQLException e1) {
+					return configTableDao.getAllEntriesForThisHost().get(ConfigValue.SupportEmergencyUrl.toString()).get(0);
+				} catch (Exception e1) {
 					throw new RuntimeException("Cannot load SupportEmergencyUrl from database", e1);
 				}
 			} else {
@@ -682,7 +742,7 @@ public class ConfigService {
 		}
 	}
 	
-	public String getEncryptedValue(ConfigValue configurationValueID, @VelocityCheck int companyID) throws GeneralSecurityException, UnsupportedEncodingException {
+	public String getEncryptedValue(ConfigValue configurationValueID, @VelocityCheck int companyID) throws Exception {
 		String encryptedDataBase64 = getValue(configurationValueID, companyID);
 		
 		if (StringUtils.isNotEmpty(encryptedDataBase64)) {
@@ -690,42 +750,6 @@ public class ConfigService {
 		} else {
 			return null;
 		}
-	}
-	
-	/**
-	 * Does a chained search for specified configuration. Search stops at first match:
-	 * 
-	 * <ol>
-	 *   <li>Search configuration value for given company ID.</li>
-	 *   <li>Search configuration value for company ID 0.</li>
-	 *   <li>Search configuration value without company ID</li>
-	 * </ol>
-	 * 
-	 * If there is no matching configuration, {@code null} is returned.
-	 * 
-	 * @param configurationValueID configuration value ID
-	 * @param companyID company ID
-
-	 * @return configuration value as String or {@code null}
-	 */
-	public String getValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
-		refreshValues();
-		
-		String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, null));
-		
-		if (value == null) {
-			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
-		}
-
-		if (value == null) {
-			value = getValue(configurationValueID);
-		}
-		
-		return value;
-	}
-
-	public String getValue(String hostName, ConfigValue configurationValueID) {
-		return getValue(hostName, configurationValueID, 0);
 	}
 	
 	/**
@@ -741,31 +765,27 @@ public class ConfigService {
 	 * 
 	 * If there is no matching configuration, {@code null} is returned.
 	 * 
-	 * @param hostName hostName
 	 * @param configurationValueID configuration value ID
 	 * @param companyID company ID
 
 	 * @return configuration value as String or {@code null}
 	 */
-	public String getValue(String hostName, ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public String getValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
 		refreshValues();
 		
-		String value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, hostName));
+		String value = null;
 		
-		if (value == null) {
-			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, hostName));
+		Map<Integer, String> companyValueMap = CONFIGURATIONVALUES.get(configurationValueID.toString());
+		if (companyValueMap != null) {
+			if (companyValueMap.containsKey(companyID)) {
+				value = companyValueMap.get(companyID);
+			} else {
+				value = companyValueMap.get(0);
+			}
 		}
 		
 		if (value == null) {
-			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), companyID, null));
-		}
-		
-		if (value == null) {
-			value = CONFIGURATIONVALUES.get(new ConfigKey(configurationValueID.toString(), 0, null));
-		}
-
-		if (value == null) {
-			value = getValue(configurationValueID);
+			value = configurationValueID.getDefaultValue();
 		}
 		
 		return value;
@@ -828,6 +848,12 @@ public class ConfigService {
 	
 	public long getLongValue(ConfigValue configurationValueID, @VelocityCheck int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
+		
+		return Long.parseLong(value);
+	}
+
+	public long getLongValue(ConfigValue configurationValueID) {
+		String value = getValue(configurationValueID);
 		
 		return Long.parseLong(value);
 	}
@@ -946,10 +972,6 @@ public class ConfigService {
 	 */
 	public boolean isWebserviceSendServiceMailingEnabled(int companyID) {
 		return getBooleanValue(ConfigValue.WebserviceEnableSendServiceMailing, companyID);
-	}
-	
-	public boolean isActionbasedMailloopAutoresponderInUiEnabled(final int companyID) {	// TODO: Remove after transition phase (EMM-3645)
-		return getBooleanValue(ConfigValue.MailloopActionbasedAutoreponderUI, companyID);
 	}
 
 	/**
@@ -1102,10 +1124,6 @@ public class ConfigService {
 
 	public final String getLitmusStatusURL(final int companyID) {
 		return getValue(ConfigValue.Predelivery_LitmusStatusUrl);
-	}
-
-	public final String getWhatsbroadcastAttachmentHost(final int companyID) {
-		return getValue(ConfigValue.WhatsBroadcastAttachmentHost, companyID);
 	}
 
 	public final String getFullviewFormName(final int companyID) {

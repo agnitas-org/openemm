@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ComMailingGridService {
 
     int getGridTemplateId(int mailingID);
+
+    Map<Integer, Integer> getGridTemplateIds(@VelocityCheck int companyId, Collection<Integer> mailingIds);
     
     Map<String, Object> getMailingGridInfo(int mailingID, int companyID);
     

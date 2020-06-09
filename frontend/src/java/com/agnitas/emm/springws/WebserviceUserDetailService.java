@@ -15,8 +15,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -27,7 +29,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -50,7 +51,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     public final void setConfigService(final ConfigService service) {
     	this.configService = Objects.requireNonNull(service, "Config service is null");
     }
-
+    
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
         final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id=c.company_id and c.status='active'";
@@ -68,8 +69,18 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
            
             final Collection<GrantedAuthority> grantedAuthorities = loadGrantedAuthorities(companyID, username);
             
-            return new User(username, password, true, true, true, true, grantedAuthorities);
+            return new WebserviceUserDetails(username, companyID, password, true, true, true, true, grantedAuthorities);
         }
+    }
+    
+    public final Optional<Integer> findCompanyIDForUsername(final String username) {
+        final String sql = "SELECT company_id FROM webservice_user_tbl WHERE username=?";
+
+        final List<Integer> result = select(logger, sql,  new IntegerRowMapper(), username); 
+        
+        return result.isEmpty()
+        		? Optional.empty()
+        		: Optional.of(result.get(0));
     }
     
     private final String decryptPassword(final String encryptedPasswordBase64, final String username) throws UsernameNotFoundException {

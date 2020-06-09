@@ -27,7 +27,7 @@ $(document).ready(function()
 									   });
 					
 		*/
-		$(".help_close A").click(
+		$(".help_close A").on("click",
 				function(event2){				 
 						$('#helpbox_container').hide();
 								 });

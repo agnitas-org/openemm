@@ -26,6 +26,8 @@ public class MailinglistForm {
 	private String description;
 	
 	private int targetId;
+
+	private boolean frequencyCounterEnabled;
 	
 	private RecipientProgressStatisticDto statistic;
 	
@@ -68,4 +70,12 @@ public class MailinglistForm {
     public void setStatistic(RecipientProgressStatisticDto statistic) {
         this.statistic = statistic;
     }
+
+	public boolean getFrequencyCounterEnabled() {
+		return frequencyCounterEnabled;
+	}
+
+	public void setFrequencyCounterEnabled(boolean markedForFrequencyCounter) {
+		this.frequencyCounterEnabled = markedForFrequencyCounter;
+	}
 }

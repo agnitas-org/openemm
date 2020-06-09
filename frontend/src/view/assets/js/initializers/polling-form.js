@@ -1,16 +1,9 @@
-;(function(){
-
-  AGN.Initializers.PollingForm = function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
-    _.each($scope.find('[data-form="polling"]'), function(el) {
-      var $el = $(el);
-
-      AGN.Lib.Form.get($el).submit();
-    });
-
+AGN.Lib.CoreInitializer.new('polling-form', function($scope) {
+  if (!$scope) {
+    $scope = $(document);
   }
 
-})();
+  $scope.find('[data-form="polling"]').each(function() {
+    AGN.Lib.Form.get($(this)).submit();
+  });
+});

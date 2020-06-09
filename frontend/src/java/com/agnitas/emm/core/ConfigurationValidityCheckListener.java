@@ -26,7 +26,7 @@ public class ConfigurationValidityCheckListener implements ServletContextListene
     	try {
 			WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(servletContextEvent.getServletContext());
 			ConfigurationValidityCheck configurationValidityCheck = webApplicationContext.getBean("ConfigurationValidityCheck", ConfigurationValidityCheck.class);
-			configurationValidityCheck.checkValidity();
+			configurationValidityCheck.checkValidity(webApplicationContext);
 		} catch (Exception e) {
 			logger.error("Cannot check installation validity: " + e.getMessage(), e);
 		}

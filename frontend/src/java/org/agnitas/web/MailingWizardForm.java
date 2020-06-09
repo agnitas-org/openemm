@@ -17,13 +17,14 @@ import javax.servlet.http.HttpServletRequest;
 import com.agnitas.beans.ComMailing.MailingContentType;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -104,7 +105,7 @@ public class MailingWizardForm extends StrutsFormBase {
         if (mailing != null && (MailingWizardAction.ACTION_TARGET.equalsIgnoreCase(action) ||
                 MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
     	  if ((mailing.getTargetGroups() == null ||
-                  mailing.getTargetGroups().isEmpty() ) && getTargetID() == 0  && mailing.getMailingType() == Mailing.TYPE_DATEBASED) {
+                  mailing.getTargetGroups().isEmpty() ) && getTargetID() == 0  && mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
               errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
           }
     	}

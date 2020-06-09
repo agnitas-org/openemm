@@ -38,7 +38,8 @@ window.I18n = {
             file: '<agn:agnMessage key="error.upload.file"/>'
         },
         mailing: {
-            invalidPriorityCount: '<agn:agnMessage key="mailing.priority.maxMails"/>'
+            invalidPriorityCount: '<agn:agnMessage key="mailing.priority.maxMails"/>',
+            exclusiveLockingFailed: '<agn:agnMessage key="error.mailing.locked"/>'
         },
         enterEmailAddresses: '<agn:agnMessage key="enterEmailAddresses"/>',
         inUse: '<agn:agnMessage key="error.email.duplicated"/>',
@@ -64,13 +65,13 @@ window.I18n = {
         formats: {
             label: '<agn:agnMessage key="import.dateFormat"/>',
             'DD.MM.YYYY' : '<agn:agnMessage key="date.format.DD.MM.YYYY"/>',
-            YYYYMMDD: '<agn:agnMessage key="date.format.YYYYMMDD"/>',
+            YYYYMMDD: '<agn:agnMessage key="default.date.format.YYYYMMDD"/>',
             DDMM: '<agn:agnMessage key="date.format.DDMM"/>',
             DDMMYYYY: '<agn:agnMessage key="date.format.DDMMYYYY"/>',
             MMDD: '<agn:agnMessage key="date.format.MMDD"/>',
             DD: '<agn:agnMessage key="date.format.DD"/>',
             MM: '<agn:agnMessage key="date.format.MM"/>',
-            YYYY: '<agn:agnMessage key="date.format.YYYY"/>'
+            YYYY: '<agn:agnMessage key="default.date.format.YYYY"/>'
         }
     },
     time: {
@@ -92,7 +93,12 @@ window.I18n = {
         no: '<agn:agnMessage key="default.No" />',
         info: '<agn:agnMessage key="Info" />',
         ok: '<agn:agnMessage key="OK" />',
-        cancel: '<agn:agnMessage key="button.Cancel"/>'
+        cancel: '<agn:agnMessage key="button.Cancel"/>',
+        logout: '<agn:agnMessage key="default.Logout"/>',
+        relogin: '<agn:agnMessage key="logout.relogin"/>',
+        remember: {
+            choice: '<agn:agnMessage key="remember.choice"/>'
+        }
     },
     selects: {
         noMatches: '<agn:agnMessage key="default.noMatchesFor" />',
@@ -203,8 +209,8 @@ window.I18n = {
             not_between: '<agn:agnMessage key="operator.not_between"/>',
             begins_with: '<agn:agnMessage key="operator.begins_with"/>',
             not_begins_with: '<agn:agnMessage key="operator.not_begins_with"/>',
-            contains: '<agn:agnMessage key="operator.contains"/>',
-            not_contains: '<agn:agnMessage key="operator.not_contains"/>',
+            contains: '<agn:agnMessage key="target.operator.contains"/>',
+            not_contains: '<agn:agnMessage key="target.operator.not_contains"/>',
             ends_with: '<agn:agnMessage key="operator.ends_with"/>',
             not_ends_with: '<agn:agnMessage key="operator.not_ends_with"/>',
             is_empty: '<agn:agnMessage key="operator.is_empty"/>',
@@ -215,6 +221,7 @@ window.I18n = {
             after: '<agn:agnMessage key="target.operator.after"/>'
         },
         errors: {
+            general: '<agn:agnMessage key="error.target.saving"/>',
             no_filter: '<agn:agnMessage key="querybuilder.error.no_filter"/>',
             empty_group: '<agn:agnMessage key="querybuilder.error.empty_group"/>',
             radio_empty: '<agn:agnMessage key="querybuilder.error.select_empty"/>',
@@ -338,8 +345,8 @@ window.I18n = {
 
         report: {
             error : {
-              no_report: '<agn:agnMessage key="workflow.report.ErrorNoReport"/>',
-            },
+              no_report: '<agn:agnMessage key="workflow.report.ErrorNoReport"/>'
+            }
         },
 
         copy: {
@@ -387,9 +394,8 @@ window.I18n = {
             multiple_tabs:'<agn:agnMessage key="logon.tabs.multiple"/>'
         },
         session: {
+            notification: '<agn:agnMessage key="warning.session.expired"/>',
             expired:'<agn:agnMessage key="session.timer.expired"/>',
-            remaining:'<agn:agnMessage key="session.timer.remaining"/>',
-            checking:'<agn:agnMessage key="session.timer.checking"/>'
         }
     },
     messenger: {
@@ -401,6 +407,9 @@ window.I18n = {
         },
         blacklisted: {
             question: '<agn:agnMessage key="recipient.blacklisted.question"/>'
+        },
+        existing: {
+            btn: '<agn:agnMessage key="recipient.existing.switch"/>'
         }
     },
     calendar: {
@@ -420,6 +429,11 @@ window.I18n = {
             comment: '<agn:agnMessage key="calendar.Comment"/>',
             new_comment: '<agn:agnMessage key="calendar.NewComment"/>',
             edit_comment: '<agn:agnMessage key="calendar.EditComment"/>'
+        }
+    },
+    userform: {
+        error: {
+            velocity_not_allowed: '<agn:agnMessage key="userform.velocityNotAllowed" />'
         }
     },
 
@@ -457,8 +471,8 @@ window.I18n = {
         greaterThanOrEqual: '<agn:agnMessage key="target.operator.geq"/>',
 
         // for text filter
-        contains: '<agn:agnMessage key="operator.contains"/>',
-        notContains: '<agn:agnMessage key="operator.not_contains"/>',
+        contains: '<agn:agnMessage key="target.operator.contains"/>',
+        notContains: '<agn:agnMessage key="target.operator.not_contains"/>',
         startsWith: '<agn:agnMessage key="operator.begins_with"/>',
         endsWith: '<agn:agnMessage key="operator.ends_with"/>',
 
@@ -471,11 +485,27 @@ window.I18n = {
             target_group_name: '<agn:agnMessage key="statistic.all_subscribers"/>',
             interest_group_name: '<agn:agnMessage key="nointerestgroup"/>',
             dyn_tag_name: '<agn:agnMessage key="statistic.all_subscribers"/>',
-            target_group_deleted: '<agn:agnMessage key="target.Deleted"/>'
+            target_group_deleted: '<agn:agnMessage key="target.Deleted"/>',
+            item_referencetable_warning: '<agn:agnMessage key="warning.mailing.items.refencetable.missing"/>'
+        },
+        remember: {
+          choice: '<agn:agnMessage key="remember.choice.mailing"/>'
         },
         validation: {
             target_group_duplicated: '<agn:agnMessage key="error.mailing.content.target.duplicated"/>',
             all_recipients_not_last: '<agn:agnMessage key="error.mailing.content.target.order"/>'
         }
+    },
+    wysiwyg: {
+        dialogs: {
+            agn_tags: {
+                tooltip: '<agn:agnMessage key="htmled.agntagsButtonTooltip"/>'
+            }
+        }
+    },
+    facebook : {
+    	leadAds: {
+    		renewedPageAccessTokens : '<agn:agnMessage key="facebook.leadAds.renewedPageAccessTokens" arg0="%s"/>'
+    	}
     }
 };

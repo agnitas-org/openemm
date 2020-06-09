@@ -28,7 +28,6 @@ public class Media {
 	static public final int		TYPE_PRINT = 2;
 	static public final int		TYPE_MMS = 3;
 	static public final int		TYPE_SMS = 4;
-	static public final int 	TYPE_WHATSAPP = 5;
 	/** Entry is not used */
 	static public final int 	STAT_UNUSED = 0;
 	/** Entry marked as inactive */
@@ -57,17 +56,22 @@ public class Media {
 	 */
 	static public String typeName (int t) {
 		switch (t) {
-		case TYPE_EMAIL:	return "email";
-		case TYPE_FAX:		return "fax";
-		case TYPE_PRINT:	return "print";
-		case TYPE_MMS:		return "mms";
-		case TYPE_SMS:		return "sms";
-		case TYPE_WHATSAPP:	return "whatsapp";
+			case TYPE_EMAIL:
+				return "email";
+			case TYPE_FAX:
+				return "fax";
+			case TYPE_PRINT:
+				return "print";
+			case TYPE_MMS:
+				return "mms";
+			case TYPE_SMS:
+				return "sms";
+			default:
+				return Integer.toString (t);
 		}
-		return Integer.toString (t);
 	}
 
-	/** Returns the string of the name of the 
+	/** Returns the string of the name of the
 	 * default profile field for this media type
 	 * (if applicated)
 	 * @param t the mediatype
@@ -75,14 +79,19 @@ public class Media {
 	 */
 	static public String defaultProfileField (int t) {
 		switch (t) {
-		case TYPE_EMAIL:	return "email";
-		case TYPE_FAX:		return "faxnumber";
-		case TYPE_PRINT:	return null;
-		case TYPE_MMS:		return "smsnumber";
-		case TYPE_SMS:		return "smsnumber";
-		case TYPE_WHATSAPP:	return "whatsapp_id";
+			case TYPE_EMAIL:
+				return "email";
+			case TYPE_FAX:
+				return "faxnumber";
+			case TYPE_PRINT:
+				return null;
+			case TYPE_MMS:
+				return "smsnumber";
+			case TYPE_SMS:
+				return "smsnumber";
+			default:
+				return null;
 		}
-		return null;
 	}
 	
 	/** Return the priority as string
@@ -99,11 +108,15 @@ public class Media {
 	 */
 	static public String statusName (int s) {
 		switch (s) {
-		case STAT_UNUSED:	return "unused";
-		case STAT_INACTIVE:	return "inactive";
-		case STAT_ACTIVE:	return "active";
+			case STAT_UNUSED:
+				return "unused";
+			case STAT_INACTIVE:
+				return "inactive";
+			case STAT_ACTIVE:
+				return "active";
+			default:
+				return Integer.toString(s);
 		}
-		return Integer.toString (s);
 	}
 
 	/** The constructor
@@ -189,12 +202,13 @@ public class Media {
 	public int findInteger (String id, int dflt) {
 		String	tmp = findString (id, null);
 
-		if (tmp != null)
+		if (tmp != null) {
 			try {
 				return Integer.parseInt (tmp);
 			} catch (NumberFormatException e) {
 				// do nothing
 			}
+		}
 		return dflt;
 	}
 }

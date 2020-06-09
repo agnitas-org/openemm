@@ -19,6 +19,7 @@ import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getNavig
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,7 +36,7 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -47,12 +48,12 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.dao.ComAdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.service.ComWebStorage;
 
 /**
@@ -66,7 +67,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
-	protected ComAdminDao adminDao;
+	protected AdminService adminService;
 	protected ComAdminGroupDao adminGroupDao;
     protected ComAdminPreferencesDao adminPreferencesDao;
 	protected ComCompanyDao companyDao;
@@ -79,8 +80,8 @@ public class ComUserSelfServiceAction extends DispatchAction {
 	private WebStorage webStorage;
 	
 	@Required
-	public void setAdminDao(ComAdminDao adminDao) {
-		this.adminDao = adminDao;
+	public void setAdminService(AdminService service) {
+		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 
 	@Required
@@ -235,7 +236,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 
 					// Only change if user entered a new password
 					PasswordCheckHandler handler = new StrutsPasswordCheckHandler(errors, "password");
-					if (adminDao.isAdminPassword(admin, adminForm.getPassword())) {
+					if (adminService.isAdminPassword(admin, adminForm.getPassword())) {
 						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.password_must_differ"));
 					} else if (!passwordCheck.checkAdminPassword(adminForm.getPassword(), admin, handler)) {
 						adminForm.setPassword("");
@@ -276,7 +277,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 			}
 			
 			if (errors.isEmpty()) {
-				adminDao.save(admin);
+				adminService.save(admin);
                 adminPreferencesDao.save(adminPreferences);
 
 				// Set the new values for this session
@@ -288,13 +289,13 @@ public class ComUserSelfServiceAction extends DispatchAction {
 				session.setAttribute(org.apache.struts.Globals.LOCALE_KEY, admin.getLocale());
                 fillRequestWithOriginalValues(request, admin);
 
-				ActionMessages messages = new ActionMessages();
-				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-				saveMessages(request, messages);
+				ActionMessages actionMessages = new ActionMessages();
+				actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+				saveMessages(request, actionMessages);
 				return mapping.findForward("show");
 			} else {
 				// Revert Admin Data Changes
-				AgnUtils.setAdmin(request, adminDao.getAdmin(admin.getAdminID(), admin.getCompanyID()));
+				AgnUtils.setAdmin(request, adminService.getAdmin(admin.getAdminID(), admin.getCompanyID()));
 				
 				saveErrors(request, errors);
 				// Reload OptionLists which will otherwise be empty
@@ -328,7 +329,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 				if (StringUtils.isNotEmpty(adminForm.getPassword())) {
 					// Only change if user entered a new password
 					PasswordCheckHandler handler = new StrutsPasswordCheckHandler(errors, "password");
-					if (adminDao.isAdminPassword(admin, adminForm.getPassword())) {
+					if (adminService.isAdminPassword(admin, adminForm.getPassword())) {
 						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.password_must_differ"));
 					} else if (!passwordCheck.checkAdminPassword(adminForm.getPassword(), admin, handler)) {
 						adminForm.setPassword("");
@@ -349,11 +350,11 @@ public class ComUserSelfServiceAction extends DispatchAction {
 			}
 			
 			if (errors.isEmpty()) {
-				adminDao.save(admin);
+				adminService.save(admin);
 
-				ActionMessages messages = new ActionMessages();
-				messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-				saveMessages(request, messages);
+				ActionMessages actionMessages = new ActionMessages();
+				actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+				saveMessages(request, actionMessages);
 			} else {
 				saveErrors(request, errors);
 			}

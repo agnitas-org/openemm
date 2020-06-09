@@ -23,6 +23,8 @@ public interface ImportModeHandler {
 	void checkPreconditions(ImportProfile importProfile) throws Exception;
 	
 	boolean isNullValueAllowedForData(DbColumnType columnType, NullValuesAction fromInt);
+	
+	void handlePreProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception;
 
 	void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception;
 

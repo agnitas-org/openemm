@@ -36,7 +36,7 @@ import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.dao.EmmActionType;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ActionExporter extends BaseImporterExporter {
 	@Resource(name="EmmActionDao")

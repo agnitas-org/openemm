@@ -12,30 +12,29 @@ package org.agnitas.emm.core.component.service;
 
 import java.util.List;
 
-import org.agnitas.beans.MailingComponent;
-
 import com.agnitas.dao.FormComponent;
 import com.agnitas.dao.FormComponent.FormComponentType;
+import org.agnitas.beans.MailingComponent;
 
 public interface ComponentService {
-	public List<MailingComponent> getComponents(ComponentModel model);
+	List<MailingComponent> getComponents(ComponentModel model);
 
-	public MailingComponent getComponent(ComponentModel model);
+	MailingComponent getComponent(ComponentModel model);
 
-	public int addComponent(ComponentModel model) throws Exception;
-	
-	public void updateComponent(ComponentModel model) throws Exception;
+	int addComponent(ComponentModel model) throws Exception;
 
-	public void deleteComponent(ComponentModel model);
+	void updateComponent(ComponentModel model) throws Exception;
+
+	void deleteComponent(ComponentModel model);
 
 	/**
 	 * Save form component.
 	 *
 	 * @param formComponent the form component
 	 */
-	public boolean saveFormComponent(FormComponent formComponent);
+	boolean saveFormComponent(FormComponent formComponent);
 	
-	public boolean deleteFormComponent(int formID, int companyID, String componentName);
+	boolean deleteFormComponent(int formID, int companyID, String componentName);
 
 	/**
 	 * Gets the form component by name.
@@ -45,7 +44,7 @@ public interface ComponentService {
 	 * @param imageFileName the image file name
 	 * @return the form component by name
 	 */
-	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType);
+	FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType);
 	
 	/**
 	 * Gets the component descriptions.
@@ -55,7 +54,7 @@ public interface ComponentService {
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
-	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
+	List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
 
 	/**
 	 * Gets the form components.
@@ -64,5 +63,5 @@ public interface ComponentService {
 	 * @param formID the form id
 	 * @return the form components
 	 */
-	public List<FormComponent> getFormComponents(int companyID, int formID);
+	List<FormComponent> getFormComponents(int companyID, int formID);
 }

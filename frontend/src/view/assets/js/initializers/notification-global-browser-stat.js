@@ -63,7 +63,7 @@
                     }
 
                     c3.generate(GLobalNotificationBrowserStatService.data.browserChartData.build(titles, values));
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }

@@ -35,9 +35,9 @@ public class EmmMailingIdValidator implements MailingIdValidator {
 			logger.info("Validating mailing ID " + mailingId + " for company " + companyId);
 		}
 		
-		LightweightMailing mailing = mailingDao.getLightweightMailing(mailingId);
+		LightweightMailing mailing = mailingDao.getLightweightMailing(companyId, mailingId);
 		
-		if(mailing == null || mailing.getMailingID() == null || mailing.getMailingID() == 0 || mailing.getCompanyID() == null || mailing.getCompanyID() != companyId) {
+		if(mailing == null) {
 			if(logger.isInfoEnabled()) {
 				logger.info("Validation mailing ID " + mailingId + " for company " + companyId + " failed.");
 			}

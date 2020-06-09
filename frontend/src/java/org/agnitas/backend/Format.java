@@ -106,8 +106,9 @@ public class Format {
 	 * @return      the processed string
 	 */
 	public String encode (String input) {
-		if ((input == null) || (encodeChain == null))
+		if ((input == null) || (encodeChain == null)) {
 			return input;
+		}
 
 		String	s = input;
 		byte[]	content = null;
@@ -121,11 +122,16 @@ public class Format {
 			}
 			
 			if (content == null) {
-				try {
-					content = s.getBytes (charset);
-				} catch (Exception e) {
-					error = coder.getClass ().getName () + ": input \"" + s + "\" can not be converted to binary (" + e.toString () + ") using charset " + charset.displayName ();
+				if (s == null) {
+					error = coder.getClass ().getName () + ": input \"" + s + "\" can not be converted to binary (Nullpointer) using charset " + charset.displayName ();
 					break;
+				} else {
+					try {
+						content = s.getBytes (charset);
+					} catch (Exception e) {
+						error = coder.getClass ().getName () + ": input \"" + s + "\" can not be converted to binary (" + e.toString () + ") using charset " + charset.displayName ();
+						break;
+					}
 				}
 			}
 			try {

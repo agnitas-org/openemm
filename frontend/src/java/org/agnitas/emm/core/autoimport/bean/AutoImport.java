@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class AutoImport extends AutoImportLight {
 	public static final String INTERVALPATTERN_ONCE = "ONCE";

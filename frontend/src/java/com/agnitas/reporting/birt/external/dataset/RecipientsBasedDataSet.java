@@ -12,23 +12,25 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
     private static final transient Logger logger = Logger.getLogger(RecipientsBasedDataSet.class);
 	
-    protected static final SimpleDateFormat RECIPIENT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-	
-	protected static String getCustomerBindingTableName(int companyId) {
+    protected static String getCustomerBindingTableName(int companyId) {
 		return "customer_" + companyId + "_binding_tbl";
+	}
+	
+	protected static String getHstCustomerBindingTableName(int companyID) {
+		return "hst_customer_" + companyID + "_binding_tbl";
 	}
 	
 	protected static String getCustomerTableName(int companyId) {
@@ -39,15 +41,13 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 		return "onepixellog_device_" + companyId + "_tbl";
 	}
 	
-	protected static String getRdirLogTableName(int companyId) {
-		return "rdirlog_" + companyId + "_tbl";
-	}
-	
     protected static UserStatus getUserStatus(int statusCode) {
 		try {
 			return UserStatus.getUserStatusByID(statusCode);
 		} catch (UnknownUserStatusException e) {
-			logger.error(e.getMessage(), e);
+			logger.error("User status code (" + statusCode + ") is invalid. Available statuses are [" +
+					StringUtils.join(UserStatus.getAvailableStatusCodeList(), ", ") + "] "
+			);
 		}
 		return null;
     }
@@ -55,6 +55,7 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	
     protected Map<Integer, String> mailinglistNamesById = new HashMap<>();
     
+	@Override
 	protected String getMailinglistName(int companyId, int mailinglistId) {
 		return mailinglistNamesById.computeIfAbsent(mailinglistId, id -> super.getMailinglistName(companyId, mailinglistId));
 	}

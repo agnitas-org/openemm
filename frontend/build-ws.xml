@@ -183,21 +183,29 @@
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_ajax']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_schedule']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/recipient_stats']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlink']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlinkstat']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/workflow']" />
 		</xmltask>
 
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" />
 		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext-service-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" preserveType="true">
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='LogonService']" />
 		</xmltask>
+		<xmltask
+				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
+				dest="${emmSourcePath}/view/WEB-INF/spring-ws-common.xml"
+				preserveType="true">
+			<insert path="/:beans/:bean[last()]" position="after">
+				<![CDATA[
+					<bean id="WebserviceSubscriptionRejectionService" class="com.agnitas.emm.springws.subscriptionrejection.service.NullSubscriptionRejectionServiceImpl" />
+				]]>
+			</insert>
+		</xmltask>
 
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-actions-basic.xml" />
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-actions-openemm.xml" />
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-permissions-basic.xml" />
-
+		
 		<xmltask
 				source="${emmSourcePath}/../etc/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
 				dest="${deploydir}${appname}/WEB-INF/spring-ws-common.xml"
@@ -213,7 +221,6 @@
 			<replacetoken> xmlns=""</replacetoken>
 		</replace>
 
-		
 		<echo message="...applicationContext.xml done" />
 	</target>
 

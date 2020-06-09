@@ -12,11 +12,11 @@ package com.agnitas.emm.core.bounce.dto;
 
 import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
+import com.agnitas.emm.core.bounce.util.BounceUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class BounceFilterDto {
 
-    private static final String EMAIL_PREFIX = "aml";
 
     private int id;
 
@@ -41,14 +41,6 @@ public class BounceFilterDto {
     private boolean doAutoRespond;
 
     private int arMailingId;
-
-    private String arSenderAddress;
-
-    private String arSubject;
-
-    private String arText;
-
-    private String arHtml;
 
     private Date changeDate;
 
@@ -87,7 +79,7 @@ public class BounceFilterDto {
     }
 
     public String getFilterEmailWithDefault() {
-        return StringUtils.defaultIfEmpty(filterEmail, EMAIL_PREFIX + "_" + id + "@" + companyDomain);
+        return StringUtils.defaultIfEmpty(filterEmail, BounceUtils.getFilterEmailDefault(getCompanyDomain(), getId()));
     }
 
     public String getCompanyDomain() {
@@ -153,38 +145,6 @@ public class BounceFilterDto {
 
     public void setArMailingId(int arMailingId) {
         this.arMailingId = arMailingId;
-    }
-
-    public String getArSenderAddress() {
-        return arSenderAddress;
-    }
-
-    public void setArSenderAddress(String arSenderAddress) {
-        this.arSenderAddress = arSenderAddress;
-    }
-
-    public String getArSubject() {
-        return arSubject;
-    }
-
-    public void setArSubject(String arSubject) {
-        this.arSubject = arSubject;
-    }
-
-    public String getArText() {
-        return arText;
-    }
-
-    public void setArText(String arText) {
-        this.arText = arText;
-    }
-
-    public String getArHtml() {
-        return arHtml;
-    }
-
-    public void setArHtml(String arHtml) {
-        this.arHtml = arHtml;
     }
 
     public Date getChangeDate() {

@@ -21,7 +21,7 @@ import org.agnitas.beans.ExportPredef;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.ExportWizardAction;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -33,78 +33,78 @@ public class ExportWizardForm extends StrutsFormBase {
 	/** Serial version UID. */
     private static final long serialVersionUID = -1678091898444495551L;
 
-	/** 
-     * Holds value of property charset. 
+	/**
+     * Holds value of property charset.
      */
     private String charset="UTF-8";
     
     /**
-     * Holds value of property action. 
+     * Holds value of property action.
      */
     private int action;
     
     /**
-     * Holds value of property csvFile. 
+     * Holds value of property csvFile.
      */
     private String exportedFile;
     
     /**
-     * Holds value of property linesOK. 
+     * Holds value of property linesOK.
      */
     private int linesOK;
     
-    /** 
-     * Holds value of property dbExportStatus. 
+    /**
+     * Holds value of property dbExportStatus.
      */
     private int dbExportStatus;
     
     /**
-     * Holds value of property separator. 
+     * Holds value of property separator.
      */
     private String separator;
     
     /**
-     * Holds value of property delimiter. 
+     * Holds value of property delimiter.
      */
     private String delimiter;
     
     /**
-     * Holds value of property downloadName. 
+     * Holds value of property downloadName.
      */
     private String downloadName;
     
     /**
-     * Holds value of property dbExportStatusMessages. 
+     * Holds value of property dbExportStatusMessages.
      */
     private LinkedList<String> dbExportStatusMessages;
     
     /**
-     * Holds value of property mailinglists. 
+     * Holds value of property mailinglists.
      */
     private String[] mailinglists;
     
     /**
-     * Holds value of property targetID. 
+     * Holds value of property targetID.
      */
     private int targetID;
     
     /**
-     * Holds value of property columns. 
+     * Holds value of property columns.
      */
     private String[] columns;
     
     /**
-     * Holds value of property mailinglistID. 
+     * Holds value of property mailinglistID.
      */
     private int mailinglistID;
     
     /**
-     * Holds value of property userType. 
+     * Holds value of property userType.
      */
     private String userType;
     
     /**
-     * Holds value of property userStatus. 
+     * Holds value of property userStatus.
      */
     private int userStatus;
 
@@ -223,7 +223,7 @@ public class ExportWizardForm extends StrutsFormBase {
 				errors.add("global", new ActionMessage("error.export.no_columns_selected"));
 			}
 
-            String pattern = AgnUtils.getDatePickerFormatPattern(AgnUtils.getAdmin(request));
+            String pattern = AgnUtils.getAdmin(request).getDateFormat().toPattern();
 			validateDate(timestampStart, timestampEnd, pattern, errors);
 			validateDate(creationDateStart, creationDateEnd, pattern, errors);
 			validateDate(mailinglistBindStart, mailinglistBindEnd, pattern, errors);
@@ -287,7 +287,7 @@ public class ExportWizardForm extends StrutsFormBase {
         return exportedFile;
     }
     
-    /** 
+    /**
      * Setter for property exportedFile.
      *
      * @param exportedFile New value of property csvFile.
@@ -326,13 +326,13 @@ public class ExportWizardForm extends StrutsFormBase {
     /**
      * Setter for property dbExportStatus.
      * 
-     * @param dbExportStatus 
+     * @param dbExportStatus
      */
     public void setDbExportStatus(int dbExportStatus) {
         this.dbExportStatus = dbExportStatus;
     }
     
-    /** 
+    /**
      * Getter for property separator.
      *
      * @return Value of property separator.
@@ -341,7 +341,7 @@ public class ExportWizardForm extends StrutsFormBase {
         return separator;
     }
     
-    /** 
+    /**
      * Setter for property separator.
      *
      * @param separator New value of property separator.
@@ -354,7 +354,7 @@ public class ExportWizardForm extends StrutsFormBase {
         }
     }
     
-    /** 
+    /**
      * Setter for property separator.
      *
      * @param separator New value of property separator.
@@ -375,7 +375,7 @@ public class ExportWizardForm extends StrutsFormBase {
     /**
      * Setter for property delimitor.
      * 
-     * @param delimiter 
+     * @param delimiter
      */
     public void setDelimiter(String delimiter) {
         this.delimiter = delimiter;
@@ -406,12 +406,12 @@ public class ExportWizardForm extends StrutsFormBase {
      */
     /*
      *  TODO: This seems not to be used anymore...
-     *  
+     * 
      *  No reference to this method in Java code
      *  No reference to bean in JSPs.
-     *  
+     * 
      *  If it can be removed, remove also setter method and field.
-     *  
+     * 
      *  Note: Setter is still called.
      */
     public LinkedList<String> getDbExportStatusMessages() {
@@ -421,7 +421,7 @@ public class ExportWizardForm extends StrutsFormBase {
     /**
      * Setter for property dbInsertStatusMessages.
      * 
-     * @param dbExportStatusMessages 
+     * @param dbExportStatusMessages
      */
     public void setDbExportStatusMessages(LinkedList<String> dbExportStatusMessages) {
         this.dbExportStatusMessages = dbExportStatusMessages;
@@ -447,7 +447,7 @@ public class ExportWizardForm extends StrutsFormBase {
         return this.mailinglists;
     }
     
-    /** 
+    /**
      * Setter for property mailinglists.
      *
      * @param mailinglists New value of property mailinglists.
@@ -456,7 +456,7 @@ public class ExportWizardForm extends StrutsFormBase {
         this.mailinglists = mailinglists;
     }
     
-    /** 
+    /**
      * Getter for property targetID.
      *
      * @return Value of property targetID.
@@ -465,7 +465,7 @@ public class ExportWizardForm extends StrutsFormBase {
         return this.targetID;
     }
     
-    /** 
+    /**
      * Setter for property targetID.
      *
      * @param targetID New value of property targetID.

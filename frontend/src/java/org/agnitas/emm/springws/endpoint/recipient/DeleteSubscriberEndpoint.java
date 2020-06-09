@@ -25,7 +25,6 @@ import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.agnitas.service.UserActivityLogService;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class DeleteSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

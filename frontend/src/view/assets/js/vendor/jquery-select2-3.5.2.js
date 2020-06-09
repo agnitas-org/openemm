@@ -132,7 +132,7 @@ the specific language governing permissions and limitations under the Apache Lic
 
     function measureScrollbar () {
         var $template = $( MEASURE_SCROLLBAR_TEMPLATE );
-        $template.appendTo(document.body);
+        $template.appendTo($(document.body));
 
         var dim = {
             width: $template.width() - $template[0].clientWidth,
@@ -709,7 +709,7 @@ the specific language governing permissions and limitations under the Apache Lic
                         "aria-live": "polite"
                     })
                     .addClass("select2-hidden-accessible")
-                    .appendTo(document.body);
+                    .appendTo($(document.body));
             }
 
             this.containerId="s2id_"+(opts.element.attr("id") || "autogen"+nextUid());

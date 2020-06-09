@@ -10,29 +10,12 @@
 
 package com.agnitas.emm.core.serverstatus.forms;
 
-import javax.validation.Valid;
-
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotEmpty;
-
 public class ServerStatusForm {
-	public interface SendTestEmail{}
-	
-	public interface SendDiagnosis{}
-	public interface StartJob {}
-	
-	@NotEmpty(message = "error.mailing.parameter.name", groups = StartJob.class)
+
 	private String jobStart;
-	
-    @NotEmpty(message = "error.email.empty", groups = SendTestEmail.class)
-	@Email(message = "error.email.invalid", groups = SendTestEmail.class)
 	private String sendTestEmail;
-	
-	@NotEmpty(message = "error.email.empty", groups = SendDiagnosis.class)
-	@Email(message = "error.email.invalid", groups = SendDiagnosis.class)
 	private String sendDiagnosis;
-	
-	@Valid
+
 	private ServerConfigForm configForm = new ServerConfigForm();
 	
 	public String getJobStart() {

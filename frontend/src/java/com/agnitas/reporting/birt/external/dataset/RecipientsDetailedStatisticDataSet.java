@@ -10,6 +10,7 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -20,20 +21,22 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
 
 public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
     private static final transient Logger logger = Logger.getLogger(RecipientsDetailedStatisticDataSet.class);
 
     private List<RecipientsDetailedStatisticsRow> statList = new ArrayList<>();
     private List<RecipientsDetailedStatisticsRow> dynamicStatList = new ArrayList<>();
-
+    
     /**
      * Get Data for Recipient Report
      * message key "report.recipient.statistics.recipientDevelopmentDetailed.label"
@@ -46,8 +49,8 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 			mailingListIds.add(NumberUtils.toInt(mailingListIdString));
 		}
 		
-        Date dateStart = RECIPIENT_DATE_FORMAT.parse(startDate);
-        Date dateStop = RECIPIENT_DATE_FORMAT.parse(stopDate);
+        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
 
         int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -76,8 +79,8 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 			mailingListIds.add(NumberUtils.toInt(mailingListIdString));
 		}
 		
-        Date dateStart = RECIPIENT_DATE_FORMAT.parse(startDate);
-        Date dateStop = RECIPIENT_DATE_FORMAT.parse(stopDate);
+        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
         
 		int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -139,7 +142,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 						new RecipientsDetailedStatisticsRow(nextDate.getTime(),
 								mailinglistId, mailinglistName, mailinglistIndex,
 								target.getId(), target.getName(), targetGroupIndex);
-	        	dataMap.put(RECIPIENT_DATE_FORMAT.format(nextDate.getTime()), nextRecipientsDetailedStatisticsRow);
+	        	dataMap.put(new SimpleDateFormat("yyyy-MM-dd").format(nextDate.getTime()), nextRecipientsDetailedStatisticsRow);
 	        	nextDate.add(Calendar.DAY_OF_MONTH, 1);
 	        }
 	        
@@ -165,17 +168,32 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 	        List<Map<String, Object>> result = select(logger, sql, mailinglistId, dateStart, dateStop);
 	        for (Map<String, Object> resultRow : result) {
 	            Date entryDate = (Date) resultRow.get("changedate");
-	            RecipientsDetailedStatisticsRow row = dataMap.get(RECIPIENT_DATE_FORMAT.format(entryDate));
+	            RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
 	            int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
 	            int amount = ((Number) resultRow.get("amount")).intValue();
 	            UserStatus status = getUserStatus(userStatusCode);
 	            calculateAmount(status, amount, row);
 	        }
 	        
-	        // Sort and collect ouput data by date 
+	        if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
+				// Select additional data from history tables
+				String hstSql = sql.replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId));
+				
+				List<Map<String, Object>> hstResult = select(logger, hstSql, mailinglistId, dateStart, dateStop);
+		        for (Map<String, Object> resultRow : hstResult) {
+		            Date entryDate = (Date) resultRow.get("changedate");
+		            RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
+		            int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
+		            int amount = ((Number) resultRow.get("amount")).intValue();
+		            UserStatus status = getUserStatus(userStatusCode);
+		            calculateAmount(status, amount, row);
+		        }
+			}
+	        
+	        // Sort and collect ouput data by date
 	        List<RecipientsDetailedStatisticsRow> returnList = new ArrayList<>();
         	SortedSet<String> keys = new TreeSet<>(dataMap.keySet());
-    		for (String key : keys) { 
+    		for (String key : keys) {
     		   returnList.add(dataMap.get(key));
     		}
     		

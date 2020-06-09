@@ -11,8 +11,11 @@
 package com.agnitas.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.AgnTagDto;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
@@ -82,5 +85,11 @@ public interface AgnTagService {
      */
     String resolve(TagDetails tag, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId);
 
+    List<AgnTagDto> getSupportedAgnTags(ComAdmin admin);
+
     boolean isContainsThirdPartyText(String text);
+
+    Set<String> parseDeprecatedTagNamesFromString(String stringWithTag, int companyId);
+
+    Set<String> parseTagNamesFromString(String stringWithTag);
 }

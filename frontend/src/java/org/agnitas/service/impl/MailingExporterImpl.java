@@ -35,7 +35,7 @@ import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.service.MailingExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComCampaign;

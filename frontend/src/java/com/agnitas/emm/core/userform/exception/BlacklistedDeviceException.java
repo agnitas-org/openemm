@@ -11,5 +11,5 @@
 package com.agnitas.emm.core.userform.exception;
 
 public final class BlacklistedDeviceException extends Exception {
-
+	private static final long serialVersionUID = -8081808118268059510L;
 }

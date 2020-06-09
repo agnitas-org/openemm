@@ -13,4 +13,5 @@ package com.agnitas.emm.core.datasource.form;
 import org.agnitas.web.forms.PaginationForm;
 
 public class DatasourceForm extends PaginationForm {
+	// nothing to do
 }

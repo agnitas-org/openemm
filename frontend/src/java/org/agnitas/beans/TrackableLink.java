@@ -10,13 +10,11 @@
 
 package org.agnitas.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
-public interface TrackableLink {
+public interface TrackableLink extends BaseTrackableLink {
     
     int TRACKABLE_NONE = 0;
-    int TRACKABLE_ONLY_HTML = 2;
     int TRACKABLE_ONLY_TEXT = 1;
+    int TRACKABLE_ONLY_HTML = 2;
     int TRACKABLE_TEXT_HTML = 3;
     
     int DEEPTRACKING_NONE = 0;
@@ -24,91 +22,27 @@ public interface TrackableLink {
     int DEEPTRACKING_ONLY_URL = 2;
     int DEEPTRACKING_BOTH = 3;
 
-    /**
-     * Getter for property actionID.
-     * 
-     * @return Value of property actionID.
-     */
-    int getActionID();
-
-    /**
-     * Getter for property companyID.
-     * 
-     * @return Value of property companyID.
-     */
-    int getCompanyID();
-
-    /**
-     * Getter for property fullUrl.
-     * 
-     * @return Value of property fullUrl.
-     */
-    String getFullUrl();
-
+    
     /**
      * Getter for property mailingID.
      * 
      * @return Value of property mailingID.
      */
     int getMailingID();
-
-    /**
-     * Getter for property shortname.
-     * 
-     * @return Value of property shortname.
-     */
-    String getShortname();
-
-    /**
-     * Getter for property urlID.
-     * 
-     * @return Value of property urlID.
-     */
-    int getId();
-
-    /**
-     * Getter for property usage.
-     * 
-     * @return Value of property usage.
-     */
-    int getUsage();
     
-     /**
-     * Setter for property actionID.
-     * 
-     * @param id New value of property actionID.
-     */
-    void setActionID(int id);
-
-     /**
-     * Setter for property companysID.
-     * 
-     * @param id New value of property companyID.
-     */
-    void setCompanyID( @VelocityCheck int id);
-
-     /**
-     * Setter for property fullUrl.
-     * 
-     * @param url New value of property fullUrl.
-     */
-    void setFullUrl(String url);
-
-     /**
+    /**
      * Setter for property mailingID.
-     * 
+     *
      * @param id New value of property mailingID.
      */
     void setMailingID(int id);
-
+    
     /**
-     * Setter for property shortname.
-     * 
-     * @param shortname New value of property shortname.
+     * Getter for property usage.
+     *
+     * @return Value of property usage.
      */
-    void setShortname(String shortname);
-
-    void setId(int id);
+    int getUsage();
 
     /**
      * Setter for property usage.
@@ -147,7 +81,17 @@ public interface TrackableLink {
     @Deprecated
     void setRelevance(int relevance);
 
+    /**
+     * Setter for property adminLink.
+     *
+     * @param adminLink New value of property adminLink.
+     */
 	void setAdminLink(boolean adminLink);
 	
+	 /**
+     * Getter for property adminLink.
+     *
+     * @return Value of property adminLink.
+     */
 	boolean isAdminLink();
 }

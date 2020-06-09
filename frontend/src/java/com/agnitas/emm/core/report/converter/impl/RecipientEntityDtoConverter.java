@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.report.bean.RecipientEntity;

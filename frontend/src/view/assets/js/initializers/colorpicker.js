@@ -26,19 +26,12 @@ Adding the `.js-colorpicker` class to an input-group will integrate a colorpicke
 ```
 */
 
-;(function(){
-
-  AGN.Initializers.Colorpicker = function($scope) {
-
-    _.each($('.js-colorpicker'), function(el) {
-      var $el     = $(el);
-
-      $el.colorpicker({
-        format: 'hex',
-        container: true
-      })
-
-    });
+AGN.Lib.CoreInitializer.new('colorpicker', function($scope) {
+  if (!$scope) {
+    $scope = $(document);
   }
 
-})();
+  $scope.find('.js-colorpicker').each(function() {
+    $(this).colorpicker({format: 'hex', container: true});
+  });
+});

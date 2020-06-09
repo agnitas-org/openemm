@@ -62,8 +62,8 @@ public class ImportResult {
 			return this;
 		}
         
-        public ImportResult.Builder addWarnings(Map<String, Object[]> warnings) {
-        	this.warnings.putAll(warnings);
+        public ImportResult.Builder addWarnings(Map<String, Object[]> warningsToAdd) {
+        	this.warnings.putAll(warningsToAdd);
             return this;
         }
 		
@@ -77,8 +77,8 @@ public class ImportResult {
 			return this;
 		}
         
-        public ImportResult.Builder addErrors(Map<String, Object[]> errors) {
-        	this.errors.putAll(errors);
+        public ImportResult.Builder addErrors(Map<String, Object[]> errorsToAdd) {
+        	this.errors.putAll(errorsToAdd);
             return this;
         }
 		

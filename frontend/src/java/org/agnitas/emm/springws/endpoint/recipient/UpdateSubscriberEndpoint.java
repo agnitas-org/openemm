@@ -20,13 +20,12 @@ import org.agnitas.emm.springws.jaxb.UpdateSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.UpdateSubscriberResponse;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class UpdateSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private RecipientService recipientService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 	
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

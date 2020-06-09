@@ -133,13 +133,12 @@ public class AgnOptionTag extends OptionTag implements DynamicAttributes {
      *
      * @param handlers The StringBuffer that output will be appended to.
      */
-    protected void  prepareAttribute(StringBuffer handlers, String name,
-                                    Object value) {
-        if (value != null) {
+    protected void prepareAttribute(StringBuffer handlers, String name, Object valueToPrepare) {
+        if (valueToPrepare != null) {
             handlers.append(" ");
             handlers.append(name);
             handlers.append("=\"");
-            handlers.append(value);
+            handlers.append(valueToPrepare);
             handlers.append("\"");
         }
     }

@@ -13,7 +13,8 @@ package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
@@ -39,7 +40,7 @@ public class DateRuleConverter extends GenericRuleConverter {
 
     @Override
     public String convert(QueryBuilderRuleNode node, DataType dataType, String operator) throws QueryBuilderToEqlConversionException {
-        Object[] values = (Object[]) node.getValue();
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(node);
         LinkedList<Object> valuesList = new LinkedList<>(Arrays.asList(values));
         String value = (String) valuesList.pop();
 
@@ -65,13 +66,13 @@ public class DateRuleConverter extends GenericRuleConverter {
 
     @Override
     protected void validate(QueryBuilderRuleNode node, DataType dataType, String operator) throws QueryBuilderToEqlConversionException {
-        Object[] values = (Object[]) node.getValue();
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(node);
 
-        if (values.length < 2) {
+        if (ArrayUtils.getLength(values) < 2) {
             throw new QueryBuilderToEqlConversionException("Invalid rule value for node " + node);
         }
 
-        if (TODAY.equalsIgnoreCase((String) values[0]) && values.length > 2) {
+        if (TODAY.equalsIgnoreCase((String) values[0]) && ArrayUtils.getLength(values) > 2) {
             // validate if values contains ['TODAY', '%operator%', '%offset%', '%dateformat%'] data
             parseOffset(node, (String) values[1]);
         }

@@ -25,6 +25,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.maildrop.InvalidMailingTypeException;
 import com.agnitas.emm.core.maildrop.MaildropException;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.MailingAlreadySentException;
 import com.agnitas.emm.core.maildrop.UnknownMailingException;
@@ -40,6 +41,11 @@ public class MaildropServiceImpl implements MaildropService {
 	private ComMailingDao mailingDao;
 	private MaildropStatusDao maildropStatusDao;
 	
+	@Override
+	public final boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID) {
+		return maildropStatusDao.delete(companyID, mailingID, MaildropStatus.WORLD, MaildropGenerationStatus.SCHEDULED);
+	}
+
 	@Override
 	public final int scheduleAdminMailing(final int mailingID, final int companyID, final int adminTargetID) throws MaildropException {
 		checkMailtype(mailingID, MailingType.NORMAL);
@@ -78,11 +84,6 @@ public class MaildropServiceImpl implements MaildropService {
 		final SteppingAndBlocksize sab = this.steppingAndBlocksizeComputer.computeFromMailingsPerHour(mailsPerHour);
 		
 		scheduleWorldMailing(mailingID, companyID, sendDate, sab.getStepping(), sab.getBlocksize());
-	}
-
-	@Override
-	public final void cancelWorldMailing(final int mailingID, final int companyID) throws MaildropException {
-		// Check for world mailing not required here. Either there is a "World"-maildrop entry or not.
 	}
 
 	@Override

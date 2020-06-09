@@ -1,4 +1,4 @@
 <HelpBalloon>
 	<title><![CDATA[Action EMM apr&egrave;s l'importation]]></title>
-	<content><![CDATA[Si vous souhaitez envoyer automatiquement un e-mail &agrave; tous les nouveaux destinataires apr&egrave;s l'importation, s&eacute;lectionnez ici l'action appropri&eacute;e.]]></content>
+	<content><![CDATA[Si vous souhaitez envoyer automatiquement un envoi de double opt-in &agrave; tous les nouveaux destinataires apr&egrave;s l'importation, s&eacute;lectionnez l'action appropri&eacute;e ici.  Cette action doit comprendre les &eacute;tapes "Ajouter/Mettre &agrave; jour les destinataires" et "Envoyer un envoi bas&eacute; sur une action".]]></content>
 </HelpBalloon>

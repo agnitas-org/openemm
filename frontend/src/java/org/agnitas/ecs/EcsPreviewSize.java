@@ -21,6 +21,14 @@ public enum EcsPreviewSize {
     private final int height;
 
     public static EcsPreviewSize getForId(int id) {
+        return getForId(id, DESKTOP);
+    }
+    
+    public static EcsPreviewSize getForIdOrNull(int id) {
+        return getForId(id, null);
+    }
+
+    public static EcsPreviewSize getForId(int id, EcsPreviewSize defaultSize) {
         switch (id) {
             case 1:
                 return DESKTOP;
@@ -33,7 +41,7 @@ public enum EcsPreviewSize {
             case 5:
                 return TABLET_LANDSCAPE;
             default:
-                return DESKTOP;
+                return defaultSize;
         }
     }
 

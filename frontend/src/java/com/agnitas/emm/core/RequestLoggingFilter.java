@@ -370,13 +370,11 @@ public class RequestLoggingFilter implements Filter {
 			return original.encodeRedirectURL(url);
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public String encodeUrl(String url) {
 			return original.encodeUrl(url);
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public String encodeRedirectUrl(String url) {
 			return original.encodeRedirectUrl(url);
@@ -432,7 +430,6 @@ public class RequestLoggingFilter implements Filter {
 			original.setStatus(sc);
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public void setStatus(int sc, String sm) {
 			original.setStatus(sc, sm);

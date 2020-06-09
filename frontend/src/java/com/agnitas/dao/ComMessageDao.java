@@ -21,4 +21,6 @@ public interface ComMessageDao {
     void markAsDeleted(String key, String language);
 
 	boolean insertMessage(String propertyKey, String language, String value);
+	
+	int getMessageKeysQuantity(String prefix, boolean isIncludeDeleted);
 }

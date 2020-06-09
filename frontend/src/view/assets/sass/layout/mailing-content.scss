@@ -153,6 +153,10 @@
     justify-content: space-between;
     align-items: stretch;
     align-content: center;
+
+    .full-size-btn{
+      padding: 0 10px 0 5px;
+    }
   }
 
   .modal-fixed-footer.standard-footer {
@@ -198,6 +202,23 @@
           display: block;
         }
       }
+
+      .plus-button-holder {
+
+        text-align: center;
+
+        .plus-button {
+          margin: 10px auto;
+          cursor: pointer;
+          color: $c-blue-27;
+          &:hover {
+            color: darken($c-blue-27, 10%);
+          }
+          &:active {
+            color: darken($c-blue-27, 15%);
+          }
+        }
+      }
     }
   }
 
@@ -212,12 +233,8 @@
       background-color: $c-transparent;
     }
 
-    .plus-button {
-      cursor: pointer;
-      color: $c-blue-20;
-      &:hover {
-        color: $c-blue-21;
-      }
+    .control-label{
+      padding: 0;
     }
   }
 }
@@ -231,17 +248,19 @@
   width: 100%;
   padding: 10px 5px;
   overflow: hidden;
-  color: $c-white;
-  background-color: $c-blue-20;
+  color: $c-gray-55;
+  background-color: $c-white;
   border-radius: 3px;
   border-left: 3px solid $c-blue-27;
   font-weight: bold;
 
   &:hover {
+    color: $c-white;
     background-color: $c-blue-21;
   }
 
   &.selected {
+    color: $c-white;
     background-color: $c-blue-27;
     transition: background-color 1000ms linear;
   }

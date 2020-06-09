@@ -14,15 +14,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
-
-import org.agnitas.beans.Mediatype;
 
 import com.agnitas.beans.ComMailing;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.web.ComMailingContentForm;
 import com.agnitas.web.ComMailingSendForm;
+import com.agnitas.web.ShowImageServlet;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.Mediatype;
+import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
+import org.agnitas.preview.Preview;
 
 /**
  * Helper class to find the proper preselected preview format.
@@ -31,6 +35,9 @@ public class MailingPreviewHelper {
 
 	/** Indicates, that the algorithm was not able to detect proper preview format. */
 	public static final int UNDEFINED_PREVIEW_FORMAT = -1;
+	
+	public static final int INPUT_TYPE_TEXT = 0;
+    public static final int INPUT_TYPE_HTML = 1;
 	
 	/**
 	 * Updated preview format for mailing contents.
@@ -76,8 +83,9 @@ public class MailingPreviewHelper {
 		ComMailing mailing = (ComMailing)dao.getMailing(mailingID, companyID);
 		
 		// No mailing found? 
-		if(mailing.getId() == 0)
+		if(mailing.getId() == 0) {
 			return UNDEFINED_PREVIEW_FORMAT;
+		}
 		
 		// Get media types of mailing
 		Map<Integer, Mediatype> mediaTypes = mailing.getMediatypes();
@@ -98,8 +106,9 @@ public class MailingPreviewHelper {
 		Mediatype mt = mediaTypes.get(currentMediaType);
 		
 		// Check, that mailing has this media type and media type is used
-		if(mt != null && mt.getStatus() == Mediatype.STATUS_ACTIVE)
+		if(mt != null && mt.getStatus() == Mediatype.STATUS_ACTIVE) {
 			return currentFormat;  // If so, keep this format as active
+		}
 		
 		Collections.sort(orderedTypeCodes);
 		for(int code : orderedTypeCodes) {
@@ -123,4 +132,40 @@ public class MailingPreviewHelper {
 		return UNDEFINED_PREVIEW_FORMAT;
 	}
 	
+	public static MediaTypes castPreviewFormatToMediaType(int previewFormat, MediatypeFactory mediatypeFactory) {
+		int mediaTypeCode = previewFormat == INPUT_TYPE_TEXT ? INPUT_TYPE_TEXT : previewFormat - 1;
+		if (mediatypeFactory.isTypeSupported(mediaTypeCode)) {
+			Mediatype mediatype = mediatypeFactory.create(mediaTypeCode);
+			return mediatype.getMediaType();
+		}
+		return null;
+	}
+	
+	/**
+     * Replacing the standard images with mobile images if present
+     * @param components - mailing dynamic components
+     * @param previewSize - size of preview choosen by user
+     * @param previewAsString - mailing preview  @return - resulting mailing preview.
+     */
+    public static String replaceImagesWithMobileComponents(Map<String, MailingComponent> components, int previewSize, String previewAsString) {
+    	Preview.Size screenSize = Preview.Size.getSizeById(previewSize);
+        if (screenSize == Preview.Size.MOBILE_PORTRAIT || screenSize == Preview.Size.MOBILE_LANDSCAPE) {
+            final Set<Map.Entry<String, MailingComponent>> componentEntries = components.entrySet();
+            for (Map.Entry<String, MailingComponent> component : componentEntries) {
+                int componentType = component.getValue().getType();
+                if (componentType == MailingComponent.TYPE_HOSTED_IMAGE ||
+                        componentType == MailingComponent.TYPE_IMAGE) {
+                    final String componentName = component.getKey();
+                    final String replacementName = ShowImageServlet.MOBILE_IMAGE_PREFIX + componentName;
+                    final MailingComponent replacementComponent = components.get(replacementName);
+                    if (replacementComponent != null &&
+                            (replacementComponent.getType() == MailingComponent.TYPE_HOSTED_IMAGE ||
+									replacementComponent.getType() == MailingComponent.TYPE_IMAGE)){
+                        previewAsString = previewAsString.replaceAll(componentName, replacementName);
+                    }
+                }
+            }
+        }
+        return previewAsString;
+    }
 }

@@ -115,6 +115,12 @@ reportContext.setPersistentGlobalVariable("reportName", recipientsStatisticDataS
 recipientsDetailedStatisticDataSet = new RecipientsDetailedStatisticDataSet();
 recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
 
+figures = BirtReporUtils.unpackFigures(params["figures"]);
+reportContext.setGlobalVariable("figures", figures);
+if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
+	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"]);
+}
+
 percentFormatter = NumberFormat.getPercentInstance();
 percentFormatter.setMaximumFractionDigits(2);
 percentFormatter.setMinimumFractionDigits(2);
@@ -136,11 +142,19 @@ function dateFormat(date, format) {
 	}
 }
 
+function formatDateByLocale(date) {
+	importPackage(Packages.java.text);
+	if (reportContext.getLocale().getLanguage() == "de") {
+		return new SimpleDateFormat("dd.MM.yyyy").format(date);	
+	} else {
+		return new SimpleDateFormat("yyyy-MM-dd").format(date);
+	}
+}
+reportContext.setGlobalVariable("formatDateByLocale", formatDateByLocale);
+
 reportContext.setPersistentGlobalVariable("startDateFormated", dateFormat(new SimpleDateFormat("yyyy-MM-dd").parse(params["startDate"]), "normal"));
 reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(new SimpleDateFormat("yyyy-MM-dd").parse(params["stopDate"]), "normal"));
-
-figures = BirtReporUtils.unpackFigures(params["figures"]);
-reportContext.setGlobalVariable("figures", figures);]]></method>
+]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
     <property name="bidiLayoutOrientation">ltr</property>
@@ -376,6 +390,31 @@ reportContext.setGlobalVariable("figures", figures);]]></method>
                     <property name="name">countBlacklisted</property>
                     <property name="dataType">integer</property>
                 </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">countWaitingForConfirmAsOf</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">22</property>
+                    <property name="name">countBlacklistedAsOf</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">23</property>
+                    <property name="name">countOptoutAsOf</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">24</property>
+                    <property name="name">countBouncedAsOf</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">25</property>
+                    <property name="name">countRecipientAsOf</property>
+                    <property name="dataType">integer</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -437,6 +476,21 @@ reportContext.setGlobalVariable("figures", figures);]]></method>
                 </structure>
                 <structure>
                     <property name="columnName">countBlacklisted</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countWaitingForConfirmAsOf</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countBlacklistedAsOf</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countOptoutAsOf</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countBouncedAsOf</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countRecipientAsOf</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -541,6 +595,31 @@ reportContext.setGlobalVariable("figures", figures);]]></method>
                         <property name="name">countBlacklisted</property>
                         <property name="dataType">integer</property>
                     </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">countWaitingForConfirmAsOf</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">22</property>
+                        <property name="name">countBlacklistedAsOf</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">23</property>
+                        <property name="name">countOptoutAsOf</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">24</property>
+                        <property name="name">countBouncedAsOf</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">25</property>
+                        <property name="name">countRecipientAsOf</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -571,6 +650,11 @@ row["countGenderUnknown"] = statData.get(currentRow).getCountGenderUnknown();
 row["countRecipient"] = statData.get(currentRow).getCountRecipient();
 row["countTargetGroup"] = statData.get(currentRow).getCountTargetGroup();
 row["active_count_asOf"] = statData.get(currentRow).getCountActiveAsOf();
+row["countWaitingForConfirmAsOf"] = statData.get(currentRow).getCountWaitingForConfirmAsOf();
+row["countBlacklistedAsOf"] = statData.get(currentRow).getCountBlacklistedAsOf();
+row["countOptoutAsOf"] = statData.get(currentRow).getCountOptoutAsOf();
+row["countBouncedAsOf"] = statData.get(currentRow).getCountBouncedAsOf();
+row["countRecipientAsOf"] = statData.get(currentRow).getCountRecipientAsOf();
 
 // do some i18n stuff
 targetGroupID = statData.get(currentRow).getTargetGroupId();
@@ -828,7 +912,7 @@ return true;
                 </structure>
                 <structure>
                     <property name="position">10</property>
-                    <property name="name">targetGoupId</property>
+                    <property name="name">targetGroupId</property>
                     <property name="dataType">integer</property>
                 </structure>
             </list-property>
@@ -861,7 +945,7 @@ return true;
                     <property name="columnName">rate</property>
                 </structure>
                 <structure>
-                    <property name="columnName">targetGoupId</property>
+                    <property name="columnName">targetGroupId</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -913,7 +997,7 @@ return true;
                     </structure>
                     <structure>
                         <property name="position">10</property>
-                        <property name="name">targetGoupId</property>
+                        <property name="name">targetGroupId</property>
                         <property name="dataType">integer</property>
                     </structure>
                 </list-property>
@@ -932,7 +1016,7 @@ row["mailingListId"] = statList.get(currentRow).getMailingListId();
 row["category"] = statList.get(currentRow).getCategory();
 row["categoryindex"] = statList.get(currentRow).getCategoryindex();
 row["targetgroupindex"] = statList.get(currentRow).getTargetgroupindex();
-row["targetgroupId"] = statList.get(currentRow).getTargetgroupId();
+row["targetGroupId"] = statList.get(currentRow).getTargetgroupId();
 row["count"] = statList.get(currentRow).getCount();
 row["rate"] = statList.get(currentRow).getRate();
 
@@ -945,6 +1029,122 @@ if (statList.get(currentRow).getTargetgroupId() == 1) {
 
 currentRow++;
 return true;]]></method>
+        </script-data-set>
+        <script-data-set name="RecipientStatisticsDynamic2" id="7425">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">0</property>
+                    <property name="name">mailingListId</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">mailingListName</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">targetGroupId</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">targetGroupName</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">day</property>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">countActive</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">mailingListId</property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailingListName</property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetGroupId</property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetGroupName</property>
+                </structure>
+                <structure>
+                    <property name="columnName">day</property>
+                </structure>
+                <structure>
+                    <property name="columnName">countActive</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">mailingListId</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">mailingListName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">targetGroupId</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">targetGroupName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">day</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">countActive</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[statList = recipientsDetailedStatisticDataSet.getDynamicStatistic();
+currentRow = 0;]]></method>
+            <method name="fetch"><![CDATA[importPackage(Packages.java.text);
+
+if (currentRow >= statList.size()) {
+	return false;
+}
+
+
+row["mailingListId"] = statList.get(currentRow).getMailingListId();
+row["mailingListName"] = statList.get(currentRow).getMailingListName();
+row["targetGroupId"] = statList.get(currentRow).getTargetGroupId();
+
+// do some i18n stuff
+if (statList.get(currentRow).getTargetGroupId() == 1) {
+	row["targetGroupName"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+} else {
+	row["targetGroupName"] = statList.get(currentRow).getTargetGroupName();
+}
+  
+row["countActive"] = statList.get(currentRow).getCountActive();
+
+row["day"] = statList.get(currentRow).getDate();
+ 
+currentRow++;
+return true;
+		]]></method>
         </script-data-set>
     </data-sets>
     <page-setup>
@@ -1298,13 +1498,15 @@ return true;]]></method>
                 </structure>
                 <structure>
                     <property name="name">countOptoutRS</property>
-                    <expression name="expression" type="javascript">dataSetRow["countOptout"]</expression>
+                    <expression name="expression" type="javascript">dataSetRow["countOptoutAsOf"]</expression>
                     <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">countBouncedRS</property>
-                    <expression name="expression" type="javascript">dataSetRow["countBounced"]</expression>
+                    <expression name="expression" type="javascript">dataSetRow["countBouncedAsOf"]</expression>
                     <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">mailingListNameRSTitle</property>
@@ -1348,8 +1550,9 @@ return true;]]></method>
                 </structure>
                 <structure>
                     <property name="name">countWaitingForConfirmRS</property>
-                    <expression name="expression" type="javascript">dataSetRow["countWaitingForConfirm"]</expression>
+                    <expression name="expression" type="javascript">dataSetRow["countWaitingForConfirmAsOf"]</expression>
                     <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">countWaitingForConfirmRSTitle</property>
@@ -1373,6 +1576,12 @@ return true;]]></method>
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
+                <structure>
+                    <property name="name">countBlacklistedRS</property>
+                    <expression name="expression" type="javascript">dataSetRow["countBlacklistedAsOf"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
             </list-property>
             <list-property name="sort">
                 <structure>
@@ -1381,7 +1590,7 @@ return true;]]></method>
                     <property name="strength">-1</property>
                 </structure>
                 <structure>
-                    <expression name="key" type="javascript">row["targetGroupName"]</expression>
+                    <expression name="key" type="javascript">row["targetGroupId"]</expression>
                     <property name="direction">asc</property>
                     <property name="strength">-1</property>
                 </structure>
@@ -1457,7 +1666,7 @@ return true;]]></method>
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 0</expression>
+                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
                                 </structure>
                             </list-property>
                             <property name="resultSetColumn">mailingListNameRS</property>
@@ -1519,7 +1728,7 @@ return true;]]></method>
                     <cell id="7236">
                         <property name="textAlign">right</property>
                         <data id="7238">
-                            <property name="resultSetColumn">countBlacklisted</property>
+                            <property name="resultSetColumn">countBlacklistedRS</property>
                         </data>
                     </cell>
                 </row>
@@ -1806,7 +2015,7 @@ return true;]]></method>
                     <property name="strength">-1</property>
                 </structure>
                 <structure>
-                    <expression name="key" type="javascript">row["targetGroupName"]</expression>
+                    <expression name="key" type="javascript">row["targetGroupId"]</expression>
                     <property name="direction">asc</property>
                     <property name="strength">-1</property>
                 </structure>
@@ -1864,7 +2073,7 @@ return true;]]></method>
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 0</expression>
+                                    <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
                                 </structure>
                             </list-property>
                             <property name="resultSetColumn">mailingListNameGR</property>
@@ -1911,6 +2120,309 @@ return true;]]></method>
                     </cell>
                 </row>
             </detail>
+        </table>
+        <grid id="7252">
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                </structure>
+            </list-property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">active_recipients_total_title</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.recipient.active.total", reportContext.getLocale())</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="7253"/>
+            <column id="7279"/>
+            <column id="7254"/>
+            <column id="7284"/>
+            <column id="7289"/>
+            <column id="7255"/>
+            <row id="7256">
+                <cell id="7257"/>
+                <cell id="7275"/>
+                <cell id="7258"/>
+                <cell id="7280"/>
+                <cell id="7285"/>
+                <cell id="7259"/>
+            </row>
+            <row id="7260">
+                <cell id="7261"/>
+                <cell id="7276"/>
+                <cell id="7262"/>
+                <cell id="7281"/>
+                <cell id="7286"/>
+                <cell id="7263"/>
+            </row>
+            <row id="7416">
+                <cell id="7417"/>
+                <cell id="7418"/>
+                <cell id="7419"/>
+                <cell id="7420"/>
+                <cell id="7421"/>
+                <cell id="7422"/>
+            </row>
+            <row id="7269">
+                <cell id="7270">
+                    <data id="7274">
+                        <property name="resultSetColumn">active_recipients_total_title</property>
+                    </data>
+                </cell>
+                <cell id="7277"/>
+                <cell id="7271"/>
+                <cell id="7282"/>
+                <cell id="7287"/>
+                <cell id="7272"/>
+            </row>
+            <row id="7264">
+                <cell id="7265"/>
+                <cell id="7278"/>
+                <cell id="7266"/>
+                <cell id="7283"/>
+                <cell id="7288"/>
+                <cell id="7267"/>
+            </row>
+        </grid>
+        <table id="7296">
+            <property name="dataSet">RecipientStatisticsDynamic2</property>
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                </structure>
+            </list-property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">mailingListId</property>
+                    <text-property name="displayName">mailingListId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListId"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListName</property>
+                    <text-property name="displayName">mailingListName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["mailingListName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupId</property>
+                    <text-property name="displayName">targetGroupId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupName</property>
+                    <text-property name="displayName">targetGroupName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">day</property>
+                    <text-property name="displayName">day</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["day"]</expression>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="name">countActive</property>
+                    <text-property name="displayName">countActive</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["countActive"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">mailingListTitle</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailinglist", reportContext.getLocale());</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">targetGroupTitle</property>
+                    <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("Target-Groups", reportContext.getLocale());</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">startDateAggregated</property>
+                    <property name="dataType">date</property>
+                    <simple-property-list name="aggregateOn">
+                        <value>groupTargetGroup</value>
+                    </simple-property-list>
+                    <property name="aggregateFunction">MIN</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["day"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">endDateAggregated</property>
+                    <property name="dataType">date</property>
+                    <simple-property-list name="aggregateOn">
+                        <value>groupTargetGroup</value>
+                    </simple-property-list>
+                    <property name="aggregateFunction">MAX</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["day"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">sumActiveForStartDate</property>
+                    <property name="dataType">integer</property>
+                    <simple-property-list name="aggregateOn">
+                        <value>groupTargetGroup</value>
+                    </simple-property-list>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["countActive"]</expression>
+                        </structure>
+                    </list-property>
+                    <expression name="filterExpr" type="javascript">BirtComp.equalTo(row["day"], row["startDateAggregated"])</expression>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">sumActiveForEndDate</property>
+                    <property name="dataType">integer</property>
+                    <simple-property-list name="aggregateOn">
+                        <value>groupTargetGroup</value>
+                    </simple-property-list>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["countActive"]</expression>
+                        </structure>
+                    </list-property>
+                    <expression name="filterExpr" type="javascript">BirtComp.equalTo(row["day"], row["endDateAggregated"])</expression>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">formatedStartDate</property>
+                    <expression name="expression" type="javascript">formatDateByLocale(row["startDateAggregated"])</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">formatedEndDate</property>
+                    <expression name="expression" type="javascript">formatDateByLocale(row["endDateAggregated"])</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="7309"/>
+            <column id="7310"/>
+            <column id="7348"/>
+            <column id="7311"/>
+            <group id="7321">
+                <property name="groupName">groupMailingList</property>
+                <expression name="keyExpr" type="javascript">row["mailingListId"]</expression>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["mailingListId"]</expression>
+                </structure>
+                <property name="hideDetail">false</property>
+                <list-property name="sort">
+                    <structure>
+                        <expression name="key" type="javascript">row["mailingListName"]</expression>
+                        <property name="direction">asc</property>
+                        <property name="strength">-1</property>
+                    </structure>
+                </list-property>
+                <header>
+                    <row id="7406">
+                        <cell id="7407">
+                            <data id="7379">
+                                <property name="resultSetColumn">mailingListTitle</property>
+                            </data>
+                        </cell>
+                        <cell id="7408">
+                            <data id="7380">
+                                <property name="resultSetColumn">targetGroupTitle</property>
+                            </data>
+                        </cell>
+                        <cell id="7409">
+                            <data id="7423">
+                                <property name="resultSetColumn">formatedStartDate</property>
+                            </data>
+                        </cell>
+                        <cell id="7410">
+                            <data id="7424">
+                                <property name="resultSetColumn">formatedEndDate</property>
+                            </data>
+                        </cell>
+                    </row>
+                </header>
+                <footer>
+                    <row id="7411">
+                        <cell id="7412"/>
+                        <cell id="7413"/>
+                        <cell id="7414"/>
+                        <cell id="7415"/>
+                    </row>
+                </footer>
+            </group>
+            <group id="7331">
+                <property name="groupName">groupTargetGroup</property>
+                <expression name="keyExpr" type="javascript">row["targetGroupId"]</expression>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["targetGroupId"]</expression>
+                </structure>
+                <property name="hideDetail">false</property>
+                <list-property name="sort">
+                    <structure>
+                        <expression name="key" type="javascript">row["targetGroupId"]</expression>
+                        <property name="direction">asc</property>
+                        <property name="strength">-1</property>
+                    </structure>
+                </list-property>
+                <header>
+                    <row id="7369">
+                        <cell id="7370">
+                            <data id="7349">
+                                <list-property name="visibility">
+                                    <structure>
+                                        <property name="format">all</property>
+                                        <expression name="valueExpr" type="javascript">row["targetGroupId"] != 1</expression>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">mailingListName</property>
+                            </data>
+                        </cell>
+                        <cell id="7371">
+                            <data id="7350">
+                                <property name="resultSetColumn">targetGroupName</property>
+                            </data>
+                        </cell>
+                        <cell id="7372">
+                            <data id="7426">
+                                <property name="resultSetColumn">sumActiveForStartDate</property>
+                            </data>
+                        </cell>
+                        <cell id="7373">
+                            <data id="7427">
+                                <property name="resultSetColumn">sumActiveForEndDate</property>
+                            </data>
+                        </cell>
+                    </row>
+                </header>
+            </group>
+            <footer>
+                <row id="7305">
+                    <cell id="7306"/>
+                    <cell id="7307"/>
+                    <cell id="7347"/>
+                    <cell id="7308"/>
+                </row>
+            </footer>
         </table>
         <grid id="4787">
             <list-property name="visibility">
@@ -2670,7 +3182,7 @@ return true;]]></method>
                 </structure>
                 <structure>
                     <property name="name">targetGroupId</property>
-                    <expression name="expression" type="javascript">dataSetRow["targetGoupId"]</expression>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
                     <property name="dataType">integer</property>
                     <property name="allowExport">true</property>
                 </structure>
@@ -2789,7 +3301,7 @@ return true;]]></method>
                 <property name="pageBreakInside">auto</property>
                 <list-property name="sort">
                     <structure>
-                        <expression name="key" type="javascript">row["targetgroup"]</expression>
+                        <expression name="key" type="javascript">row["targetGroupId"]</expression>
                         <property name="direction">asc</property>
                         <property name="strength">-1</property>
                     </structure>
@@ -4188,7 +4700,7 @@ return true;]]></method>
                 </structure>
                 <structure>
                     <property name="name">targetgroupId</property>
-                    <expression name="expression" type="javascript">dataSetRow["targetGoupId"]</expression>
+                    <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
                     <property name="dataType">integer</property>
                     <property name="allowExport">true</property>
                 </structure>
@@ -4317,7 +4829,7 @@ return true;]]></method>
                 <property name="pageBreakInside">auto</property>
                 <list-property name="sort">
                     <structure>
-                        <expression name="key" type="javascript">row["targetgroup"]</expression>
+                        <expression name="key" type="javascript">row["targetgroupId"]</expression>
                         <property name="direction">asc</property>
                         <property name="strength">-1</property>
                     </structure>

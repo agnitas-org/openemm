@@ -12,7 +12,7 @@ package com.agnitas.emm.core.report.converter.impl;
 
 import java.util.Objects;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.WebtrackingHistoryEntry;

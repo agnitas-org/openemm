@@ -10,15 +10,11 @@
 
 package com.agnitas.emm.core.globalblacklist.forms;
 
-import org.apache.commons.lang.StringUtils;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.apache.commons.lang3.StringUtils;
 
 public class BlacklistForm {
-
-    @NotEmpty(message = "error.email.empty")
-    @Email(message = "error.invalid.email")
     private String email;
+    private String reason;
 
     public String getEmail() {
         return StringUtils.trimToNull(email);
@@ -26,5 +22,13 @@ public class BlacklistForm {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

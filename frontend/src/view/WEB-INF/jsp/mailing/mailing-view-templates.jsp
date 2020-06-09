@@ -27,12 +27,14 @@
             </ul>
 
             <ul class="tile-header-actions">
+                <emm:HideByPermission token="mailing.settings.hide">
                 <li>
                     <button type="button" class="btn btn-primary btn-large" data-form-submit data-form-set="templateID: 0">
                         <span class="text"><bean:message key="button.template.without"/></span>
                         <i class="icon icon-angle-right"></i>
                     </button>
                 </li>
+                </emm:HideByPermission>
             </ul>
         </div>
 
@@ -88,12 +90,15 @@
         </div>
 
         <div class="tile-footer" data-sizing="bottom">
-            <div class="btn-group pull-right">
-                <button type="button" class="btn btn-primary btn-large" data-form-submit data-form-set="templateID: 0">
-                    <span class="text"><bean:message key="button.template.without"/></span>
-                    <i class="icon icon-angle-right"></i>
-                </button>
-            </div>
+            <emm:HideByPermission token="mailing.settings.hide">
+                <div class="btn-group pull-right">
+                    <button type="button" class="btn btn-primary btn-large" data-form-submit data-form-set="templateID: 0">
+                        <span class="text"><bean:message key="button.template.without"/></span>
+                        <i class="icon icon-angle-right"></i>
+                    </button>
+                </div>
+            </emm:HideByPermission>
         </div>
+
     </div>
 </agn:agnForm>

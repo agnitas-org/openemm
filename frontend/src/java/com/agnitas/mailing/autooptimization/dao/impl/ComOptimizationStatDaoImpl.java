@@ -12,14 +12,15 @@ package com.agnitas.mailing.autooptimization.dao.impl;
 
 import java.util.Map;
 
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
-import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
+
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
+import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 
 public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimizationStatDao {
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationStatDaoImpl.class);
@@ -114,7 +115,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     @Override
 	public int getOptOuts(int mailingID,@VelocityCheck int companyID) {
 		String query = "SELECT count(distinct (bind.customer_id)) AS optout FROM " +
-			" customer_<COMPANYID>_binding_tbl bind " + 
+			" customer_<COMPANYID>_binding_tbl bind " +
 			" WHERE bind.exit_mailing_id= ? AND (bind.user_status = 3 OR  bind.user_status = 4)" +
 			" AND user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') and mailinglist_id=(" +
 			"select mailinglist_id from mailing_tbl where mailing_id = ?) ";
@@ -129,7 +130,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
 	public int getSend(int mailingID) {
         String query = "";
         if (isOracleDB()) {
-              query = "SELECT NVL(SUM(no_of_mailings), 0) mails FROM mailing_account_tbl " +
+              query = "SELECT COALESCE(SUM(no_of_mailings), 0) mails FROM mailing_account_tbl " +
               		"WHERE mailing_id= ? AND NOT (status_field = 'A' or status_field = 'T')";
         } else {
               query = "SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ? " +
@@ -142,7 +143,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     public int getSend(int mailingId, String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
-                .append("select ").append(isOracleDB() ? "nvl" : "ifnull").append("(sum(x.no_of_mailings), 0) ")
+                .append("select ").append("COALESCE(SUM(x.no_of_mailings), 0) ")
                 .append("  from mailing_account_tbl x, mailing_tbl m ")
                 .append(" where x.mailing_id = ? ")
                 .append("   and x.mailing_id = m.mailing_id ")
@@ -162,7 +163,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
         try {
             StringBuilder queryBuilder = new StringBuilder();
             queryBuilder
-                    .append("SELECT ").append(isOracleDB() ? "NVL" : "IFNULL").append("(SUM(num_parameter), 0) ")
+                    .append("SELECT COALESCE(SUM(num_parameter), 0) ")
                     .append("  FROM rdirlog_").append(companyID).append("_val_num_tbl ")
                     .append(" WHERE mailing_id = ? ")
                     .append("   AND page_tag = ?");

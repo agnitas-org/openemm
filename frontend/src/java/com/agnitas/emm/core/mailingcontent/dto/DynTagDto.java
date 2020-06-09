@@ -16,6 +16,7 @@ public class DynTagDto {
 
     private int id;
     private int mailingId;
+    private int companyId;
     private String interestGroup;
     private String name;
     private List<DynContentDto> contentBlocks;
@@ -58,5 +59,13 @@ public class DynTagDto {
 
     public void setContentBlocks(List<DynContentDto> contentBlocks) {
         this.contentBlocks = contentBlocks;
+    }
+
+    public int getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(int companyId) {
+        this.companyId = companyId;
     }
 }

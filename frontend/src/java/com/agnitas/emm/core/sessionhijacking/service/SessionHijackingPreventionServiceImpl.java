@@ -33,7 +33,7 @@ import com.agnitas.emm.core.sessionhijacking.dao.SessionHijackingPreventionDataD
 public final class SessionHijackingPreventionServiceImpl implements SessionHijackingPreventionService {
 
 	/** Default time for caching configuration data. */
-	public static final transient int DEFAULT_CACHE_TIME_SECONDS = 300; 
+	public static final transient int DEFAULT_CACHE_TIME_SECONDS = 300;
 	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(SessionHijackingPreventionServiceImpl.class);
@@ -55,9 +55,9 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 		
 	@Override
 	public final boolean isAddressAllowed(final InetAddress sessionIpAddress, final InetAddress clientIpAddress) {
-		if(logger.isDebugEnabled()) {
+		if (logger.isDebugEnabled()) {
 			logger.debug(String.format(
-					"IP addresses are: session=%s, client=%s", 
+					"IP addresses are: session=%s, client=%s",
 					sessionIpAddress != null ? sessionIpAddress.getHostAddress() : "<unknown>",
 					clientIpAddress != null ? clientIpAddress.getHostAddress() : "<unknown>"
 							));
@@ -65,13 +65,13 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 		
 		try {
 			refreshCache();
-		} catch(final Exception e) {
+		} catch (final Exception e) {
 			logger.error("Unable to refresh cache - using old cache state", e);
 		}
 		
 		// The client IP address is always allowed, if it is the same as the IP address bound to the session
-		if(sessionIpAddress.equals(clientIpAddress)) {
-			if(logger.isInfoEnabled()) {
+		if (sessionIpAddress != null && sessionIpAddress.equals(clientIpAddress)) {
+			if (logger.isInfoEnabled()) {
 				logger.info("IP of session equals to IP of client - accepted");
 			}
 			
@@ -79,7 +79,7 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 		}
 		
 		// Whitelisted IP addresses of client are never checked and always allowed
-		if(whitelist.contains(clientIpAddress)) {
+		if (whitelist.contains(clientIpAddress)) {
 			if(logger.isInfoEnabled()) {
 				logger.info("IP of client is whitelisted - accepted");
 			}
@@ -91,7 +91,7 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 		final Integer clientGroup = this.groups.get(clientIpAddress);
 
 		// Here, we have a client IP address, that differs from the IP address bound to the session and that is not whitelisted. We need to check group ID.
-		if(sessionGroup != null && clientGroup != null && sessionGroup.equals(clientGroup)) {
+		if (sessionGroup != null && clientGroup != null && sessionGroup.equals(clientGroup)) {
 			if(logger.isInfoEnabled()) {
 				logger.info("IP of session and IP of client in same group - accepted");
 			}
@@ -107,8 +107,8 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 	}
 
 	private final void refreshCache() throws Exception {
-		if(lastRefresh == null || (lastRefresh.getTime() + cacheTimeSeconds * 1000 < (new Date()).getTime())) {
-			if(logger.isDebugEnabled()) {
+		if (lastRefresh == null || (lastRefresh.getTime() + cacheTimeSeconds * 1000 < (new Date()).getTime())) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Refreshing internal caches");
 			}
 			

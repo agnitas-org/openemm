@@ -14,8 +14,11 @@ import java.util.List;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MediaTypesService {
     
     List<MediaTypes> getAllowedMediaTypes(ComAdmin admin);
+    
+    MediaTypes getActiveMediaType(@VelocityCheck int companyId, int mailingId);
 }

@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!DOCTYPE form-validation PUBLIC
-     "-//Apache Software Foundation//DTD Commons Validator Rules Configuration 1.1//EN"
-     "http://jakarta.apache.org/commons/dtds/validator_1_1.dtd">
-
+<!DOCTYPE form-validation PUBLIC "-//Apache Software Foundation//DTD Commons Validator Rules Configuration 1.1//EN" "http://jakarta.apache.org/commons/dtds/validator_1_1.dtd">
 <form-validation>
     <global>
         <!--  
@@ -224,6 +220,11 @@
             </field>
             <field property="email" depends="required, isEmail">
                 <arg0 key="email" />
+            </field>
+            <field property="reason" depends="maxLength">
+                <arg0 key="reason" />
+                <arg1 name="maxLength" key="${var:maxlength}" resource="false" />
+                <var><var-name>maxlength</var-name><var-value>500</var-value></var>
             </field>
         </form>
         <form name="addContentBlock">

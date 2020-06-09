@@ -82,8 +82,8 @@ public class AdminGroupImpl implements AdminGroup {
 	}
 
 	@Override
-	public boolean permissionAllowed(Permission... permissions) {
-		return Permission.permissionAllowed(groupPermissions, companyPermissions, permissions);
+	public boolean permissionAllowed(int companyIdToCheckFor, Permission... permissions) {
+		return Permission.permissionAllowed(companyIdToCheckFor, groupPermissions, companyPermissions, permissions);
 	}
 
 	/**

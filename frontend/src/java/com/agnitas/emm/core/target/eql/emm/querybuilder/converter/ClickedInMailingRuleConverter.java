@@ -10,12 +10,9 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
-import java.util.Arrays;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class ClickedInMailingRuleConverter extends GenericMailingRelatedRuleConverter {
 
@@ -23,18 +20,19 @@ public class ClickedInMailingRuleConverter extends GenericMailingRelatedRuleConv
 
     @Override
     protected String convertMailingRule(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException {
-        Object[] values = (Object[]) ruleNode.getValue();
-        String eql = "CLICKED %s IN MAILING %s";
-        if (values[1].equals(ANY_LINK_VALUE)) {
-            return String.format(eql, StringUtils.EMPTY, values[0]);
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(ruleNode);
+        String linkIdValue = values[1].toString();
+        if (ANY_LINK_VALUE.equals(linkIdValue)) {
+            return "CLICKED IN MAILING " + values[0];
         }
-        return "CLICKED LINK " + values[1]  + " IN MAILING " + values[0];
+
+        return "CLICKED LINK " + linkIdValue + " IN MAILING " + values[0];
     }
 
     @Override
     protected void validate(QueryBuilderRuleNode ruleNode) throws QueryBuilderToEqlConversionException {
-        Object[] values = (Object[]) ruleNode.getValue();
-        if (values.length != 2 || Arrays.stream(values).map(Object::toString).anyMatch(StringUtils::isBlank)) {
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(ruleNode);
+        if (ArrayUtils.getLength(values) != 2 || QueryBuilderUtil.containsAnyEmptyValue(values)) {
             throw new QueryBuilderToEqlConversionException("Invalid value for node " + ruleNode);
         }
     }

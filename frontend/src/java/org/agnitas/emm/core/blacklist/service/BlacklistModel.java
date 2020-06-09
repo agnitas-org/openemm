@@ -13,9 +13,9 @@ package org.agnitas.emm.core.blacklist.service;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class BlacklistModel {
-	
 	private int companyId;
 	private String email;
+	private String reason;
 
 	public int getCompanyId() {
 		return companyId;
@@ -33,4 +33,11 @@ public class BlacklistModel {
 		this.email = email;
 	}
 
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
+	}
 }

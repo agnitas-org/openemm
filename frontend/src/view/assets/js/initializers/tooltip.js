@@ -43,7 +43,7 @@ Use `data-tooltip-src` attribute to generate a tooltip content (title option) fr
 
   var Tooltip = AGN.Lib.Tooltip;
 
-  AGN.Initializers.Tooltip = function($scope) {
+  AGN.Lib.CoreInitializer.new('tooltip', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -54,6 +54,6 @@ Use `data-tooltip-src` attribute to generate a tooltip content (title option) fr
       var $e = $(this);
       Tooltip.create($e, Tooltip.options($e));
     });
-  };
+  });
 
 })();

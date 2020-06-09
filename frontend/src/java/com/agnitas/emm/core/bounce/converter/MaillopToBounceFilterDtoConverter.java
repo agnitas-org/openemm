@@ -32,10 +32,6 @@ public class MaillopToBounceFilterDtoConverter implements Converter<Mailloop, Bo
         filterDto.setUserFormId(mailloop.getUserformID());
         filterDto.setDoAutoRespond(mailloop.isDoAutoresponder());
         filterDto.setArMailingId(mailloop.getAutoresponderMailingId());
-        filterDto.setArSenderAddress(mailloop.getArSender());
-        filterDto.setArSubject(mailloop.getArSubject());
-        filterDto.setArText(mailloop.getArText());
-        filterDto.setArHtml(mailloop.getArHtml());
         filterDto.setSecurityToken(mailloop.getSecurityToken());
         return filterDto;
     }

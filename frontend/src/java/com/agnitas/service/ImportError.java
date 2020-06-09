@@ -12,7 +12,7 @@ package com.agnitas.service;
 
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.messages.I18nString;
 
@@ -31,7 +31,8 @@ public class ImportError extends RuntimeException {
 		invalidMapping("error.invalidMapping"),
 		csvContainsInvalidColumn("error.csvContainsInvalidColumn"),
 		cannotReadImportFile("error.cannotReadImportFile"),
-		emptyImportFile("error.emptyImportFile");
+		emptyImportFile("error.emptyImportFile"),
+		missingMandatoryColumn("error.missingMandatoryColumn");
 		
 		/**
 		  * Instantiates a new error key.

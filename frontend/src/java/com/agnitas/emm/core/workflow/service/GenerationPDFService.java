@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,9 +23,10 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
@@ -59,8 +61,12 @@ public class GenerationPDFService {
         	logger.error("Missing wkhtmltopdf tool at path: '" + wkhtmltopdf + "'");
         }
 
-        try {
-            // render workflow into PDF
+		try {
+			int responseStatusCode = HttpUtils.getResponseStatusCode(url);
+			if (responseStatusCode != HttpURLConnection.HTTP_OK) {
+				throw new Exception("Missing or wrong url for generating PDF: " + url);
+			}
+			// render workflow into PDF
             File pdfInitialFile = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
             String pdfName = pdfInitialFile.getAbsolutePath();
 
@@ -94,6 +100,7 @@ public class GenerationPDFService {
                         "-T", "25mm", "-B", "12mm",          // top and bottom margins
                         "--print-media-type",
 						"--enable-smart-shrinking",
+						"--load-error-handling", "ignore",
 						"--window-status",
                         windowStatusForWaiting,              // wait until WM is loaded
                         "--user-style-sheet",
@@ -199,25 +206,31 @@ public class GenerationPDFService {
 				        }
 				
 				        // draw bottom page text: workflow name + date
-				        String workflowStr = SafeString.getLocaleString(footerTitleMessageKey, admin.getLocale());
+						String workflowTitle = String.format("%s \"%s\"", SafeString.getLocaleString(footerTitleMessageKey, admin.getLocale()), title);
 				        DateFormat dateFormat = SimpleDateFormat.getDateInstance(SimpleDateFormat.MEDIUM, admin.getLocale());
 				        Date currentDate = GregorianCalendar.getInstance(TimeZone.getTimeZone(admin.getAdminTimezone())).getTime();
 				        String dateStr = dateFormat.format(currentDate);
-				        String bottomText = workflowStr + " \"" + title + "\", " + dateStr;
+						String bottomText = workflowTitle + ", " + dateStr;
 				        BaseFont font = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
 			
 				        for (int i = 1; i <= pdfReader.getNumberOfPages(); i++) {
 				            PdfContentByte overContent = stamper.getOverContent(i);
 				            //add logo
 				            overContent.addImage(image);
-				
+
+				            overContent.beginText();
+				            overContent.setFontAndSize(font, 10); // set font and size
+							overContent.setTextMatrix(borderGap + 5, topLineStartY + 10); // set x,y position (0,0 is at the bottom left)
+							overContent.showText(workflowTitle); // set text
+				            overContent.endText();
+
 				            //add footer text
 				            overContent.beginText();
 				            overContent.setFontAndSize(font, 10); // set font and size
 				            overContent.setTextMatrix(borderGap + 5, borderGap - 5); // set x,y position (0,0 is at the bottom left)
 				            overContent.showText(bottomText); // set text
 				            overContent.setTextMatrix(bottomLineEndX - 20, bottomLineEndY - 15);
-				            overContent.showText("" + i + "/" + pdfReader.getNumberOfPages());
+				            overContent.showText("" + i + "/" + pdfReader.getNumberOfPages()); // set page number
 				            overContent.endText();
 				
 				            // add light grey lines at the top and at the bottom

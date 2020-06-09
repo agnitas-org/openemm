@@ -23,12 +23,6 @@ public class Const {
 	}
 	
 	public static class Mailing {
-		public static final int
-			TYPE_NORMAL = 0,
-			TYPE_ACTIONBASED = 1,
-			TYPE_DATEBASED = 2,
-			TYPE_FOLLOWUP = 3,
-			TYPE_INTERVAL = 4;
 		public static final String
 			TYPE_FOLLOWUP_NON_OPENER = "non-opener",
 			TYPE_FOLLOWUP_OPENER = "opener",
@@ -44,14 +38,16 @@ public class Const {
 			NAME_FAX = "agnFAX",
 			NAME_PRINT = "agnPRINT",
 			NAME_MMS = "agnMMS",
-			NAME_SMS = "agnSMS",
-			NAME_WHATSAPP = "agnWHATSAPP";
+			NAME_SMS = "agnSMS";
 		
 	}
 	
 	public static class Workstatus {
 		public static final String
-			MAILING_STATUS_TEST = "mailing.status.test";
+			MAILING_STATUS_TEST = "mailing.status.test",
+			MAILING_STATUS_IN_GENERATION = "mailing.status.in-generation",
+			MAILING_STATUS_GENERATION_FINISHED = "mailing.status.generation-finished",
+			MAILING_STATUS_NORECIPIENTS = "mailing.status.norecipients";
 	}
 	
 	public static class WorkflowDependencyType {

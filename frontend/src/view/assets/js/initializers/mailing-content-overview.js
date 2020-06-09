@@ -1,4 +1,7 @@
-AGN.Lib.DomInitializer.new('mailing-content-overview', function($elem, $scope) {
+AGN.Lib.DomInitializer.new( 'mailing-content-overview', function($elem, $scope) {
+
+  var config = this.config;
+
   if (!$scope) {
     var data = AGN.Lib.Storage.get('mailings-content-dynNameID');
     if (data) {
@@ -44,5 +47,11 @@ AGN.Lib.DomInitializer.new('mailing-content-overview', function($elem, $scope) {
       $('#startHour').val(0);
       $('#startMinute').val(0);
     });
+  }
+
+  if (!AGN.Opt.Components.MailingContentLock.manageLock(config.mailingId, config.isMailingExclusiveLockingAcquired)) {
+    var $controls = $('[data-controls-group="editing"]');
+    $controls.prop('disabled', true);
+    $controls.addClass('disabled');
   }
 });

@@ -203,6 +203,13 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
   };
 
   Form.prototype.valid = function() {
+    var validationEvent = $.Event('validation');
+    this.$form.trigger(validationEvent);
+
+    if (validationEvent.isDefaultPrevented()) {
+      return false;
+    }
+
     var fieldsValid = _.every(this.fields, function(field) {
       return field.valid()
     });
@@ -711,6 +718,10 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     } else {
       if (anchor.is('select')) {
         showIcon = false;
+
+        if (anchor.is('.input-group .input-group-controls .js-select')) {
+          anchor = anchor.closest('.input-group');
+        }
       }
     }
 

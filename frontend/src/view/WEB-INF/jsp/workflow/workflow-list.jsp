@@ -118,16 +118,8 @@
         {
             "columns": [
                 {
-                    "headerName": "",
-                    "editable": false,
                     "field": "select",
-                    "checkboxSelection": true,
-                    "headerCheckboxSelection": true,
-                    "suppressResize": true,
-                    "suppressMenu": true,
-                    "suppressSorting": true,
-                    "width": 20,
-                    "cellAction": "select"
+                    "type": "bulkSelectColumn"
                 },
                 {
                     "headerName": "<mvc:message code='Status'/>",
@@ -172,15 +164,8 @@
                     "cellRenderer": "WorkflowReactionCellRenderer"
                 },
                 {
-                    "headerName": "",
-                    "editable": false,
                     "field": "delete",
-                    "suppressResize": true,
-                    "suppressMenu": true,
-                    "suppressSorting": true,
-                    "width": 36,
-                    "cellAction": null,
-                    "cellRenderer": "DeleteCellRenderer"
+                    "type": "deleteColumn"
                 }
             ],
             "data": ${workflowsJson}

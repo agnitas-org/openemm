@@ -18,10 +18,8 @@ import org.agnitas.emm.springws.jaxb.UpdateMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistResponse;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class UpdateMailinglistEndpoint extends AbstractMarshallingPayloadEndpoint {
 	
-
     private MailinglistService mailinglistService;
 
     private ObjectFactory objectFactory;

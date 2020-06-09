@@ -22,7 +22,8 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -30,19 +31,14 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
 public interface Mailing extends MailingBase {
-	int INPUT_TYPE_TEXT = 0;
-    int INPUT_TYPE_HTML = 1;
+    @Deprecated
+    int INPUT_TYPE_TEXT = MailingPreviewHelper.INPUT_TYPE_TEXT;
+    @Deprecated
+    int INPUT_TYPE_HTML = MailingPreviewHelper.INPUT_TYPE_HTML;
 
     int TARGET_MODE_OR = 0;
     int TARGET_MODE_AND = 1;
 
-    // TODO: replace with MailingTypes enum
-    int TYPE_NORMAL = MailingTypes.NORMAL.getCode();
-    int TYPE_ACTIONBASED = MailingTypes.ACTION_BASED.getCode();
-    int TYPE_DATEBASED = MailingTypes.DATE_BASED.getCode();
-    int TYPE_FOLLOWUP = MailingTypes.FOLLOW_UP.getCode();
-    int TYPE_INTERVAL = MailingTypes.INTERVAL.getCode();
-    
     enum AccountMailingType {
     	World("W"), // World sent Mailings
     	EventBased("E"),
@@ -87,6 +83,8 @@ public interface Mailing extends MailingBase {
     Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws Exception;
 
     MailingComponent getTemplate(String id);
+    
+    MailingComponent getTemplate(MediaTypes mediaTypes);
 
     MailingComponent getTextTemplate();
 
@@ -255,4 +253,7 @@ public interface Mailing extends MailingBase {
 
     List<EmmAction> getPossibleActions();
     void setPossibleActions(List<EmmAction> possibleActions);
+
+    boolean isFrequencyCounterDisabled();
+    void setFrequencyCounterDisabled(boolean isDisabled);
 }

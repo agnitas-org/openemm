@@ -1,4 +1,4 @@
-(function() {
+(function($) {
 
   var CampaignManagerScale = function(properties) {
     var externalScale = 0;
@@ -71,4 +71,4 @@
 
   AGN.Lib.WM.CampaignManagerScale = CampaignManagerScale;
 
-})();
+})(jQuery);

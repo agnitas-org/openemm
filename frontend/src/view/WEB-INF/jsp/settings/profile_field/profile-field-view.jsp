@@ -155,7 +155,7 @@
 								<div class="form-badge">
 									<c:choose>
 										<c:when test="${profileForm.fieldNull}">
-											<bean:message key="Yes"/>
+											<bean:message key="default.Yes"/>
 										</c:when>
 										<c:otherwise>
 											<bean:message key="No"/>

@@ -13,7 +13,7 @@ package com.agnitas.emm.springws.endpoint;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
@@ -24,20 +24,17 @@ import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.FailedCreateDataSourceException;
 
-@SuppressWarnings("deprecation")
 public class CreateDataSourceEndpoint extends AbstractMarshallingPayloadEndpoint {
-	
-	@SuppressWarnings("hiding")
-	private static final Logger logger = Logger.getLogger(CreateDataSourceEndpoint.class);
+	private static final Logger classLogger = Logger.getLogger(CreateDataSourceEndpoint.class);
 
-	private ObjectFactory comObjectFactory; 
+	private ObjectFactory comObjectFactory;
 	private DataSourceService dataSourceService;
 	private ConfigService configService;
 	
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered CreateDataSourceEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered CreateDataSourceEndpoint.invokeInternal()");
 		}
 		
 		CreateDataSourceRequest request = (CreateDataSourceRequest) arg0;
@@ -54,13 +51,13 @@ public class CreateDataSourceEndpoint extends AbstractMarshallingPayloadEndpoint
 			dsGroup = 1;
 		}
 
-		int rs = dataSourceService.createDataSource(Utils.getUserCompany(), dsGroup, 
+		int rs = dataSourceService.createDataSource(Utils.getUserCompany(), dsGroup,
 				request.getDescription(), request.getUrl());
 		
 		response.setId(rs);
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
 		}
 		
 		return response;

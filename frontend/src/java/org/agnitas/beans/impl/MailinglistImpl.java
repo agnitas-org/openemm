@@ -48,6 +48,8 @@ public class MailinglistImpl implements Mailinglist {
 
 	protected boolean isRemoved;
 
+	protected boolean isFrequencyCounterEnabled;
+
 	@Override
 	public int getId() {
 		return id;
@@ -108,8 +110,18 @@ public class MailinglistImpl implements Mailinglist {
 	}
 
 	@Override
+	public boolean isFrequencyCounterEnabled() {
+		return isFrequencyCounterEnabled;
+	}
+
+	@Override
 	public void setCreationDate(Date creationDate) {
 		this.creationDate = creationDate;
+	}
+
+	@Override
+	public void setFrequencyCounterEnabled(boolean isFrequencyCounterEnabled) {
+		this.isFrequencyCounterEnabled = isFrequencyCounterEnabled;
 	}
 
 	@Override

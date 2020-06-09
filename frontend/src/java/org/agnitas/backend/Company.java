@@ -19,7 +19,6 @@ import	java.util.Map;
 import	java.util.Set;
 
 import	org.agnitas.backend.dao.CompanyDAO;
-import	org.agnitas.util.Config;
 import	org.agnitas.util.Log;
 
 /**
@@ -39,6 +38,7 @@ public class Company {
 	private Map <String, String>	info;
 	/** configuration from company table				*/
 	private boolean			mailtracking;
+	private boolean			mailtrackingExtended;
 	private String			mailtrackingTable;
 	private String			rdirDomain;
 	private String			mailloopDomain;
@@ -82,6 +82,9 @@ public class Company {
 	}
 	public boolean mailtracking () {
 		return mailtracking;
+	}
+	public boolean mailtrackingExtended () {
+		return mailtrackingExtended;
 	}
 	public String mailtrackingTable () {
 		return mailtrackingTable;
@@ -152,8 +155,9 @@ public class Company {
 	public String info (String key, int index) {
 		String	ci;
 		
-		if ((ci = info (key + "[" + index + "]")) == null)
+		if ((ci = info (key + "[" + index + "]")) == null) {
 			ci = info (key);
+		}
 		return ci;
 	}
 	public String info (String key, long index) {
@@ -171,8 +175,9 @@ public class Company {
 	public String infoSubstituted (String key, long index, Map <String, String> extra, String defaultValue) {
 		String	ci;
 		
-		if ((ci = infoSubstituted (key + "[" + index + "]", extra)) == null)
+		if ((ci = infoSubstituted (key + "[" + index + "]", extra)) == null) {
 			ci = infoSubstituted (key, extra, defaultValue);
+		}
 		return ci;
 	}
 	public String infoSubstituted (String key, long index, Map <String, String> extra) {
@@ -240,11 +245,11 @@ public class Company {
 		}
 		return rc;
 	}
-	public void infoAdd (String name, String value) {
+	public void infoAdd (String key, String value) {
 		if (info == null) {
 			info = new HashMap <> ();
 		}
-		info.put (name, value == null ? "" : value);
+		info.put (key, value == null ? "" : value);
 	}
 	public boolean infoAvailable () {
 		return info != null;
@@ -280,6 +285,7 @@ public class Company {
 		data.logging (Log.DEBUG, "init", "\tcompany.baseMailsPerDay = " + (baseMailsPerDay == null ? "*unset*" : baseMailsPerDay));
 		data.logging (Log.DEBUG, "init", "\tcompany.priorityCount = " + priorityCount);
 		data.logging (Log.DEBUG, "init", "\tcompany.mailtracking = " + mailtracking);
+		data.logging (Log.DEBUG, "init", "\tcompany.mailtrackingExtended = " + mailtrackingExtended);
 		data.logging (Log.DEBUG, "init", "\tcompany.mailtrackingTable = " + mailtrackingTable);
 	}
 	
@@ -289,13 +295,14 @@ public class Company {
 	 * @param cfg the configuration
 	 */
 	public void configure (Config cfg) {
+		// nothing to do
 	}
 	
 	/**
 	 * Retrieves all company realted information from available resources
 	 */
 	public void retrieveInformation () throws Exception {
-		CompanyDAO	company = new CompanyDAO (data.dbase, id);
+		CompanyDAO	company = new CompanyDAO (data.dbase, id, Data.user, Data.fqdn, Data.hostname);
 		
 		if (company.companyID () == 0L) {
 			throw new Exception ("No database entry for companyID " + id + " found");
@@ -311,6 +318,7 @@ public class Company {
 	private void retrieveCompanyStaticConfiguration (CompanyDAO company) throws SQLException {
 		name = company.shortName ();
 		mailtracking = company.mailTracking ();
+		mailtrackingExtended = company.mailTrackingExtended ();
 		mailtrackingTable = company.mailTrackingTable ();
 		secretKey = company.secretKey ();
 		uidVersion = company.uidVersion ();
@@ -328,14 +336,14 @@ public class Company {
 		priorityCount = company.priorityCount ();
 	}
 	private void retrieveCompanyDynamicConfiguration (CompanyDAO company) throws SQLException {
-		Map <String, String>	info = company.info ();
+		Map <String, String> companyInfo = company.info ();
 		
-		if (info != null) {
-			for (Map.Entry <String, String> kv : info.entrySet ()) {
-				String	name = kv.getKey ();
+		if (companyInfo != null) {
+			for (Map.Entry <String, String> kv : companyInfo.entrySet ()) {
+				String	key = kv.getKey ();
 				String	value = kv.getValue ();
-				if (! name.startsWith ("_")) {
-					infoAdd (name, value);
+				if (! key.startsWith ("_")) {
+					infoAdd (key, value);
 				}
 			}
 		}

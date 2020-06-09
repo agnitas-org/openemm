@@ -31,7 +31,7 @@ import org.agnitas.util.importvalues.MailType;
 import org.agnitas.util.importvalues.NullValuesAction;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ImportProfileImpl implements ImportProfile {
 	protected int id;
@@ -439,9 +439,9 @@ public class ImportProfileImpl implements ImportProfile {
 	@Override
 	public Set<String> getEncryptedColumns() {
 		Set<String> encryptedColumns = new HashSet<>();
-		for (ColumnMapping columnMapping : getColumnMapping()) {
-			if (columnMapping.isEncrypted()) {
-				encryptedColumns.add(columnMapping.getDatabaseColumn());
+		for (ColumnMapping columnMappingEntry : getColumnMapping()) {
+			if (columnMappingEntry.isEncrypted()) {
+				encryptedColumns.add(columnMappingEntry.getDatabaseColumn());
 			}
 		}
 		return encryptedColumns;

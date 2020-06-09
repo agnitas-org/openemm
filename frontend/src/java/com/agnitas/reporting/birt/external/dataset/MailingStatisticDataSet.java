@@ -21,7 +21,7 @@ import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.beans.LightMailing;
@@ -33,7 +33,6 @@ import com.agnitas.reporting.birt.external.beans.SendStatWithMailingIdRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class MailingStatisticDataSet extends BIRTDataSet {
-	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(MailingStatisticDataSet.class);
 
     private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();

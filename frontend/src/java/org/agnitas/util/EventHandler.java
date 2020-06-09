@@ -10,7 +10,7 @@
 
 package org.agnitas.util;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessage;
 import org.apache.velocity.app.event.EventCartridge;
@@ -35,7 +35,7 @@ public class EventHandler implements InvalidReferenceEventHandler,
     	String exceptionMessage = e.getMessage() != null ? e.getMessage() : "<no exception message>";
     	
         String error = "an " + e.getClass().getName() + " was thrown by the " + method
-        + " method of the " + aClass.getName() + " class [" + StringEscapeUtils.escapeHtml(exceptionMessage.split("\n")[0]) + "]";
+        + " method of the " + aClass.getName() + " class [" + StringEscapeUtils.escapeHtml4(exceptionMessage.split("\n")[0]) + "]";
         errors.add(error, new ActionMessage("Method exception: " + error));
         return error;
     }

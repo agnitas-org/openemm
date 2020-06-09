@@ -1,181 +1,357 @@
+
+@mixin wide-menu-subitem-before {
+  position: absolute;
+  content: "";
+  top: 50%;
+  left: 15px;
+  height: 13px;
+  margin-top: -6px;
+  width: 2px;
+  background-color: $c-blue-27;
+  font-weight: $fw-bold;
+}
+
 .l-menu {
-  width: 240px;
+  overflow: hidden;
+  width: 100%;
   height: 100%;
 
-  background-color: lighten($c-gray-11, 5%);
-  border-right: 1px solid $c-gray-20;
-
-  &.scrollable {
-    position: relative;
-
-    @media (min-width: $screen-md-min) {
-      position: fixed;
-      left: 0; top: 60px;
-      z-index: 1001;
-    }
-  }
-
-  // there seems to be a bug related to perfectscrollbar and position: fixed, which would prevent us from being unable to scroll completely to the bottom, this pseudo-element is there to ensure the calculations take the top offset of our menu into account and leaves some space
-  &:after {
-    content: "";
-    display: block;
-    height: 80px;
-  }
-
-  > li + li {
-    border-top: 1px solid $c-gray-20;
-  }
-
-  .menu-header + li {
-    border-top: 0;
-  }
-
-  .session-timer {
-    padding: 12px 30px 12px 10px;
-    color: grey;
-  }
+  background-color: $c-white;
 
   .open > .menu-item {
     background-color: $c-blue-27;
     color: $c-white;
 
     &.active {
+      font-weight: $fw-regular;
+    }
+  }
+
+  .menu-item {
+    position: relative;
+    display: block;
+    padding: 10px 0;
+    font-size: $fs-regular;
+    line-height: 1;
+    color: $c-black-82;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.active {
+      background-color: $c-blue-27;
+      color: $c-white;
+    }
+
+    &.active {
       font-weight: $fw-bold;
     }
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      right: 15px;
+
+      @include translate(0, -50%);
+    }
+    .menu-item-text, .nav-arrow {
+      display: none;
+    }
   }
 
-  .account-data {
-    padding-bottom: 15px;
+  .submenu {
+    position: fixed;
+    display: none;
+    min-width: 150px;
+    background-color: $c-white;
+    border-radius: 3px;
+    font-size: $fs-regular;
 
-    p {
+    @include shadow-variant(hard);
+
+    &.open {
       display: block;
-      line-height: 1.5em;
     }
 
-    .btn {
-      margin-left: 10px;
-      color: $c-black-82;
-      border-color: $c-gray-27;
-
-      &:hover {
-        color: $c-blue-27;
-        border-color: $c-blue-27;
-      }
-
-      &:focus, &:active {
-        color: $c-white;
-        border-color: transparent;
-        background-color: $c-blue-27;
-      }
+    .subitems {
+      max-height: 0;
+      @include transition(max-height 0.5s ease-in-out);
+      overflow: hidden;
     }
-  }
 
-  .version-sign {
-    font-size: $fs-small;
-    padding: 15px;
+    .subitems.open {
+      max-height: 500px;
+      @include transition(max-height 1s ease-in-out);
+    }
 
-  }
+    .arrow {
+      width: 0;
+      height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-right: 7px solid #ffffff;
+      content: " ";
+      position: absolute;
+      top: 8px;
+      left: -7px;
+    }
 
+    li, .submenu-header {
+      color: $c-black-80;
+      text-align: left;
+    }
 
-  .dropdown-menu {
-    float: none;
-    position: static;
-    @include box-shadow(none);
-
-    width: 100%;
-    padding-bottom: 10px;
-    font-size: $fs-small;
-    line-height: 1;
-
-    border-radius: 0;
-
-    background-color: $c-gray-11;
+    .submenu-header {
+      padding: 6px 10px;
+      font-weight: $fw-bold;
+    }
 
     .menu-item {
-      padding-left: 25px;
-      color: $c-black-82;
-      font-size: $fs-small;
+      padding: 6px 10px;
+      color: $c-black-80;
+    }
 
-      &:hover,
-      &:focus {
-        background-color: darken($c-gray-11, 2%);
+    .menu-item:hover ,
+    .menu-item:focus,
+    .menu-item.active {
+      background-color: $c-blue-27;
+      color: $c-white;
+      font-weight: $fw-regular;
+    }
+  }
 
-        &:before {
-          position: absolute;
-          content: "";
-          top: 50%;
-          left: 15px;
-          height: 13px;
-          margin-top: -6px;
-          width: 2px;
-          background-color: $c-blue-27;
-          font-weight: $fw-bold;
+  .menu-item-logo {
+
+    line-height: 1;
+    vertical-align: middle;
+
+
+    font-size: $fs-xxlarge;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+body.wide-sidebar .l-menu {
+  width: 240px;
+
+  .menu-item-logo {
+    text-align: left;
+    width: auto;
+    font-size: $fs-regular;
+    padding: 0 5px 0 10px;
+  }
+
+  .menu-item-text, .nav-arrow {
+    display: inline;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  .menu-item {
+    padding: 12px 0;
+  }
+
+  .submenu {
+    position: static;
+    display: block;
+    @include box-shadow(none);
+
+    .arrow, .submenu-header {
+      display: none;
+    }
+
+    .subitems {
+      background-color: $c-gray-02;
+      @include box-shadow(inset 0 -4px 8px -8px rgba(0, 23, 39, 0.6), //bottom shadow
+              inset 0 4px 8px -8px rgba(0, 23, 39, 0.6)); //top shadow
+      @include transition(max-height 0.5s ease-in);
+
+      .menu-item {
+        padding: 7px 0 7px 25px;
+        line-height: 1.2;
+        color: $c-black-82;
+        font-size: $fs-small;
+
+        &:hover,
+        &:focus {
+          background-color: darken($c-gray-02, 2%);
+
+          &:before {
+            @include wide-menu-subitem-before;
+          }
         }
-      }
 
-      &.active {
-        background-color: darken($c-gray-11, 5%);
-        font-weight: $fw-bold;
-
-        &:before {
-          position: absolute;
-          content: "";
-          top: 50%;
-          left: 15px;
-          height: 13px;
-          margin-top: -6px;
-          width: 2px;
-          background-color: $c-blue-27;
+        &.active {
+          background-color: darken($c-gray-02, 5%);
           font-weight: $fw-bold;
+
+          &:before {
+            @include wide-menu-subitem-before;
+          }
         }
       }
     }
-
   }
 
+  li:hover .submenu,
+  li:focus .submenu,
+  .menu-item.active ~ .submenu {
+    display: block;
+
+    .subitems {
+      max-height: 500px;
+      @include transition(max-height 1s ease 0.3333333s);
+    }
+  }
 }
 
-.menu-item {
-  position: relative;
-  display: block;
-  padding: 12px 10px;
-  padding-right: 30px;
+#session-time-layout {
+  font-size: $fs-xtiny;
+  margin: 0 10px 10px 10px;
+  text-align: center;
+  border-radius: 5px;
+  background: $c-gray-11;
+  font-weight: $fw-bold;
+  min-height: 20px;
 
-  font-size: $fs-regular;
-  line-height: 1;
-  color: $c-black-82;
+  .item {
+    margin: 7px 0;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .pre-timer-info {
+    font-weight: $fw-regular;
+    word-wrap: break-word;
+    padding: 0 2px;
+  }
+}
+
+
+/*----START info section*/
+.l-info-section {
+  margin-top: 10px;
+  overflow: hidden;
+  width: 100%;
+  flex-shrink: 0;
+  background-color: $c-white;
+
+  #account-data {
+    border-top: 1px solid $c-gray-20;
+    position: relative;
+
+    .account-initials {
+      display: block;
+      margin: 10px auto 20px auto;
+
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: darken($c-orange, 5%);
+
+      text-align: center;
+      line-height: 48px;
+      text-transform: uppercase;
+      color: $c-white;
+      font-size: $fs-xxlarge;
+    }
+  }
+
+  .account-data-infobox {
+    display: none;
+  }
+
+  .logout-form {
+    text-align: center;
+
+    .logout-logo {
+      font-size: $fs-xxlarge;
+    }
+
+    button {
+      padding: 10px 0px;
+      width: 100%;
+    }
+
+    .logout-text {
+      display: none;
+    }
+  }
+}
+
+body.wide-sidebar .l-sidebar .l-info-section {
+  #account-data {
+    .account-initials {
+      display: none;
+    }
+
+    .account-data-infobox {
+      padding: 10px;
+      display: block;
+      color: $c-black;
+    }
+  }
+
+  .logout-form {
+    text-align: left;
+
+    .logout-logo {
+      font-size: $fs-regular;
+    }
+
+    button {
+      color: $c-black-82;
+      padding: 5px 10px;
+      width: auto;
+      border: 1px solid $c-gray-11;
+      border-radius: 2px;
+      margin: 0 0 10px 10px;
+    }
+
+    .logout-text {
+      display: inline;
+    }
+  }
+}
+/*----END info section*/
+
+
+/*----START menu toggle*/
+#wide-menu-toggle {
+  position: fixed;
+  top: 10px;
+  left: 65px;
+  line-height: 40px;
+  height: 40px;
+  width: 15px;
+  background-color: $c-blue-21;
+  color: $c-white;
+  text-align: center;
+  cursor: pointer;
+
+  @include transition(width 0.5s ease);
+
+  .icon-caret-left {
+    display: none;
+  }
 
   &:hover,
-  &:focus,
-  &:active,
-  &.active {
-    background-color: $c-blue-27;
-    color: $c-white;
-  }
-
-  &.active {
-    font-weight: $fw-bold;
-  }
-
-  .nav-arrow {
-    position: absolute;
-    top: 50%;
-    right: 15px;
-
-    @include translate(0, -50%);
+  &:focus {
+    width: 23px;
   }
 }
 
-.menu-item-logo {
-  width: 20px;
-  font-size: $fs-regular;
-  line-height: 1;
-  vertical-align: middle;
-  text-align: left;
-}
+body.wide-sidebar #wide-menu-toggle {
+  left: 240px;
 
-.menu-item-text {
-  display: inline-block;
-  line-height: 1;
-  vertical-align: middle;
+  .icon-caret-right {
+    display: none;
+  }
+
+  .icon-caret-left {
+    display: inline;
+    padding-right: 2px;
+  }
 }
+/*----END menu toggle*/

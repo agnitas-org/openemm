@@ -99,7 +99,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"      OLD.timestamp,\n" +
 				"      OLD.exit_mailing_id,\n" +
 				"      OLD.mediatype,\n" +
-				"      CURRENT_TIMESTAMP(),\n" +
+				"      CURRENT_TIMESTAMP,\n" +
 				"      0,\n" +
 				"      v_hist);\n" +
 				"  END");
@@ -151,7 +151,7 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"        OLD.timestamp,\n" +
 				"        OLD.exit_mailing_id,\n" +
 				"        OLD.mediatype,\n" +
-				"        CURRENT_TIMESTAMP(),\n" +
+				"        CURRENT_TIMESTAMP,\n" +
 				"        1,\n" +
 				"        v_hist);\n" +
 				"    END IF;\n" +

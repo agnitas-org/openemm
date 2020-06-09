@@ -15,7 +15,7 @@
                         <bean:message key="button.Cancel"/>
                     </button>
                     <button type="button" class="btn btn-regular btn-primary" data-action="icon-comment-editor-save">
-                        <bean:message key="button.Save"/>
+                        <bean:message key="button.Apply"/>
                     </button>
                 </div>
             </div>

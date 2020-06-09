@@ -10,7 +10,7 @@
 
 package org.agnitas.util.importvalues;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Values for textRecognitionChar property of import profile

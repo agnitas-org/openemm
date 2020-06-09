@@ -10,16 +10,19 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
-
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.log4j.Logger;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,6 +33,7 @@ import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
@@ -60,28 +64,47 @@ public class MailingContentController {
         this.previewImageService = previewImageService;
     }
 
-    @RequestMapping("/save.action")
+    @GetMapping("/name/{id:\\d+}/view.action")
+    public ResponseEntity<DynTagDto> view(ComAdmin admin, @PathVariable("id") int dynNameId) {
+        DynTagDto dto = mailingContentService.getDynTag(admin.getCompanyID(), dynNameId);
+
+        if (dto == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/save.action")
     public @ResponseBody
-    DataResponseDto<DynTagDto> save(ComAdmin admin, HttpServletRequest req, @RequestBody DynTagDto dynTagDto, Popups popups) {
-        if (!dynTagChainValidator.validate(dynTagDto, popups)) {
+    DataResponseDto<DynTagDto> save(ComAdmin admin, HttpSession session, @RequestBody DynTagDto dynTagDto, Popups popups) {
+        if (!dynTagChainValidator.validate(dynTagDto, popups, admin)) {
             return new DataResponseDto<>(popups, false);
         }
 
         Mailing mailing = mailingContentService.getMailing(admin.getCompanyID(), dynTagDto.getMailingId());
+
         try {
             // editing or creating
-            List<UserAction> userActions = mailingContentService.updateDynContent(mailing, dynTagDto, admin);
-            userActions.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
-            logger.info(String.format("Content of mailing was changed. mailing-name : %s, mailing-id: %d",
-                    mailing.getDescription(), mailing.getId()));
+            ServiceResult<List<UserAction>> serviceResult =
+                    mailingContentService.updateDynContent(mailing, dynTagDto, admin);
+            if(!serviceResult.isSuccess()) {
+                popups.addPopups(serviceResult);
+                return new DataResponseDto<>(popups, false);
+            } else {
+                final List<UserAction> userActions = serviceResult.getResult();
+                userActions.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
+                logger.info(String.format("Content of mailing was changed. mailing-name : %s, mailing-id: %d",
+                        mailing.getDescription(), mailing.getId()));
+            }
         } catch (Exception e) {
             logger.error(String.format("Error during building dependencies. mailing-name : %s, mailing-id: %d",
                     mailing.getDescription(), mailing.getId()), e);
-            popups.alert("error.invalid.dependencies");
+            popups.alert("error.mailing.save", mailing.getShortname());
             return new DataResponseDto<>(popups, false);
         }
 
-        previewImageService.generateMailingPreview(admin, req.getSession().getId(), mailing.getId(), true);
+        previewImageService.generateMailingPreview(admin, session.getId(), mailing.getId(), true);
         DynamicTag dynamicTag = mailing.getDynTags().get(dynTagDto.getName());
         DynTagDto dynTagDtoResponse = extendedConversionService.convert(dynamicTag, DynTagDto.class);
         popups.success("default.changes_saved");

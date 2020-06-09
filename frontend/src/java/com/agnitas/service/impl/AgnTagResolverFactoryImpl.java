@@ -30,8 +30,8 @@ import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformati
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -138,28 +138,29 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
             initialize(tag);
 
             switch (name) {
-            case "agnONEPIXEL":
-                return resolveAgnOnePixel();
-
-            case "agnDATE":
-                return resolveAgnDate();
-
-            case "agnTITLE":
-            case "agnTITLEFIRST":
-            case "agnTITLEFULL":
-                return resolveAgnTitle();
-
-            case "agnPROFILE":
-                return resolveAgnProfile();
-
-            case "agnUNSUBSCRIBE":
-                return resolveAgnUnsubscribe();
-
-            case "agnFORM":
-                return resolveAgnForm();
+	            case "agnONEPIXEL":
+	                return resolveAgnOnePixel();
+	
+	            case "agnDATE":
+	                return resolveAgnDate();
+	
+	            case "agnTITLE":
+	            case "agnTITLEFIRST":
+	            case "agnTITLEFULL":
+	                return resolveAgnTitle();
+	
+	            case "agnPROFILE":
+	                return resolveAgnProfile();
+	
+	            case "agnUNSUBSCRIBE":
+	                return resolveAgnUnsubscribe();
+	
+	            case "agnFORM":
+	                return resolveAgnForm();
+	                
+				default:
+					return resolveCustomAgnTag(tag);
             }
-
-            return resolveCustomAgnTag(tag);
         }
 
         /**
@@ -209,14 +210,15 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
             }
 
             switch (name) {
-            case "agnTITLE":
-                return value + " " + lastName;
-            case "agnTITLEFIRST":
-                return genderMap.get(gender) + " " + firstName;
-            case "agnTITLEFULL":
-                return value + " " + firstName + " " + lastName;
+	            case "agnTITLE":
+	                return value + " " + lastName;
+	            case "agnTITLEFIRST":
+	                return genderMap.get(gender) + " " + firstName;
+	            case "agnTITLEFULL":
+	                return value + " " + firstName + " " + lastName;
+				default:
+					return value;
             }
-            return value;
         }
 
         private String resolveAgnProfile() {
@@ -231,8 +233,8 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
             return resolveAgnForm(options.get("name"));
         }
 
-        private String resolveAgnForm(String name) {
-            return getRedirectDomain() + "/form.do?agnCI=" + companyId + "&agnFN=" + name + "&agnUID=##AGNUID##";
+        private String resolveAgnForm(String formName) {
+            return getRedirectDomain() + "/form.do?agnCI=" + companyId + "&agnFN=" + formName + "&agnUID=##AGNUID##";
         }
 
         /**
@@ -341,10 +343,10 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
         }
 
         private TagDefinition getTagDefinition() {
-            return definitionCache.computeIfAbsent(name, name -> {
-                TagDefinition definition = tagDao.getTag(companyId, name);
+            return definitionCache.computeIfAbsent(name, nameParameter -> {
+                TagDefinition definition = tagDao.getTag(companyId, nameParameter);
                 if (definition == null) {
-                    logger.error("Unknown tag " + name + " (no definition available)");
+                    logger.error("Unknown tag " + nameParameter + " (no definition available)");
                     return null;
                 }
 

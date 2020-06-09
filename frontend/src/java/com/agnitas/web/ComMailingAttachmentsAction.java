@@ -29,7 +29,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.web.StrutsActionBase;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -139,7 +139,7 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                 	} else if (aForm.getNewAttachment() == null || checkNewAttachmentSize(aForm, errors, messages)) {
                 		if(aForm.getNewAttachment() != null && !this.mimetypeWhitelistService.isMimeTypeWhitelisted(aForm.getNewAttachment().getContentType()) ) {
                 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.errors.attachment.invalidMimeType", aForm.getNewAttachment().getContentType()));
-     	                    destination = mapping.findForward("list");	
+     	                    destination = mapping.findForward("list");
                 		} else {
 		                    if (!statusChanged(aForm,req)) {
 		                        saveAttachment(aForm, req, errors);
@@ -199,13 +199,14 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                     MailingComponent mailingComponent =componentDao.getMailingComponent(aForm.getAttachmentId(), AgnUtils.getCompanyID(req));
                     componentDao.deleteMailingComponent(mailingComponent);
                     String mailingName = mailingBaseService.getMailingName(aForm.getMailingID(), AgnUtils.getCompanyID(req));
-                    mailingName = mailingName == null ? StringUtils.EMPTY : mailingName;
                     writeUserActivityLog(admin, "delete attachment",
                             String.format("%s(%d), deletion of an attachment (%d)", mailingName, aForm.getMailingID(), aForm.getAttachmentId()));
                     messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
                     aForm.setAction(ComMailingComponentsAction.ACTION_LIST);
                     destination = mapping.findForward("list");
                     break;
+				default:
+					break;
             }
 
             if (destination != null && "list".equals(destination.getName())) {
@@ -285,7 +286,9 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
         aForm.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(mailingId));
         aForm.setWorkflowId(mailingBaseService.getWorkflowId(mailingId, companyId));
 
-        if (logger.isInfoEnabled()) logger.info("loadMailing: mailing loaded");
+        if (logger.isInfoEnabled()) {
+			logger.info("loadMailing: mailing loaded");
+		}
     }
 
     protected List<MailingComponent> loadAttachments(ComMailingAttachmentsForm aForm, HttpServletRequest req){
@@ -382,6 +385,8 @@ public final class ComMailingAttachmentsAction extends StrutsActionBase {
                         component.setTargetID(Integer.parseInt(aParam));
                     }
                     break;
+				default:
+					break;
             }
         }
 

@@ -14,7 +14,7 @@ The `load` directive can be used to load an area designated by a jquery selector
 
   var Load = AGN.Lib.Load;
 
-  AGN.Initializers.Load = function($scope) {
+  AGN.Lib.CoreInitializer.new('load', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -24,8 +24,7 @@ The `load` directive can be used to load an area designated by a jquery selector
       window.setTimeout(function() {
         Load.load($(el));
       }, 100)
-    })
-
-  }
+    });
+  });
 
 })();

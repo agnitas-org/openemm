@@ -45,12 +45,10 @@
 
     updateInits: function() {
       window.setTimeout(function() {
-        AGN.Initializers.Truncate();
-        AGN.Initializers.Scrollable();
-        AGN.Initializers.DropdownExpand();
+        AGN.Lib.CoreInitializer.run(['truncate', 'scrollable', 'dropdown-expand']);
       }, 600);
     }
-  }
+  };
 
   AGN.Lib.Menu = Menu;
 

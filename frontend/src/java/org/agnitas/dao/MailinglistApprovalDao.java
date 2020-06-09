@@ -16,6 +16,7 @@ import java.util.List;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+//TODO: Used for emm only. Invalid scope. Code should be rafactored to change scope to the correct.
 public interface MailinglistApprovalDao {
 
 	/**

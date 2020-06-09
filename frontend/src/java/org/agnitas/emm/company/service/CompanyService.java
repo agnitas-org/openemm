@@ -12,16 +12,14 @@ package org.agnitas.emm.company.service;
 
 import java.util.List;
 
-import org.agnitas.beans.Company;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface CompanyService {
 	
-	Company getCompanyOrNull(@VelocityCheck int companyId);
+	ComCompany getCompanyOrNull(@VelocityCheck int companyId);
 
 	ComCompany getCompany(@VelocityCheck int companyId) throws UnknownCompanyIdException;
 
@@ -32,5 +30,7 @@ public interface CompanyService {
 	
 	//get only own company and companies created by own company + status = active
 	List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId);
+
+	List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId);
 	
 }

@@ -10,6 +10,8 @@
 
 package org.agnitas.web;
 
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,23 +28,13 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.util.FutureHolderMap;
-import com.agnitas.web.forms.ComNewImportWizardForm;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.CustomerImportStatus;
 import org.agnitas.beans.DatasourceDescription;
@@ -75,7 +67,7 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -85,7 +77,17 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
+import com.agnitas.messages.I18nString;
+import com.agnitas.util.FutureHolderMap;
+import com.agnitas.web.forms.ComNewImportWizardForm;
 
 /**
  * Profileimport Action
@@ -349,7 +351,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				
 				ImportProfile importPreviewProfile = importProfileService.getImportProfileById(aForm.getDefaultProfileId());
 				
-				if (!ImportUtils.checkIfFileHasData(getCurrentFile(request), importPreviewProfile)) {
+				if (!ImportUtils.checkIfImportFileHasData(getCurrentFile(request), importPreviewProfile.isZipped(), importPreviewProfile.getZipPassword())) {
 					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("autoimport.error.emptyFile", aForm.getCsvFile().getFileName()));
 					destination = mapping.findForward("start");
 					break;
@@ -390,8 +392,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				boolean keyColumnValid = isProfileKeyColumnValid(importPreviewProfile, errors);
 
 				// log ImportStart
-				Random random = new Random();
-				int importId = Math.abs(random.nextInt());
+				int importId = new Random().nextInt();
 				importPreviewProfile.setImportId(importId);
 				if (logger.isInfoEnabled()) {
 					logger.info("Import ID: " + importId + " Import Profile ID: "
@@ -650,6 +651,8 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				destination = mapping.findForward("start");
 				aForm.setResultPagePrepared(false);
 				break;
+			default:
+				throw new Exception("Invalid action");
 			}
 
 			if (destination != null && FORWARDKEY_ERROREDIT.equals(destination.getName())) {

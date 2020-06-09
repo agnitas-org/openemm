@@ -25,11 +25,10 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -37,6 +36,7 @@ import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.calendar.service.CalendarService;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.messages.I18nString;
 
@@ -56,27 +56,28 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getUnsentMailings(@VelocityCheck int companyId, int listSize) {
-        return mailingDao.getUnsentMailings(companyId, listSize);
+    public PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize) {
+        return mailingDao.getUnsentMailings(admin.getCompanyID(), admin.getAdminID(), listSize);
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int listSize) {
-        return mailingDao.getPlannedMailings(companyId, listSize);
+    public PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int listSize) {
+        return mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), listSize);
     }
 
     @Override
     public JSONArray getMailings(ComAdmin admin, LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> mailings = new ArrayList<>();
         int companyId = admin.getCompanyID();
+        int adminId = admin.getAdminID();
         ZoneId zoneId = AgnUtils.getZoneId(admin);
 
         // TODO: change DAO methods to use inclusive (not exclusive) date bounds.
         Date start = DateUtilities.toDate(startDate.atStartOfDay().minusNanos(1), zoneId);
         Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
 
-        mailings.addAll(getMailings(companyId, start, end));
-        mailings.addAll(getPlannedMailings(companyId, start, end, zoneId));
+        mailings.addAll(getMailings(companyId, adminId, start, end));
+        mailings.addAll(getPlannedMailings(companyId, adminId, start, end, zoneId));
 
         List<Integer> sentMailings = getSentMailings(mailings);
 
@@ -92,8 +93,8 @@ public class CalendarServiceImpl implements CalendarService {
         return mailingsAsJson(mailings, openers, clickers, admin);
     }
 
-    private List<Map<String, Object>> getPlannedMailings(int companyId, Date startDate, Date endDate, ZoneId zoneId) {
-        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(companyId, startDate, endDate);
+    private List<Map<String, Object>> getPlannedMailings(int companyId, int adminId, Date startDate, Date endDate, ZoneId zoneId) {
+        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(companyId, adminId, startDate, endDate);
         Date midnight = DateUtilities.midnight(zoneId);
 
         for (Map<String, Object> plannedMailing : plannedMailings) {
@@ -106,8 +107,8 @@ public class CalendarServiceImpl implements CalendarService {
         return plannedMailings;
     }
 
-    private List<Map<String, Object>> getMailings(int companyId, Date startDate, Date endDate) {
-        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(companyId, startDate, endDate);
+    private List<Map<String, Object>> getMailings(int companyId, int adminId, Date startDate, Date endDate) {
+        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(companyId, adminId, startDate, endDate);
 
         for (Map<String, Object> mailing : mailings) {
             mailing.put("planned", false);
@@ -121,7 +122,7 @@ public class CalendarServiceImpl implements CalendarService {
         List<Integer> sentMailings = new ArrayList<>();
 
         for (Map<String, Object> mailing : mailings) {
-            if (getIntValue(mailing, "genstatus") > MaildropEntry.GEN_SCHEDULED) {
+            if (getIntValue(mailing, "genstatus") > MaildropGenerationStatus.SCHEDULED.getCode()) {
                 sentMailings.add(getIntValue(mailing, "mailingId"));
             }
         }
@@ -131,7 +132,6 @@ public class CalendarServiceImpl implements CalendarService {
 
     private void setMailingData(List<Map<String, Object>> mailings) {
         for (Map<String, Object> mailing : mailings) {
-
 
             String subject = (String) mailing.get("subject");
             if (Objects.nonNull(subject)) {
@@ -165,7 +165,7 @@ public class CalendarServiceImpl implements CalendarService {
         boolean success = false;
 
         if (Objects.nonNull(drop)) {
-            if (drop.getGenStatus() == MaildropEntry.GEN_SCHEDULED) {
+            if (drop.getGenStatus() == MaildropGenerationStatus.SCHEDULED.getCode()) {
                 // Merge new date with old time (simply change the date without changing time).
                 LocalDateTime sendDate = DateUtilities.merge(date, DateUtilities.toLocalTime(drop.getSendDate(), zoneId));
                 success = setSendDate(drop, DateUtilities.toDate(sendDate, zoneId));
@@ -190,7 +190,7 @@ public class CalendarServiceImpl implements CalendarService {
 
             if (DateUtilities.isPast(genDate)) {
                 genDate = new Date();
-                drop.setGenStatus(MaildropEntry.GEN_NOW);
+                drop.setGenStatus(MaildropGenerationStatus.NOW.getCode());
             }
 
             drop.setSendDate(sendDate);
@@ -236,7 +236,7 @@ public class CalendarServiceImpl implements CalendarService {
 
             Date sendDate = (Date) mailing.get("senddate");
             int mailingId = getIntValue(mailing, "mailingId");
-            boolean isSent = getIntValue(mailing, "genstatus") > MaildropEntry.GEN_SCHEDULED;
+            boolean isSent = getIntValue(mailing, "genstatus") > MaildropGenerationStatus.SCHEDULED.getCode();
 
             //hardcode because dao returns keys in different case (depends on db)
             object.element("shortname", getShortname(mailing));

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+
 import javax.activation.DataHandler;
 import javax.mail.Address;
 import javax.mail.Message;
@@ -31,7 +32,7 @@ import javax.mail.util.ByteArrayDataSource;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -86,7 +87,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * @return true if all went ok.
 	 */
 	@Override
-	public boolean sendExceptionMail(String comment, Exception e) {
+	public boolean sendExceptionMail(String comment, Throwable e) {
 		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
 		if (toAddress != null) {
 			if (StringUtils.isNotBlank(toAddress)) {
@@ -179,7 +180,10 @@ public class JavaMailServiceImpl implements JavaMailService {
 			props.put("system.mail.host", smtpMailRelayHostname);
 			props.put("mail.smtp.host", smtpMailRelayHostname);
 			props.put("mail.host", smtpMailRelayHostname);
-			
+			props.put("mail.smtp.starttls.enable", "true");
+			props.put("mail.smtp.ssl.enable", "false");
+			props.put("mail.smtp.ssl.trust", smtpMailRelayHostname);
+
 			// Set bounce address
 			if (StringUtils.isNotBlank(bounceAddress)) {
 				props.put("mail.smtp.from", bounceAddress);

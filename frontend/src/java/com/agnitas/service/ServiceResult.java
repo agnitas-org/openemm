@@ -10,7 +10,6 @@
 
 package com.agnitas.service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -20,18 +19,91 @@ import com.agnitas.messages.Message;
 public class ServiceResult<T> {
     private final T result;
     private final boolean success;
-    private final List<Message> messages;
+    private final List<Message> successMessages;
+    private final List<Message> warningMessages;
+    private final List<Message> errorMessages;
+
+    public static <R> ServiceResult<R> success(final R result, final Message... successMessages) {
+        return new ServiceResult<>(result, true, Arrays.asList(successMessages), null, null);
+    }
+
+    public static <R> ServiceResult<R> warning(final boolean success, final Message... warningMessages) {
+        return new ServiceResult<>(null, success, null, Arrays.asList(warningMessages), null);
+    }
+
+    public static <R> ServiceResult<R> warning(final R result, final boolean success, final Message... warningMessages) {
+        return new ServiceResult<>(result, success, null, Arrays.asList(warningMessages), null);
+    }
+
+    public static <R> ServiceResult<R> error(final Message... errorMessages) {
+        return new ServiceResult<>(null, false, null, null,  Arrays.asList(errorMessages));
+    }
+
+    public static <R> ServiceResult<R> error(final List<Message> errorMessages) {
+        return new ServiceResult<>(null, false, null, null,  errorMessages);
+    }
+
 
     public ServiceResult(T result, boolean success, Message... messages) {
         this.result = result;
         this.success = success;
-        this.messages = Arrays.asList(messages);
+        if(success) {
+            this.successMessages = Collections.unmodifiableList(Arrays.asList(messages));
+            this.warningMessages = Collections.emptyList();
+            this.errorMessages = Collections.emptyList();
+        } else {
+            this.successMessages = Collections.emptyList();
+            this.warningMessages = Collections.emptyList();
+            this.errorMessages = Collections.unmodifiableList(Arrays.asList(messages));
+        }
     }
 
     public ServiceResult(T result, boolean success, List<Message> messages) {
         this.result = result;
         this.success = success;
-        this.messages = new ArrayList<>(messages);
+        if(success) {
+            this.successMessages = Collections.unmodifiableList(messages);
+            this.warningMessages = Collections.emptyList();
+            this.errorMessages = Collections.emptyList();
+        } else {
+            this.successMessages = Collections.emptyList();
+            this.warningMessages = Collections.emptyList();
+            this.errorMessages = Collections.unmodifiableList(messages);
+        }
+    }
+
+    public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
+
+        this.result = result;
+        this.success = success;
+
+        if(successMessages == null) {
+            this.successMessages = Collections.emptyList();
+        } else {
+            this.successMessages =  Collections.unmodifiableList(successMessages);
+        }
+        if(warningMessages == null) {
+            this.warningMessages = Collections.emptyList();
+        } else {
+            this.warningMessages =  Collections.unmodifiableList(warningMessages);
+        }
+        if(errorMessages == null) {
+            this.errorMessages = Collections.emptyList();
+        } else {
+            this.errorMessages = Collections.unmodifiableList(errorMessages);
+        }
+    }
+
+    public List<Message> getSuccessMessages() {
+        return successMessages;
+    }
+
+    public List<Message> getWarningMessages() {
+        return warningMessages;
+    }
+
+    public List<Message> getErrorMessages() {
+        return errorMessages;
     }
 
     public T getResult() {
@@ -42,7 +114,4 @@ public class ServiceResult<T> {
         return success;
     }
 
-    public List<Message> getMessages() {
-        return Collections.unmodifiableList(messages);
-    }
 }

@@ -59,7 +59,7 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 
 	List<ComProfileField> getHistorizedProfileFields(@VelocityCheck int companyID) throws Exception;
 
-	boolean checkAllowedDefaultValue(int companyID, String columnName, String fieldDefault) throws Exception;
+	boolean checkAllowedDefaultValue(@VelocityCheck int companyID, String columnName, String fieldDefault) throws Exception;
 
 	/**
 	 * Returns the user-selected profile fields in history.
@@ -68,7 +68,7 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 	 * 
 	 * @return list of user-selected profile fields in history.
 	 */
-	Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(int companyID);
+	Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(@VelocityCheck int companyID);
 	
 	boolean deleteByCompany(@VelocityCheck int companyID);
 
@@ -91,13 +91,15 @@ public interface ComProfileFieldDao extends ProfileFieldDao {
 	 */
 	boolean isTrackableColumn(String column, @VelocityCheck int companyId);
 	
-	int countCustomerEntries(final int companyID);
+	int countCustomerEntries(@VelocityCheck final int companyID);
 
-	boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase) throws Exception;
+	boolean checkProfileFieldExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws Exception;
 
-	int getMaximumCompanySpecificFieldCount(int companyID) throws Exception;
+	int getMaximumCompanySpecificFieldCount(@VelocityCheck int companyID) throws Exception;
 
-	int getCurrentCompanySpecificFieldCount(int companyID) throws Exception;
+	int getCurrentCompanySpecificFieldCount(@VelocityCheck int companyID) throws Exception;
 
-	DbColumnType getColumnType(int companyId, String columnName);
+	DbColumnType getColumnType(@VelocityCheck int companyId, String columnName);
+
+	boolean isColumnIndexed(@VelocityCheck int companyId, String column);
 }

@@ -42,16 +42,17 @@ public class FormTime {
         return DateUtilities.parseTime(time, formatter, defaultValue);
     }
 
-    public LocalTime get(DateTimeFormatter formatter) {
-        return DateUtilities.parseTime(time, formatter);
+    public LocalTime get(DateTimeFormatter formatterParam) {
+        return DateUtilities.parseTime(time, formatterParam);
     }
 
-    public LocalTime get(LocalTime defaultValue, DateTimeFormatter formatter) {
-        return DateUtilities.parseTime(time, formatter, defaultValue);
+    public LocalTime get(LocalTime defaultValue, DateTimeFormatter formatterParam) {
+        return DateUtilities.parseTime(time, formatterParam, defaultValue);
     }
 
-    public void set(LocalTime time) {
+    public FormTime set(LocalTime time) {
         set(time, formatter);
+        return this;
     }
 
     public void set(LocalTime time, DateTimeFormatter formatter) {

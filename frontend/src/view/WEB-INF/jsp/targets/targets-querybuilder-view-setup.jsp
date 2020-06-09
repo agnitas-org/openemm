@@ -174,16 +174,10 @@
 					<c:set target="${dropDownItem}" property="btnCls" value="btn btn-regular btn-secondary" />
 					<c:set target="${dropDownItem}" property="type" value="href" />
 					<c:set target="${dropDownItem}" property="url">
-						<emm:HideByPermission token="stats.recipient.migration">
-							<html:rewrite
-									page="/recipient_stats.do?action=2&mailinglistID=0&targetID=${editTargetForm.targetID}" />
-						</emm:HideByPermission>
-						<emm:ShowByPermission token="stats.recipient.migration">
-                            <c:url var="statUrl" value="/statistic/recipient/view.action">
-                                <c:param name="mailinglistId" value="0"/>
-                                <c:param name="targetId" value="${editTargetForm.targetID}"/>
-                            </c:url>
-						</emm:ShowByPermission>
+						<c:url value="/statistics/recipient/view.action">
+							<c:param name="mailinglistId" value="0"/>
+							<c:param name="targetId" value="${editTargetForm.targetID}"/>
+						</c:url>
 					</c:set>
 					<c:set target="${dropDownItem}" property="icon" value="icon-bar-chart-o" />
 					<c:set target="${dropDownItem}" property="name">

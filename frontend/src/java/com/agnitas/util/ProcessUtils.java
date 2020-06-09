@@ -30,29 +30,29 @@ public class ProcessUtils {
 	 * Writes the output of the given process to log4j.
 	 * 
 	 * @param process			process to log
-	 * @param logger			logger to use
+	 * @param loggerToUse			logger to use
 	 * @param priority			priority of log message
 	 * @param outputMessage		message inserted before stdout output
 	 * @param errorMessage		message inserted before stderr output
 	 */
-	public static void logProcessOutput( Process process, Logger logger, Priority priority, String outputMessage, String errorMessage) {
-		logStream( process.getInputStream(), logger, priority, outputMessage);
-		logStream( process.getErrorStream(), logger, priority, errorMessage);
+	public static void logProcessOutput( Process process, Logger loggerToUse, Priority priority, String outputMessage, String errorMessage) {
+		logStream( process.getInputStream(), loggerToUse, priority, outputMessage);
+		logStream( process.getErrorStream(), loggerToUse, priority, errorMessage);
 	}
 	
 	/**
 	 * Write content of stream to log4j.
 	 * 
 	 * @param stream 		stream to log
-	 * @param logger		logger to use
+	 * @param loggerToUse		logger to use
 	 * @param priority		priority of log message
 	 * @param message		message before stream output
 	 */
-	public static void logStream( InputStream stream, Logger logger, Priority priority, String message) {
+	public static void logStream( InputStream stream, Logger loggerToUse, Priority priority, String message) {
 		try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
 			FileUtils.streamToStream(stream, stream.available(), byteStream);
 			
-			logger.log( priority, message + ":\n" + byteStream.toString());
+			loggerToUse.log( priority, message + ":\n" + byteStream.toString());
 		} catch( IOException e) {
 			ProcessUtils.logger.warn( "Unable to log stream", e);
 		}

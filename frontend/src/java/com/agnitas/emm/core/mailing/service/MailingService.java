@@ -12,6 +12,10 @@ package com.agnitas.emm.core.mailing.service;
 
 import java.util.List;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
@@ -21,10 +25,6 @@ import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 
 public interface MailingService {
 	int addMailing(MailingModel model) throws MailinglistNotExistException;
@@ -72,7 +72,7 @@ public interface MailingService {
 
 	boolean isActiveIntervalMailing(final int mailingID);
 	
-    List<LightweightMailing> getAllMailingNames(@VelocityCheck int companyID);
+    List<LightweightMailing> getAllMailingNames(@VelocityCheck ComAdmin admin);
 
     List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID) throws MailingNotExistException;
 
@@ -92,4 +92,15 @@ public interface MailingService {
 	LightweightMailing getLightweightMailing(final int companyID, final int mailingId) throws MailingNotExistException;
 
 	List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException;
+
+	boolean tryToLock(ComAdmin admin, int mailingId);
+	
+	boolean isDeliveryComplete(final int companyID, final int mailingID);
+	boolean isDeliveryComplete(final LightweightMailing mailing);
+
+	void updateStatus(int companyID, int mailingID, String string);
+
+	List<Integer> listFollowupMailingIds(int companyID, int mailingID, boolean includeUnscheduled);
+    
+    boolean generateMailingTextContentFromHtml(ComAdmin admin, int mailingId) throws Exception;
 }

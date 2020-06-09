@@ -12,6 +12,7 @@ package com.agnitas.web.mvc.impl;
 
 import java.util.Map;
 
+import com.agnitas.service.ServiceResult;
 import org.agnitas.util.GuiConstants;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessage;
@@ -128,6 +129,14 @@ public class StrutsPopups implements Popups {
     @Override
     public Popups exactSuccess(String text) {
         return success(new Message(text, false));
+    }
+
+    @Override
+    public Popups addPopups(final ServiceResult<?> serviceResult) {
+        serviceResult.getSuccessMessages().forEach(this::success);
+        serviceResult.getWarningMessages().forEach(this::warning);
+        serviceResult.getErrorMessages().forEach(this::alert);
+        return this;
     }
 
     @Override

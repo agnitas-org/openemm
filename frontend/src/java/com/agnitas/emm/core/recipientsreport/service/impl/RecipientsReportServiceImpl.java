@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.recipientsreport.service.impl;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Date;
@@ -35,7 +34,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,12 +113,6 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    @Deprecated
-    public void writeContentOfExportReportToStream(int companyId, int reportId, OutputStream outputStream) throws Exception{
-        downloadDao.writeContentOfExportReportToStream(companyId, reportId, outputStream);
-    }
-
-    @Override
     public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         return recipientsReportDao.getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, types);
     }
@@ -130,13 +123,6 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         Date oldestReportDate = DateUtilities.getDateOfDaysAgo(new Date(),  expireDays);
         downloadDao.deleteAllContentOfOldExportReports(companyId, oldestReportDate);
         return recipientsReportDao.deleteOldReports(companyId, oldestReportDate);
-    }
-
-    @Override
-    @Transactional
-    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
-        deleteOldReports(companyId);
-        return getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, types);
     }
 
     @Override

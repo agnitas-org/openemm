@@ -17,23 +17,23 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
 
-import com.agnitas.emm.core.supervisor.service.ComSupervisorService;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.commons.password.ComPasswordCheck;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SortCriterion;
-import com.agnitas.emm.core.supervisor.common.SortDirection;
+import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.emm.core.supervisor.common.UnknownSupervisorIdException;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
+import com.agnitas.emm.core.supervisor.service.ComSupervisorService;
+import com.agnitas.emm.util.SortDirection;
 import com.agnitas.web.mvc.Popups;
 
 /**
@@ -51,8 +51,8 @@ public class ComSupervisorServiceImpl implements ComSupervisorService {
 	private ComPasswordCheck passwordCheck;
 
 	@Override
-	public List<Supervisor> listSupervisors(SortCriterion criterion0, SortDirection direction0) throws SupervisorException {
-		SortCriterion criterion = criterion0 != null ? criterion0 : SortCriterion.SUPERVISOR_NAME;
+	public List<Supervisor> listSupervisors(SupervisorSortCriterion criterion0, SortDirection direction0) throws SupervisorException {
+		SupervisorSortCriterion criterion = criterion0 != null ? criterion0 : SupervisorSortCriterion.SUPERVISOR_NAME;
 		SortDirection direction = direction0 != null ? direction0 : SortDirection.ASCENDING;
 		return supervisorDao.listAllSupervisors(criterion, direction);
 	}
@@ -166,13 +166,22 @@ public class ComSupervisorServiceImpl implements ComSupervisorService {
 
 	@Override
 	public List<Integer> getAllowedCompanyIds(int supervisorId) {
-		List<Integer> ids = supervisorDao.getAllowedCompanyIDs(supervisorId);
-
-		if (ids.contains(ALL_COMPANIES_ID)) {
-			return Collections.singletonList(ALL_COMPANIES_ID);
+		try {
+			final Supervisor supervisor = supervisorDao.getSupervisor(supervisorId);
+			List<Integer> ids = supervisorDao.getAllowedCompanyIDs(supervisorId);
+			
+			if(supervisor.getDepartment() != null && !supervisor.getDepartment().isSupervisorBindingToCompany0Allowed()) {
+				ids.remove(Integer.valueOf(ALL_COMPANIES_ID)); // Boxing to Integer needed, otherwise we will remove item at index
+			}
+	
+			if (ids.contains(ALL_COMPANIES_ID)) {
+				return Collections.singletonList(ALL_COMPANIES_ID);
+			}
+	
+			return ids;
+		} catch(final SupervisorException e) {
+			return Collections.emptyList();
 		}
-
-		return ids;
 	}
 	
 	@Override

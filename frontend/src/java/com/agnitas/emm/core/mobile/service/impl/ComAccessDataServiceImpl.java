@@ -32,22 +32,22 @@ public class ComAccessDataServiceImpl implements ComAccessDataService {
 	
 	@Override
 	public void writeAccessData(final ComAccessData data) {
-		accessDataDao.writeData(data);		
+		accessDataDao.writeData(data);
 	}
 
 	@Override
 	public void logAccess(final HttpServletRequest request, final ComExtensibleUID uid, final int deviceID) {
 		final ComAccessData data = new ComAccessData();
 		
-		data.setIp(request.getRemoteAddr());		
+		data.setIp(request.getRemoteAddr());
 		data.setReferer(request.getHeader("referer")); 	// can be null!
-		data.setUserAgent(request.getHeader("User-Agent"));		
+		data.setUserAgent(request.getHeader("User-Agent"));
 		data.setXuid(request.getParameter("uid"));	// can be null
 		
 		AccessType requestType;
 		if (request.getRequestURL().indexOf("g.html") > 0) {
 			requestType = AccessType.ONEPIXEL;
-		} else if (request.getRequestURL().indexOf("r.html") > 0) {
+		} else if (request.getRequestURL().indexOf("r.html") > 0 || request.getRequestURL().indexOf("/r/") > 0) {
 			requestType = AccessType.REDIRECT;
 		} else {
 			requestType = AccessType.UNKNOWN;

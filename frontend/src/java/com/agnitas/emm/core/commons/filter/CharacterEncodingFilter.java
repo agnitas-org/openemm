@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.antlr.v4.runtime.misc.Nullable;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CharacterEncodingFilter extends org.springframework.web.filter.CharacterEncodingFilter {
 	private Set<String> iso_8859_1RdirDomains = new CaseInsensitiveSet();

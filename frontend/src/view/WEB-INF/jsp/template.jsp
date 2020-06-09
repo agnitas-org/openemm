@@ -5,6 +5,7 @@
 <%@ page import="com.agnitas.util.ComHelpUtil" %>
 <%@ page import="org.agnitas.beans.EmmLayoutBase" %>
 <%@ page import="com.agnitas.beans.ComAdminPreferences" %>
+<%@ page import="org.agnitas.service.WebStorage" %>
 <%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -18,16 +19,21 @@
 <c:set var="MENU_POSITION_TOP" value="<%= EmmLayoutBase.MENU_POSITION_TOP%>" scope="page"/>
 <c:set var="START_PAGE_DASHBOARD" value="<%= ComAdminPreferences.START_PAGE_DASHBOARD%>" scope="page"/>
 <c:set var="START_PAGE_CALENDAR" value="<%= ComAdminPreferences.START_PAGE_CALENDAR%>" scope="page"/>
+<c:set var="isWideSidebarWebStorageBundleKey" value="<%= WebStorage.IS_WIDE_SIDEBAR%>" scope="page"/>
 
 <c:set var="isTabsMenuShown" value="true" scope="request"/>
 <c:set var="isBreadcrumbsShown" value="false" scope="request"/>
+
+<c:url var="LOGOUT" value="/logout.action"/>
 
 <tiles:insert attribute="page-setup"/>
 
 <!--[if IE 9 ]>    <html class="ie9"> <![endif]-->
 <!--[if (gt IE 9)|!(IE)]><!--> <html class=""> <!--<![endif]-->
 <tiles:insert attribute="head-tag"/>
-<body>
+
+<emm:webStorage var="isWideSidebarBundle" key="${isWideSidebarWebStorageBundleKey}"/>
+<body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''}">
 
     <div class="loader">
         <i class="icon icon-refresh icon-spin"></i> <bean:message key="default.loading" />
@@ -35,13 +41,11 @@
 
     <!-- Header BEGIN -->
     <header class="l-header">
-        <ul class="header-menu">
-            <li>
-                <a class="menu-open" href="#">
-                    <i class="icon icon-bars"></i>
-                </a>
-            </li>
-        </ul>
+        <div id="wide-menu-toggle" data-action="expandMenu">
+            <i class="icon icon-caret-right"></i>
+            <i class="icon icon-caret-left"></i>
+        </div>
+
         <ul class="header-nav">
             <li>
                 <h1 class="headline">
@@ -70,7 +74,7 @@
                         <c:when test="${isHeadLineShown and isBreadcrumbsShown}">
                             <c:set var="crumbs" value=""/>
 
-                            <c:set var="crumbs">${crumbs}<li><i class="icon icon-${agnHeadLineIconClass}"></i></li></c:set>
+                            <c:set var="crumbs">${crumbs}<li><i class="icon-fa5 icon-fa5-${agnHeadLineIconClass}"></i></li></c:set>
                             <c:choose>
                                 <c:when test="${not empty agnBreadcrumbsRootUrl}">
                                     <c:set var="crumbs">${crumbs}<li class="js-ellipsis"><a href="${agnBreadcrumbsRootUrl}">${fn:trim(agnHeadLineFirstCrumb)}</a></li></c:set>
@@ -113,7 +117,7 @@
                             <ul class="breadcrumbs js-ellipsis">${crumbs}</ul>
                         </c:when>
                         <c:when test="${isHeadLineShown}">
-                            <i class="icon icon-${agnHeadLineIconClass}"></i>
+                            <i class="icon-fa5 icon-fa5-${agnHeadLineIconClass}"></i>
                             ${agnHeadLineFirstCrumb}
                         </c:when>
                         <c:otherwise>
@@ -140,87 +144,73 @@
 
     <!-- Nav BEGIN -->
     <aside class="l-sidebar">
-        <c:url var="agnitasEmmLogoSvgLink" value="/assets/core/images/facelift/agnitas-emm-logo.svg"/>
-        <c:url var="agnitasEmmLogoPngLink" value="/assets/core/images/facelift/agnitas-emm-logo.png"/>
-        <div class="l-logo">
-            <c:if test="${sessionScope['emm.adminPreferences'].startPage == START_PAGE_DASHBOARD}">
-                <html:link page="/dashboard.action" styleClass="logo">
-                    <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
+        <%@ include file="logo.jspf" %>
 
-                    <p class="headline"><bean:message key="default.EMM" /></p>
-                    <p class="version"><bean:message key="default.version" /></p>
-                </html:link>
-            </c:if>
-            <c:if test="${sessionScope['emm.adminPreferences'].startPage == START_PAGE_CALENDAR}">
-                <html:link page="/calendar.action" styleClass="logo">
-                    <img class="logo-image" src="${agnitasEmmLogoSvgLink}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngLink}'">
+        <ul class="l-menu scrollable js-scrollable" data-controller="sidemenu" data-initializer="sidemenu">
+            <%-- init data for transfering on frontend side --%>
+            <c:set var="creationTime" value="${pageContext.session.creationTime}"/>
+            <c:set var="lastAccessedTime" value="${pageContext.session.lastAccessedTime}"/>
+            <c:set var="maxInactiveInterval" value="${pageContext.session.maxInactiveInterval}"/>
+            <c:url var="sessionInfoUrl" value="/session/info.action" />
+            <c:set var="sessionTimeOnMouseOverMessage">
+                <bean:message key="session.timer.mouseover"/>
+            </c:set>
 
-                    <p class="headline"><bean:message key="default.EMM" /></p>
-                    <p class="version"><bean:message key="default.version" /></p>
-                </html:link>
-            </c:if>
-            <a href="#" class="menu-close">
-                <i class="icon icon-close"></i>
-            </a>
-        </div>
+            <%-- data injection into client --%>
+            <script data-initializer="session-timer" type="application/json">
+                {
+                    "creationTime": "${creationTime}",
+                    "lastAccessedTime": "${lastAccessedTime}",
+                    "maxInactiveInterval": "${maxInactiveInterval}",
+                    "sessionInfoUrl": "${sessionInfoUrl}"
+                }
+            </script>
 
-        <ul class="l-menu scrollable js-scrollable">
-                <%-- init data for transfering on frontend side --%>
-                <c:set var="creationTime" value="${pageContext.session.creationTime}"/>
-                <c:set var="lastAccessedTime" value="${pageContext.session.lastAccessedTime}"/>
-                <c:set var="maxInactiveInterval" value="${pageContext.session.maxInactiveInterval}"/>
-                <c:url var="sessionInfoUrl" value="/session/info.action" />
-                <c:set var="sessionTimeOnMouseOverMessage">
-                    <bean:message key="session.timer.mouseover"/>
-                </c:set>
-
-                <%-- data injection into client --%>
-                <script data-initializer="session-timer" type="application/json">
-                    {
-                        "creationTime": "${creationTime}",
-                        "lastAccessedTime": "${lastAccessedTime}",
-                        "maxInactiveInterval": "${maxInactiveInterval}",
-                        "sessionInfoUrl": "${sessionInfoUrl}"
-                    }
-                </script>
-
-                <%-- timer layout --%>
-                <li id="session-time-layout"
-                    class="session-timer"
-                    style="display: none;"
-                    data-tooltip="${sessionTimeOnMouseOverMessage}">
-                    <i class="menu-item-logo icon icon-hourglass-end" id="session-time-icon" aria-hidden="true"></i>
-                    <span class="menu-item-text" id="session-time-field"></span>
-                </li>
             <tiles:insert attribute="sidemenu"/>
-            <%@include file="information-link.jspf"%>
-            <li class="account-data">
-                <html:link page="/selfservice.do?action=showChangeForm" styleClass="menu-item">
-                    <p class="small"><bean:message key="username.message"/></p>
-                    <p><strong><c:if test="${not empty firstName}">${firstName} </c:if>${fullName}</strong></p>
-                    <p>${companyShortName}</p>
-                    <p><bean:message key="default.CompanyID"/>: ${companyID}</p>
-                </html:link>
+        </ul>
 
-                <c:set var="messageDefaultLogout"><bean:message key="default.Logout"/></c:set>
-
-                <form action="<c:url value="/logout.action"/>" method="POST">
-                    <button type="submit" class="btn btn-regular" data-tooltip="${messageDefaultLogout}">
-                        <i class="icon icon-power-off"></i>
-                        <span>${messageDefaultLogout}</span>
+        <ul class="l-info-section">
+            <%-- timer layout --%>
+            <li>
+                <div id="session-time-layout"
+                     class="session-timer"
+                     style="display: none;"
+                     data-tooltip="${sessionTimeOnMouseOverMessage}">
+                    <span class="item" id="session-time-field"></span>
+                </div>
+            </li>
+            <li>
+                <form action="${LOGOUT}" method="POST" class="logout-form">
+                    <button type="submit" data-tooltip="<bean:message key='default.Logout'/>">
+                        <i class="logout-logo icon-fa5 icon-power-off"></i>
+                        <span class="logout-text"><bean:message key='default.Logout'/></span>
                     </button>
                 </form>
-             </li>
-            <%
-            // Show Version on non-live servers only
-            if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)) {
-            %>
-            <li class="version-sign">
-                <strong><%= ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion) %></strong>
             </li>
-            <%
-            }
-            %>
+            <li id="account-data" data-initializer="account-data">
+                <html:link page="/selfservice.do?action=showChangeForm">
+                    <div class="account-initials">
+                        <span><c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}</span>
+                    </div>
+                    <div class="account-data-infobox">
+                        <p><strong><c:if test="${not empty firstName}">${firstName} </c:if>${fullName}</strong></p>
+                        <p>${companyShortName}</p>
+                        <p><bean:message key="default.CompanyID"/>: ${companyID}</p>
+                        <br/>
+
+                        <%
+                        // Show Version on non-live servers only
+                        if (!ConfigService.getInstance().getBooleanValue(ConfigValue.IsLiveInstance)) {
+                        %>
+                            <p class="version-sign">
+                                <strong><%= ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion) %></strong>
+                            </p>
+                        <%
+                        }
+                        %>
+                    </div>
+                </html:link>
+            </li>
         </ul>
     </aside>
 
@@ -231,6 +221,7 @@
         <tiles:insert attribute="tabsmenu"/>
         <!-- Tabs END -->
     </c:if>
+
 
     <!-- Main Content BEGIN -->
     <main class="l-main-view">

@@ -132,16 +132,6 @@
 		<servlet-name>action</servlet-name>
 	</filter-mapping>
 
-	<filter>
-		<filter-name>PdfViewFilter</filter-name>
-		<filter-class>com.agnitas.emm.core.workflow.filter.PdfViewFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
-	<filter-mapping>
-		<filter-name>PdfViewFilter</filter-name>
-		<url-pattern>/workflow/viewOnlyElements.action</url-pattern>
-	</filter-mapping>
-
 	<!-- EMM Listeners -->
 
 	<!-- load Spring applicationContext -->
@@ -197,6 +187,11 @@
 		that Springs ContextLoaderListener is loaded before this listener! -->
 	<listener>
 		<listener-class>com.agnitas.emm.extension.listener.ComExtensionSystemInitializationContextListener</listener-class>
+	</listener>
+	
+	<!-- Listener for execution of startup jobs -->
+	<listener>
+		<listener-class>com.agnitas.startuplistener.web.StartUpExecutionListener</listener-class>
 	</listener>
 
 	<!-- Struts Action servlet -->
@@ -269,6 +264,17 @@
 	</servlet-mapping>
 
 	<servlet>
+		<servlet-name>LayoutServlet</servlet-name>
+		<servlet-class>com.agnitas.web.LayoutServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>LayoutServlet</servlet-name>
+		<url-pattern>/layout</url-pattern>
+		<url-pattern>/layout/*</url-pattern>
+		<url-pattern>/favicon.ico</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
 		<servlet-name>ShowDynamicImage</servlet-name>
 		<servlet-class>com.agnitas.web.ShowDynamicImage</servlet-class>
 	</servlet>
@@ -320,6 +326,10 @@
 		<servlet-name>OpenrateServlet</servlet-name>
 		<url-pattern>/g.html</url-pattern>
 	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>OpenrateServlet</servlet-name>
+		<url-pattern>/g/*</url-pattern>
+	</servlet-mapping>
 
 	<!-- EMM redirect servlets -->
 	<servlet>
@@ -329,6 +339,10 @@
 	<servlet-mapping>
 		<servlet-name>RedirectServlet</servlet-name>
 		<url-pattern>/r</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RedirectServlet</servlet-name>
+		<url-pattern>/r/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>RedirectServlet</servlet-name>
@@ -370,7 +384,11 @@
 		<servlet-name>UnsubscribeServlet</servlet-name>
 		<url-pattern>/uq.html</url-pattern>
 	</servlet-mapping>
-
+	<servlet-mapping>
+		<servlet-name>UnsubscribeServlet</servlet-name>
+		<url-pattern>/uq/*</url-pattern>
+	</servlet-mapping>
+	
 	<!-- heatmap statistic servlet -->
 	<servlet>
 		<servlet-name>EmbeddedClickStatView</servlet-name>
@@ -468,6 +486,15 @@
 	<servlet-mapping>
 		<servlet-name>jsConfig</servlet-name>
 		<url-pattern>/assets/config.js</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>LandingpageServlet</servlet-name>
+		<servlet-class>com.agnitas.emm.landingpage.web.LandingpageServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>LandingpageServlet</servlet-name>
+		<url-pattern>/landingpage</url-pattern>
 	</servlet-mapping>
 
 	<!-- Error Pages -->

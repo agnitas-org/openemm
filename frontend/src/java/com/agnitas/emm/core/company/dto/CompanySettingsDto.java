@@ -21,8 +21,6 @@ public class CompanySettingsDto {
     private boolean hasExtendedSalutation;
     private int executiveAdministrator;
     private boolean hasDataExportNotify;
-    private int maxFailedLoginAttempts;
-    private int blockIpTime;
     private String language;
     private String timeZone;
     private boolean hasForceSending;
@@ -33,6 +31,8 @@ public class CompanySettingsDto {
     private int business;
     private int maxAdminMails;
     private boolean hasTwoFactorAuthentication;
+    private int maxFailedLoginAttempts;
+    private int blockIpTime;
 
     public boolean isHasMailTracking() {
         return hasMailTracking;
@@ -96,22 +96,6 @@ public class CompanySettingsDto {
 
     public void setHasDataExportNotify(boolean hasDataExportNotify) {
         this.hasDataExportNotify = hasDataExportNotify;
-    }
-
-    public int getMaxFailedLoginAttempts() {
-        return maxFailedLoginAttempts;
-    }
-
-    public void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
-        this.maxFailedLoginAttempts = maxFailedLoginAttempts;
-    }
-
-    public int getBlockIpTime() {
-        return blockIpTime;
-    }
-
-    public void setBlockIpTime(int blockIpTime) {
-        this.blockIpTime = blockIpTime;
     }
 
     public String getLanguage() {
@@ -193,4 +177,22 @@ public class CompanySettingsDto {
 	public void setMaxAdminMails(int maxAdminMails) {
 		this.maxAdminMails = maxAdminMails;
 	}
+
+	public final int getMaxFailedLoginAttempts() {
+		return maxFailedLoginAttempts;
+	}
+
+	public final void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
+		this.maxFailedLoginAttempts = maxFailedLoginAttempts;
+	}
+
+	public final int getBlockIpTime() {
+		return blockIpTime;
+	}
+
+	public final void setBlockIpTime(final int blockIpTime) {
+		this.blockIpTime = blockIpTime;
+	}
+	
+	 
 }

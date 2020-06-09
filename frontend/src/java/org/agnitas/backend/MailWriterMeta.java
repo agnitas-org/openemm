@@ -72,7 +72,11 @@ public class MailWriterMeta extends MailWriter {
 		pathname = null;
 		out = null;
 		writer = null;
-		if (data.maildropStatus.isAdminMailing () || data.maildropStatus.isTestMailing () || data.maildropStatus.isCampaignMailing () || data.maildropStatus.isPreviewMailing ()) {
+		if (data.maildropStatus.isAdminMailing () ||
+		    data.maildropStatus.isTestMailing () ||
+		    data.maildropStatus.isCampaignMailing () ||
+		    data.maildropStatus.isVerificationMailing () ||
+		    data.maildropStatus.isPreviewMailing ()) {
 			blockSize = 0;
 		} else {
 			blockSize = data.mailing.blockSize ();
@@ -122,34 +126,38 @@ public class MailWriterMeta extends MailWriter {
 					error = e.toString ();
 				}
 				if (data.previewOutput != null) {
-					if (output.exists () && (output.length () > 0)) try {
-						DocumentBuilderFactory
-								docBuilderFactory = DocumentBuilderFactory.newInstance ();
-						DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder ();
-						Document	doc = docBuilder.parse (output);
-						Element		root = doc.getDocumentElement ();
-						NodeList	nlist = root.getElementsByTagName ("content");
-						int		ncount = nlist.getLength ();
+					if (output.exists () && (output.length () > 0)) {
+						try {
+							DocumentBuilderFactory
+									docBuilderFactory = DocumentBuilderFactory.newInstance ();
+							DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder ();
+							Document	doc = docBuilder.parse (output);
+							Element		root = doc.getDocumentElement ();
+							NodeList	nlist = root.getElementsByTagName ("content");
+							int		ncount = nlist.getLength ();
 
-						for (int n = 0; n < ncount; ++n) {
-							Node		node = nlist.item (n);
-							NamedNodeMap	attr = node.getAttributes ();
-							Node		name = attr.getNamedItem ("name");
+							for (int n = 0; n < ncount; ++n) {
+								Node		node = nlist.item (n);
+								NamedNodeMap	attr = node.getAttributes ();
+								Node		name = attr.getNamedItem ("name");
 
-							if (name != null) {
-								Node	text = node.getFirstChild ();
+								if (name != null) {
+									Node	text = node.getFirstChild ();
 
-								data.previewOutput.addContent (name.getNodeValue (), (text == null ? "" : text.getNodeValue ()));
+									data.previewOutput.addContent (name.getNodeValue (), (text == null ? "" : text.getNodeValue ()));
+								}
+							}
+						} catch (Exception e) {
+							if (error != null) {
+								error += "\n" + e.toString ();
+							} else {
+								error = e.toString ();
 							}
 						}
-					} catch (Exception e) {
-						if (error != null)
-							error += "\n" + e.toString ();
-						else
-							error = e.toString ();
 					}
-					if (error != null)
+					if (error != null) {
 						data.previewOutput.setError (error);
+					}
 				}
 				if ((new File (path)).delete ()) {
 					data.unmarkToRemove (path);
@@ -209,6 +217,9 @@ public class MailWriterMeta extends MailWriter {
 		generalURLs ();
 		secrets ();
 		writer.single ("total_subscribers", data.totalSubscribers);
+		if (data.company.mailtracking ()) {
+			writer.single ("mailtracking", data.company.mailtrackingExtended () ? "extended" : "standard");
+		}
 		writer.close ("general");
 		writer.empty ();
 		writer.opennode ("mailcreation");
@@ -269,15 +280,17 @@ public class MailWriterMeta extends MailWriter {
 
 				if (! doit) {
 					switch (n) {
-					case 0:
-						doit = b.isEmailPlaintext ();
-						break;
-					case 1:
-						doit = b.isEmailText ();
-						break;
-					case 2:
-						doit = true;
-						break;
+						case 0:
+							doit = b.isEmailPlaintext ();
+							break;
+						case 1:
+							doit = b.isEmailText ();
+							break;
+						case 2:
+							doit = true;
+							break;
+						default:
+							break;
 					}
 				}
 				if (doit) {
@@ -494,24 +507,26 @@ public class MailWriterMeta extends MailWriter {
 			String	value;
 
 			switch (tag.tagType) {
-			case EMMTag.TAG_INTERNAL:
-				if (tag.fixedValue || tag.globalValue) {
-					if (! found) {
-						writer.opennode ("global_tags");
-						found = true;
+				case EMMTag.TAG_INTERNAL:
+					if (tag.fixedValue || tag.globalValue) {
+						if (! found) {
+							writer.opennode ("global_tags");
+							found = true;
+						}
+						XMLWriter.Creator	c = writer.create ("tag", "name", tag.mTagFullname, "hash", tag.mTagFullname.hashCode ());
+	
+						c.add ("type", ttype);
+						if ((value = tag.makeInternalValue (data, null)) != null) {
+							writer.opennode (c);
+							writer.data (value);
+							writer.close (c.name);
+						} else {
+							writer.openclose (c);
+						}
 					}
-					XMLWriter.Creator	c = writer.create ("tag", "name", tag.mTagFullname, "hash", tag.mTagFullname.hashCode ());
-
-					c.add ("type", ttype);
-					if ((value = tag.makeInternalValue (data, null)) != null) {
-						writer.opennode (c);
-						writer.data (value);
-						writer.close (c.name);
-					} else {
-						writer.openclose (c);
-					}
-				}
-				break;
+					break;
+				default:
+					break;
 			}
 		}
 		if (found) {
@@ -551,8 +566,9 @@ public class MailWriterMeta extends MailWriter {
 				data.logging (Log.INFO, "writer/meta", "Validating XML output");
 				startXMLBack (null, "none", pathname);
 				data.logging (Log.INFO, "writer/meta", "Validation done");
-			} else
+			} else {
 				data.logging (Log.INFO, "writer/meta", "Skip validation of XML document");
+			}
 
 			if (! (data.maildropStatus.isAdminMailing () || data.maildropStatus.isTestMailing () || data.maildropStatus.isPreviewMailing ())) {
 				try (FileOutputStream temp = new FileOutputStream (fname + ".stamp")) {
@@ -589,18 +605,22 @@ public class MailWriterMeta extends MailWriter {
 	 * @param mcount if more than one mail is written for this receiver
 	 * @param mailtype the mailtype for this receiver
 	 * @param icustomer_id the customer ID
-	 * @param tagNames the available tags
+	 * @param tagNamesParameter the available tags
 	 */
 	@Override
 	public void writeMail (Custinfo cinfo,
 			       int mcount, int mailtype, long icustomer_id,
-			       String mediatypes, Map <String, EMMTag> tagNames) throws Exception {
-		super.writeMail (cinfo, mcount, mailtype, icustomer_id, mediatypes, tagNames);
+			       String mediatypes, Map <String, EMMTag> tagNamesParameter) throws Exception {
+		super.writeMail (cinfo, mcount, mailtype, icustomer_id, mediatypes, tagNamesParameter);
 		if ((mailCount % 100) == 0) {
 			data.logging (Log.VERBOSE, "writer/meta", "Currently at " + mailCount + " mails (in block " + blockCount + ": " + inBlockCount + ", records: " + inRecordCount + ") ");
 		}
 		if ((backendLog != null) && (logSize > 0) && ((mailCount % logSize) == 0)) {
-			backendLog.update (data.dbase, mailCount, data.totalReceivers);
+			try {
+				backendLog.update (data.dbase, mailCount, data.totalReceivers);
+			} catch (Exception e) {
+				data.logging (Log.WARNING, "writer/meta", "Failed to write current state to database, assume next try to success: " + e.toString ());
+			}
 		}
 
 		XMLWriter.Creator	c = writer.create ("receiver", "customer_id", icustomer_id, "user_type", cinfo.getUserType ());
@@ -636,27 +656,29 @@ public class MailWriterMeta extends MailWriter {
 
 	@Override
 	public void writeContent (Custinfo cinfo, long icustomer_id,
-				  Map <String, EMMTag> tagNames, Column[] rmap) throws Exception {
-		super.writeContent (cinfo, icustomer_id, tagNames, rmap);
+				  Map <String, EMMTag> tagNamesParameter, Column[] rmap) throws Exception {
+		super.writeContent (cinfo, icustomer_id, tagNamesParameter, rmap);
 
 		next (rmap);
 		writer.opennode ("tags");
 
-		for (EMMTag tag : tagNames.values ()) {
+		for (EMMTag tag : tagNamesParameter.values ()) {
 			String	value;
 
 			switch (tag.tagType) {
 			case EMMTag.TAG_DBASE:
-				if (! (tag.fixedValue || tag.globalValue))
-					value = tag.mTagValue;
-				else
+				if (! (tag.fixedValue || tag.globalValue)) {
+					value = tag.getTagValue ();
+				} else {
 					value = null;
+				}
 				break;
 			case EMMTag.TAG_INTERNAL:
-				if (! (tag.fixedValue || tag.globalValue))
+				if (! (tag.fixedValue || tag.globalValue)) {
 					value = tag.makeInternalValue (data, cinfo);
-				else
+				} else {
 					value = null;
+				}
 				break;
 			default:
 				throw new Exception ("Invalid tag type: " + tag.toString ());
@@ -760,8 +782,9 @@ public class MailWriterMeta extends MailWriter {
 
 		command.add (data.xmlBack ());
 		if (options != null) {
-			for (int n = 0; n < options.size (); ++n)
+			for (int n = 0; n < options.size (); ++n) {
 				command.add (options.get (n));
+			}
 		}
 		command.add ("-q");
 		if (data.eol.equals ("\n")) {
@@ -825,8 +848,9 @@ public class MailWriterMeta extends MailWriter {
 			data.logging (Log.ERROR, "writer/meta", "command " + cmd + " failed (Missing binary? Wrong permissions?): " + e.toString (), e);
 			throw new Exception ("Execution of " + cmd + " failed: " + e.toString (), e);
 		} finally {
-			if (efile.delete ())
+			if (efile.delete ()) {
 				data.unmarkToRemove (efile);
+			}
 		}
 	}
 
@@ -843,21 +867,20 @@ public class MailWriterMeta extends MailWriter {
 				opts.add ("media=" + m.typeName ());
 				String	path = null;
 				switch (m.type) {
-				case Media.TYPE_FAX:
-					path = data.mailing.outputDirectoryForCompany ("fax");
-					break;
-				case Media.TYPE_PRINT:
-					path = data.mailing.outputDirectoryForCompany ("print");
-					break;
-				case Media.TYPE_MMS:
-					path = data.mailing.outputDirectoryForCompany ("mms");
-					break;
-				case Media.TYPE_SMS:
-					path = data.mailing.outputDirectoryForCompany ("sms");
-					break;
-				case Media.TYPE_WHATSAPP:
-					path = data.mailing.outputDirectoryForCompany ("whatsapp");
-					break;
+					case Media.TYPE_FAX:
+						path = data.mailing.outputDirectoryForCompany ("fax");
+						break;
+					case Media.TYPE_PRINT:
+						path = data.mailing.outputDirectoryForCompany ("print");
+						break;
+					case Media.TYPE_MMS:
+						path = data.mailing.outputDirectoryForCompany ("mms");
+						break;
+					case Media.TYPE_SMS:
+						path = data.mailing.outputDirectoryForCompany ("sms");
+						break;
+					default:
+						break;
 				}
 				if (path != null) {
 					opts.add ("path=" + path);
@@ -874,12 +897,8 @@ public class MailWriterMeta extends MailWriter {
 		String		mta = data.mailing.messageTransferAgent ();
 			
 		opts.add ("temporary=true");
-		opts.add ("syslog=false");
 		opts.add ("account-logfile=" + data.mailing.accountLogfile ());
 		opts.add ("bounce-logfile=" + data.mailing.bounceLogfile ());
-		if ((mta != null) && mta.equals ("postfix")) {
-			opts.add ("messageid-logfile=" + data.mailing.messageIDLogfile ());
-		}
 		addGenerateMediaOptions (opts, mta);
 		return "generate:" + String.join (";", opts);
 	}
@@ -903,6 +922,11 @@ public class MailWriterMeta extends MailWriter {
 		if (data.previewEcsUIDs) {
 			options.add ("-g");
 		}
+		if ((data.previewTargetIDs != null) && (data.previewTargetIDs.length > 0)) {
+			for (long targetID : data.previewTargetIDs) {
+				options.add ("-t" + targetID);
+			}
+		}
 	}
 
 	private String getStampMessage () {
@@ -914,7 +938,7 @@ public class MailWriterMeta extends MailWriter {
 			"Mailing-ID: " + data.mailing.id () + "\n" +
 			"Mailing-Name: " + data.mailing.name () + "\n" +
 			"Subscriber-Count: " + data.totalSubscribers + "\n" +
-			"Receiver-Count: " + data.totalReceivers + "\n" + 
+			"Receiver-Count: " + data.totalReceivers + "\n" +
 			"Count: " + inBlockCount + "\n";
 	}
 
@@ -931,12 +955,13 @@ public class MailWriterMeta extends MailWriter {
 		String		encode;
 
 		if (b.isText) {
-			if (b.isPDF)
+			if (b.isPDF) {
 				encode = "base64";
-			else if (b.media == Media.TYPE_EMAIL)
+			} else if (b.media == Media.TYPE_EMAIL) {
 				encode = data.mailing.encoding ();
-			else
+			} else {
 				encode = "none";
+			}
 		} else if (b.isFont) {
 			encode = "none";
 		} else {
@@ -1028,10 +1053,12 @@ public class MailWriterMeta extends MailWriter {
 				XMLWriter.Creator	c = writer.create ("tagposition", "name", tp.getTagname (), "hash", tp.getTagname ().hashCode ());
 
 				type = 0;
-				if (tp.isDynamic ())
+				if (tp.isDynamic ()) {
 					type |= 0x1;
-				if (tp.isDynamicValue ())
+				}
+				if (tp.isDynamicValue ()) {
 					type |= 0x2;
+				}
 				if (type != 0) {
 					c.add ("type", type);
 				}
@@ -1039,8 +1066,9 @@ public class MailWriterMeta extends MailWriter {
 					writer.opennode (c);
 					emitBlock (tp.getContent (), (isHeader != 0 ? isHeader + 1 : 0), 0);
 					writer.close (c.name);
-				} else
+				} else {
 					writer.openclose (c);
+				}
 			}
 		}
 	}
@@ -1113,8 +1141,6 @@ public class MailWriterMeta extends MailWriter {
 	}
 
 	private void generalURLs () {
-		writer.single ("profile_url", data.profileURL);
-		writer.single ("unsubscribe_url", data.unsubscribeURL);
 		writer.single ("auto_url", data.autoURL);
 		writer.single ("onepixel_url", data.onePixelURL);
 		writer.single ("anon_url", data.anonURL);

@@ -10,9 +10,19 @@
 
 package com.agnitas.emm.core.birtreport.service.impl;
 
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILINGS_TO_SEND_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_NORMAL;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_FILTER_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_TYPE_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.SORT_MAILINGS_KEY;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -21,7 +31,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import javax.sql.DataSource;
+
+import org.agnitas.beans.MailingBase;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -29,27 +50,11 @@ import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportComparisonSettings
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.PeriodType;
 import com.agnitas.emm.core.birtreport.dto.PredefinedType;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILINGS_TO_SEND_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_NORMAL;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_FILTER_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_TYPE_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_MAILINGS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.SORT_MAILINGS_KEY;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 
 public class ComBirtReportServiceImpl implements ComBirtReportService {
     /** The logger. */
@@ -66,7 +71,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     private DataSource dataSource;
 
     @Override
-    public boolean insert(ComBirtReport report){
+    public boolean insert(ComBirtReport report) throws Exception{
         if(report.isReportActive() == 1){
             report.setActivationDate(new Date());
         }
@@ -74,18 +79,18 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     @Override
-    public boolean logSentReport(ComBirtReport report){
-        if(report.isTriggeredByMailing()){
+    public void logSentReport(ComBirtReport report){
+        if (report.isTriggeredByMailing()){
             final ComBirtReportMailingSettings reportMailingSettings = report.getReportMailingSettings();
             final List<Integer> mailingsIdsToSend = reportMailingSettings.getMailingsIdsToSend();
-            if(!mailingsIdsToSend.isEmpty()){
-                // log to db and clear in bean
-                birtReportDao.insertSentMailings(report.getId(), report.getCompanyID(), mailingsIdsToSend);
+            birtReportDao.insertSentMailings(report.getId(), report.getCompanyID(), mailingsIdsToSend);
+            birtReportDao.deactivateBirtReport(report.getId());
+            if (!mailingsIdsToSend.isEmpty()){
                 reportMailingSettings.getSettingsMap().remove(MAILINGS_TO_SEND_KEY);
             }
+        } else {
+        	birtReportDao.insertSentMailings(report.getId(), report.getCompanyID(), null);
         }
-        report.setDeliveryDate(new Date());
-        return birtReportDao.update(report);
     }
 
     protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey) {
@@ -93,31 +98,22 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey, Map<String, LocalDate> datesRestriction){
-        List<MailingBase> mailings;
-
         if (number == 0) {
-            Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE));
-            Date to = DateUtilities.toDate(datesRestriction.get(KEY_END_DATE));
+            Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE), AgnUtils.getSystemTimeZoneId());
+            // Include the defined day completely, so use limit of next day 00:00
+            Date to = DateUtilities.toDate(datesRestriction.get(KEY_END_DATE).plus(1, ChronoUnit.DAYS), AgnUtils.getSystemTimeZoneId());
 
-            mailings = mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey);
+            return mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey);
         } else {
-            mailings = mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey);
+        	return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey);
         }
-
-        return mailings;
-    }
-
-    @Override
-    public List<ComBirtReport> getReportsToSend(final Date date) {
-        final List<ComBirtReport> activeBirtReports = birtReportDao.getAllReportToSend(date);
-        activeBirtReports.removeIf(birtReport -> !checkReportToSend(birtReport));
-        return activeBirtReports;
     }
 
     private boolean checkReportToSend(final ComBirtReport birtReport) {
         try {
             if (birtReport.isTriggeredByMailing()) {
-                if (!birtReport.getReportMailingSettings().isEnabled()) {
+                ComBirtReportMailingSettings mailingSettings = birtReport.getReportMailingSettings();
+                if (!mailingSettings.isEnabled()) {
                     return false;
                 }
                 BirtReportType reportType = BirtReportType.getTypeByCode(birtReport.getReportType());
@@ -152,25 +148,27 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                 final Date startDate = startCalendar.getTime();
                 final Date endDate = endCalendar.getTime();
 
-                int filter = birtReport.getReportMailingSettings().getReportSettingAsInt(MAILING_FILTER_KEY,  BirtReportSettingsUtils.FILTER_NO_FILTER_VALUE);
-                int filterValue = birtReport.getReportMailingSettings().getReportSettingAsInt(ComBirtReportSettings.PREDEFINED_ID_KEY);
+                int filter = mailingSettings.getReportSettingAsInt(MAILING_FILTER_KEY,  BirtReportSettingsUtils.FILTER_NO_FILTER_VALUE);
+                int filterValue = mailingSettings.getReportSettingAsInt(ComBirtReportSettings.PREDEFINED_ID_KEY);
 
                 final List<Integer> mailingsToSend = mailingDao.getBirtReportMailingsToSend(birtReport.getCompanyID(), birtReport.getId(), startDate, endDate, filter, filterValue);
-                birtReport.getReportMailingSettings().setMailingsToSend(mailingsToSend);
+                mailingSettings.setMailingsToSend(mailingsToSend);
                 return !mailingsToSend.isEmpty();
-            }
-            else {
-                updateSelectedMailingIds(birtReport.getReportMailingSettings(), birtReport.getCompanyID());
-                final List<Integer> mailingsToSend = birtReport.getReportMailingSettings().getMailingsIdsToSend();
-                boolean doMailingReport = birtReport.getReportMailingSettings().isEnabled() && !mailingsToSend.isEmpty();
+            } else {
+                ComBirtReportMailingSettings mailingSettings = birtReport.getReportMailingSettings();
+                updateSelectedMailingIds(mailingSettings, birtReport.getCompanyID());
+                final List<Integer> mailingsToSend = mailingSettings.getMailingsIdsToSend();
+                boolean doMailingReport = mailingSettings.isEnabled() && !mailingsToSend.isEmpty();
 
-                updateSelectedComparisonIds(birtReport.getReportComparisonSettings(), birtReport.getCompanyID());
-                List<String> compareMailings = birtReport.getReportComparisonSettings().getMailings();
-                boolean doComparisonReport = birtReport.getReportComparisonSettings().isEnabled() && CollectionUtils.isNotEmpty(compareMailings);
+                ComBirtReportComparisonSettings comparisonSettings = birtReport.getReportComparisonSettings();
+                updateSelectedComparisonIds(comparisonSettings, birtReport.getCompanyID());
+                List<String> compareMailings = comparisonSettings.getMailings();
+                boolean doComparisonReport = comparisonSettings.isEnabled() && CollectionUtils.isNotEmpty(compareMailings);
 
                 boolean doRecipientReport = birtReport.getReportRecipientSettings().isEnabled();
-
-                return doComparisonReport || doMailingReport || doRecipientReport;
+                boolean doTopDomainsReport = birtReport.getReportTopDomainsSettings().isEnabled();
+    
+                return doComparisonReport || doMailingReport || doRecipientReport || doTopDomainsReport;
             }
         } catch (Exception e) {
             logger.error("Cannot check status of report: " + birtReport.getId(), e);
@@ -300,12 +298,12 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     }
 
     @Override
-    public boolean isExistBenchmarkMailingStatTbl() {
-    	return DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_tbl") && DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_stat_tbl");
+    public boolean isExistedBenchmarkMailingTbls() {
+        return DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_tbl") && DbUtilities.checkIfTableExists(dataSource, "benchmark_mailing_stat_tbl");
     }
     
     /**
-     * Set DAO accessing BIRT report data. 
+     * Set DAO accessing BIRT report data.
      * 
      * @param birtReportDao DAO accessing BIRT report data
      */
@@ -333,4 +331,42 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         this.dataSource = dataSource;
     }
 
+	@Override
+	public boolean announceStart(ComBirtReport birtReport) {
+		return birtReportDao.announceStart(birtReport);
+	}
+
+	@Override
+	public void announceEnd(ComBirtReport birtReport) {
+		birtReportDao.announceEnd(birtReport);
+	}
+
+	@Override
+	public int getRunningReportsByHost(String hostName) {
+		return birtReportDao.getRunningReportsByHost(hostName);
+	}
+
+	@Override
+	public List<ComBirtReport> getReportsToSend(int maximumNumberOfReports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
+		if (maximumNumberOfReports <= 0) {
+			return new ArrayList<>();
+		} else {
+			final List<ComBirtReport> reportsList =  birtReportDao.getReportsToSend(includedCompanyIds, excludedCompanyIds);
+			List<ComBirtReport> reportsToSend = new ArrayList<>();
+			for (ComBirtReport birtReport : reportsList) {
+				if (reportsToSend.size() < maximumNumberOfReports) {
+					if (checkReportToSend(birtReport)) {
+						reportsToSend.add(birtReport);
+					} else if (birtReport.getNextStart() != null) {
+						// Time triggered reports, which do have an additional unfulfilled condition for being sent will be retried after next interval
+						// (e.g. reports for mailings of a defined mailinglists to be sent within the last week, when no fitting mailing was sent in that week)
+						birtReport.setNextStart(DateUtilities.calculateNextJobStart(birtReport.getIntervalpattern()));
+						birtReportDao.announceStart(birtReport);
+						birtReportDao.announceEnd(birtReport);
+					}
+				}
+			}
+			return reportsToSend;
+		}
+	}
 }

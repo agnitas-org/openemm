@@ -9,11 +9,7 @@
     }
 
     viewportChanged = setTimeout(function() {
-      AGN.Initializers.Equalizer();
-      AGN.Initializers.Truncate();
-      AGN.Initializers.Sizing();
-      AGN.Initializers.Scrollable();
-      AGN.Initializers.DropdownExpand();
+      AGN.Lib.CoreInitializer.run(['equalizer', 'truncate', 'sizing', 'scrollable', 'dropdown-expand']);
 
       _.each(AGN.Lib.Editor.all(), function(editor) {
         editor.resize();
@@ -23,7 +19,7 @@
 
     }, 500);
 
-  }
+  };
 
   $(window).on('resize', updateViewport);
 

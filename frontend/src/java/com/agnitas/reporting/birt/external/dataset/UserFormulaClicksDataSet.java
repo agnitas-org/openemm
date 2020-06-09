@@ -29,13 +29,13 @@ public class UserFormulaClicksDataSet extends BIRTDataSet {
 	public List<UserFormulaURLClickStatRow> getClicksPerUrl(@VelocityCheck int formID, int companyID) {
 		logger.debug("getClicksPerUrl started - formula id: " + formID);
 		
-        String query = 
+        String query =
 			"SELECT" +
 				" COUNT(measured_customer_id) clicks_gross," +
 				" COUNT(distinct measured_customer_id) clicks_net," +
-				" sum(anonym_clicks) clicks_anonym," +
+				" SUM(anonym_clicks) clicks_anonym," +
 				" url_id," +
-				" " + getIfNull() + "(shortname, full_url) url" +
+				" COALESCE(shortname, full_url) url" +
 			" FROM (" +
 				"SELECT" +
 					" urltbl.url_id," +

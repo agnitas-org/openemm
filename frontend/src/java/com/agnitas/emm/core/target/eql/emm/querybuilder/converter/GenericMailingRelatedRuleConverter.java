@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
@@ -29,10 +29,10 @@ public abstract class GenericMailingRelatedRuleConverter implements RuleConverte
 
     protected abstract String convertMailingRule(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException;
 
-    //Default validation checks if value is resent and not blank.
+    //Default validation checks if value is present and not blank.
     protected void validate(QueryBuilderRuleNode ruleNode) throws QueryBuilderToEqlConversionException {
-        Object value = ruleNode.getValue();
-        if (value == null || StringUtils.isBlank(value.toString())) {
+        String value = QueryBuilderUtil.getRuleNodeValueAsString(ruleNode);
+        if (StringUtils.isBlank(value)) {
             throw new QueryBuilderToEqlConversionException("Value is empty for node " + ruleNode);
         }
     }

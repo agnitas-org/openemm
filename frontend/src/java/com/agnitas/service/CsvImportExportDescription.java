@@ -12,6 +12,7 @@ package com.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,14 +27,13 @@ import org.agnitas.service.UpdateMethod;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
-import org.agnitas.util.FileUtils;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
 import com.agnitas.service.ImportError.ImportErrorKey;
@@ -296,82 +296,73 @@ public class CsvImportExportDescription {
 	}
 
 	// TODO: move to service layer
-	@SuppressWarnings("resource")
 	public void prepareColumnMapping(ComReferenceTable table, CaseInsensitiveMap<String, DbColumnType> structure, File importFile) throws Exception {
-		File unzipPath = null;
-		InputStream dataInputStream = null;
-		try {
-			if (isZipped()) {
-				try {
-					if (getZipPassword() == null) {
-						dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						}
-					} else {
-						unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
-						unzipPath.mkdir();
-						ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, getZipPassword());
-						
-						// Check if there was only one file within the zip file and use it for import
-						String[] filesToImport = unzipPath.list();
-						if (filesToImport.length != 1) {
-							throw new Exception("Invalid number of files included in zip file");
-						}
-						dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-					}
-				} catch (ImportException e) {
-					throw e;
-				} catch (Exception e) {
-					throw new ImportException(false, "error.unzip", e.getMessage());
-				}
-			} else {
-				dataInputStream = new FileInputStream(importFile);
-			}
+		List<String> csvColumns;
+		try (CsvReader readerForAnalyse = new CsvReader(getImportInputStream(importFile), getEncoding(), getDelimiter(), getStringQuote())) {
+			readerForAnalyse.setAlwaysTrim(true);
+			csvColumns = readerForAnalyse.readNextCsvLine();
+		} catch (Exception e) {
+			throw new ImportError(ImportErrorKey.cannotReadImportFile);
+		}
+		
+		if (csvColumns == null) {
+			throw new ImportError(ImportErrorKey.emptyImportFile);
+		}
 			
-			List<String> csvColumns;
-			try (CsvReader readerForAnalyse = new CsvReader(dataInputStream, getEncoding(), getDelimiter(), getStringQuote())) {
-				readerForAnalyse.setAlwaysTrim(true);
-				csvColumns = readerForAnalyse.readNextCsvLine();
+		String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvColumns, autoMapping);
+		if (duplicateCsvColumn != null) {
+			throw new ImportError(ImportErrorKey.csvContainsInvalidColumn, duplicateCsvColumn);
+		}
+
+		String keyColumn = table.getKeyColumn().toLowerCase();
+
+		if (autoMapping || CollectionUtils.isEmpty(columnMapping)) {
+			List<ColumnMapping> mappings = new ArrayList<>();
+
+			for (String csvColumn : csvColumns) {
+				if (structure.containsKey(csvColumn)) {
+					mappings.add(createMapping(csvColumn, csvColumn.toLowerCase(), csvColumn.equalsIgnoreCase(keyColumn)));
+				} else {
+					throw exceptionCsvInvalidColumn(csvColumn);
+				}
+			}
+
+			columnMapping = mappings;
+		}
+
+		validateColumnMapping(table.isVoucher(), structure, keyColumn, csvColumns);
+	}
+
+	private InputStream getImportInputStream(File importFile) throws FileNotFoundException {
+		if (isZipped()) {
+			try {
+				if (getZipPassword() == null) {
+					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
+					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+					if (zipEntry == null) {
+						throw new ImportException(false, "error.unzip.noEntry");
+					}
+					return dataInputStream;
+				} else {
+					File unzipPath = new File(importFile.getAbsolutePath() + ".unzipped");
+					unzipPath.mkdir();
+					ZipUtilities.decompressFromEncryptedZipFile(importFile, unzipPath, getZipPassword());
+					
+					// Check if there was only one file within the zip file and use it for import
+					String[] filesToImport = unzipPath.list();
+					if (filesToImport.length != 1) {
+						throw new Exception("Invalid number of files included in zip file");
+					}
+					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
+					return new TempFileInputStream(dataInputStream, unzipPath);
+				}
+			} catch (ImportException e) {
+				throw e;
 			} catch (Exception e) {
-				throw new ImportError(ImportErrorKey.cannotReadImportFile);
+				throw new ImportException(false, "error.unzip", e.getMessage());
 			}
-			
-			if (csvColumns == null) {
-				throw new ImportError(ImportErrorKey.emptyImportFile);
-			}
-				
-			String duplicateCsvColumn = CsvReader.checkForDuplicateCsvHeader(csvColumns, autoMapping);
-			if (duplicateCsvColumn != null) {
-				throw new ImportError(ImportErrorKey.csvContainsInvalidColumn, duplicateCsvColumn);
-			}
-
-			String keyColumn = table.getKeyColumn().toLowerCase();
-
-			if (autoMapping || CollectionUtils.isEmpty(columnMapping)) {
-				List<ColumnMapping> mappings = new ArrayList<>();
-
-				for (String csvColumn : csvColumns) {
-					if (structure.containsKey(csvColumn)) {
-						mappings.add(createMapping(csvColumn, csvColumn.toLowerCase(), csvColumn.equalsIgnoreCase(keyColumn)));
-					} else {
-						throw exceptionCsvInvalidColumn(csvColumn);
-					}
-				}
-
-				columnMapping = mappings;
-			}
-
-			validateColumnMapping(table.isVoucher(), structure, keyColumn, csvColumns);
-		} finally {
-			if (dataInputStream != null) {
-				IOUtils.closeQuietly(dataInputStream);
-			}
-			
-			if (unzipPath != null) {
-				FileUtils.removeRecursively(unzipPath);
-			}
+		} else {
+			return new FileInputStream(importFile);
 		}
 	}
 

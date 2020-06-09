@@ -12,6 +12,7 @@ package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 import javax.annotation.Resource;
 
@@ -27,17 +28,17 @@ import org.agnitas.emm.springws.jaxb.ListSubscribersResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-import com.agnitas.dao.ComAdminDao;
+import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
-@SuppressWarnings("deprecation")
 public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private RecipientService recipientService;
 	@Resource
 	private ObjectFactory objectFactory;
-    @Resource
-    private ComAdminDao comAdminDao;
+	@Resource
+	private WebserviceUserService webserviceUserService;
 	
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
@@ -46,13 +47,9 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
 
 		RecipientsModel model = parseModel(request);
 		
-		String username = Utils.getUserName();
-		Integer maxResultListSize = comAdminDao.getWsMaxResultListSize(username);
-		int size = recipientService.getSubscribersSize(model);
-		
-        if (maxResultListSize != null && maxResultListSize > 0 && maxResultListSize < size) {
-            throw new RecipientsSizeLimitExceededExeption("List too large, refine search criterion");
-        }
+		final String username = Utils.getUserName();
+		final int size = recipientService.getSubscribersSize(model);
+        checkResultListSize(username, size);
 	        
 		List<Integer> recipientResultList = recipientService.getSubscribers(model);
 		populateResponse(request, response, recipientResultList, objectFactory);
@@ -75,8 +72,8 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
         for (Equals equals : equalsList) {
             criteriaEqualsList
                 .add(new RecipientsModel.CriteriaEquals(
-                        equals.getProfilefield(), 
-                        equals.getValue(), 
+                        equals.getProfilefield(),
+                        equals.getValue(),
                         equals.getDateformat())
                 );
         }
@@ -91,4 +88,20 @@ public class ListSubscribersEndpoint extends AbstractMarshallingPayloadEndpoint 
 		}
 	}
 
+	private final void checkResultListSize(final String username, final int listSize) throws RecipientsSizeLimitExceededExeption {
+		final OptionalInt resultListSizeOpt = readMaxResultListSize(username);
+		
+        if(resultListSizeOpt.isPresent() && resultListSizeOpt.getAsInt() > 0 && resultListSizeOpt.getAsInt() < listSize) {
+            throw new RecipientsSizeLimitExceededExeption("List too large, refine search criterion");
+        }
+	}
+	
+	private final OptionalInt readMaxResultListSize(final String username) {
+		try {
+			final WebserviceUserSettings settings = webserviceUserService.findSettingsForWebserviceUser(username);
+			return settings.getMaxResultListSize();
+		} catch(final Exception e) {
+			return OptionalInt.empty();
+		}
+	}
 }

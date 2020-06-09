@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+#	-*- python -*-
+#
+from	__future__ import annotations
+import	os, logging
+from	agn3.crontab import Crontab
+from	agn3.db import DB
+from	agn3.definitions import base
+from	agn3.io import relink
+from	agn3.sanity import Sanity, Report, File
+#
+logger = logging.getLogger (__name__)
+#
+class OpenEMM (Sanity):
+	def __init__ (self) -> None:
+		super ().__init__ (
+			directories = [
+				'log', 'var',
+				'log/done', 'log/fail',
+				'var/lock', 'var/log', 'var/run', 'var/fsdb', 'var/spool', 'var/tmp', 'var/lib',
+				'var/spool/ARCHIVE', 'var/spool/DELETED',
+				'var/spool/META', 'var/spool/DIRECT',
+				'var/spool/ADMIN', 'var/spool/ADMIN0', 'var/spool/RECOVER',
+				'var/spool/QUEUE', 'var/spool/MIDQUEUE', 'var/spool/SLOWQUEUE',
+				'var/spool/mail', 'var/spool/filter'
+			], files = [
+				File (name = 'bin/smctrl', issuid = True, uid = 0, gid=  0),
+				File (name = 'bin/qctrl', issuid = True, uid = 0, gid = 0)
+			], executables = [
+				'java'
+			], modules = [
+				'sqlite3'
+			], checks = [
+				self.__relink,
+				self.__db_sanity,
+				self.__crontab
+			], runas = 'openemm', startas = 'openemm', umask = 0o22
+		)
+	
+	def __relink (self, r: Report) -> None:
+		relink (os.path.join (base, 'release', 'backend', 'current', 'bin'), os.path.join (base, 'bin'))
+	
+	def __db_sanity (self, r: Report) -> None:
+		with DB () as db:
+			key = 'mask-envelope-from'
+			rq = db.querys (
+				'SELECT count(*) AS cnt '
+				'FROM company_info_tbl '
+				'WHERE company_id = 0 AND cname = :cname',
+				{'cname': key}
+			)
+			if rq is None or not rq.cnt:
+				count = db.update (
+					'INSERT INTO company_info_tbl ('
+					'       company_id, cname, cvalue, description, creation_date, timestamp'
+					') VALUES ('
+					'       0, :cname, :cvalue, NULL, current_timestamp, current_timestamp'
+					')', {
+						'cname': key,
+						'cvalue': 'false'
+					}, commit = True
+				)
+				if count == 1:
+					logger.info ('Added configuration for envelope address')
+				else:
+					logger.error ('Failed to set configuration for envelope address: %s' % db.last_error ())
+	
+	def __crontab (self, r: Report) -> None:
+		Crontab ().update ([
+			'10 2 * * * /home/openemm/bin/janitor.sh openemm',
+			'45 20 * * * /home/openemm/bin/bouncemanagement.sh',
+		], runas = 'openemm')
+
+class Sanities:
+	checks = {'openemm': OpenEMM}
+
+def main () -> None:
+	OpenEMM ()
+if __name__ == '__main__':
+	main ()

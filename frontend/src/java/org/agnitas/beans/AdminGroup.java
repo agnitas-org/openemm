@@ -48,14 +48,14 @@ public interface AdminGroup {
 
     /**
      * Getter for property groupPermissions.
-     * Return a Set containing one entry for each permission, this group has. 
+     * Return a Set containing one entry for each permission, this group has.
      * 
      * @return A set of Permissions.
      */
     Set<Permission> getGroupPermissions();
 
     /**
-     * Get the property Shortname. 
+     * Get the property Shortname.
      * The shortname is a short descriptive name for the group.
      * 
      * @return Value of property shortname
@@ -66,10 +66,10 @@ public interface AdminGroup {
      * Check if admingroup has any of the demanded permission rights.
      * @param permissions
      */
-    boolean permissionAllowed(Permission... permissions);
+    boolean permissionAllowed(int companyID, Permission... permissions);
 
     /**
-     * Setter for property companyID. 
+     * Setter for property companyID.
      * 
      * @param id companyID
      */

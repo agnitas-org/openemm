@@ -22,16 +22,18 @@ import com.agnitas.beans.MailingsListProperties;
 public class MailingsQueryWorker implements Callable<PaginatedListImpl<Map<String, Object>>> {
 	private MailingDao mDao;
 	private int companyID;
+	private int adminId;
 	private MailingsListProperties props;
 
-	public MailingsQueryWorker(MailingDao dao, @VelocityCheck int companyID, MailingsListProperties props) {
+	public MailingsQueryWorker(MailingDao dao, @VelocityCheck int companyID, int adminId, MailingsListProperties props) {
 		this.mDao = dao;
 		this.companyID = companyID;
+		this.adminId = adminId;
 		this.props = props;
 	}
 
 	@Override
 	public PaginatedListImpl<Map<String, Object>> call() throws Exception {
-		return mDao.getMailingList(companyID, props);
+		return mDao.getMailingList(companyID, adminId, props);
 	}
 }

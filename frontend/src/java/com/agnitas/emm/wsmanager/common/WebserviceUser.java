@@ -18,12 +18,11 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserService;
  * Interface for webservice userdata. Extends the smaller list item interface.
  * 
  * <b>Note:</b> For security reasons, do not add a property to hold the password or secured
- * password. For modifying the users password, 
+ * password. For modifying the users password,
  * use{@link WebserviceUserService#updateWebserviceUser(com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto)} with non-empty
  * password property defined.
  */
 public interface WebserviceUser extends WebserviceUserListItem {
-
 	/**
 	 * Sets <i>active</i>-flag of webservice user. If user is not active, login is impossible.
 	 * 
@@ -62,9 +61,7 @@ public interface WebserviceUser extends WebserviceUserListItem {
 	
 	public void setGrantedPermissions(final Set<String> grantedPermissions);
 	
-	
 	public void setGrantedPermissionGroupIDs(final Set<Integer> permissionGroups);
 	
 	public Set<Integer> getGrantedPermissionGroupIDs();
-
 }

@@ -21,7 +21,6 @@ import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.target.service.ComTargetService;
 
-@SuppressWarnings("deprecation")
 public class ListTargetgroupsEndpoint extends AbstractMarshallingPayloadEndpoint {
 
     @Resource

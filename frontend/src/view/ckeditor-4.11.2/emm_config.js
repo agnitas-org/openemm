@@ -1,6 +1,9 @@
 CKEDITOR.editorConfig = function(config) {
 /*-- EDITOR BEHAVIOUR --*/
 
+    //Disable converting 'background' to 'background-color' in tag styles
+    config.colorButton_normalizeBackground = false;
+
     /*true keeps HTML structure after paste from Word*/
     /*FCKConfig.CleanWordKeepsStructure*/
     config.pasteFromWordNumberedHeadingToList = true;

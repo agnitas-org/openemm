@@ -9,39 +9,21 @@
     no_add_rule: true,
     no_add_group: true
   };
-  var WORKFLOW_URLS;
 
-  AGN.Initializers.TargetGroupQueryBuilder = function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
+  AGN.Lib.DomInitializer.new('target-group-query-builder', function($form) {
     var qbSelector = '#targetgroup-querybuilder';
-    var queryBuilders = $scope.find(qbSelector);
+    var queryBuilders = $(qbSelector);
 
-    var config = {
-      jSessionId: "",
-      isTargetGroupLocked: false,
-      WORKFLOW_URLS: {}
-    };
-
-    if (queryBuilders.exists()) {
-      if ($scope.find("script#target-group-query-builder").exists()) {
-        config = $scope.find("script#target-group-query-builder").json();
-        WORKFLOW_URLS = config.WORKFLOW_URLS;
-      }
-
-    }
-
-    var jSessionId = config.jSessionId;
-    var isTargetGroupLocked = config.isTargetGroupLocked;
+    var mailTrackingAvailable = this.config.mailTrackingAvailable;
+    var isTargetGroupLocked = this.config.isTargetGroupLocked;
 
     var isIE10 = navigator.userAgent.match('MSIE 10.0;');
 
     _.each(queryBuilders, function(el) {
       var $el = $(el);
       var operator_groups = buildOperatorGroups();
-      var qbFilters = readFiltersFromJson($el, "#queryBuilderFilters");
+      var qbFilters = readFiltersFromJson($el, "#queryBuilderFilters", {mail_tracking_available: mailTrackingAvailable});
+
       $el.queryBuilder({
         filters: qbFilters,
         allow_empty: true,
@@ -57,62 +39,93 @@
       });
 
       if (!isIE10) {
-        AGN.Initializers.Select($el);
+        AGN.Lib.CoreInitializer.run('select', $el);
       }
-
-      // Register event handler callback to receive notifications on any change on groups that affects getRules()
-      $el.on('afterMove.queryBuilder rulesChanged.queryBuilder', function(event) {
-        setRulesAsJson(event.builder);
-      });
-
-      // Register event handler callback to receive notifications on any change on groups that affects getRules()
-      $el.on('afterAddGroup.queryBuilder afterDeleteGroup.queryBuilder afterUpdateGroupCondition.queryBuilder', function(event) {
-        setRulesAsJson(event.builder);
-      });
-
-      // Register event handler callback to receive notifications on any change on rules that affects getRules()
-      $el.on('afterAddRule.queryBuilder afterDeleteRule.queryBuilder afterUpdateRuleValue.queryBuilder afterUpdateRuleOperator.queryBuilder afterUpdateRuleFilter.queryBuilder', function(event) {
-        setRulesAsJson(event.builder);
-      });
 
       $el.on('afterSetRules.queryBuilder afterUpdateRuleFilter.queryBuilder afterCreateRuleFilters.queryBuilder afterAddRule.querybuilder', function(event) {
         if (!isIE10) {
-          AGN.Initializers.Select($(this));
+          AGN.Lib.CoreInitializer.run('select', $(this));
         }
       });
 
       $el.on('link-values-set', function(e) {
         if (!isIE10) {
-          AGN.Initializers.Select($(e.target));
+          AGN.Lib.CoreInitializer.run('select', $(e.target));
         }
       });
 
       $el.on('mailing-values-set values-set ', function(e) {
         if (!isIE10) {
-          AGN.Initializers.Select($(e.target));
+          AGN.Lib.CoreInitializer.run('select', $(e.target));
         }
       });
 
       $el.on('change-date-format', function(e) {
         if (!isIE10) {
-          AGN.Initializers.Select($(e.target));
+          AGN.Lib.CoreInitializer.run('select', $(e.target));
         }
       });
 
-      $el.on("save-target-group.queryBuilder", function(event){
-        var self = this;
-        var queryBuilder = self.queryBuilder;
-          queryBuilder.clearInitialRuleSettings();
-          queryBuilder.validate();
+      // Prevent form submission on enter press when QB inputs are in focus.
+      $el.on('enterdown', 'input', function(e) {
+        return false;
+      });
+
+      $form.on('validation', function(e) {
+        var $self = $(this),
+          qb = $el.prop('queryBuilder');
+
+        var methodName = AGN.Lib.Form.get($self).getValue('method');
+        if (methodName === 'save') {
+          validate(e, qb, false);
+        } else {
+          validate(e, qb, true);
+        }
       });
     });
 
-    function setRulesAsJson(builder) {
-      var json = JSON.stringify(builder.getRules({allow_invalid: true}));
-      _.each($scope.find("#queryBuilderRules"), function(el) {
-        var $el = $(el);
-        $el.val(json);
-      });
+    $form.on('click', '[data-toggle-tab]', function(e) {
+      var form = AGN.Lib.Form.get($form);
+      //reset the method for proper validation
+      //method hasn't to be 'save'
+      form.setValue('method', '');
+      if (!form.valid()) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    this.addAction({click: 'switch-tab-viewEQL'}, function() {
+      var element = this.el,
+        form = AGN.Lib.Form.get($(element));
+
+      form.setValue('method', 'viewEQL');
+      form.submit();
+    });
+
+    this.addAction({click: 'switch-tab-viewQB'}, function() {
+      var element = this.el,
+        form = AGN.Lib.Form.get($(element));
+
+      form.setValue('method', 'viewQB');
+      form.submit();
+    });
+
+    function validate(e, qb, skipEmpty) {
+      qb.clearInitialRuleSettings();
+
+      if (qb.validate({skip_filter_validation: false, skip_empty: skipEmpty})) {
+        $('#queryBuilderRules').val(getRulesAsJson(qb, skipEmpty));
+        return true;
+      } else {
+        AGN.Lib.Messages(t('defaults.error'), t('querybuilder.errors.general'), 'alert');
+        e.preventDefault();
+        return false;
+      }
+    }
+
+    function getRulesAsJson(qb, skipEmpty) {
+      return JSON.stringify(qb.getRules({allow_invalid: true, skip_empty: skipEmpty}));
     }
 
     function setValue($element, value) {
@@ -123,7 +136,7 @@
       }
     }
 
-    function readFiltersFromJson($scope, name) {
+    function readFiltersFromJson($scope, name, options) {
       var result = readQBJSON($scope, name);
 
       if (result === null) {
@@ -145,7 +158,7 @@
         });
       }
 
-      augmentIndependentFields(result);
+      augmentIndependentFields(result, options);
 
       return result;
     }
@@ -161,9 +174,10 @@
       return options;
     }
 
-    function augmentIndependentFields(result) {
+    function augmentIndependentFields(result, options) {
       //An additional properties for independent fields
 
+      options = $.extend({mail_tracking_available: false}, options);
       var getEmptyMailingSelect = function(rule) {
         var $select = $('<select class="form-control qb-input-element-select mailings js-select">');
         $select.attr("id", rule.id);
@@ -242,7 +256,6 @@
           type: 'string',
           input_event: 'values-setup-finished',
           input: getEmptyMailingSelect,
-          canBeNegated: true,
           values: function($ruleInput) {
             requestMailings($ruleInput).done(function() {
               $ruleInput.trigger('values-setup-finished');
@@ -250,6 +263,7 @@
           },
           valueSetter: mailingValueSetter,
           valueGetter: mailingsValueGetter,
+          canBeNegated: options.mail_tracking_available,
           skipOperator: true
         },
         'clicked in mailing': {
@@ -339,7 +353,7 @@
               return values.every(function(v) { return v; }) || ["string_empty"];
             }
           },
-          canBeNegated: true,
+          canBeNegated: options.mail_tracking_available,
           skipOperator: true
         },
         'revenue by mailing': {
@@ -353,7 +367,7 @@
           },
           valueSetter: mailingValueSetter,
           valueGetter: mailingsValueGetter,
-          canBeNegated: true,
+          canBeNegated: options.mail_tracking_available,
           skipOperator: true
         }
       };
@@ -379,7 +393,7 @@
 
       return $.ajax({
         type: 'POST',
-        url: WORKFLOW_URLS.getAllMailingSorted,
+        url: AGN.url('/workflow/getAllMailingSorted.action'),
         data: {
           sortField: 'date',
           sortDirection: 'desc'
@@ -401,7 +415,7 @@
 
       return $.ajax({
         type: 'POST',
-        url: 'autoimport.do;jsessionid=' + jSessionId,
+        url: AGN.url('/autoimport.do'),
         data: {
           method: 'listJson'
         },
@@ -421,7 +435,7 @@
     function requestMailingLinks(mailingId, success) {
       $.ajax({
         type: 'POST',
-        url: WORKFLOW_URLS.getMailingLinks,
+        url: AGN.url('/workflow/getMailingLinks.action'),
         data: {
           mailingId: mailingId
         },
@@ -564,5 +578,5 @@
         }
       ];
     }
-  }
+  });
 })();

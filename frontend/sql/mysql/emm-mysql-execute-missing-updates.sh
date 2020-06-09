@@ -92,10 +92,12 @@ function getVersionNumber {
 	echo ${version}
 }
 
-updatefiles="${updatefiles} ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages.sql"
+updatefiles="${updatefiles} ${scriptDir}/emm-mysql-messages.sql"
+
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-messages-*.sql" | sort`;do
 	updatefiles="${updatefiles} ${sqlfilename}"
 done
+
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql" | sort`;do
 	updatefileVersion=$(getVersionNumber ${sqlfilename})
 	
@@ -107,6 +109,8 @@ for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-update-*.sql"
 			updatefiles="${updatefiles} ${sqlfilename}"
 	} fi
 done
+
+updatefiles="${updatefiles} ${scriptDir}/../userrights.sql"
 
 echo
 

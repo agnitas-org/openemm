@@ -14,24 +14,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.springframework.beans.factory.annotation.Required;
+
 /**
  * Implementation of {@link KeyProvider} to read DES-keys from salt files
  */
 public class SaltFileDESKeyProvider implements KeyProvider {
+	private ConfigService configService;
+	
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
 
 	/** Key created from salt file. */
-	private final byte[] key;
-	
-	/**
-	 * Creates the key provider for given salt file.
-	 * 
-	 * @param file salt file
-	 * 
-	 * @throws IOException on errors reading key
-	 */
-	public SaltFileDESKeyProvider(File file) throws IOException {
-		this.key = readKey(file);
-	}
+	private byte[] keyCache;
 	
 	/**
 	 * Read key from salt file.
@@ -74,8 +73,11 @@ public class SaltFileDESKeyProvider implements KeyProvider {
 	}
 	
 	@Override
-	public byte[] getEncryptionKey() {
-		return this.key;
+	public byte[] getEncryptionKey() throws Exception {
+		if (keyCache == null) {
+			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			keyCache = readKey(new File(saltFilePath));
+		}
+		return keyCache;
 	}
-
 }

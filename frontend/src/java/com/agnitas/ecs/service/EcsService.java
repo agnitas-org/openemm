@@ -13,10 +13,9 @@ package com.agnitas.ecs.service;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -43,11 +42,11 @@ public interface EcsService {
      * Generate a PDF representation of the heat map for the specified mailing.
      * @return a generated document.
      */
-    File exportHeatMap(HttpServletRequest request, int mailingId, int recipientId, int viewMode, int previewSize);
-
+    File exportHeatMap(ComAdmin admin, String sessionId, EcsHeatMapOptions options);
+    
     /**
      * Generate a PDF representation of the heat map for the specified mailing and write it as an HTTP-response.
      * @return {@code true} if succeeded or {@code false} otherwise.
      */
-    boolean exportHeatMap(HttpServletRequest request, HttpServletResponse response, int mailingId, int recipientId, int viewMode, int previewSize);
+    boolean exportHeatMap(ComAdmin admin, String sessionId, HttpServletResponse response, EcsHeatMapOptions options);
 }

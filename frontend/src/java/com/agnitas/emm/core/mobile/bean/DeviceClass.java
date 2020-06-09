@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.agnitas.ecs.EcsPreviewSize;
+
 public enum DeviceClass {
     DESKTOP(1),
     MOBILE(2),
@@ -66,5 +68,17 @@ public enum DeviceClass {
         return Arrays.stream(DeviceClass.values())
                 .filter(item -> !item.getName().startsWith("UNKNOWN_"))
                 .collect(Collectors.toList());
+    }
+    
+    public static EcsPreviewSize getPreviewSizeByDeviceType(int id) {
+        if (id == MOBILE.getId()) {
+            return EcsPreviewSize.MOBILE_PORTRAIT;
+        }
+        
+        if (id == TABLET.getId()) {
+            return EcsPreviewSize.TABLET_PORTRAIT;
+        }
+
+        return EcsPreviewSize.DESKTOP;
     }
 }

@@ -1,41 +1,32 @@
 AGN.Lib.Controller.new('admin-enabling', function() {
 
   this.addAction({
-    'click': 'save-enabling'
+    'click': 'save-approved-mailing-lists'
   }, function(){
-    prepareEnabledMailinglistsBeforeSaving();
-    $('#EnablingForm').submit();
-  });
-
-  this.addAction({
-    'click': 'toggle-checkboxes-on'
-  }, function(){
-    disabledCheckboxes(this.el.data("enabling-scope")).each(function () {
-      $(this).prop('checked', true);
+    var $element = this.el;
+    var $form = AGN.Lib.Form.getWrapper($element);
+    prepareDisabledMailinglistsBeforeSaving($form);
+    var formObj = AGN.Lib.Form.get($form);
+    formObj.submit().done(function(resp) {
+      if(resp.success === true) {
+        AGN.Lib.JsonMessages(resp.popups, true);
+        AGN.Lib.Modal.getWrapper($element).modal('hide');
+      } else {
+        AGN.Lib.JsonMessages(resp.popups, true);
+      }
     });
   });
 
-  this.addAction({
-    'click': 'toggle-checkboxes-off'
-  }, function(){
-    enabledCheckboxes(this.el.data("enabling-scope")).each(function () {
-      $(this).prop('checked', false);
-    });
-  });
+  function prepareDisabledMailinglistsBeforeSaving($form) {
+    $("input[name*='disabledMailinglistsIds']").remove();
 
-  /**
-   * Return selector of checked checkboxes with "data-enabling".
-   * If scope == undefined returns all checked checkboxes.
-   * If scope != undefined returns checked checkboxes with data-enabling=scope
-   * @param scope in checkbox definition -> data-enabling=SCOPE
-   * @returns {*|jQuery|HTMLElement} checked checkboxes selector
-   */
-  function enabledCheckboxes(scope){
-    if (scope){
-      return $("input:checkbox:checked[data-enabling="+scope+"]");
-    } else {
-      return $("input:checkbox:checked[data-enabling]");
-    }
+    disabledCheckboxes('mailinglist').each(function () {
+      $('<input>').attr({
+        type: 'hidden',
+        name: 'disabledMailinglistsIds',
+        value: $(this).data("mailinglist"),
+      }).appendTo($form);
+    });
   }
 
   /**
@@ -51,23 +42,6 @@ AGN.Lib.Controller.new('admin-enabling', function() {
     } else {
       return $("input:checkbox:not(:checked)[data-enabling]");
     }
-  }
-
-  /**
-   * Form stores id of disabled mailinglists only, so before a form submitting
-   * this method sets disabled mailinglists in form instead of enabled.
-   */
-  function prepareEnabledMailinglistsBeforeSaving() {
-    $("input[name*='enabledMailinglist']").remove();
-
-    disabledCheckboxes('mailinglist').each(function () {
-      var mailinglistID = $(this).data("mailinglist");
-      $('<input>').attr({
-        type: 'hidden',
-        name: 'enabledMailinglist[' + mailinglistID + ']',
-        value: 'off'
-      }).appendTo('#EnablingForm');
-    });
   }
 
 });

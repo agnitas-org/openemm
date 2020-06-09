@@ -13,8 +13,11 @@ package com.agnitas.taglib;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.DynamicAttributes;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.struts.taglib.TagUtils;
 import org.apache.struts.taglib.html.CheckboxTag;
 
 public class AgnCheckboxTag extends CheckboxTag implements DynamicAttributes {
@@ -32,5 +35,21 @@ public class AgnCheckboxTag extends CheckboxTag implements DynamicAttributes {
         for(Map.Entry<String, Object> entry : tagattr.entrySet()) {
             prepareAttribute(results, entry.getKey(), entry.getValue());
         }
+    }
+
+    @Override
+    protected boolean isChecked() throws JspException {
+        Object result = TagUtils.getInstance().lookup(this.pageContext, this.name, this.property, null);
+
+        if (result instanceof String[]) {
+            return ArrayUtils.contains((String[]) result, this.value);
+        }
+
+        if (result == null) {
+            result = "";
+        }
+
+        String checked = result.toString();
+        return checked.equalsIgnoreCase(this.value) || checked.equalsIgnoreCase("true") || checked.equalsIgnoreCase("yes") || checked.equalsIgnoreCase("on");
     }
 }

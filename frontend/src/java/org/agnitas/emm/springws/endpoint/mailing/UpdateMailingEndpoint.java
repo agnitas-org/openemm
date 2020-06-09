@@ -26,7 +26,6 @@ import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-@SuppressWarnings("deprecation")
 public class UpdateMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

@@ -18,7 +18,6 @@ import	java.util.List;
 import	java.util.Map;
 import	java.util.Set;
 
-import	org.agnitas.util.Config;
 import	org.agnitas.util.Log;
 
 public class TargetExpression {
@@ -33,7 +32,7 @@ public class TargetExpression {
 	/** keep track of collected targets				*/
 	private Map <Long, Target>	targets;
 	/**
-	 * collect a list of targets that must be resolved using 
+	 * collect a list of targets that must be resolved using
 	 * the database
 	 */
 	private List <Target>		resolveByDatabase;
@@ -82,6 +81,7 @@ public class TargetExpression {
 	 * @param cfg the configuration
 	 */
 	public void configure (Config cfg) {
+		// nothing to do
 	}
 
 	/**
@@ -112,12 +112,14 @@ public class TargetExpression {
 				if ((ch == '(') || (ch == ')')) {
 					buf.append (ch);
 				} else if ((ch == '&') || (ch == '|')) {
-					if (ch == '&')
+					if (ch == '&') {
 						buf.append (" AND");
-					else
+					} else {
 						buf.append (" OR");
-					while (((n + 1) < elen) && (combinedExpression.charAt (n + 1) == ch))
+					}
+					while (((n + 1) < elen) && (combinedExpression.charAt (n + 1) == ch)) {
 						++n;
+					}
 				} else if (ch == '!') {
 					buf.append (" NOT");
 				} else if ("0123456789".indexOf (ch) != -1) {
@@ -131,19 +133,22 @@ public class TargetExpression {
 						tid *= 10;
 						tid += pos;
 						++n;
-						if (n < elen)
+						if (n < elen) {
 							ch = combinedExpression.charAt (n);
-						else
+						} else {
 							ch = '\0';
+						}
 					}
 					n = newn;
 					temp = getTarget (tid, false);
-					if ((temp != null) && temp.valid ())
+					if ((temp != null) && temp.valid ()) {
 						buf.append (" (" + temp.getSQL (true) + ")");
+					}
 				}
 			}
-			if (buf.length () >= 3)
+			if (buf.length () >= 3) {
 				subselect = buf.toString ();
+			}
 		}
 	}
 
@@ -192,7 +197,7 @@ public class TargetExpression {
 	 * Get a target representation
 	 * 
 	 * @param tid               the dyn_target_tbl.target_di
-	 * @param requireEvaluation if this target should be pre evaluated 
+	 * @param requireEvaluation if this target should be pre evaluated
 	 * @return                  an instance for the retrieved target
 	 * @throws Exception
 	 */
@@ -211,7 +216,7 @@ public class TargetExpression {
 			try {
 				Map <String, Object>	row = data.dbase.querys (
 					"SELECT target_sql, component_hide, eql, deleted, invalid "+
-					"FROM dyn_target_tbl "+ 
+					"FROM dyn_target_tbl "+
 					"WHERE target_id = :targetID",
 					"targetID", tid
 				);
@@ -304,12 +309,12 @@ public class TargetExpression {
 
 	public void setEvaluatedValues (String targetInformation) {
 		Set <Long>	targetIDs = new HashSet <> ();
-		String[]	targets = targetInformation.split (", *");
+		String[]	targetsToEvaluate = targetInformation.split (", *");
 		
-		for (int n = 0; n < targets.length; ++n) {
-			if (! targets[n].equals ("")) {
+		for (int n = 0; n < targetsToEvaluate.length; ++n) {
+			if (! targetsToEvaluate[n].equals ("")) {
 				try {
-					long	targetID = Long.parseLong (targets[n]);
+					long	targetID = Long.parseLong (targetsToEvaluate[n]);
 			
 					if (targetID > 0) {
 						targetIDs.add (targetID);

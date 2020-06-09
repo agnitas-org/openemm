@@ -16,30 +16,34 @@ package com.agnitas.emm.core.target.eql.codegen.resolver;
 public enum MailingType {
 
 	/** Regular mailing. */
-	NORMAL(0),
+	NORMAL(0, "mailing.Normal_Mailing"),
 	
 	/** Action-based mailing. */
-	ACTION_BASED(1),
+	ACTION_BASED(1, "mailing.action.based.mailing"),
 	
 	/** Date-based mailing. */
-	DATE_BASED(2),
+	DATE_BASED(2, "mailing.Rulebased_Mailing"),
 	
 	/** Follow-Up mailing. */
-	FOLLOW_UP(3),
+	FOLLOW_UP(3, "mailing.Followup_Mailing"),
 	
 	/** Interval mailing. */
-	INTERVAL(4);
+	INTERVAL(4, "mailing.Interval_Mailing");
 	
 	/** Magic number for mailing type. */
 	private final int code;
+	
+	/** Messagekey for i18n. */
+	private final String messagekey;
 	
 	/**
 	 * Creates new enum element with given mailing type code.
 	 * 
 	 * @param code magic number of mailing type
 	 */
-	MailingType(int code) {
+	private MailingType(int code, String messagekey) {
 		this.code = code;
+		this.messagekey = messagekey;
 	}
 
 	/**
@@ -48,22 +52,26 @@ public enum MailingType {
 	 * @return code for mailing type
 	 */
 	public int getCode() {
-		return this.code;
+		return code;
+	}
+	
+	public String getMessagekey() {
+		return messagekey;
 	}
 	
 	public static MailingType fromCode(final int code) {
-		for (final MailingType mt : values()) {
-			if (mt.code == code) {
-				return mt;
+		for (final MailingType mailingType : values()) {
+			if (mailingType.code == code) {
+				return mailingType;
 			}
 		}
 		return null;
 	}
 
 	public static MailingType fromName(final String name) {
-		for (final MailingType mt : values()) {
-			if (mt.name().equalsIgnoreCase(name)) {
-				return mt;
+		for (final MailingType mailingType : values()) {
+			if (mailingType.name().equalsIgnoreCase(name)) {
+				return mailingType;
 			}
 		}
 		return null;

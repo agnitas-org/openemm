@@ -22,6 +22,7 @@ import	java.util.Set;
 import	org.agnitas.backend.DBase;
 import	org.agnitas.backend.Media;
 import	org.agnitas.util.Const;
+import	org.agnitas.util.ParameterParser;
 
 /**
  * Accesses all mailing relevant information from the database
@@ -41,10 +42,13 @@ public class MailingDAO {
 	private int		mailingType;
 	private String		workStatus;
 	private int		priority;
-	private Boolean		isWorkflowMailing;
+	private boolean		frequencyCounterDisabled;
+	private boolean		isWorkflowMailing;
 	private List <Media>	media;
 	private Map <String, String>
 				info;
+	private Map <String, String>
+				item;
 	private long		templateID;
 	private int		templatePriority;
 		
@@ -54,9 +58,7 @@ public class MailingDAO {
 
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
-					    "SELECT mailing_id, company_id, mailinglist_id, mailtemplate_id, " +
-					    "       is_template, deleted, shortname, creation_date, " +
-					    "       target_expression, split_id, mailing_type, work_status, priority " +
+					    "SELECT * " +
 					    "FROM mailing_tbl WHERE mailing_id = :mailingID",
 					    "mailingID", forMailingID);
 			if (row != null) {
@@ -75,6 +77,9 @@ public class MailingDAO {
 				mailingType = dbase.asInt (row.get ("mailing_type"));
 				workStatus = dbase.asString (row.get ("work_status"));
 				priority = dbase.asInt (row.get ("priority"), -1);
+				if (row.containsKey ("freq_counter_disabled")) {
+					frequencyCounterDisabled = dbase.asInt (row.get ("freq_counter_disabled")) == 1;
+				}
 				//
 				// workflow related informations
 				int	dependencyTypeMailing = Const.WorkflowDependencyType.MAILING_DELIVERY;
@@ -108,7 +113,7 @@ public class MailingDAO {
 				info = new HashMap <> ();
 				rq = dbase.query (with.jdbc (),
 						  "SELECT name, value FROM mailing_info_tbl " +
-						  "WHERE mailing_id = :mailingID OR (mailing_id = 0 AND company_id = :companyID) " + 
+						  "WHERE mailing_id = :mailingID OR (mailing_id = 0 AND company_id = :companyID) " +
 						  "ORDER BY mailing_id",
 						  "mailingID", mailingID,
 						  "companyID", companyID);
@@ -121,8 +126,28 @@ public class MailingDAO {
 					}
 				}
 				//
+				// mailing specific item definitions
+				item = null;
+				if (dbase.tableExists ("mailing_item_tbl")) {
+					rq = dbase.query (with.jdbc (),
+							  "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
+							  "mailingID", mailingID);
+					for (int n = 0; n < rq.size (); ++n) {
+						row = rq.get (n);
+						String	param = dbase.asString (row.get ("param"));
+						if (param != null) {
+							ParameterParser	parsed = new ParameterParser (param);
+							if (item == null) {
+								item = parsed.parse ();
+							} else {
+								item.putAll (parsed.parse ());
+							}
+						}
+					}
+				}
+				//
 				// find source template
-				Set <Long>	seen = new HashSet <Long> ();
+				Set <Long>	seen = new HashSet <> ();
 				long		scanID = mailtemplateID;
 		
 				while ((scanID > 0L) && (! seen.contains (scanID))) {
@@ -188,7 +213,10 @@ public class MailingDAO {
 	public int priority () {
 		return priority;
 	}
-	public Boolean isWorkflowMailing () {
+	public boolean frequencyCounterDisabled () {
+		return frequencyCounterDisabled;
+	}
+	public boolean isWorkflowMailing () {
 		return isWorkflowMailing;
 	}
 	public List <Media> media () {
@@ -196,6 +224,9 @@ public class MailingDAO {
 	}
 	public Map <String, String> info () {
 		return info;
+	}
+	public Map <String, String> item () {
+		return item;
 	}
 	public long sourceTemplateID () {
 		return templateID;

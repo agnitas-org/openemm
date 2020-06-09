@@ -24,7 +24,7 @@
 	    <c:set var="agnNavigationKey"	value="Campaign" 		scope="request" />
 		<c:set var="agnSubtitleKey" 	value="mailing.archive"	scope="request" />
 		<c:set var="agnHighlightKey" 	value="campaign.Edit" 	scope="request" />
-		<c:set var="agnHelpKey" 		value="archiveView" 	scope="request" />
+		<c:set var="agnHelpKey" 		value="mailingArchive" 	scope="request" />
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -46,7 +46,7 @@
 	    <c:set var="agnNavigationKey"	value="CampaignsOverview" 		scope="request" />
  		<c:set var="agnSubtitleKey" 	value="campaign.NewCampaign"	scope="request" />
 		<c:set var="agnHighlightKey" 	value="campaign.NewCampaign" 	scope="request" />
-		<c:set var="agnHelpKey" 		value="newArchive"	 			scope="request" />
+		<c:set var="agnHelpKey" 		value="mailingArchive"	 		scope="request" />
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

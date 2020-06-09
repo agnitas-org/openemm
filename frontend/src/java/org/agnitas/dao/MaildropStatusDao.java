@@ -17,6 +17,8 @@ import java.util.Set;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
 
 public interface MaildropStatusDao {
     /**
@@ -29,6 +31,8 @@ public interface MaildropStatusDao {
      * @return true on success.
      */
     boolean delete(@VelocityCheck int companyId, int id);
+    
+    boolean delete(final int companyId, final int mailingId, final MaildropStatus status, final MaildropGenerationStatus generationStatus);
 
     /**
      * Deletes unsent world maildrop entries for given mailing id.
@@ -115,5 +119,6 @@ public interface MaildropStatusDao {
 	 */
     void setTestRecipients(int maildropStatusId, List<Integer> customerIds);
     
+    // TODO Remove "companyID" and "mailingID" from method. Both arguments are superfluous, because they are already included in the MaildropEntry items of the list
 	void saveMaildropEntries(int companyId, int mailingId, Set<MaildropEntry> maildropStatusList);
 }

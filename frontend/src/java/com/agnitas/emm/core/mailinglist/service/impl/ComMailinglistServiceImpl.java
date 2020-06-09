@@ -11,24 +11,11 @@
 package com.agnitas.emm.core.mailinglist.service.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
@@ -36,22 +23,31 @@ import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
 import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.service.ExtendedConversionService;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.MailinglistImpl;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailinglistApprovalDao;
+import org.agnitas.dao.MailinglistDao;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
 
 public class ComMailinglistServiceImpl implements ComMailinglistService {
 
     private MailinglistDao mailinglistDao;
+
+    private MailinglistApprovalDao mailinglistApprovalDao;
     
     private ComMailingDao mailingDao;
     
@@ -63,10 +59,8 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
     
     private ExtendedConversionService conversionService;
     
-    private AdminService adminService;
-    
     private ComTargetDao targetDao;
-    
+
     @Required
     public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
         this.bindingEntryDao = bindingEntryDao;
@@ -75,6 +69,11 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
     @Required
     public void setMailinglistDao(MailinglistDao mailinglistDao) {
         this.mailinglistDao = mailinglistDao;
+    }
+
+    @Required
+    public void setMailinglistApprovalDao(MailinglistApprovalDao mailinglistApprovalDao) {
+        this.mailinglistApprovalDao = mailinglistApprovalDao;
     }
 
     @Required
@@ -95,11 +94,6 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
 	@Required
     public void setRecipientDao(ComRecipientDao recipientDao) {
         this.recipientDao = recipientDao;
-    }
-    
-    @Required
-    public void setAdminService(AdminService adminService) {
-        this.adminService = adminService;
     }
 
     @Required
@@ -145,6 +139,31 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
     }
 
     @Override
+    public boolean existAndEnabled(ComAdmin admin, int mailingListId) {
+        if (mailingListId <= 0) {
+            return false;
+        }
+
+        if (mailinglistDao.exist(mailingListId, admin.getCompanyID())) {
+            return mailinglistApprovalDao.isAdminHaveAccess(admin.getCompanyID(), admin.getAdminID(), mailingListId);
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isFrequencyCounterEnabled(ComAdmin admin, int mailingListId) {
+        if (mailinglistApprovalDao.isAdminHaveAccess(admin.getCompanyID(), admin.getAdminID(), mailingListId)) {
+            Mailinglist mailinglist = mailinglistDao.getMailinglist(mailingListId, admin.getCompanyID());
+            if (mailinglist != null) {
+                return mailinglist.isFrequencyCounterEnabled();
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public String getMailinglistName(int mailinglistId, @VelocityCheck int companyId) {
         return mailinglistDao.getMailinglistName(mailinglistId, companyId);
     }
@@ -183,20 +202,6 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
     }
 
     @Override
-    public List<LightweightMailing> getMailingListByType(MailingTypes type, @VelocityCheck int companyId) {
-        List<LightweightMailing> mailingLists = null;
-        if(type != null) {
-            mailingLists = mailingDao.listMailingsByType(type.getCode(), companyId);
-        }
-        
-        if (mailingLists == null) {
-            mailingLists = Collections.emptyList();
-        }
-
-        return mailingLists;
-    }
-	
-	@Override
 	public PaginatedListImpl<MailinglistDto> getMailinglistPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber) {
 		PaginatedListImpl<MailinglistEntry> mailinglists = mailinglistDao.getMailinglists(admin.getCompanyID(), admin.getAdminID(), sort, sortDirection, page, rownumber);
 		
@@ -210,6 +215,7 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
 		mailinglistForSave.setCompanyID(companyId);
 		mailinglistForSave.setShortname(mailinglist.getShortname());
 		mailinglistForSave.setDescription(mailinglist.getDescription());
+		mailinglistForSave.setFrequencyCounterEnabled(mailinglist.isFrequencyCounterEnabled());
 		int mailinglistId;
 		if(mailinglist.getId() == 0) {
 			mailinglistId = mailinglistDao.createMailinglist(companyId, mailinglistForSave);
@@ -263,10 +269,11 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
             entry.element("description", mailinglist.getDescription());
             entry.element("changeDate", DateUtilities.toLong(mailinglist.getChangeDate()));
             entry.element("creationDate", DateUtilities.toLong(mailinglist.getCreationDate()));
+            entry.element("isFrequencyCounterEnabled", mailinglist.isFrequencyCounterEnabled());
 
             mailingListsJson.element(entry);
         }
 
         return mailingListsJson;
     }
- }
+}

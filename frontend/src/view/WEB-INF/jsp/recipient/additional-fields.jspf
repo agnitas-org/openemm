@@ -1,0 +1,77 @@
+<c:forEach var="selectedField" items="${recipientForm.selectedFields}" varStatus="rowCounter">
+    <c:forEach var="field" items="${fieldsMap}" varStatus="rowCounter">
+
+        <c:if test="${field.key == selectedField}">
+            <c:choose>
+                <c:when test="${field.key == 'gender' or field.key == 'GENDER'}">
+                    <c:set var="gender"><bean:write name="recipient" property="gender"/></c:set>
+                    <display:column class="recipient_title" headerClass="js-table-sort"
+                                    titleKey="recipient.Salutation" sortable="true"
+                                    sortProperty="gender" paramId="recipientID"
+                                    paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}">
+                        <bean:message key="recipient.gender.${gender}.short"/>
+                    </display:column>
+                </c:when>
+                <c:when test="${field.key == 'firstname' or field.key == 'FIRSTNAME'}">
+                    <display:column class="recipient_firstname"
+                                    headerClass="js-table-sort" titleKey="Firstname"
+                                    sortable="true" sortProperty="firstname"
+                                    paramId="recipientID" paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}">
+                        <c:set var="firstname"><bean:write name="recipient" property="firstname"/></c:set>
+                        ${firstname}
+                    </display:column>
+                </c:when>
+                <c:when test="${field.key == 'lastname' or field.key == 'LASTNAME'}">
+                    <display:column class="recipient_lastname"
+                                    headerClass="js-table-sort" titleKey="Lastname"
+                                    sortable="true" sortProperty="lastname"
+                                    paramId="recipientID" paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}">
+                        <c:set var="lastname"><bean:write name="recipient" property="lastname"/></c:set>
+                        ${lastname}
+                    </display:column>
+                </c:when>
+
+                <c:when test="${field.key == 'creation_date' or field.key == 'CREATION_DATE'}">
+                    <c:set var="creation_date"><bean:write name="recipient" property="creation_date"/></c:set>
+
+                    <display:column headerClass="js-table-sort" sortable="true"
+                                    titleKey="default.creationDate"
+                                    sortProperty="creation_date" paramId="recipientID"
+                                    paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}">
+                        <fmt:parseDate value="${creation_date}" type="date"
+                                       pattern="yyyy-MM-dd HH:mm:ss"
+                                       var="formatedDate"/>
+                        <fmt:formatDate value="${formatedDate}" type="date" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
+                    </display:column>
+                </c:when>
+
+                <c:when test="${field.key == 'timestamp' or field.key == 'TIMESTAMP'}">
+                    <c:set var="timestamp"><bean:write name="recipient" property="timestamp"/></c:set>
+
+                    <display:column headerClass="js-table-sort" sortable="true"
+                                    titleKey="default.changeDate"
+                                    sortProperty="timestamp" paramId="recipientID"
+                                    paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}">
+                        <fmt:parseDate value="${timestamp}" type="date"
+                                       pattern="yyyy-MM-dd HH:mm:ss"
+                                       var="formatedDate"/>
+                        <fmt:formatDate value="${formatedDate}" type="date" pattern="${adminDateFormat}" timeZone="${adminTimeZone}"/>
+                    </display:column>
+                </c:when>
+                
+                <c:otherwise>
+                    <display:column class="recipient_title" headerClass="js-table-sort"
+                                    title="${field.value}" property="${field.key}"
+                                    sortable="true" sortProperty="${field.key}"
+                                    paramId="recipientID" paramProperty="customer_id"
+                                    url="/recipient.do?action=${ACTION_VIEW}"/>
+                </c:otherwise>
+            </c:choose>
+        </c:if>
+    </c:forEach>
+</c:forEach>

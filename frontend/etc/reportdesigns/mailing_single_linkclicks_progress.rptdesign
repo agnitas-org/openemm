@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
     <property name="units">in</property>
     <method name="initialize"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.lang);
+importPackage(Packages.java.text);
+importPackage(Packages.java.util);
 
 var isSingleTargetMode = true;
 selectedTargets = null;
@@ -22,6 +24,24 @@ reportContext.setPersistentGlobalVariable("isSingleTargetMode", new Boolean(isSi
 function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
+
+
+//ReportHeader generating
+startDateAsString = String.valueOf(params["startDate"].value);
+
+// check if an hour value is appended yyyy-mm-dd:hh 
+colonPosition =  startDateAsString.indexOf(":"); 
+if( colonPosition > -1 ) {
+	startDateAsString = startDateAsString.substring(0,colonPosition); // remove hour part
+} 
+
+startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateAsString);
+
+locale = new Locale(params["language"].value);
+
+startDateAsString =  DateFormat.getDateInstance(DateFormat.MEDIUM, locale ).format(startDate);
+reportContext.setPersistentGlobalVariable("linkReportHeader", tr("report.startDate") + ": " + startDateAsString);
+
 ]]></method>
     <method name="beforeRender"><![CDATA[function drop(name) {
 	reportContext.getReportRunnable()
@@ -557,27 +577,7 @@ return false;]]></method>
                                     <property name="fontFamily">sans-serif</property>
                                     <property name="fontSize">12px</property>
                                     <property name="fontWeight">normal</property>
-                                    <method name="onRender"><![CDATA[importPackage(Packages.java.text);
-importPackage(Packages.java.util);
-
-startDateAsString = params["startDate"].value;
-
-// check if an hour value is appended yyyy-mm-dd:hh 
-colonPosition =  startDateAsString.indexOf(":"); 
-if( colonPosition > -1 ) {
-	startDateAsString = startDateAsString.substring(0,colonPosition); // remove hour part
-} 
-
-simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-startDate = simpleDateFormat.parse(startDateAsString);
-
-locale = new Locale(params["language"].value);
-
-startDateAsString =  DateFormat.getDateInstance(DateFormat.MEDIUM, locale ).format(startDate);
-
-text = Packages.com.agnitas.messages.I18nString.getLocaleString("report.startDate", reportContext.getLocale()) + ": " 
-
-this.text = text+ startDateAsString;]]></method>
+                                    <expression name="valueExpr">linkReportHeader</expression>
                                     <property name="contentType">html</property>
                                 </text-data>
                             </cell>

@@ -23,7 +23,6 @@ import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class ListSubscriberMailingsEndpoint extends AbstractMarshallingPayloadEndpoint {
     @Resource
     private ObjectFactory objectFactory;

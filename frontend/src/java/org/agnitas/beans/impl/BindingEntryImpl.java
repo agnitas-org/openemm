@@ -213,8 +213,8 @@ public class BindingEntryImpl implements BindingEntry {
 		}
 	}
 
-	private String getUserRemarkForStatusByAdmin(int userStatus, ComAdmin admin) throws Exception {
-		switch (UserStatus.getUserStatusByID(userStatus)) {
+	private String getUserRemarkForStatusByAdmin(int newUserStatus, ComAdmin admin) throws Exception {
+		switch (UserStatus.getUserStatusByID(newUserStatus)) {
 			case Active:
 				return "Opt-In by ADMIN (" + admin.getUsername() + ")";
 			case Bounce:
@@ -230,7 +230,7 @@ public class BindingEntryImpl implements BindingEntry {
 			case Suspend:
 				return "Suspend by ADMIN (" + admin.getUsername() + ")";
 			default:
-				return "Unknown status " + userStatus + " by ADMIN (" + admin.getUsername() + ")";
+				return "Unknown status " + newUserStatus + " by ADMIN (" + admin.getUsername() + ")";
 		}
 	}
 

@@ -12,7 +12,7 @@
 <%--@elvariable id="userActivityLogForm" type="com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm"--%>
 <%--@elvariable id="userActivityLogKey" type="java.util.List"--%>
 <%--@elvariable id="admins" type="java.util.List"--%>
-<%--@elvariable id="datePickerFormatPattern" type="java.lang.String"--%>
+<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="localeTableFormat" type="java.text.SimpleDateFormat"--%>
 <%--@elvariable id="userActions" type="java.util.List"--%>
 <%--@elvariable id="defaultDate" type="java.lang.String"--%>
@@ -103,8 +103,7 @@
                                       cssClass="form-control datepicker-input js-datepicker js-datepicker-period-start"
                                       value="${not empty userActivityLogForm.dateFrom.date ? userActivityLogForm.dateFrom.date : defaultDate}"
                                       datepicker-period-id="0"
-                                      data-datepicker-options="format: '${fn:toLowerCase(datePickerFormatPattern)}',
-                                      formatSubmit: '${fn:toLowerCase(datePickerFormatPattern)}'"/>
+                                      data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
 
                         </div>
                     </div>
@@ -121,8 +120,7 @@
                                       cssClass="form-control datepicker-input js-datepicker js-datepicker-period-end"
                                       value="${not empty userActivityLogForm.dateTo.date ? userActivityLogForm.dateTo.date : defaultDate}"
                                       datepicker-period-id="0"
-                                      data-datepicker-options="format: '${fn:toLowerCase(datePickerFormatPattern)}',
-                                      formatSubmit: '${fn:toLowerCase(datePickerFormatPattern)}'"/>
+                                      data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
                         </div>
                     </div>
                 </div>

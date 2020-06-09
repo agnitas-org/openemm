@@ -15,21 +15,29 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.reporting.birt.external.beans.LightMailing;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
 
-public class AutoOptimizationDataSet extends BIRTDataSet{
+public class AutoOptimizationDataSet extends BIRTDataSet {
 	private static final transient Logger logger = Logger.getLogger(AutoOptimizationDataSet.class);
 
 	public static class AutoOptimizationData {
 		String autoOptimizationName;
 		String testGroup1;
+		int testGroup1Id;
 		String testGroup2;
+		int testGroup2Id;
 		String testGroup3;
+		int testGroup3Id;
 		String testGroup4;
+		int testGroup4Id;
 		String testGroup5;
+		int testGroup5Id;
 		String resultMailing;
+		int resultMailingId;
+		int winnerId;
 
 		public String getAutoOptimizationName() {
 			return autoOptimizationName;
@@ -37,29 +45,46 @@ public class AutoOptimizationDataSet extends BIRTDataSet{
 		public String getTestGroup1() {
 			return testGroup1;
 		}
+		public int getTestGroup1Id() {
+			return testGroup1Id;
+		}
 		public String getTestGroup2() {
 			return testGroup2;
+		}
+		public int getTestGroup2Id() {
+			return testGroup2Id;
 		}
 		public String getTestGroup3() {
 			return testGroup3;
 		}
+		public int getTestGroup3Id() {
+			return testGroup3Id;
+		}
 		public String getTestGroup4() {
 			return testGroup4;
+		}
+		public int getTestGroup4Id() {
+			return testGroup4Id;
 		}
 		public String getTestGroup5() {
 			return testGroup5;
 		}
-
+		public int getTestGroup5Id() {
+			return testGroup5Id;
+		}
 		public String getResultMailing() {
 			return resultMailing;
 		}
-
+		public int getResultMailingId() {
+			return resultMailingId;
+		}
+		public int getWinnerId() {return winnerId; }
 	}
 
     public AutoOptimizationData getData(Integer optimizationID, Integer companyID) {
         List<Integer> mailings = getAutoOptimizationMailings(optimizationID, companyID);
         AutoOptimizationData data = new AutoOptimizationData();
-        if ((mailings != null) && (mailings.size() > 0)) {
+        if (CollectionUtils.isNotEmpty(mailings)) {
             List<String> mailingNames = new ArrayList<>();
 			LightMailingDaoImpl lightMailingDao = new LightMailingDaoImpl(getDataSource());
 			for (Integer mailingID : mailings) {
@@ -71,12 +96,19 @@ public class AutoOptimizationDataSet extends BIRTDataSet{
                 }
             }
             data.autoOptimizationName = getAutoOptimizationShortname(optimizationID, companyID);
+            data.testGroup1Id = mailings.get(0);
             data.testGroup1 = mailingNames.get(0);
-            data.testGroup2 = mailingNames.get(1);
-            data.testGroup3 = mailingNames.get(2);
-            data.testGroup4 = mailingNames.get(3);
-            data.testGroup5 = mailingNames.get(4);
-            data.resultMailing = mailingNames.get(5);
+			data.testGroup2Id = mailings.get(1);
+			data.testGroup2 = mailingNames.get(1);
+			data.testGroup3Id = mailings.get(2);
+			data.testGroup3 = mailingNames.get(2);
+			data.testGroup4Id = mailings.get(3);
+			data.testGroup4 = mailingNames.get(3);
+			data.testGroup5Id = mailings.get(4);
+			data.testGroup5 = mailingNames.get(4);
+			data.resultMailingId = mailings.get(5);
+			data.resultMailing = mailingNames.get(5);
+			data.winnerId = getAutoOptimizationWinnerId(optimizationID, companyID);
         }
         return data;
     }

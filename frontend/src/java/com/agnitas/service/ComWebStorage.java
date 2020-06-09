@@ -45,7 +45,6 @@ public interface ComWebStorage extends WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> MEDIAPOOL_FONT_OVERVIEW = WebStorageBundle.define("mediapool-font-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> MEDIAPOOL_PDF_OVERVIEW = WebStorageBundle.define("mediapool-pdf-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> MEDIAPOOL_VIDEO_OVERVIEW = WebStorageBundle.define("mediapool-video-overview", RowsCountWebStorageEntry.class);
-    WebStorageBundle<RowsCountWebStorageEntry> MEDIAPOOL_BACKGROUND_OVERVIEW = WebStorageBundle.define("mediapool-background-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> MEDIAPOOL_CATEGORY_OVERVIEW = WebStorageBundle.define("mediapool-category-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> ADMIN_LOGIN_LOG_OVERVIEW = WebStorageBundle.define("admin-login-log-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> MESSENGER_OVERVIEW = WebStorageBundle.define("messenger-overview", RowsCountWebStorageEntry.class);

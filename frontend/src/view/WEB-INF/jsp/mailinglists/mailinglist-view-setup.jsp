@@ -7,21 +7,19 @@
 
 <c:set var="isNew" value="${mailinglistForm.id eq 0}"/>
 
-<c:set var="agnTitleKey" 			value="NewMailinglist"	scope="request" />
-<c:set var="sidemenu_active" 		value="Mailinglists" 	scope="request" />
-<c:set var="sidemenu_sub_active" 	value="Mailinglists" 	scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 			scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="Mailinglists" 	scope="request" />
-<c:set var="agnHelpKey" 			value="newMailinglist" 	scope="request" />
+<c:set var="agnTitleKey" 			value="NewMailinglist"		scope="request" />
+<c:set var="sidemenu_active" 		value="Recipients"	 		scope="request" />
+<c:set var="sidemenu_sub_active" 	value="Mailinglists"	 	scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="Recipients" 			scope="request" />
+<c:set var="agnHelpKey" 			value="mailinglistCreate" 	scope="request" />
 
 <c:choose>
     <c:when test="${isNew}">
-        <c:set var="agnNavigationKey"   value="none"                        scope="request" />
         <c:set var="agnHighlightKey"    value="settings.NewMailinglist"     scope="request" />
         <c:set var="isTabsMenuShown"    value="false" 				        scope="request" />
     </c:when>
     <c:otherwise>
-        <c:set var="agnNavigationKey" 	value="MailinglistEdit" 			scope="request" />
         <c:set var="agnHighlightKey" 	value="settings.EditMailinglist" 	scope="request" />
         <c:set var="isTabsMenuShown" 	value="true" 			            scope="request" />
     </c:otherwise>
@@ -32,8 +30,15 @@
 </emm:instantiate>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
-    <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
+	<emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
+        <c:set target="${agnBreadcrumb}" property="textKey" value="Mailinglists"/>
+        <c:set target="${agnBreadcrumb}" property="url">
+            <c:url value="/mailinglist/list.action"/>
+        </c:set>
+    </emm:instantiate>
+    <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
+        <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:choose>
             <c:when test="${isNew}">
                 <c:set target="${agnBreadcrumb}" property="textKey" value="settings.NewMailinglist"/>

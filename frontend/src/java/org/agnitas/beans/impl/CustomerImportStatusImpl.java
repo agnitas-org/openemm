@@ -278,8 +278,8 @@ public class CustomerImportStatusImpl implements CustomerImportStatus {
 	}
 
 	@Override
-	public Object getError(ImportErrorType id) {
-		Object ret = errors.get(id);
+	public Object getError(ImportErrorType importErrorType) {
+		Object ret = errors.get(importErrorType);
 
 		if (ret == null) {
 			return new Integer(0);
@@ -295,8 +295,8 @@ public class CustomerImportStatusImpl implements CustomerImportStatus {
 	@Override
 	public Object getError(String idString) {
 		try {
-			ImportErrorType id = ImportErrorType.fromString(idString);
-			return getError(id);
+			ImportErrorType errorType = ImportErrorType.fromString(idString);
+			return getError(errorType);
 		} catch (Exception e) {
 			logger.error("Cannot get error data: " + e.getMessage(), e);
 			return new Integer(0);
@@ -304,14 +304,14 @@ public class CustomerImportStatusImpl implements CustomerImportStatus {
 	}
 
 	@Override
-	public void addError(ImportErrorType id) {
+	public void addError(ImportErrorType importErrorType) {
 		Integer old = null;
 
-		old = errors.get(id);
+		old = errors.get(importErrorType);
 		if (old != null) {
-			errors.put(id, new Integer(old.intValue() + 1));
+			errors.put(importErrorType, new Integer(old.intValue() + 1));
 		} else {
-			errors.put(id, new Integer(1));
+			errors.put(importErrorType, new Integer(1));
 		}
 	}
 

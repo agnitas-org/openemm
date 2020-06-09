@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.profilefields.form;
 
 import org.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ProfileFieldForm extends PaginationForm {
     private boolean fieldVisible = true;

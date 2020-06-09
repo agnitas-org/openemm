@@ -12,4 +12,6 @@ package com.agnitas.emm.core.trackingpoint.forms;
 
 import org.agnitas.web.forms.PaginationForm;
 
-public class TrackingPointListForm extends PaginationForm {}
+public class TrackingPointListForm extends PaginationForm {
+	// nothing to do
+}

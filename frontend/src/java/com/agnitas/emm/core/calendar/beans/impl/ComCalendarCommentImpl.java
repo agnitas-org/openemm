@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
 import com.agnitas.emm.core.calendar.beans.ComCalendarCommentRecipient;

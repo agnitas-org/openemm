@@ -15,13 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.RawTargetGroup;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.phloc.commons.collections.pair.Pair;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetRepresentation;
-
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.target.beans.RawTargetGroup;
 
 public interface ComTargetDao {
     /**
@@ -141,6 +144,16 @@ public interface ComTargetDao {
     String getTargetName(int targetId, @VelocityCheck int companyId, boolean includeDeleted);
 
 	/**
+	 * Check if there's a target having given name.
+	 *
+	 * @param companyId an identifier of a company.
+	 * @param targetName a name to check.
+	 * @param includeDeleted whether ({@code true}) or not ({@code false}) deleted targets should also be considered.
+	 * @return {@code true} if there's at least one target having given name.
+	 */
+	boolean isTargetNameInUse(@VelocityCheck int companyId, String targetName, boolean includeDeleted);
+
+	/**
 	 * Load list of Target groups names by IDs.
      * Uses JdbcTemplate.
      *
@@ -181,8 +194,13 @@ public interface ComTargetDao {
     
 	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
+	List<TargetLight> getLimitingTarget(@VelocityCheck int companyId);
+
+	List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
+			boolean content, boolean isSearchName, boolean isSearchDescription, String searchQueryText);
+
     List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery,
-            boolean content, boolean isSearchName, boolean isSearchDescription, String searchQueryText);
+            boolean content, boolean isSearchName, boolean isSearchDescription, String searchQueryText, boolean isAltg);
 
 	List<TargetLight> getTargetLights(int companyID, Collection<Integer> targetIds, boolean includeDeleted);
 	
@@ -246,13 +264,6 @@ public interface ComTargetDao {
     List<ComTarget> getTargetGroup( @VelocityCheck int companyID, Collection<Integer> targetIds, boolean includeDeleted);
 
 	Map<Integer, TargetLight> getAllowedTargetLights(int companyID);
-
-	/**
-	 * Target group names are not unique
-	 */
-	List<TargetLight> getTargetLightsByName(String targetName, @VelocityCheck int companyID, boolean allowDeleted);
-	
-//	List<Map<String, Object>> select(Logger logger, String statement, Object... parameter);
 	
 	boolean isOracle();
 
@@ -261,11 +272,19 @@ public interface ComTargetDao {
 	 * @param companyId company ID
 	 * @return list of target groups
 	 */
-	List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId);
+	List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId, String ...eqlRawFragments);
 	
 	List<RawTargetGroup> getTargetsCreatedByWorkflow(@VelocityCheck int companyId, boolean onlyEmptyEQL);
-	
-	List<Integer> getTargetIdsCreatedByWorkflow(@VelocityCheck int companyId);
     
 	List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
+
+    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
+
+	Map<Integer, Integer> getTargetComplexityIndices(@VelocityCheck int companyId);
+
+	Integer getTargetComplexityIndex(@VelocityCheck int companyId, int targetId);
+
+	List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(@VelocityCheck int companyId);
+
+	void saveComplexityIndices(@VelocityCheck int companyId, Map<Integer, Integer> complexities);
 }

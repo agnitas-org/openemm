@@ -166,9 +166,4 @@ public abstract class ComComponentServiceImpl extends ComponentServiceImpl imple
 	public List<FormComponent> getFormComponents(int companyID, int formID) {
 		return formComponentDao.getFormComponents(companyID, formID);
 	}
-
-	@Override
-	public void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes) {
-		mailingComponentDao.updateHostImage(mailingID, companyID, componentID, imageBytes);
-	}
 }

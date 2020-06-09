@@ -14,6 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -22,29 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.impl.AdminEntryImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.util.Tuple;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComCompany;
 import com.agnitas.beans.impl.ComAdminImpl;
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComAdminGroupDao;
@@ -56,6 +37,30 @@ import com.agnitas.emm.core.admin.AdminNameNotFoundException;
 import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
 import com.agnitas.emm.core.admin.encrypt.PasswordEncryptor;
 import com.agnitas.emm.core.news.enums.NewsType;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.Company;
+import org.agnitas.beans.impl.AdminEntryImpl;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailinglistApprovalDao;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.agnitas.util.SqlPreparedStatementManager;
+import org.agnitas.util.Tuple;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * DAO handler for ComAdmin-Objects
@@ -64,12 +69,16 @@ import com.agnitas.emm.core.news.enums.NewsType;
 public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComAdminDaoImpl.class);
+
+	private final RowMapper<ComAdmin> adminRowMapper = new ComAdmin_RowMapper();
 	
 	/** DAO for accessing admin groups. */
     protected ComAdminGroupDao adminGroupDao;
     
     /** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
+	
+	protected MailinglistApprovalDao mailinglistApprovalDao;
 	
 	/** Encryptor for passwords. */
 	protected PasswordEncryptor passwordEncryptor;
@@ -94,6 +103,11 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
     @Required
     public void setCompanyDao(ComCompanyDao companyDao) {
         this.companyDao = companyDao;
+    }
+    
+    @Required
+    public void setMailinglistApprovalDao(MailinglistApprovalDao mailinglistApprovalDao) {
+    	this.mailinglistApprovalDao = mailinglistApprovalDao;
     }
     
     @Required
@@ -128,18 +142,30 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 	public ComAdmin getByNameAndActiveCompany(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException {
 		return getAdminInternal(username);
 	}
-	
+
 	@Override
 	public ComAdmin getAdmin(int adminID, @VelocityCheck int companyID) {
 		if (adminID == 0 || companyID == 0) {
 			return null;
 		} else {
+			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
 			return selectObjectDefaultNull(logger,
-				"SELECT admin_id, username, fullname, firstname, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-					+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, admin_group_id, timestamp,"
-					+ " gender, title, news_date, message_date, is_one_time_pass, phone_number"
-				+ " FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != 'deleted'))",
-				new ComAdmin_RowMapper(), adminID, companyID, companyID);
+					"SELECT admin_id, username, fullname, firstname, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
+							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, admin_group_id, timestamp,"
+							+ " gender, title, news_date, message_date, is_one_time_pass, phone_number" + additionalColumns
+							+ " FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != 'deleted'))",
+					getAdminRowMapper(), adminID, companyID, companyID);
+		}
+	}
+	@Override
+	public String getAdminName(int adminID, @VelocityCheck int companyID) {
+		if (adminID == 0 || companyID == 0) {
+			return null;
+		} else {
+			return selectObjectDefaultNull(logger,
+					"SELECT username FROM admin_tbl " +
+							"WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != 'deleted'))",
+					new StringRowMapper(), adminID, companyID, companyID);
 		}
 	}
 
@@ -157,7 +183,7 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 		String name = username.trim();
 		String sql = "SELECT * FROM admin_tbl WHERE username = ? AND "
 				+ "company_id" + " IN (SELECT company_id FROM company_tbl WHERE status = 'active')";
-		List<ComAdmin> adminList = select(logger, sql, new ComAdmin_RowMapper(), name);
+		List<ComAdmin> adminList = select(logger, sql, getAdminRowMapper(), name);
 		if (adminList.size() == 1) {
 			return adminList.get(0);
 		} else if (adminList.size() == 0) {
@@ -185,42 +211,48 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 				admin.setCreationDate(now);
 			}
 			admin.setLastPasswordChange(now);
-			
+
+			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
+
 			// store new Admin and set its AdminID
 			if (isOracleDB()) {
 				// Insert new Admin into DB
 				int newAdminId = selectInt(logger, "SELECT admin_tbl_seq.nextval FROM DUAL");
-		
+
+				final List<Object> params = new ArrayList<>(Arrays.asList(newAdminId,
+						admin.getUsername(),
+						admin.getFullname(),
+						admin.getFirstName(),
+						admin.getCompanyID(),
+						admin.getCompanyName(),
+						admin.getEmail(),
+						admin.getStatEmail(),
+						admin.getSecurePasswordHash(),
+						admin.getCreationDate(),
+						admin.getLastPasswordChange(),
+						admin.getAdminCountry(),
+						admin.getAdminLang(),
+						admin.getAdminLangVariant(),
+						admin.getAdminTimezone(),
+						admin.getLayoutBaseID(),
+						admin.getDefaultImportProfileID(),
+						admin.getGroup().getGroupID(),
+						new Date(),
+						admin.getGender(),
+						admin.getTitle(),
+						admin.getLastNewsDate(),
+						admin.getLastMessageDate(),
+						admin.getAdminPhone(),
+						admin.isOneTimePassword() ? 1 : 0));
+				params.addAll(getAdditionalExtendedParams(admin));
+
 				int touchedLines = update(logger,
 					"INSERT INTO admin_tbl (admin_id, username, fullname, firstname, company_id, company_name, email, stat_email, secure_password_hash,"
 						+ " creation_date, pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id,"
-						+ " admin_group_id, timestamp, gender, title, news_date, message_date, phone_number, is_one_time_pass)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 25, ", ") + ")",
-					newAdminId,
-					admin.getUsername(),
-					admin.getFullname(),
-					admin.getFirstName(),
-					admin.getCompanyID(),
-					admin.getCompanyName(),
-					admin.getEmail(),
-					admin.getStatEmail(),
-					admin.getSecurePasswordHash(),
-					admin.getCreationDate(),
-					admin.getLastPasswordChange(),
-					admin.getAdminCountry(),
-					admin.getAdminLang(),
-					admin.getAdminLangVariant(),
-					admin.getAdminTimezone(),
-					admin.getLayoutBaseID(),
-					admin.getDefaultImportProfileID(),
-					admin.getGroup().getGroupID(),
-					new Date(),
-	                admin.getGender(),
-	                admin.getTitle(),
-					admin.getLastNewsDate(),
-					admin.getLastMessageDate(),
-					admin.getAdminPhone(),
-					admin.isOneTimePassword() ? 1 : 0);
+						+ " admin_group_id, timestamp, gender, title, news_date, message_date, phone_number, is_one_time_pass" + additionalColumns
+						+ ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")",
+						params.toArray()
+					);
 				
 				if (touchedLines != 1) {
 					throw new RuntimeException("Illegal insert result");
@@ -229,35 +261,40 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 				// set the new id to refresh the Admin
 				admin.setAdminID(newAdminId);
 			} else {
+
+				final List<Object> params = new ArrayList<>(Arrays.asList(
+						admin.getUsername(),
+						admin.getFullname(),
+						admin.getFirstName(),
+						admin.getCompanyID(),
+						admin.getCompanyName(),
+						admin.getEmail(),
+						admin.getStatEmail(),
+						admin.getSecurePasswordHash(),
+						admin.getCreationDate(),
+						admin.getLastPasswordChange(),
+						admin.getAdminCountry(),
+						admin.getAdminLang(),
+						admin.getAdminLangVariant(),
+						admin.getAdminTimezone(),
+						admin.getLayoutBaseID(),
+						admin.getDefaultImportProfileID(),
+						admin.getGroup().getGroupID(),
+						new Date(),
+						admin.getGender(),
+						admin.getTitle(),
+						admin.getLastNewsDate(),
+						admin.getLastMessageDate(),
+						admin.getAdminPhone(),
+						admin.isOneTimePassword() ? 1 : 0));
+				params.addAll(getAdditionalExtendedParams(admin));
+
 				int newAdminId = insertIntoAutoincrementMysqlTable(logger, "admin_id",
 					"INSERT INTO admin_tbl (username, fullname, firstname, company_id, company_name, email, stat_email, secure_password_hash, creation_date,"
 						+ " pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, admin_group_id,"
-						+ " timestamp, gender, title, news_date, message_date, phone_number, is_one_time_pass)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ")",
-					admin.getUsername(),
-					admin.getFullname(),
-					admin.getFirstName(),
-					admin.getCompanyID(),
-					admin.getCompanyName(),
-					admin.getEmail(),
-					admin.getStatEmail(),
-					admin.getSecurePasswordHash(),
-					admin.getCreationDate(),
-					admin.getLastPasswordChange(),
-					admin.getAdminCountry(),
-					admin.getAdminLang(),
-					admin.getAdminLangVariant(),
-					admin.getAdminTimezone(),
-					admin.getLayoutBaseID(),
-					admin.getDefaultImportProfileID(),
-					admin.getGroup().getGroupID(),
-				    new Date(),
-				    admin.getGender(),
-				    admin.getTitle(),
-					admin.getLastNewsDate(),
-					admin.getLastMessageDate(),
-					admin.getAdminPhone(),
-					admin.isOneTimePassword() ? 1 : 0
+						+ " timestamp, gender, title, news_date, message_date, phone_number, is_one_time_pass" + additionalColumns
+						+ ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")",
+						params.toArray()
 				);
 				
 				// set the new id to refresh the Admin
@@ -285,31 +322,42 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 				admin.setPasswordForStorage(null);
 			}
 
+			final List<Object> params = new ArrayList<>(Arrays.asList(admin.getUsername(),
+					admin.getFullname(),
+					admin.getFirstName(),
+					admin.getCompanyID(),
+					admin.getCompanyName(),
+					admin.getEmail(),
+					admin.getStatEmail(),
+					admin.getSecurePasswordHash(),
+					admin.getCreationDate(),
+					admin.getLastPasswordChange(),
+					admin.getAdminCountry(),
+					admin.getAdminLang(),
+					admin.getAdminLangVariant(),
+					admin.getAdminTimezone(),
+					admin.getLayoutBaseID(),
+					admin.getDefaultImportProfileID(),
+					admin.getGroup().getGroupID(),
+					new Date(),
+					admin.getGender(),
+					admin.getTitle(),
+					admin.getAdminPhone(),
+					admin.isOneTimePassword() ? 1 : 0));
+
+			params.addAll(getAdditionalExtendedParams(admin));
+			params.add(admin.getAdminID());
+
 			// Update Admin in DB
-			int touchedLines = update(logger, "UPDATE admin_tbl SET username = ?, fullname = ?, firstname = ?, company_id = ?, " + "company_name" + " = ?, " + "email" + " = ?, " + "stat_email" + " = ?, secure_password_hash = ?, creation_date = ?, " + "pwdchange_date" + " = ?, " + "admin_country" + " = ?, " + "admin_lang" + " = ?, " + "admin_lang_variant" + " = ?, " + "admin_timezone" + " = ?, " + "layout_base_id" + " = ?, " + "default_import_profile_id" + " = ?, " + "admin_group_id" + " = ?, " + "timestamp" + " = ?, " + "gender" + " = ?, " + "title" + " = ?, "+ "phone_number" + " = ?, " + "is_one_time_pass" + " = ? WHERE admin_id = ?",
-				admin.getUsername(),
-				admin.getFullname(),
-				admin.getFirstName(),
-				admin.getCompanyID(),
-				admin.getCompanyName(),
-				admin.getEmail(),
-				admin.getStatEmail(),
-				admin.getSecurePasswordHash(),
-				admin.getCreationDate(),
-				admin.getLastPasswordChange(),
-				admin.getAdminCountry(),
-				admin.getAdminLang(),
-				admin.getAdminLangVariant(),
-				admin.getAdminTimezone(),
-				admin.getLayoutBaseID(),
-				admin.getDefaultImportProfileID(),
-				admin.getGroup().getGroupID(),
-				new Date(),
-                admin.getGender(),
-                admin.getTitle(),
-                admin.getAdminPhone(),
-				admin.isOneTimePassword() ? 1 : 0,
-				admin.getAdminID());
+			int touchedLines = update(logger,
+				"UPDATE admin_tbl SET username = ?, fullname = ?, firstname = ?, company_id = ?,"
+					+ " company_name = ?, email = ?, stat_email = ?, secure_password_hash = ?, creation_date = ?,"
+					+ " pwdchange_date = ?, admin_country = ?, admin_lang = ?, admin_lang_variant = ?, admin_timezone = ?,"
+					+ " layout_base_id = ?, default_import_profile_id = ?, admin_group_id = ?, timestamp = ?, gender = ?,"
+					+ " title = ?, phone_number = ?, is_one_time_pass = ?"
+					+ DbUtilities.joinColumnsNamesForUpdate(getAdditionalExtendedColumns(), true)
+					+ " WHERE admin_id = ?",
+					params.toArray());
 			
 			if (touchedLines != 1) {
 				throw new RuntimeException("Illegal update result");
@@ -334,21 +382,44 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 	public boolean delete(ComAdmin admin) {
 		if (admin == null) {
 			return false;
-		}
-		int touchedLines = update(logger, "DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != 'deleted'))", admin.getAdminID(), admin.getCompanyID(), admin.getCompanyID());
-
-		if (touchedLines == 1) {
-			update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", admin.getAdminID());
-			return true;
 		} else {
-			return false;
+			return delete(admin.getAdminID(), admin.getCompanyID());
 		}
+	}
+	
+	@Override
+	public final boolean delete(final int adminID, final int companyID) {
+		final ComCompany company = companyDao.getCompany(companyID);
+		final int companyAdminId = company.getStatAdmin();
+		
+		if (adminID == companyAdminId && Company.STATUS_ACTIVE.equals(company.getStatus())) {
+			return false;
+		} else {
+			update(logger, "UPDATE auto_import_tbl SET admin_id = ? WHERE company_id = ? AND admin_id = ?", companyAdminId, companyID, adminID);
+			update(logger, "UPDATE auto_export_tbl SET admin_id = ? WHERE company_id = ? AND admin_id = ?", companyAdminId, companyID, adminID);
+			if (isDisabledMailingListsSupported()) {
+				mailinglistApprovalDao.allowAdminToUseAllMailinglists(companyID, adminID);
+			}
+			update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
+			int touchedLines = update(logger, "DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != 'deleted'))", adminID, companyID, companyID);
+			return touchedLines == 1;
+		}
+		
 	}
 
 	@Override
 	public boolean adminExists(String username) {
 		try {
 			return selectInt(logger, "SELECT admin_id FROM admin_tbl WHERE username = ?", username) > 0;
+		} catch (DataAccessException e) {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean isEnabled(ComAdmin admin) {
+		try {
+			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE admin_id = ? AND company_id = ?", admin.getAdminID(), admin.getCompanyID()) > 0;
 		} catch (DataAccessException e) {
 			return false;
 		}
@@ -387,13 +458,13 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
         }
         
         String adminsIdsStr = StringUtils.join(new LinkedHashSet<>(adminsIds).toArray(), ", ");
-        String sql = "select admin_id, username from admin_tbl where company_id = ? and admin_id in (" + adminsIdsStr + ")";
+        String sql = "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? AND admin_id in (" + adminsIdsStr + ")";
         return select(logger, sql, companyID);
 	}
 
 	@Override
 	public List<Tuple<Integer, String>> getAdminsUsernames(int companyID){
-		return select(logger, "select admin_id, username from admin_tbl where company_id = ? ORDER BY LOWER(username)",
+		return select(logger, "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? ORDER BY LOWER(username)",
 				(resultSet, i) -> new Tuple<>(resultSet.getInt("admin_id"), resultSet.getString("username")),
 				companyID);
 	}
@@ -548,6 +619,7 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 			readComAdmin.setCompanyPermissions(companyPermissions);
 			
 			AdminGroup adminGroup = adminGroupDao.getAdminGroup(resultSet.getInt("admin_group_id"), readComAdmin.getCompanyID());
+			
 			readComAdmin.setGroup(adminGroup);
 
 			return readComAdmin;
@@ -735,27 +807,9 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 		public AdminEntry mapRow(ResultSet resultSet, int row) throws SQLException {
 			String username = resultSet.getString("username");
             String shortname = resultSet.getString("shortname");
-            return new AdminEntryImpl(-1, username, "WS:" + username, shortname);
+            return new AdminEntryImpl(-1, username, "WS:" + username, "WS:" + username, shortname);
 		}
 	}
-	
-	@Override
-	public Double getWsRateLimit(String username) {
-		String sql = "SELECT req_rate_limit FROM webservice_user_tbl WHERE username=?";
-		return select(logger, sql, Double.class, username);
-	}
-	
-	@Override
-	public Integer getWsBulkSizeLimit(String username) {
-		String sql = "SELECT bulk_size_limit FROM webservice_user_tbl WHERE username=?";
-		return select(logger, sql, Integer.class, username);
-	}
-	
-    @Override
-    public Integer getWsMaxResultListSize(String username) {
-        String sql = "SELECT max_result_list_size FROM webservice_user_tbl WHERE username=?";
-		return select(logger, sql, Integer.class, username);
-    }
 	   
 	@Override
 	public int getNumberOfAdmins() {
@@ -791,9 +845,9 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 	}
 
 	@Override
-	public boolean updateNewsDate(ComAdmin admin, Date newsDate, NewsType type) {
+	public boolean updateNewsDate(final int adminID, Date newsDate, NewsType type) {
 		String columnName = type.name().toLowerCase() + "_date";
-		return update(logger, "UPDATE admin_tbl SET " + columnName + " = ? WHERE ADMIN_ID = ?", newsDate, admin.getAdminID()) == 1;
+		return update(logger, "UPDATE admin_tbl SET " + columnName + " = ? WHERE ADMIN_ID = ?", newsDate, adminID) == 1;
 	}
 
 	@Override
@@ -812,12 +866,24 @@ public class ComAdminDaoImpl extends PaginatedBaseDaoImpl implements ComAdminDao
 					+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, admin_group_id, timestamp,"
 					+ " gender, title, news_date, message_date, is_one_time_pass, phone_number"
 				+ " FROM admin_tbl WHERE company_id = ? AND admin_id = (SELECT MIN(admin_id) FROM admin_tbl WHERE company_id = ?)",
-				new ComAdmin_RowMapper(), companyID, companyID);
+					getAdminRowMapper(), companyID, companyID);
 		}
 	}
 
 	@Override
 	public boolean checkBlacklistedAdminNames(String username) {
 		return selectInt(logger, "SELECT COUNT(*) FROM admin_blacklist_tbl WHERE username = ?", username) > 0;
+	}
+
+	protected Collection<String> getAdditionalExtendedColumns() {
+		return CollectionUtils.emptyCollection();
+	}
+
+	protected Collection<Object> getAdditionalExtendedParams(final ComAdmin admin) {
+		return CollectionUtils.emptyCollection();
+	}
+
+	protected RowMapper<ComAdmin> getAdminRowMapper() {
+		return adminRowMapper;
 	}
 }

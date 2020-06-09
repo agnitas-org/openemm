@@ -10,7 +10,7 @@
 
 package com.agnitas.beans;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class LinkProperty {
 	public enum PropertyType {

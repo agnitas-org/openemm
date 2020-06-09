@@ -48,7 +48,7 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.ImportProfileForm;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -60,10 +60,10 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComProfileField;
 import com.agnitas.beans.ImportProcessAction;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ComColumnInfoService;
@@ -73,6 +73,7 @@ import com.agnitas.service.ComColumnInfoService;
  * manage gender mappings.
  */
 public class ImportProfileAction extends StrutsActionBase {
+	/** The logger. */
     private static final transient Logger logger = Logger.getLogger(ImportProfileAction.class);
 
     public static final int ACTION_NEW_GENDER = ACTION_LAST + 1;
@@ -88,7 +89,9 @@ public class ImportProfileAction extends StrutsActionBase {
     protected ConfigService configService;
 	protected ImportProcessActionDao importProcessActionDao = null;
 	protected EmmActionDao emmActionDao = null;
-	protected ComAdminDao adminDao;
+	
+	protected AdminService adminService;
+	
 	private ImportProfileService importProfileService;
 	private ImportRecipientsDao importRecipientsDao;
 	private AutoImportService autoImportService = null;
@@ -100,11 +103,11 @@ public class ImportProfileAction extends StrutsActionBase {
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
     	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
     }
-
-	@Required
-	public void setAdminDao(ComAdminDao adminDao) {
-		this.adminDao = adminDao;
-	}
+    
+    @Required
+    public final void setAdminService(final AdminService service) {
+    	this.adminService = Objects.requireNonNull(service, "Admin service is null");
+    }
 
 	@Required
     public void setImportProfileService(ImportProfileService importProfileService) {
@@ -517,11 +520,10 @@ public class ImportProfileAction extends StrutsActionBase {
         int defaultProfileId = aForm.getDefaultProfileId();
         ComAdmin admin = AgnUtils.getAdmin(request);
         admin.setDefaultImportProfileID(defaultProfileId);
-//        AdminDao adminDao = (AdminDao) getWebApplicationContext().getBean("AdminDao");
 
-        ComAdmin adminFromDao = adminDao.getAdmin(admin.getAdminID(), admin.getCompanyID());
+        final ComAdmin adminFromDao = adminService.getAdmin(admin.getAdminID(), admin.getCompanyID());
         adminFromDao.setDefaultImportProfileID(defaultProfileId);
-        adminDao.save(adminFromDao);
+        adminService.save(adminFromDao);
     }
 
     /**

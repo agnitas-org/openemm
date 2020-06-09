@@ -1,4 +1,4 @@
-(function() {
+(function($) {
     var IconsSetLoader = function IconsSetLoader(campaignManager) {
 
         this.loadIconsSetAJAX = function(rootNode, useOriginal) {
@@ -229,4 +229,4 @@
     };
 
     AGN.Lib.WM.IconsSetLoader = IconsSetLoader;
-})();
+})(jQuery);

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import com.agnitas.util.Caret;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackableLink;
@@ -102,14 +103,16 @@ public interface LinkService {
 
 	class ParseLinkRuntimeException extends RuntimeException implements ErrorLinkStorage {
 		private static final long serialVersionUID = -6277656615171367404L;
-		
+
 		private final String errorLink;
 		private final String errorMessage;
+		private final Caret caret;
 
-		public ParseLinkRuntimeException(String message, String errorLink) {
+		public ParseLinkRuntimeException(String message, String errorLink, Caret caret) {
 			super(message);
 			this.errorLink = errorLink;
 			errorMessage = message;
+			this.caret = caret;
 		}
 
 		@Override
@@ -121,6 +124,10 @@ public interface LinkService {
 		public String getErrorMessage() {
 			return errorMessage;
 		}
+
+		public Caret getCaret() {
+			return caret;
+		}
 	}
 
 	interface ErrorLinkStorage {
@@ -128,7 +135,7 @@ public interface LinkService {
 		String getErrorMessage();
 	}
 	
-	public class LinkScanResult {
+	class LinkScanResult {
 		List<ComTrackableLink> trackableLinks;
 		List<String> imageLinks;
 		List<String> notTrackableLinks;
@@ -188,7 +195,7 @@ public interface LinkService {
 		}
 	}
 	
-	public class ErrorneousLink {
+	class ErrorneousLink {
 		String errorMessageKey;
 		int position;
 		String linkText;

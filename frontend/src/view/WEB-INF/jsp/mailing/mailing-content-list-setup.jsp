@@ -91,7 +91,7 @@
                 </emm:instantiate>
 
                 <c:set var="agnHighlightKey" 	value="mailing.TextModules" 																					scope="request" />
-                <c:set var="agnHelpKey" 		value="Content_blocks" 																							scope="request" />
+                <c:set var="agnHelpKey" 		value="mailingGridTextContent" 																							scope="request" />
             </c:when>
             <c:otherwise>
                 <c:choose>
@@ -102,7 +102,10 @@
                         <c:set var="agnNavigationKey" 		value="mailingView"                         scope="request" />
                     </c:otherwise>
                 </c:choose>
-                <c:set var="agnNavHrefAppend"	value="&mailingID=${mailingContentForm.mailingID}&init=true"	scope="request" />
+                <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingContentForm.mailingID}"/>
+                    <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+                </emm:instantiate>
                 <c:set var="agnHighlightKey" 	value="default.Content" 												scope="request" />
                 <c:set var="agnHelpKey" 		value="contentView" 												scope="request" />
             </c:otherwise>

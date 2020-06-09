@@ -11,188 +11,92 @@
 package com.agnitas.emm.core.birtreport.bean.impl;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.agnitas.util.DateUtilities;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 /**
  * Class for BirtReports. Allows managing BirtReports with an easy interface.
  */
 public class ComBirtReportImpl implements ComBirtReport {
-	private static final long serialVersionUID = 7646744980286070049L;
+	private static final Logger logger = Logger.getLogger(ComBirtReportImpl.class);
+	
+	@Autowired
+	private BirtReportFactory factory;
 
 	protected int reportID;
     protected int companyID;
     protected String shortname;
     protected String description;
-    private String sendEmail;
     protected String emailSubject;
     protected String emailDescription;
     private int reportActive;
     private int reportType;
     private int format;
-    private Date sendDate;
-    private Date sendTime;
     private Date activationDate;
     private Date endDate;
-    private int sendDays = 0;
     private int activeTab = 1;
     private boolean hidden = false;
     private Date changeDate;
-
-    /**
-     * Last time when this report was generated and delivered
-     */
-    private Date deliveryDate;
+    private List<String> emailRecipientList;
+    private String intervalpattern;
+    private Date nextStart;
+    private String lastresult;
 
     private String language;
 
-    // reports settings
-    private ComBirtReportComparisonSettings reportComparisonSettings = new ComBirtReportComparisonSettings();
-    private ComBirtReportMailingSettings reportMailingSettings = new ComBirtReportMailingSettings();
-    private ComBirtReportRecipientSettings reportRecipientSettings = new ComBirtReportRecipientSettings();
-
-    private List<ComBirtReportSettings> settings = new ArrayList<>();
-
-    public ComBirtReportImpl(){
-        settings.add(reportComparisonSettings);
-        settings.add(reportMailingSettings);
-        settings.add(reportRecipientSettings);
-    }
-
-    @Override
-	public boolean isEnabled() {
-        for(ComBirtReportSettings setting : settings) {
-            if(setting.isEnabled()){
-                return true;
-            }
+    private Map<ReportSettingsType, ComBirtReportSettings> settings;
+    
+    /**
+     * To proper initializing ComBirtReportImpl use {@link BirtReportFactory#createReport()}
+     */
+    public ComBirtReportImpl(Map<ReportSettingsType, ComBirtReportSettings> settings){
+        if (settings == null) {
+            logger.warn("Added not all supported settings");
+            settings = new HashMap<>();
         }
-        return false;
+        this.settings = settings;
     }
 
     @Override
 	public List<ComBirtReportSettings> getSettings() {
-        return settings;
+        return new ArrayList<>(settings.values());
     }
 
     @Override
-	public ComBirtReportComparisonSettings getReportComparisonSettings() {
-        return reportComparisonSettings;
+    public void setSettings(Map<ReportSettingsType, ComBirtReportSettings> settings) {
+        this.settings.putAll(settings);
     }
 
     @Override
-	public void setReportComparisonSettings(ComBirtReportComparisonSettings reportComparisonSettings) {
-        this.reportComparisonSettings = reportComparisonSettings;
+    public ComBirtReportComparisonSettings getReportComparisonSettings() {
+        return (ComBirtReportComparisonSettings) getSetting(ReportSettingsType.COMPARISON);
     }
 
     @Override
-	public ComBirtReportMailingSettings getReportMailingSettings() {
-        return reportMailingSettings;
+    public ComBirtReportMailingSettings getReportMailingSettings() {
+        return (ComBirtReportMailingSettings) getSetting(ReportSettingsType.MAILING);
     }
 
     @Override
-	public void setReportMailingSettings(ComBirtReportMailingSettings reportMailingSettings) {
-        this.reportMailingSettings = reportMailingSettings;
+    public ComBirtReportRecipientSettings getReportRecipientSettings() {
+        return (ComBirtReportRecipientSettings) getSetting(ReportSettingsType.RECIPIENT);
     }
 
     @Override
-	public ComBirtReportRecipientSettings getReportRecipientSettings() {
-        return reportRecipientSettings;
-    }
-
-    @Override
-	public void setReportRecipientSettings(ComBirtReportRecipientSettings reportRecipientSettings) {
-        this.reportRecipientSettings = reportRecipientSettings;
-    }
-
-    @Override
-	public boolean isSend(int day) {
-        return (sendDays & day) != 0;
-    }
-
-    @Override
-	public void setSend(int day, boolean send) {
-        if (send) {
-            sendDays |= day;
-        } else {
-            sendDays &= ~day;
-        }
-    }
-
-    @Override
-	public void parseSendDays(String input) {
-        sendDays = 0;
-        if (input == null || input.length() < 7) {
-            return;
-        }
-
-        if (input.charAt(0) == '1') {
-            sendDays |= MONDAY;
-        }
-
-        if (input.charAt(1) == '1') {
-            sendDays |= TUESDAY;
-        }
-
-        if (input.charAt(2) == '1') {
-            sendDays |= WEDNESDAY;
-        }
-
-        if (input.charAt(3) == '1') {
-            sendDays |= THURSDAY;
-        }
-
-        if (input.charAt(4) == '1') {
-            sendDays |= FRIDAY;
-        }
-
-        if (input.charAt(5) == '1') {
-            sendDays |= SATURDAY;
-        }
-
-        if (input.charAt(6) == '1') {
-            sendDays |= SUNDAY;
-        }
-    }
-
-    @Override
-	public String buildSendDate() {
-        StringBuffer output = new StringBuffer("0000000");
-        if ((sendDays & MONDAY) != 0) {
-            output.setCharAt(0, '1');
-        }
-
-        if ((sendDays & TUESDAY) != 0) {
-            output.setCharAt(1, '1');
-        }
-
-        if ((sendDays & WEDNESDAY) != 0) {
-            output.setCharAt(2, '1');
-        }
-
-        if ((sendDays & THURSDAY) != 0) {
-            output.setCharAt(3, '1');
-        }
-
-        if ((sendDays & FRIDAY) != 0) {
-            output.setCharAt(4, '1');
-        }
-
-        if ((sendDays & SATURDAY) != 0) {
-            output.setCharAt(5, '1');
-        }
-
-        if ((sendDays & SUNDAY) != 0) {
-            output.setCharAt(6, '1');
-        }
-
-        return output.toString();
+    public ComBirtReportTopDomainsSettings getReportTopDomainsSettings() {
+        return (ComBirtReportTopDomainsSettings) getSetting(ReportSettingsType.TOP_DOMAIN);
     }
 
     @Override
@@ -201,50 +105,16 @@ public class ComBirtReportImpl implements ComBirtReport {
             return;
         } else {
         	BirtReportType birtReportType = BirtReportType.getTypeByCode(getReportType());
-    		Calendar sendTimeCalendar = new GregorianCalendar();
-    		sendTimeCalendar.setTime(sendTime);
 	        if (birtReportType == BirtReportType.TYPE_MONTHLY_FIRST) {
-	        	String intervalPattern = "M01:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
-	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
 	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_15TH) {
-	        	String intervalPattern = "M15:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
-	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
 	        } else if (birtReportType == BirtReportType.TYPE_MONTHLY_LAST) {
-	        	String intervalPattern = "M99:" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
-	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
 	        } else if (birtReportType == BirtReportType.TYPE_WEEKLY || birtReportType == BirtReportType.TYPE_BIWEEKLY) {
-	    		String intervalPattern = "";
-	        	if (isSend(MONDAY)) {
-	        		intervalPattern += "Mo";
-	        	}
-	        	if (isSend(TUESDAY)) {
-	        		intervalPattern += "Tu";
-	        	}
-	        	if (isSend(WEDNESDAY)) {
-	        		intervalPattern += "We";
-	        	}
-	        	if (isSend(THURSDAY)) {
-	        		intervalPattern += "Th";
-	        	}
-	        	if (isSend(FRIDAY)) {
-	        		intervalPattern += "Fr";
-	        	}
-	        	if (isSend(SATURDAY)) {
-	        		intervalPattern += "Sa";
-	        	}
-	        	if (isSend(SUNDAY)) {
-	        		intervalPattern += "Su";
-	        	}
-	        	intervalPattern += ":" + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
-
-	            if (birtReportType == BirtReportType.TYPE_BIWEEKLY) {
-	            	sendDate = DateUtilities.addDaysToDate(DateUtilities.calculateNextJobStart(intervalPattern), 7);
-	            } else {
-	            	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
-	            }
+	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
 	        } else {
-	        	String intervalPattern = String.format("%02d", sendTimeCalendar.get(GregorianCalendar.HOUR_OF_DAY)) + String.format("%02d", sendTimeCalendar.get(GregorianCalendar.MINUTE));
-	        	sendDate = DateUtilities.calculateNextJobStart(intervalPattern);
+	        	nextStart = DateUtilities.calculateNextJobStart(intervalpattern);
 	        }
         }
     }
@@ -287,16 +157,6 @@ public class ComBirtReportImpl implements ComBirtReport {
     @Override
 	public void setDescription(String description) {
         this.description = description;
-    }
-
-    @Override
-	public String getSendEmail() {
-        return sendEmail;
-    }
-
-    @Override
-	public void setSendEmail(String sendEmail) {
-        this.sendEmail = sendEmail;
     }
 
     @Override
@@ -355,36 +215,6 @@ public class ComBirtReportImpl implements ComBirtReport {
     }
 
     @Override
-	public Date getSendDate() {
-        return sendDate;
-    }
-
-    @Override
-	public void setSendDate(Date sendDate) {
-        this.sendDate = sendDate;
-    }
-
-    @Override
-	public Date getSendTime() {
-        return sendTime;
-    }
-
-    @Override
-	public void setSendTime(Date sendTime) {
-        this.sendTime = sendTime;
-    }
-
-    @Override
-	public int getSendDays() {
-        return sendDays;
-    }
-
-    @Override
-	public void setSendDays(int sendDays) {
-        this.sendDays = sendDays;
-    }
-
-    @Override
     public Date getActivationDate() {
         return activationDate;
     }
@@ -411,7 +241,7 @@ public class ComBirtReportImpl implements ComBirtReport {
 
     @Override
     public int getActiveTab() {
-        return this.activeTab;
+        return activeTab;
     }
 
     @Override
@@ -425,10 +255,12 @@ public class ComBirtReportImpl implements ComBirtReport {
 
     @Override
     public ComBirtReportSettings getActiveReportSetting() {
-        return settings.stream()
+        Optional<ComBirtReportSettings> first = settings.values().stream()
                 .filter(s -> s.getReportSettingsType().getKey() == activeTab)
-                .findFirst()
-                .orElse(reportComparisonSettings);
+                .findFirst();
+    
+        return first.orElseGet(() -> getSetting(ReportSettingsType.COMPARISON));
+    
     }
 
     @Override
@@ -438,7 +270,7 @@ public class ComBirtReportImpl implements ComBirtReport {
 
     @Override
     public String getLanguage() {
-    	return this.language;
+    	return language;
     }
 
     @Override
@@ -460,14 +292,57 @@ public class ComBirtReportImpl implements ComBirtReport {
     public void setChangeDate(Date changeDate) {
         this.changeDate = changeDate;
     }
-
+    
     @Override
-	public Date getDeliveryDate() {
-        return deliveryDate;
+    public void setSettingParameter(ReportSettingsType type, String name, Object value) {
+        ComBirtReportSettings comBirtReportSettings = settings.get(type);
+        if (comBirtReportSettings != null) {
+            comBirtReportSettings.setReportSetting(name, value);
+        }
+    }
+    
+    @Override
+    public ComBirtReportSettings getSetting(ReportSettingsType type) {
+        return settings.computeIfAbsent(type, t -> factory.createReportSettings(type));
     }
 
-    @Override
-	public void setDeliveryDate(Date deliveryDate) {
-        this.deliveryDate = deliveryDate;
-    }
+	@Override
+	public void setEmailRecipientList(List<String> emailRecipientList) {
+		this.emailRecipientList = emailRecipientList;
+	}
+
+	@Override
+	public List<String> getEmailRecipientList() {
+		return emailRecipientList;
+	}
+
+	@Override
+	public void setIntervalpattern(String intervalpattern) {
+		this.intervalpattern = intervalpattern;
+	}
+
+	@Override
+	public String getIntervalpattern() {
+		return intervalpattern;
+	}
+
+	@Override
+	public void setNextStart(Date nextStart) {
+		this.nextStart = nextStart;
+	}
+
+	@Override
+	public Date getNextStart() {
+		return nextStart;
+	}
+
+	@Override
+	public void setLastresult(String lastresult) {
+		this.lastresult = lastresult;
+	}
+
+	@Override
+	public String getLastresult() {
+		return lastresult;
+	}
 }

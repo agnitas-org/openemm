@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.beans.Company;
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.RdirTrafficAmountDao;
@@ -30,13 +31,13 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.agnitas.util.TimeoutLRUMap;
 import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
@@ -55,15 +56,13 @@ public class ShowImageServlet extends HttpServlet {
 	private static final long serialVersionUID = -595094416663851734L;
 
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
-    public static final String IMAGE_CACHE = "imageCache";
-    public static final String CDN_CACHE = "cdnCache";
 
 	private static int NOT_FOUND_RELOAD_TIMEOUT_MILLIS = 300000; // AGNEMM-2384: set from 30 sec to 5 min
 
 	protected ComMailingComponentDao componentDao;
 	protected ComDeviceService deviceService;
-	protected TimeoutLRUMap<String, DeliverableImage> imageCache;
-	protected TimeoutLRUMap<String, CdnImage> cdnCache;
+	protected ImageCache imageCache;
+	protected CdnCache cdnCache;
     protected RdirTrafficAmountDao rdirTrafficAmountDao;
     protected CompanyDaoCache companyDaoCache;
 	protected ConfigService configService;
@@ -71,7 +70,7 @@ public class ShowImageServlet extends HttpServlet {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
-	public void setImageCache(TimeoutLRUMap<String, DeliverableImage> imageCache) {
+	public void setImageCache(ImageCache imageCache) {
 		this.imageCache = imageCache;
 	}
 
@@ -352,9 +351,15 @@ public class ShowImageServlet extends HttpServlet {
 				}
 			} else if (newImage == null) {
 				notFound = true;
-				if (!"active".equals(getCompanyDaoCache().getItem(companyID).getStatus())) {
+				ComCompany company = getCompanyDaoCache().getItem(companyID);
+				if (company == null) {
 					if (logger.isDebugEnabled()) {
-						logger.debug("image image not found for inactive company: " + cacheKey);
+						logger.debug("image not found for not existing company: " + cacheKey);
+					}
+					newImage = null;
+				} else if (!Company.STATUS_ACTIVE.equals(company.getStatus())) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("image not found for inactive company: " + cacheKey);
 					}
 					newImage = null;
 				} else {
@@ -363,7 +368,7 @@ public class ShowImageServlet extends HttpServlet {
 					newImage.imageData = "Image not found".getBytes("UTF-8");
 					newImage.name = "";
 					if (logger.isDebugEnabled()) {
-						logger.debug("image image not found: " + cacheKey);
+						logger.debug("image not found: " + cacheKey);
 					}
 				}
 				
@@ -491,11 +496,9 @@ public class ShowImageServlet extends HttpServlet {
 	/**
 	 * Return existing cache or create new one
 	 */
-	private TimeoutLRUMap<String, DeliverableImage> getImageCache() {
+	public ImageCache getImageCache() {
 		if (imageCache == null) {
-			@SuppressWarnings("unchecked")
-			TimeoutLRUMap<String, DeliverableImage> newMap = (TimeoutLRUMap<String, DeliverableImage>) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean(IMAGE_CACHE);
-			imageCache = newMap;
+			imageCache = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ImageCache", ImageCache.class);
 		}
 
 		return imageCache;
@@ -504,11 +507,9 @@ public class ShowImageServlet extends HttpServlet {
 	/**
 	 * Return existing cache or create new one
 	 */
-	private TimeoutLRUMap<String, CdnImage> getCdnCache() {
+	private CdnCache getCdnCache() {
 		if (cdnCache == null) {
-			@SuppressWarnings("unchecked")
-			TimeoutLRUMap<String, CdnImage> newMap = (TimeoutLRUMap<String, CdnImage>) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean(CDN_CACHE);
-			cdnCache = newMap;
+			cdnCache = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("CdnCache", CdnCache.class);
 		}
 
 		return cdnCache;

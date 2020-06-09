@@ -17,22 +17,12 @@ import org.agnitas.beans.impl.CompanyImpl;
 import com.agnitas.beans.ComCompany;
 
 public class ComCompanyImpl extends CompanyImpl implements ComCompany {
-	private static final long serialVersionUID = -5817004759096244296L;
-
-	private int expireStat;
 	private int statAdmin;
-	private int expireOnePixel;
-	private int expireSuccess;
-	private int expireCookie;
-	private int expireRecipient;
-	private int expireUpload;
 	private int salutationExtended;
 	private String secretKey;
 	private String localeTimezone;
 	private String localeLanguage;
 	private int enabledUIDVersion;
-	private int maxAdminMails;
-	private int maxFields;
 	private int exportNotifyAdmin;
 	private Date creationDate;
 	private boolean autoMailingReportActivated;
@@ -40,38 +30,7 @@ public class ComCompanyImpl extends CompanyImpl implements ComCompany {
 	private int sector;
 	private int business;
 	private int parentCompanyId;
-	private int expireBounce;
 	private String contactTech;
-
-	@Override
-	public int getExpireStat() {
-		return expireStat;
-	}
-
-	@Override
-	public void setExpireStat(int expireStat) {
-		this.expireStat = expireStat;
-	}
-
-	@Override
-	public int getExpireOnePixel() {
-		return expireOnePixel;
-	}
-
-	@Override
-	public void setExpireOnePixel(int expireOnePixel) {
-		this.expireOnePixel = expireOnePixel;
-	}
-
-	@Override
-	public int getExpireUpload() {
-		return expireUpload;
-	}
-
-	@Override
-	public void setExpireUpload(int expireUpload) {
-		this.expireUpload = expireUpload;
-	}
 
 	@Override
 	public int getStatAdmin() {
@@ -81,26 +40,6 @@ public class ComCompanyImpl extends CompanyImpl implements ComCompany {
 	@Override
 	public void setStatAdmin(int statAdmin) {
 		this.statAdmin = statAdmin;
-	}
-
-	@Override
-	public int getExpireCookie() {
-		return expireCookie;
-	}
-
-	@Override
-	public void setExpireCookie(int expireCookie) {
-		this.expireCookie = expireCookie;
-	}
-
-	@Override
-	public int getExpireRecipient() {
-		return expireRecipient;
-	}
-
-	@Override
-	public void setExpireRecipient(int expireRecipient) {
-		this.expireRecipient = expireRecipient;
 	}
 
 	@Override
@@ -174,16 +113,6 @@ public class ComCompanyImpl extends CompanyImpl implements ComCompany {
 	}
 
 	@Override
-	public int getMaxAdminMails() {
-		return maxAdminMails;
-	}
-
-	@Override
-	public void setMaxAdminMails(int maxAdminMails) {
-		this.maxAdminMails = maxAdminMails;
-	}
-
-	@Override
 	public int getExportNotifyAdmin() {
 		return exportNotifyAdmin;
 	}
@@ -201,36 +130,6 @@ public class ComCompanyImpl extends CompanyImpl implements ComCompany {
 	@Override
 	public void setParentCompanyId(int companyId) {
 		this.parentCompanyId = companyId;
-	}
-
-	@Override
-	public int getExpireSuccess() {
-		return expireSuccess;
-	}
-
-	@Override
-	public void setExpireSuccess(int maximumAgeInDays) {
-		expireSuccess = maximumAgeInDays;
-	}
-
-	@Override
-	public int getExpireBounce() {
-		return expireBounce;
-	}
-
-	@Override
-	public void setExpireBounce(int expireBounce) {
-		this.expireBounce = expireBounce;
-	}
-
-	@Override
-	public int getMaxFields() {
-		return maxFields;
-	}
-
-	@Override
-	public void setMaxFields(int maxFields) {
-		this.maxFields = maxFields;
 	}
 
 	@Override

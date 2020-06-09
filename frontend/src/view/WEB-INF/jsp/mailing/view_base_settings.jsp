@@ -1,10 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.beans.ComAdminPreferences" %>
-<%@ page import="com.agnitas.beans.TargetLight" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %> <%-- ComMailingBaseAction Required for view_base_settings-follow3.jspf --%>
+<%@ page import="com.agnitas.beans.ComAdminPreferences, com.agnitas.beans.ComMailing, com.agnitas.beans.TargetLight" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.ComMailingBaseAction" %>  <%-- Required for view_base_settings-follow3.jspf --%>
+<%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -28,25 +29,29 @@
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>
 <c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>
 
-<c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
-<c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
+<c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
+<c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
 
-<c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
-<c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
+<c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
+<c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
 
 <c:set var="LIST_SPLIT_PREFIX" value="<%= TargetLight.LIST_SPLIT_PREFIX %>"/>
 <c:set var="LIST_SPLIT_CM_PREFIX" value="<%= TargetLight.LIST_SPLIT_CM_PREFIX %>"/>
 
-<c:set var="MAILING_TYPE_NORMAL" value="<%= Mailing.TYPE_NORMAL %>"/>
-<c:set var="MAILING_TYPE_FOLLOWUP" value="<%= Mailing.TYPE_FOLLOWUP %>"/>
-<c:set var="MAILING_TYPE_ACTIONBASED" value="<%= Mailing.TYPE_ACTIONBASED %>"/>
-<c:set var="MAILING_TYPE_DATEBASED" value="<%= Mailing.TYPE_DATEBASED %>"/>
-<c:set var="MAILING_TYPE_INTERVAL" value="<%= Mailing.TYPE_INTERVAL %>"/>
+<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>"/>
+<c:set var="MAILING_TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
+<c:set var="MAILING_TYPE_ACTIONBASED" value="<%= MailingTypes.ACTION_BASED.getCode() %>"/>
+<c:set var="MAILING_TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
+<c:set var="MAILING_TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
 
 <c:set var="FOLLOWUP_TYPE_OPENER" value="<%= Mailing.TYPE_FOLLOWUP_OPENER %>"/>
 <c:set var="FOLLOWUP_TYPE_NON_OPENER" value="<%= Mailing.TYPE_FOLLOWUP_NON_OPENER %>"/>
 <c:set var="FOLLOWUP_TYPE_CLICKER" value="<%= Mailing.TYPE_FOLLOWUP_CLICKER %>"/>
 <c:set var="FOLLOWUP_TYPE_NON_CLICKER" value="<%= Mailing.TYPE_FOLLOWUP_NON_CLICKER %>"/>
+
+<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN.toString() %>" scope="page"/>
+<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW.toString() %>" scope="page"/>
+<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED.toString() %>" scope="page"/>
 
 <c:set var="allSubscribersMessage"><bean:message key="statistic.all_subscribers"/></c:set>
 <c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key="mailing.EditWithCampaignManager"/></c:set>
@@ -133,7 +138,7 @@
         </a>
     </div>
     <div id="tile-mailingGeneral" class="tile-content tile-content-forms">
-        <div class="form-group">
+        <div class="form-group" data-field="validator">
             <div class="col-sm-4">
                 <label class="control-label">
                     <label for="settingsGeneralMailingList"><bean:message key="Mailinglist"/></label>
@@ -146,13 +151,16 @@
             <div class="col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
-                        <c:set var="isMailinglistDisabled" value="${not isMailingEditable or usedInCampaign or not isEmailSettingsEditable or not isMailinglistEditable}"/>
-                        <html:select styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
-                                     disabled="${isMailinglistDisabled}">
+                        <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not isMailingEditable or not isEmailSettingsEditable or useInCampaign}"/>
+                        <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
+                                       data-action="save-mailing-list-id"
+                                       disabled="${isMailinglistDenied}" data-field-validator="required-id">
+                            <agn:agnOption value="0" styleId="0-mailinglist">--</agn:agnOption>
+
                             <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
-                                <html:option value="${mailinglist.id}">${mailinglist.shortname}</html:option>
+                                <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
                             </logic:iterate>
-                        </html:select>
+                        </agn:agnSelect>
                     </div>
                     <c:if test="${usedInCampaign}">
                         <div class="input-group-btn">
@@ -305,7 +313,13 @@
                         <%-- Target groups aren't editable if mailing has complex target expression or is managed by campaign --%>
                         <agn:agnHidden styleId="assignTargetGroups" property="assignTargetGroups" value="false"/>
 
-                        <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds" styleClass="form-control js-select" multiple="true" data-placeholder="${allSubscribersMessage}" disabled="true">
+                        <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds"
+                                       styleClass="form-control js-select"
+                                       disabled="true"
+                                       multiple="true"
+                                       data-placeholder="${allSubscribersMessage}"
+                                       data-result-template="target-group-result-item"
+                                       data-selection-template="target-group-selection-item">
                             <logic:iterate id="target" name="mailingBaseForm" property="targets">
                             
                             	<%-- Build link to target group editor --%>
@@ -314,7 +328,9 @@
                                     <c:param name="targetID" value="${target.id}"/>
                                 </c:url>
 
-                                <agn:agnOption value="${target.id}" data-url="${targetLink}">${target.targetName} (${target.id})</agn:agnOption>
+                                <agn:agnOption value="${target.id}"
+                                               data-complexity-grade="${mailingBaseForm.targetComplexities[target.id]}"
+                                               data-url="${targetLink}">${fn:escapeXml(target.targetName)} (${target.id})</agn:agnOption>
                             </logic:iterate>
                         </agn:agnSelect>
                     </div>
@@ -332,7 +348,16 @@
                         <%-- Target groups are editable unless mailing is sent --%>
                         <agn:agnHidden styleId="assignTargetGroups" property="assignTargetGroups" value="${not mailingBaseForm.worldMailingSend}"/>
 
-                        <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds" styleClass="form-control js-select" multiple="true" data-placeholder="${allSubscribersMessage}" disabled="${mailingBaseForm.worldMailingSend}" data-action="selectTargetGroups">
+                        <c:set var="disabledTargetsInput" value="${mailingBaseForm.worldMailingSend and isALTG}"/>
+
+                        <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds"
+                                       styleClass="form-control js-select"
+                                       disabled="${mailingBaseForm.worldMailingSend}"
+                                       multiple="true"
+                                       data-placeholder="${allSubscribersMessage}"
+                                       data-result-template="target-group-result-item"
+                                       data-selection-template="target-group-selection-item"
+                                       data-action="selectTargetGroups">
                             <logic:iterate id="target" name="mailingBaseForm" property="targets">
 
                             	<%-- Build link to target group editor --%>
@@ -341,7 +366,9 @@
                                     <c:param name="targetID" value="${target.id}"/>
                                 </c:url>
 
-                                <agn:agnOption value="${target.id}" data-url="${targetLink}">${target.targetName} (${target.id})</agn:agnOption>
+                                <agn:agnOption value="${target.id}"
+                                               data-complexity-grade="${mailingBaseForm.targetComplexities[target.id]}"
+                                               data-url="${targetLink}">${fn:escapeXml(target.targetName)} (${target.id})</agn:agnOption>
                             </logic:iterate>
                         </agn:agnSelect>
                     </div>
@@ -421,7 +448,7 @@
                 <html:select styleId="settingsTargetgroupsListSplit" styleClass="form-control js-double-select-trigger"
                              property="splitBase" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or usedInCampaign}">
                     <c:if test="${mailingBaseForm.splitId eq -1}">
-                        <html:option value="yes"><bean:message key="Yes"/></html:option>
+                        <html:option value="yes"><bean:message key="default.Yes"/></html:option>
                     </c:if>
                     <html:option value="none"><bean:message key="listsplit.none"/></html:option>
 
@@ -504,4 +531,29 @@
         </div>
 
     </div>
+        <script id="target-group-selection-item" type="text/x-mustache-template">
+            <a href="{{= element.dataset.url }}">{{- text }}</a>
+            {{ if (element.dataset.complexityGrade == '${COMPLEXITY_RED}') { }}
+            <span class="circle-complexity complexity-red"></span>
+            <i class="icon icon-exclamation-triangle pull-right complexity-red" style="margin-right: 4px;"
+               data-tooltip="<bean:message key="warning.target.group.performance.red"/>"></i>
+            {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_YELLOW}') { }}
+            <span class="circle-complexity complexity-yellow"></span>
+            <i class="icon icon-exclamation-triangle pull-right complexity-yellow" style="margin-right: 4px;"
+               data-tooltip="<bean:message key="warning.target.group.performance.yellow"/>"></i>
+            {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_GREEN}') { }}
+            <span class="circle-complexity complexity-green"></span>
+            {{ } }}
+        </script>
+
+        <script id="target-group-result-item" type="text/x-mustache-template">
+            {{- text }}
+            {{ if (element.dataset.complexityGrade == '${COMPLEXITY_RED}') { }}
+            <span class="circle-complexity complexity-red"></span>
+            {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_YELLOW}') { }}
+            <span class="circle-complexity complexity-yellow"></span>
+            {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_GREEN}') { }}
+            <span class="circle-complexity complexity-green"></span>
+            {{ } }}
+        </script>
 </div>

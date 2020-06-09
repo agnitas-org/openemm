@@ -10,18 +10,11 @@
 
 package com.agnitas.emm.core.upload.forms;
 
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.Length;
-
 public class UploadFileForm {
     private int uploadId;
-    @Length(min = 3, message = "fields.required.errors.missing")
     private String name;
-    @Length(min = 3, message = "fields.required.errors.missing")
     private String firstName;
-    @Length(min = 3, message = "fields.required.errors.missing")
     private String phone;
-    @Email(message = "error.upload.email")
     private String email;
     private String[] notifyEmail;
     private String description;

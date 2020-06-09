@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.workflow.beans;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class WorkflowRule {
 	private int primaryOperator;

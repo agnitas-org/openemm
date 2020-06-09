@@ -10,159 +10,33 @@
 
 package com.agnitas.userform.trackablelinks.web;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import org.agnitas.web.BaseTrackableLinkForm;
 
-import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
 /**
  * Struts form class for trackable user form links
  */
-public class ComTrackableUserFormLinkForm extends StrutsFormBase {
+public class ComTrackableUserFormLinkForm extends BaseTrackableLinkForm {
 	private static final long serialVersionUID = -3023759941861970201L;
-
-	public static final String PROPERTY_NAME_PREFIX = "propertyName_";
-	public static final String PROPERTY_VALUE_PREFIX = "propertyValue_";
-
-	private int action;
-
-	private int linkID;
-
-	private String linkName;
-	
-	private String shortname;
-
-	private int linkAction;
-
-	private int trackable;
-
-	private String linkUrl;
 
 	private int formID;
 
-	private int deepTracking;
-
-	private int relevance;
-
-	private String altText;
-
 	private String linkExtension;
 	
-	private List<LinkProperty> commonLinkExtensions;
-
-	private Collection<ComTrackableUserFormLink> links;
-
-	private Map<Integer, String> linkItemName = new HashMap<>();
-
-	private Map<Integer, Integer> linkItemRelevance = new HashMap<>();
-
 	private Map<Integer, Integer> linkItemUsage = new HashMap<>();
-
-	private Map<Integer, Integer> linkItemId = new HashMap<>();
-
-	private ComTrackableUserFormLink linkToView;
 
 	private Map<Integer, Integer> extendLinkId = new HashMap<>();
 
 	private Map<Integer, Boolean> extendLinkUrl = new HashMap<>();
 	
-	private boolean companyHasDefaultLinkExtension = false;
+	private ComTrackableUserFormLink linkToView;
+
     private boolean linkExtensionsContainerVisible;
-
-	/**
-	 * Reset all properties to their default values.
-	 * 
-	 * @param mapping
-	 *            The mapping used to select this instance
-	 * @param request
-	 *            The servlet request we are processing
-	 */
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		super.reset(mapping, request);
-	}
-
-	/**
-	 * Validate the properties that have been set from this HTTP request, and
-	 * return an <code>ActionErrors</code> object that encapsulates any
-	 * validation errors that have been found. If no errors are found, return
-	 * <code>null</code> or an <code>ActionErrors</code> object with no recorded
-	 * error messages.
-	 * 
-	 * @param mapping
-	 *            The mapping used to select this instance
-	 * @param request
-	 *            The servlet request we are processing
-	 * @return errors
-	 */
-	@Override
-	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
-
-		if (!errors.isEmpty()) {
-			mapping.setInput(mapping.findForward("view").getPath());
-		}
-		
-		return errors;
-	}
-
-	public int getAction() {
-		return action;
-	}
-
-	public void setAction(int action) {
-		this.action = action;
-	}
-
-	public int getLinkID() {
-		return linkID;
-	}
-
-	public void setLinkID(int linkID) {
-		this.linkID = linkID;
-	}
-
-	public String getLinkName() {
-		return linkName;
-	}
-
-	public void setLinkName(String linkName) {
-		this.linkName = linkName;
-	}
-
-	public int getLinkAction() {
-		return linkAction;
-	}
-
-	public void setLinkAction(int linkAction) {
-		this.linkAction = linkAction;
-	}
-
-	public int getTrackable() {
-		return trackable;
-	}
-
-	public void setTrackable(int trackable) {
-		this.trackable = trackable;
-	}
-
-	public String getLinkUrl() {
-		return linkUrl;
-	}
-
-	public void setLinkUrl(String linkUrl) {
-		this.linkUrl = linkUrl;
-	}
 
 	public int getFormID() {
 		return formID;
@@ -172,90 +46,12 @@ public class ComTrackableUserFormLinkForm extends StrutsFormBase {
 		this.formID = formID;
 	}
 	
-	public String getShortname() {
-		return shortname;
-	}
-
-	public void setShortname(String shortname) {
-		this.shortname = shortname;
-	}
-
-	public String getLinkItemName(int index) {
-		return this.linkItemName.getOrDefault(index, " ");
-	}
-
-	public void setLinkItemName(int id, String value) {
-		this.linkItemName.put(id, value);
-	}
-
-	public int getLinkItemRelevance(int index) {
-		return this.linkItemRelevance.getOrDefault(index, 0);
-	}
-
-	public void setLinkItemRelevance(int id, int value) {
-		this.linkItemRelevance.put(id, value);
-	}
-
-	public int getLinkItemUsage(int index) {
-		return this.linkItemUsage.getOrDefault(index, 0);
+	public int getLinkItemUsage(int id) {
+		return this.linkItemUsage.getOrDefault(id, 0);
 	}
 
 	public void setLinkItemUsage(int id, int value) {
 		this.linkItemUsage.put(id, value);
-	}
-
-	public int getLinkItemId(int index) {
-		return this.linkItemId.getOrDefault(index, 0);
-	}
-
-	public Map<Integer, Integer> getLinkItemIds() {
-		return this.linkItemId;
-	}
-
-	public void setLinkItemId(int id, int value) {
-		this.linkItemId.put(id, value);
-	}
-
-	public Collection<ComTrackableUserFormLink> getLinks() {
-		return links;
-	}
-
-	public void setLinks(Collection<ComTrackableUserFormLink> links) {
-		this.links = links;
-
-		int index = 0;
-		for (ComTrackableUserFormLink link : links) {
-			setLinkItemName(index, link.getShortname());
-			setLinkItemRelevance(index, link.getRelevance());
-			setLinkItemUsage(index, link.getUsage());
-			setLinkItemId(index, link.getId());
-			index++;
-		}
-
-	}
-
-	public int getDeepTracking() {
-		return deepTracking;
-	}
-
-	public void setDeepTracking(int deepTracking) {
-		this.deepTracking = deepTracking;
-	}
-
-	public int getRelevance() {
-		return relevance;
-	}
-
-	public void setRelevance(int relevance) {
-		this.relevance = relevance;
-	}
-
-	public String getAltText() {
-		return altText;
-	}
-
-	public void setAltText(String altText) {
-		this.altText = altText;
 	}
 
 	public String getLinkExtension() {
@@ -275,19 +71,11 @@ public class ComTrackableUserFormLinkForm extends StrutsFormBase {
 	}
 
 	public int getExtendLinkId(int index) {
-		if (extendLinkId.containsKey(index)) {
-			return extendLinkId.get(index);
-		} else {
-			return -1; // Should never occur!
-		}
+		return extendLinkId.getOrDefault(index, -1);
 	}
 
 	public boolean getExtendLinkUrl(int index) {
-		if (this.extendLinkUrl.containsKey(index)) {
-			return this.extendLinkUrl.get(index);
-		} else {
-			return false;
-		}
+		return this.extendLinkUrl.getOrDefault(index, false);
 	}
 
 	public Set<Integer> getLinkIndices() {
@@ -300,22 +88,6 @@ public class ComTrackableUserFormLinkForm extends StrutsFormBase {
 
 	public ComTrackableUserFormLink getLinkToView() {
 		return linkToView;
-	}
-
-	public boolean getCompanyHasDefaultLinkExtension() {
-		return companyHasDefaultLinkExtension;
-	}
-
-	public void setCompanyHasDefaultLinkExtension(boolean companyHasDefaultLinkExtension) {
-		this.companyHasDefaultLinkExtension = companyHasDefaultLinkExtension;
-	}
-
-	public List<LinkProperty> getCommonLinkExtensions() {
-		return commonLinkExtensions;
-	}
-
-	public void setCommonLinkExtensions(List<LinkProperty> commonLinkExtensions) {
-		this.commonLinkExtensions = commonLinkExtensions;
 	}
 
     public boolean isLinkExtensionsContainerVisible() {

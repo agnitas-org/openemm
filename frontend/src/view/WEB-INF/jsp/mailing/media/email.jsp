@@ -10,12 +10,19 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
-<c:set var="sentMail" value="${mailingBaseForm.worldMailingSend}"/>
 <c:set var="TEXTAREA_WIDTH" value="<%= ComMailingBaseForm.TEXTAREA_WIDTH%>" scope="page" />
 <c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
+
+<c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
 <emm:ShowByPermission token="mailing.content.change.always">
-    <c:set var="sentMail" value="${false}"/>
+    <c:set var="isMailingEditable" value="${true}"/>
 </emm:ShowByPermission>
+
+<c:set var="isEmailSettingsEditable" value="${mailingBaseForm.canChangeEmailSettings}"/>
+
+<c:set var="isEmailSettingsDisabled" value="${not isMailingEditable or not isEmailSettingsEditable}"/>
+
+<c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
 
 <emm:ShowByPermission token="template.show">
 
@@ -150,7 +157,7 @@
                         <div class="row">
                             <div class="col-sm-12">
                                 <html:textarea styleId="textTemplate" property="textTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
-                                               styleClass="form-control js-editor-text" readonly="${sentMail}"/>
+                                               styleClass="form-control js-editor-text" readonly="${not isMailingEditable}"/>
                             </div>
                         </div>
                     </div>
@@ -172,7 +179,7 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <html:textarea styleId="htmlTemplate" property="htmlTemplate" rows="14" cols="${TEXTAREA_WIDTH}"
-                                                   styleClass="form-control js-editor" readonly="${sentMail}" />
+                                                   styleClass="form-control js-editor" readonly="${not isMailingEditable}" />
                                 </div>
                             </div>
                         </div>
@@ -203,8 +210,6 @@
 
 </emm:ShowByPermission>
 
-<c:set var="denyEmailEdit" value="${not mailingBaseForm.canChangeEmailSettings}"/>
-
 <div class="tile">
     <div class="tile-header">
         <a href="#" class="headline" data-toggle-tile="#tile-mediaEmail">
@@ -231,7 +236,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="emailSubject" property="emailSubject"
-                           styleClass="form-control" readonly="${sentMail}" />
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" />
                 </div>
             </div>
 
@@ -243,7 +248,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:select styleId="emailMailFormat" property="mediaEmail.mailFormat"
-                                 styleClass="form-control" disabled="${sentMail or denyEmailEdit}">
+                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
                         <html:option value="0"><bean:message key="only_Text"/></html:option>
                         <html:option value="1"><bean:message key="Text_HTML"/></html:option>
                         <html:option value="2"><bean:message key="Text_HTML_OfflineHTML"/></html:option>
@@ -259,7 +264,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="emailSenderMail" property="media[0].fromEmail"
-                               styleClass="form-control" readonly="${sentMail or denyEmailEdit}"/>
+                               styleClass="form-control" readonly="${isEmailSettingsDisabled}"/>
                </div>
             </div>
 
@@ -271,7 +276,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="emailSenderName" property="media[0].fromFullname"
-                           styleClass="form-control" readonly="${sentMail or denyEmailEdit}" />
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" />
                 </div>
             </div>
 
@@ -283,7 +288,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="emailReplyEmail" property="media[0].replyEmail"
-                           styleClass="form-control" readonly="${sentMail or denyEmailEdit}"/>
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}"/>
                 </div>
             </div>
 
@@ -295,7 +300,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="emailReplyName" property="media[0].replyFullname"
-                           styleClass="form-control" readonly="${sentMail or denyEmailEdit}" />
+                           styleClass="form-control" readonly="${isEmailSettingsDisabled}" />
                 </div>
             </div>
         </div>
@@ -311,7 +316,7 @@
                     </div>
                     <div class="col-sm-8">
                         <html:text styleId="emailEnvelopeEmail" property="media[0].envelopeEmail"
-                                   styleClass="form-control" readonly="${sentMail or denyEmailEdit}" />
+                                   styleClass="form-control" readonly="${isEmailSettingsDisabled}" />
                     </div>
                 </div>
             </emm:ShowByPermission>
@@ -346,7 +351,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:select styleId="emailLinefeed" property="emailLinefeed"
-                                 styleClass="form-control" disabled="${sentMail or denyEmailEdit}">
+                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
                         <html:option value="0"><bean:message key="mailing.No_Linefeed"/></html:option>
                         <c:forEach begin="60" end="80" step="1" var="a">
                             <html:option value="${a}">${a} <bean:message key="Characters"/></html:option>
@@ -363,7 +368,7 @@
                 </div>
                 <div class="col-sm-8">
                     <html:select styleId="emailOnepixel" property="emailOnepixel"
-                                 styleClass="form-control" disabled="${sentMail or denyEmailEdit}">
+                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
                         <html:option value="<%= MediatypeEmail.ONEPIXEL_TOP %>"><bean:message
                                 key="mailing.openrate.top"/></html:option>
                         <html:option value="<%= MediatypeEmail.ONEPIXEL_BOTTOM %>"><bean:message

@@ -10,6 +10,10 @@
 
 package org.agnitas.dao;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.agnitas.dao.exception.UnknownUserStatusException;
 
 public enum UserStatus {
@@ -38,5 +42,9 @@ public enum UserStatus {
 			}
 		}
 		throw new UnknownUserStatusException(id);
+	}
+	
+	public static List<Integer> getAvailableStatusCodeList() {
+		return Arrays.stream(UserStatus.values()).map(UserStatus::getStatusCode).collect(Collectors.toList());
 	}
 }

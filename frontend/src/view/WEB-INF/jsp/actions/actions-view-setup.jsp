@@ -33,10 +33,10 @@
 <c:set var="agnNavHrefAppend" 		value="&actionID=${emmActionForm.actionID}"	scope="request" />
 <c:set var="agnTitleKey" 			value="Actions" 							scope="request" />
 <c:set var="agnSubtitleKey" 		value="Actions" 							scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 						scope="request" />
+<c:set var="sidemenu_active" 		value="TriggerManagement" 					scope="request" />
 <c:set var="sidemenu_sub_active"	value="Actions"								scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 								scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="SiteActions" 						scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="TriggerManagement" 					scope="request" />
 <c:set var="agnHelpKey" 			value="actionList" 							scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

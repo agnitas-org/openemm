@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.agnitas.beans.WebStorageEntry;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public final class WebStorageBundle<T extends WebStorageEntry> {
     private static Map<String, WebStorageBundle<?>> registry = new HashMap<>();

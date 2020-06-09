@@ -25,7 +25,7 @@ public final class WebservicePermissionDaoImpl extends BaseDaoImpl implements We
 	
 	@Override
 	public final List<WebservicePermission> listPermissions() {
-		final String sql = "SELECT * FROM webservice_permission_tbl";
+		final String sql = "SELECT * FROM webservice_permissions_tbl";
 		
 		return select(LOGGER, sql, new WebservicePermissionRowMapper());		
 	}

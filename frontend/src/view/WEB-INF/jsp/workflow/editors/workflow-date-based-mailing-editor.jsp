@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -41,7 +41,7 @@
                     <bean:message key="button.Cancel"/>
                 </a>
                 <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="date-mailing-editor-save">
-                    <bean:message key="button.Save"/>
+                    <bean:message key="button.Apply"/>
                 </a>
             </div>
         </div>

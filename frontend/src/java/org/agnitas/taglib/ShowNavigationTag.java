@@ -22,11 +22,13 @@ import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 
 import com.agnitas.emm.core.Permission;
+import org.agnitas.emm.core.navigation.ConditionsHandler;
 import org.agnitas.emm.extension.ExtensionSystem;
 import org.agnitas.emm.extension.util.ExtensionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.java.plugin.registry.Extension;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  *  Display the navigation for a page. the navigation is specified by a
@@ -38,7 +40,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private static final long serialVersionUID = 6251408976255583139L;
 
 	private static final transient Logger logger = Logger.getLogger(ShowNavigationTag.class);
-	
+
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
@@ -48,7 +50,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
 	private int navigationIndex;
-	
+
 	private static class NavigationData {
 		private final String message;
 		private final String token;
@@ -60,10 +62,11 @@ public class ShowNavigationTag extends BodyTagSupport {
 		private final String subMenu;
 		private final String hideForToken;
 		private final String upsellingRef;
+		private final boolean conditionSatisfied;
 
 		public NavigationData(String message, String token, String href, Boolean hideForMysqlKey, String iconClass,
 							  String plugin, String extension, String subMenu, String hideForToken,
-							  String upsellingRef) {
+							  String upsellingRef, boolean conditionSatisfied) {
             this.message = message;
             this.token = token;
             this.href = href;
@@ -74,6 +77,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 			this.subMenu = subMenu;
 			this.hideForToken = hideForToken;
 			this.upsellingRef = upsellingRef;
+			this.conditionSatisfied = conditionSatisfied;
 		}
 
         public String getMessage() { return message; }
@@ -86,6 +90,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 		public String getSubMenu() { return subMenu; }
 		public String getHideForToken() { return hideForToken; }
 		public String getUpsellingRef() { return upsellingRef; }
+        public boolean isConditionSatisfied() { return conditionSatisfied; }
 
         @Override
         public String toString() {
@@ -94,10 +99,11 @@ public class ShowNavigationTag extends BodyTagSupport {
                     + "], href[" + getHref() + "], plugin[" + (plugin !=  null ? plugin : "")
                     + "], extension[" + (extension != null ? extension : "")
 					+ "], subMenu[" + (subMenu != null ? subMenu : "")
-					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "") + "]";
+					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "")
+                    + "], conditionId[" + isConditionSatisfied() + "]";
         }
 	}
-	
+
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
 	}
@@ -105,7 +111,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	public void setNavigation(String navigation) {
 		this.navigation = navigation;
 	}
-	
+
 	public void setHighlightKey(String highlightKey) {
 		this.highlightKey = highlightKey;
 	}
@@ -146,8 +152,8 @@ public class ShowNavigationTag extends BodyTagSupport {
 			return SKIP_BODY;
 		}
 	}
-	
-	@Override 
+
+	@Override
 	public int doEndTag() throws JspException {
 		// Reset optional attribute value
 		declaringPlugin = null;
@@ -155,13 +161,13 @@ public class ShowNavigationTag extends BodyTagSupport {
 
 		// Emit body content
 		try {
-			BodyContent bodyContent = getBodyContent();
+			BodyContent currentBodyContent = getBodyContent();
 
-			if (bodyContent != null) {
+			if (currentBodyContent != null) {
 				if (!navigationDataList.isEmpty()) {
-					bodyContent.writeOut(getPreviousOut());
+					currentBodyContent.writeOut(getPreviousOut());
 				}
-				bodyContent.clearBody();
+				currentBodyContent.clearBody();
 			}
 		} catch (IOException e) {
 			logger.error("Error in ShowNavigationTag.doEndTag: " + e.getMessage(), e);
@@ -202,24 +208,24 @@ public class ShowNavigationTag extends BodyTagSupport {
 			logger.error("Error preparing navigation data from extension: " + e.getMessage(), e);
 		}
 	}
-	
-	private ResourceBundle getExtensionResourceBundle(String extension, String resourceName) throws Exception {
+
+	private ResourceBundle getExtensionResourceBundle(String extensionItem, String resourceName) throws Exception {
 		ExtensionSystem extensionSystem = ExtensionUtils.getExtensionSystem(pageContext.getServletContext());
-		
-		return extensionSystem.getPluginResourceBundle(extension, resourceName);
+
+		return extensionSystem.getPluginResourceBundle(extensionItem, resourceName);
 	}
-	
-	private void prepareNavigationDataFromResourceBundle(ResourceBundle resourceBundle, String plugin, String extension) {
+
+	private void prepareNavigationDataFromResourceBundle(ResourceBundle resourceBundle, String plugin, String extensionItem) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Processing navigation resource bundle for plugin: " + (plugin != null ? plugin : "core system"));
 		}
-        
+
         for (int i = 1;; i++) {
             String msgKey = "msg_" + i;
             if (!resourceBundle.containsKey(msgKey)) {
             	break;
             }
-            
+
             String hrefKey = "href_" + i;
             String hideForMysqlKey = "hideForMysql_" + i;
             String iconClass = "iconClass_" + i;
@@ -238,15 +244,17 @@ public class ShowNavigationTag extends BodyTagSupport {
 			//Remove after finishing migration
 			String hideForToken = "hideForToken_" + i;
 
+			String conditionId = "conditionId_" + i;
+
 			if (logger.isInfoEnabled()) {
-				logger.info("extension '" + extension + "' in plugin '" + plugin + "' added menu item. Label key is: " + msgKey);
+				logger.info("extension '" + extensionItem + "' in plugin '" + plugin + "' added menu item. Label key is: " + msgKey);
 			}
-			
+
             NavigationData navigationData = new NavigationData(resourceBundle.getString(msgKey), securityToken,
                 resourceBundle.getString(hrefKey),
 				getDataQuietly(resourceBundle, hideForMysqlKey).equals("true"), getDataQuietly(resourceBundle, iconClass),
-                plugin, extension, getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken),
-				getDataQuietly(resourceBundle, upsellingRef));
+                plugin, extensionItem, getDataQuietly(resourceBundle, subMenu), getDataQuietly(resourceBundle, hideForToken),
+				getDataQuietly(resourceBundle, upsellingRef), isConditionSatisfied(getDataQuietly(resourceBundle, conditionId)));
 
             navigationDataList.add(navigationData);
         }
@@ -259,7 +267,19 @@ public class ShowNavigationTag extends BodyTagSupport {
             return "";
         }
     }
-	
+
+    private boolean isConditionSatisfied(String conditionId){
+	    if(StringUtils.isBlank(conditionId)){
+	        return true;
+        }
+        final ConditionsHandler conditionsHandler = WebApplicationContextUtils.getRequiredWebApplicationContext(pageContext.getServletContext()).getBean(ConditionsHandler.class);
+        if(conditionsHandler == null){
+            logger.error("Conditions handler is not allowed!!!");
+            return false;
+        }
+        return conditionsHandler.checkCondition(conditionId);
+    }
+
 	private void prepareNavigationDataFromExtensionPoints(ResourceBundle resourceBundle) throws Exception {
 		if (!resourceBundle.containsKey("navigation.plugin") || !resourceBundle.containsKey("navigation.extensionpoint")) {
 			return;
@@ -268,25 +288,25 @@ public class ShowNavigationTag extends BodyTagSupport {
 		//getting data from navigation.property file for the extension point
 		String plugin = resourceBundle.getString("navigation.plugin");
 		String extensionPoint = resourceBundle.getString("navigation.extensionpoint");
-		
+
 		ExtensionSystem extensionSystem = ExtensionUtils.getExtensionSystem(pageContext.getServletContext());
 		if(extensionSystem != null) {
 			Collection<Extension> extensions = extensionSystem.getActiveExtensions(plugin, extensionPoint);
-			for (Extension extension : extensions) {
-				String resourceName = extension.getParameter("navigation-bundle").valueAsString();
-				
-				ResourceBundle extensionBundle = extensionSystem.getPluginResourceBundle(extension.getDeclaringPluginDescriptor().getId(), resourceName);
-				prepareNavigationDataFromResourceBundle(extensionBundle, extension.getDeclaringPluginDescriptor().getId(), extension.getId());
+			for (Extension extensionItem : extensions) {
+				String resourceName = extensionItem.getParameter("navigation-bundle").valueAsString();
+
+				ResourceBundle extensionBundle = extensionSystem.getPluginResourceBundle(extensionItem.getDeclaringPluginDescriptor().getId(), resourceName);
+				prepareNavigationDataFromResourceBundle(extensionBundle, extensionItem.getDeclaringPluginDescriptor().getId(), extensionItem.getId());
 			}
 		} else {
 			logger.warn("No active Navigation extensions for plugin '" + plugin + "' defined");
 		}
 	}
-	
+
 	private void setBodyAttributes() {
 		NavigationData navigationData = navigationDataIterator.next();
 		navigationIndex++;
-		
+
 		logger.info("setting navigation attributes " + prefix + "_navigation_href = " + navigationData.getHref());
 
 		if (StringUtils.isNotBlank(highlightKey) && StringUtils.equals(navigationData.getMessage(), highlightKey)) {
@@ -307,5 +327,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.getSubMenu()));
 		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));
 		pageContext.setAttribute(prefix + "_navigation_upsellingRef", StringUtils.trimToEmpty(navigationData.getUpsellingRef()));
+        pageContext.setAttribute(prefix + "_navigation_conditionSatisfied", navigationData.isConditionSatisfied());
 	}
 }

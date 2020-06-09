@@ -12,16 +12,15 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DynTagChainValidatorImpl implements DynTagChainValidator {
-
     private List<DynTagValidator> validators;
 
     public DynTagChainValidatorImpl(List<DynTagValidator> validators) {
@@ -29,14 +28,13 @@ public class DynTagChainValidatorImpl implements DynTagChainValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
         for (DynTagValidator validator : validators) {
-            if (!validator.validate(dynTagDto, popups)) {
+            if (!validator.validate(dynTagDto, popups, admin)) {
                 return false;
             }
         }
 
         return true;
     }
-
 }

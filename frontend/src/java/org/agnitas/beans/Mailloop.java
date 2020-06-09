@@ -16,34 +16,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Mailloop {
     /**
-     * Getter for property arHtml.
-     *
-     * @return Value of property arHtml.
-     */
-    String getArHtml();
-
-    /**
-     * Getter for property arSender.
-     *
-     * @return Value of property arSender.
-     */
-    String getArSender();
-
-    /**
-     * Getter for property arSubject.
-     *
-     * @return Value of property arSubject.
-     */
-    String getArSubject();
-
-    /**
-     * Getter for property arText.
-     *
-     * @return Value of property arText.
-     */
-    String getArText();
-
-    /**
      * Getter for property companyID.
      *
      * @return Value of property companyID.
@@ -91,34 +63,6 @@ public interface Mailloop {
      * @return Value of property doForward.
      */
     boolean isDoForward();
-
-    /**
-     * Setter for property arHtml.
-     *
-     * @param arHtml New value of property arHtml.
-     */
-    void setArHtml(String arHtml);
-
-    /**
-     * Setter for property arSender.
-     *
-     * @param arSender New value of property arSender.
-     */
-    void setArSender(String arSender);
-
-    /**
-     * Setter for property arSubject.
-     *
-     * @param arSubject New value of property arSubject.
-     */
-    void setArSubject(String arSubject);
-
-    /**
-     * Setter for property arText.
-     *
-     * @param arText New value of property arText.
-     */
-    void setArText(String arText);
 
     /**
      * Setter for property companyID.

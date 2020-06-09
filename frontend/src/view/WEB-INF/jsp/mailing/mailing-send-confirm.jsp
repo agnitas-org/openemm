@@ -8,7 +8,7 @@
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
 
 <c:choose>
-    <c:when test="${mailingSendForm.approximateMaxSizeWithoutExternalImages < mailingSendForm.sizeErrorThreshold}">
+    <c:when test="${mailingSendForm.approximateMaxSizeWithoutExternalImages <= mailingSendForm.sizeErrorThreshold}">
         <div class="modal">
             <div class="modal-dialog">
                 <div class="modal-content">

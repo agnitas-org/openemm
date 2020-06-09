@@ -130,7 +130,7 @@ Clicking on a tab of a closed tile will automatically open the tile
     Storage.set('toggle_tile' + target, {hidden: false});
 
     // Load lazy data if any
-    AGN.Initializers.Load($target);
+    AGN.Lib.CoreInitializer.run('load', $target);
   }
 
   trigger = function($needle) {

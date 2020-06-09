@@ -15,5 +15,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 public interface ComDeeptrackingSetupDao {
 	
 	boolean create(@VelocityCheck int companyID);
-   
+
+	void delete(@VelocityCheck int companyId);
 }

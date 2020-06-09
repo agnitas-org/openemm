@@ -42,7 +42,7 @@ To enable interval timer add `data-autosave-period` attribute to a root element 
 </div>
 ```
 
-The restoration availability is checked when the page/subtree initialization (when AGN.Initializers.* invoked) goes on.
+The restoration availability is checked when the page/subtree initialization (when AGN.Lib.CoreInitializer.autorun() invoked) goes on.
 If the stored values are different that the ones held by watched elements then a user is prompted (modal dialog) to restore data or cancel restoration.
 
 Use `data-autorestore` attribute to enable an automatic (without prompt) restoration for an exact element:
@@ -72,7 +72,7 @@ Use `data-autorestore` attribute to enable an automatic (without prompt) restora
     }
   }
 
-  AGN.Initializers.AutoSave = function($scope) {
+  AGN.Lib.CoreInitializer.new('auto-save', ['ace'], function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -145,6 +145,6 @@ Use `data-autorestore` attribute to enable an automatic (without prompt) restora
         AutoSave.initialize(scopeId, save, check, restore, period);
       }
     });
-  };
+  });
 
 })();

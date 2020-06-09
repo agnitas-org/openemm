@@ -68,15 +68,21 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
 
 ;(function(){
   var Popover = AGN.Lib.Popover,
+      Template = AGN.Lib.Template,
       Page = AGN.Lib.Page;
 
-  AGN.Initializers.Select = function($scope) {
+  AGN.Lib.CoreInitializer.new('select', ['template'], function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
 
     _.each($scope.all('select'), function(el) {
       var $el = $(el);
+      var resultTemplateId = $el.data('result-template');
+
+      if ($el.data('select2')) {
+        $el.select2('destroy');
+      }
 
       var options = {
         placeholder: $el.attr('placeholder'),
@@ -88,27 +94,52 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
       }
 
       if ( $el.prop('multiple') ) {
+        var selectionTemplateId = $el.data('selection-template');
+
         options.minimumResultsForSearch = 1;
-        options.formatSelection = function(state) {
-          if (state.element && state.element.length === 1) {
-            var url = $(state.element).data('url');
-            if (url) {
-              return $('<a></a>', {
-                href: url,
-                text: state.text,
-                click: function() { Page.reload(url); }
-              });
+
+        if (selectionTemplateId) {
+          var createSelection = Template.prepare(selectionTemplateId);
+
+          options.formatSelection = function(data) {
+            return createSelection({
+              element: data.element[0],
+              isLocked: data.locked,
+              isDisabled: data.disabled,
+              text: data.text,
+              value: data.id
+            });
+          };
+        } else {
+          options.formatSelection = function(state) {
+            if (state.element && state.element.length === 1) {
+              var url = $(state.element).data('url');
+              if (url) {
+                return $('<a></a>', {
+                  href: url,
+                  text: state.text,
+                  click: function() { Page.reload(url); }
+                });
+              }
             }
-          }
-          return state.text;
+            return state.text;
+          };
+        }
+      }
+
+      if (resultTemplateId) {
+        var createResult = Template.prepare(resultTemplateId);
+
+        options.formatResult = function(data) {
+          return createResult({
+            element: data.element[0],
+            isLocked: data.locked,
+            isDisabled: data.disabled,
+            text: data.text,
+            value: data.id
+          });
         };
-      }
-
-      if ($el.data("select2")) {
-        $el.select2("destroy")
-      }
-
-      if ($el.hasClass('js-option-popovers')) {
+      } else if ($el.hasClass('js-option-popovers')) {
         options.formatResult = function(data, $label, query, escapeMarkup) {
           var text = '<span style="white-space: nowrap;">' + escapeMarkup(data.text) + '</span>';
 
@@ -162,6 +193,6 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         })
       }
     });
-  }
+  });
 
 })();

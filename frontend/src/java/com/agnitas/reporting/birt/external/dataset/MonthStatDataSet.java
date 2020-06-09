@@ -36,29 +36,42 @@ public class MonthStatDataSet extends BIRTDataSet {
 	public static final int TOP_10_BY_OPEN_NUM = 1;
 	public static final int TOP_10_BY_RECIPIENT_CLICKS = 2;
 
-	public List<MonthCounterStatRow> getMailingCounts (@VelocityCheck int companyID, String startDateString, String endDateString) throws ParseException {
+	public List<MonthCounterStatRow> getMailingCounts(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
+		List<Object> params = new ArrayList<>();
+		
 		String query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
 			+ " SUM(a.no_of_mailings) email_count,"
-			+ " SUM(a.no_of_bytes) / SUM(no_of_mailings) / 1024 kbPerMail"
-			+ " FROM mailing_account_tbl a "
-            + " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id AND m.deleted = 0 "
-			+ " WHERE a.company_id = ?"
+			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail"
+			+ " FROM mailing_account_tbl a"
+            + " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id AND m.deleted = 0 ";
+		
+			if (adminId > 0 && isDisabledMailingListsSupported()) {
+				query += " AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?)";
+				params.add(adminId);
+			}
+			
+			query += " WHERE a.company_id = ? "
 			+ " AND a.timestamp >= ?"
 			+ " AND a.timestamp < ?"
 			+ " AND a.status_field NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') ";
+		
+			params.add(companyID);
+			params.add(startDate);
+			params.add(endDate);
+		
 		return select(logger, query, (resultSet, rowNum) -> {
 			MonthCounterStatRow monthCounterRow = new MonthCounterStatRow();
 			monthCounterRow.setMailingCount(resultSet.getInt("mailing_count"));
 			monthCounterRow.setEMailCount(resultSet.getInt("email_count"));
 			monthCounterRow.setKilobyte(new DecimalFormat("0.0").format(resultSet.getDouble("kbPerMail")));
 			return monthCounterRow;
-		}, companyID, startDate, endDate);
+		}, params.toArray());
 	}
 
-	public List<MonthDetailStatRow> getMonthDetails(@VelocityCheck int companyID, String startDateString, String endDateString) throws Exception {
+	public List<MonthDetailStatRow> getMonthDetails(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString) throws Exception {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
@@ -71,11 +84,15 @@ public class MonthStatDataSet extends BIRTDataSet {
 			queryBuilder.append(", DATE_FORMAT(a.timestamp, '%d.%m.%Y') datum");
 		}
 
-		queryBuilder.append(", (SELECT COUNT(distinct o.customer_id) FROM onepixellog_device_" + companyID + "_tbl o WHERE m.mailing_id = o.mailing_id  AND o.creation >= ? AND o.creation < ?) open_count");
+		queryBuilder.append(", (SELECT COUNT(distinct o.customer_id) FROM ")
+                .append(getOnePixelLogDeviceTableName(companyID))
+                .append(" o WHERE m.mailing_id = o.mailing_id  AND o.creation >= ? AND o.creation < ?) open_count");
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
 		
-		queryBuilder.append(", (SELECT COUNT(distinct r.customer_id) click_recipients FROM rdirlog_" + companyID + "_tbl r WHERE r.mailing_id = m.mailing_id  AND r.timestamp >= ? AND r.timestamp < ?) click_recipients");
+		queryBuilder.append(", (SELECT COUNT(distinct r.customer_id) click_recipients FROM ")
+                .append(getRdirLogTableName(companyID))
+                .append(" r WHERE r.mailing_id = m.mailing_id  AND r.timestamp >= ? AND r.timestamp < ?) click_recipients");
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
 
@@ -91,6 +108,12 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryBuilder.append(" AND a.timestamp >= ? AND a.timestamp < ?");
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
+		
+		if (adminId > 0 && isDisabledMailingListsSupported()) {
+			queryBuilder.append(" AND a.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
+			queryParameters.add(adminId);
+		}
+		
 		queryBuilder.append(" GROUP BY m.mailing_id, m.shortname, m.description, a.mailtype");
 		if (isOracleDB()) {
 			queryBuilder.append(", TO_CHAR(a.timestamp, 'DD.MM.YYYY')");
@@ -119,7 +142,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}, queryParameters.toArray(new Object[0]));
 	}
 
-	public List<MonthTotalStatRow> getMonthTotals(@VelocityCheck int companyID, String startDateString, String endDateString, int top10Metric) throws Exception {
+	public List<MonthTotalStatRow> getMonthTotals(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
@@ -132,12 +155,16 @@ public class MonthStatDataSet extends BIRTDataSet {
 				queryBuilder.append(", SUM(a.no_of_mailings) total");
 				break;
 			case TOP_10_BY_OPEN_NUM:
-				queryBuilder.append(", (SELECT COUNT(distinct o.customer_id) FROM onepixellog_device_" + companyID + "_tbl o WHERE m.mailing_id = o.mailing_id  AND o.creation >= ? AND o.creation < ?) total");
+				queryBuilder.append(", (SELECT COUNT(distinct o.customer_id) FROM ")
+                        .append(getOnePixelLogDeviceTableName(companyID))
+                        .append(" o WHERE m.mailing_id = o.mailing_id  AND o.creation >= ? AND o.creation < ?) total");
 				queryParameters.add(startDate);
 				queryParameters.add(endDate);
 				break;
 			case TOP_10_BY_RECIPIENT_CLICKS:
-				queryBuilder.append(", (SELECT COUNT(distinct r.customer_id) click_recipients FROM rdirlog_" + companyID + "_tbl r WHERE r.mailing_id = m.mailing_id  AND r.timestamp >= ? AND r.timestamp < ?) total");
+				queryBuilder.append(", (SELECT COUNT(distinct r.customer_id) click_recipients FROM ")
+                        .append(getRdirLogTableName(companyID))
+                        .append(" r WHERE r.mailing_id = m.mailing_id  AND r.timestamp >= ? AND r.timestamp < ?) total");
 				queryParameters.add(startDate);
 				queryParameters.add(endDate);
 				break;
@@ -157,6 +184,12 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryBuilder.append(" AND a.timestamp >= ? AND a.timestamp < ?");
 		queryParameters.add(startDate);
 		queryParameters.add(endDate);
+		
+		if (adminId > 0 && isDisabledMailingListsSupported()) {
+			queryBuilder.append(" AND a.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
+			queryParameters.add(adminId);
+		}
+		
 		queryBuilder.append(" GROUP BY m.mailing_id, m.shortname");
 
 		return select(logger, queryBuilder.toString(), (resultSet, rowNum) -> {

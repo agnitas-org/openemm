@@ -13,4 +13,5 @@ package com.agnitas.emm.core.company.form;
 import org.agnitas.web.forms.PaginationForm;
 
 public class CompanyListForm extends PaginationForm {
+	// nothing to do
 }

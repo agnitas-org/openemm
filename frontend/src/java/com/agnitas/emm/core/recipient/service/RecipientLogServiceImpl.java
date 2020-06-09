@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service("recipientLogService")

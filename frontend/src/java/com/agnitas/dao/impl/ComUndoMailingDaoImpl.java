@@ -34,7 +34,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 
 	private static final String SELECT_LAST_MAILING_UNDO_ID_STATEMENT = "SELECT max(undo_id) AS last_undo_id FROM undo_mailing_tbl WHERE mailing_id = ?";
 	
-	private static final String INSERT_MAILING_UNDO_STATEMENT = 
+	private static final String INSERT_MAILING_UNDO_STATEMENT =
 		"INSERT INTO undo_mailing_tbl " +
 		"(mailing_id, undo_id, undo_creation_date, undo_admin_id) " +
 		"VALUES (?, ?, ?, ?)";
@@ -55,7 +55,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	private static final String SELECT_YOUNGEST_OUTDATED_UNDO_ID_MYSQL =
 		"SELECT max(undo_id) " +
 		"FROM undo_mailing_tbl " +
-		"WHERE undo_creation_date <= DATE_SUB(CURRENT_TIMESTAMP(),INTERVAL ? DAY);";
+		"WHERE undo_creation_date <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);";
 
 	
 	private static final String DELETE_UNDODATA_FOR_MAILING_STATEMENT =
@@ -64,7 +64,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	
 	private static final String SELECT_FIRST_UNDO_ID_OVER_LIMIT =
 		"SELECT max(undo_id) " +
-		"FROM (" + 
+		"FROM (" +
 		"SELECT undo_id, rownum AS x "+
 		"FROM (SELECT undo_id FROM undo_mailing_tbl WHERE mailing_id = ? ORDER BY undo_id DESC)) WHERE x > ?";
 	
@@ -87,7 +87,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 		"AND mds.status_field = 'W' " +
 		"AND mds.genstatus = 3";
 	/*
-		SELECT 
+		SELECT
 			um.mailing_id
 		FROM
 			maildrop_status_tbl mds,
@@ -106,7 +106,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 			c) Eintrag ueber Versandmenge vorhanden ist
 	 */
 	
-	// --------------------------------------------------------------------------------------------------------------------------------------- DI code	
+	// --------------------------------------------------------------------------------------------------------------------------------------- DI code
 
 	private ComUndoMailingComponentDao undoComponentDao;
 	private ComUndoDynContentDao undoDynContentDao;
@@ -133,7 +133,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 		}
 	}
 	
-	// --------------------------------------------------------------------------------------------------------------------------------------- business logic	
+	// --------------------------------------------------------------------------------------------------------------------------------------- business logic
 
 	@Override
 	public ComUndoMailing getUndoData(int mailingId, int undoId) {
@@ -143,8 +143,9 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveUndoData(int mailingId, int undoId, Date undoCreationDate, int undoAdminId) {
-		if(mailingId == 0)
+		if(mailingId == 0) {
 			return;
+		}
 
 		update(logger, INSERT_MAILING_UNDO_STATEMENT, mailingId, undoId, undoCreationDate, undoAdminId);
 		
@@ -155,10 +156,11 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	public ComUndoMailing getLastUndoData(int mailingId) {
 		int undoId = selectInt(logger, SELECT_LAST_MAILING_UNDO_ID_STATEMENT, mailingId);
 		
-		if( undoId == 0)
+		if( undoId == 0) {
 			return null;
-		else
+		} else {
 			return getUndoData(mailingId, undoId);
+		}
 	}
 	
 	@Override
@@ -191,8 +193,9 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteUndoDataOverLimit(int mailingId, int undoId) {
-		if( undoId == 0) 
+		if( undoId == 0) {
 			return;
+		}
 		
 		update(logger, DELETE_UNDODATA_OVER_LIMIT_FOR_MAILING_STATEMENT, new Object[] { mailingId , undoId });
 	}
@@ -217,5 +220,5 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 			undoComponentDao.deleteUndoDataForMailing( mailingId);
 			undoDynContentDao.deleteUndoDataForMailing( mailingId);
 		}
-	}		
+	}
 }

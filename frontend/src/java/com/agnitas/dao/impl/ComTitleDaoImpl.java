@@ -23,7 +23,7 @@ import org.agnitas.beans.impl.SalutationEntryImpl;
 import org.agnitas.beans.impl.TitleImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -75,8 +75,8 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	@Override
 	public boolean deleteTitlesByCompanyID(@VelocityCheck int companyID) {
 		try {
-			update(logger, "DELETE FROM title_gender_tbl WHERE title_id IN (SELECT title_id FROM title_tbl WHERE company_id IN (?))", companyID);
-			update(logger, "DELETE FROM title_tbl WHERE company_id IN (?)", companyID);
+			update(logger, "DELETE FROM title_gender_tbl WHERE title_id IN (SELECT title_id FROM title_tbl WHERE company_id = ?)", companyID);
+			update(logger, "DELETE FROM title_tbl WHERE company_id = ?", companyID);
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -145,7 +145,7 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 		}
 	}
 	
-    protected class TitleLight_RowMapper implements RowMapper<Title> {
+    protected static class TitleLight_RowMapper implements RowMapper<Title> {
 		@Override
 		public Title mapRow(ResultSet resultSet, int row) throws SQLException {
 			Title title = new TitleImpl();
@@ -156,7 +156,7 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 		}
 	}
     
-    protected class SalutationEntry_RowMapper implements RowMapper<SalutationEntry> {
+    protected static class SalutationEntry_RowMapper implements RowMapper<SalutationEntry> {
 		@Override
 		public SalutationEntry mapRow(ResultSet resultSet, int row) throws SQLException {
 			return new SalutationEntryImpl(resultSet.getInt("title_id"), resultSet.getString("description"), resultSet.getInt("company_id"));

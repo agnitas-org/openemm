@@ -32,10 +32,6 @@ public class BounceFilterFormToBounceFilterDtoConverter implements Converter<Bou
         bounceFilterDto.setUserFormId(bounceFilterForm.getUserFormId());
         bounceFilterDto.setDoAutoRespond(bounceFilterForm.isDoAutoRespond());
         bounceFilterDto.setArMailingId(bounceFilterForm.getArMailingId());
-        bounceFilterDto.setArSenderAddress(bounceFilterForm.getArSenderAddress());
-        bounceFilterDto.setArSubject(bounceFilterForm.getArSubject());
-        bounceFilterDto.setArText(bounceFilterForm.getArText());
-        bounceFilterDto.setArHtml(bounceFilterForm.getArHtml());
         return bounceFilterDto;
     }
 }

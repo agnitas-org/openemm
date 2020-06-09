@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.dashboard.web;
 
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -19,7 +18,6 @@ import java.util.Map;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.displaytag.pagination.PaginatedList;
 import org.springframework.stereotype.Controller;
@@ -42,9 +40,6 @@ import net.sf.json.JSONObject;
 @PermissionMapping("dashboard")
 public class DashboardController {
     private static final Logger logger = Logger.getLogger(DashboardController.class);
-    private static final String DIRECTION_VALUE = StringUtils.EMPTY;
-    private static final int ROWNUMS = 20;
-
 
     private AdminService adminService;
     private DashboardService dashboardService;
@@ -56,11 +51,8 @@ public class DashboardController {
 
     @RequestMapping("/dashboard.action")
     public String view(ComAdmin admin, DashboardForm form, Model model) {
-        PaginatedList mailingList;
-        List<Map<String, Object>> worldMailinglist;
-
-        mailingList = dashboardService.getMailings(admin.getCompanyID(), form.getSort(), DIRECTION_VALUE, ROWNUMS);
-        worldMailinglist = dashboardService.getLastSentWorldMailings(admin.getCompanyID(), ROWNUMS);
+        PaginatedList mailingList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
+        List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
 
         if (CollectionUtils.isNotEmpty(worldMailinglist)) {
             int lastSentMailingId = (Integer) (worldMailinglist.get(0).get("mailingid"));
@@ -104,8 +96,8 @@ public class DashboardController {
         model.addAttribute("currentAdminName", admin.getUsername());
 
         //admin's time configurations
-        model.addAttribute("localeDatePattern", AgnUtils.getLocaleDateFormatSpecific(locale).toPattern());
-        model.addAttribute("localeTablePattern", AgnUtils.getDateFormat(DateFormat.MEDIUM, admin).toPattern());
+        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
+        model.addAttribute("localeTablePattern", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimeZone", admin.getAdminTimezone());
         model.addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimeFormat", admin.getTimeFormat().toPattern());

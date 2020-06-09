@@ -42,12 +42,12 @@ public class FormDate {
         return DateUtilities.parseDate(date, formatter, defaultValue);
     }
 
-    public LocalDate get(DateTimeFormatter formatter) {
-        return DateUtilities.parseDate(date, formatter);
+    public LocalDate get(DateTimeFormatter formatterToUse) {
+        return DateUtilities.parseDate(date, formatterToUse);
     }
 
-    public LocalDate get(LocalDate defaultValue, DateTimeFormatter formatter) {
-        return DateUtilities.parseDate(date, formatter, defaultValue);
+    public LocalDate get(LocalDate defaultValue, DateTimeFormatter formatterToUse) {
+        return DateUtilities.parseDate(date, formatterToUse, defaultValue);
     }
 
     public void set(LocalDate date) {
@@ -82,8 +82,8 @@ public class FormDate {
         return DateUtilities.toDate(get(), zoneId);
     }
 
-    public Date get(ZoneId zoneId, DateTimeFormatter formatter) {
-        return DateUtilities.toDate(get(formatter), zoneId);
+    public Date get(ZoneId zoneId, DateTimeFormatter formatterToUse) {
+        return DateUtilities.toDate(get(formatterToUse), zoneId);
     }
 
     public Date get(SimpleDateFormat dateFormat) {
@@ -100,5 +100,9 @@ public class FormDate {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public void setFormatter(DateTimeFormatter formatter) {
+        this.formatter = formatter;
     }
 }

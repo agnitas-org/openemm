@@ -12,8 +12,10 @@ package org.agnitas.backend.dao;
 
 import	java.sql.SQLException;
 import	java.util.HashMap;
+import	java.util.HashSet;
 import	java.util.List;
 import	java.util.Map;
+import	java.util.Set;
 import	java.util.regex.Matcher;
 import	java.util.regex.Pattern;
 
@@ -26,8 +28,11 @@ import	org.agnitas.backend.StringOps;
  */
 public class CompanyDAO {
 	private long		companyID;
+	private String		savedUser;
+	private String[]	savedHostnames;
 	private String		shortName;
 	private boolean		mailTracking;
+	private boolean		mailTrackingExtended;
 	private String		secretKey;
 	private long		uidVersion;
 	private String		rdirDomain;
@@ -40,10 +45,12 @@ public class CompanyDAO {
 	private long		companyBaseID;
 		
 	static private Pattern	searchBase = Pattern.compile ("from .*cust(omer_?)?([0-9]+)_(master_)?tbl", Pattern.CASE_INSENSITIVE);
-	public CompanyDAO (DBase dbase, long forCompanyID) throws SQLException {
+	public CompanyDAO (DBase dbase, long forCompanyID, String user, String ... hostnames) throws SQLException {
 		List <Map <String, Object>>	rq;
 		Map <String, Object>		row;
 
+		savedUser = user;
+		savedHostnames = hostnames;
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
 					    "SELECT company_id, shortname, mailtracking, secret_key, enabled_uid_version, " +
@@ -62,19 +69,32 @@ public class CompanyDAO {
 				mailsPerDay = dbase.asString (row.get ("mails_per_day"));
 				priorityCount = dbase.asInt (row.get ("priority_count"));
 				info = new HashMap <> ();
+				Set <String>	seenByHost = new HashSet <> ();
 				rq = dbase.query (with.jdbc (),
-						  "SELECT cname, cvalue FROM company_info_tbl " +
+						  "SELECT company_id, cname, cvalue, hostname FROM company_info_tbl " +
 						  "WHERE company_id IN (0, :companyID) " + 
 						  "ORDER BY company_id",
 						  "companyID", companyID);
 				for (int n = 0; n < rq.size (); ++n) {
 					row = rq.get (n);
+					int	cid = dbase.asInt (row.get ("company_id"));
 					String	name = dbase.asString (row.get ("cname"));
 					String	value = dbase.asString (row.get ("cvalue"));
-					if (name != null) {
-						info.put (name, value != null ? value : "");
+					String	hostname = dbase.asString (row.get ("hostname"));
+					
+					if ((name != null) && ((hostname == null) || Tools.isin (hostname, user, hostnames))) {
+						String	key = Integer.toString (cid) + ":" + name;
+						
+						if ((hostname != null) || (! seenByHost.contains (key))) {
+							info.put (name, value != null ? value : "");
+							if (hostname != null) {
+								seenByHost.add (key);
+							}
+						}
 					}
 				}
+				mailTrackingExtended = mailTracking && StringOps.atob (info.get ("mailtrack-extended"), false);
+
 				companyBaseID = companyID;
 
 				String	table = "customer_" + companyID + "_tbl";
@@ -138,6 +158,9 @@ public class CompanyDAO {
 	public boolean mailTracking () {
 		return mailTracking;
 	}
+	public boolean mailTrackingExtended () {
+		return mailTrackingExtended;
+	}
 	public String mailTrackingTable () {
 		return "mailtrack_" + companyID + "_tbl";
 	}
@@ -169,6 +192,6 @@ public class CompanyDAO {
 		return companyBaseID;
 	}
 	public CompanyDAO baseCompany (DBase dbase) throws SQLException {
-		return companyBaseID == companyID ? this : new CompanyDAO (dbase, companyBaseID);
+		return companyBaseID == companyID ? this : new CompanyDAO (dbase, companyBaseID, savedUser, savedHostnames);
 	}
 }

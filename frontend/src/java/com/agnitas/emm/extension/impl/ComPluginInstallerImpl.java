@@ -40,10 +40,9 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 	}
 
 	@Override
-	protected void installFilesFromPluginZip(ZipFile zipFile, String pluginId,
-			ExtensionSystemConfiguration configuration) throws IOException,
+	protected void installFilesFromPluginZip(ZipFile zipFile, String pluginId) throws IOException,
 			ZipEntryNotFoundException, DatabaseScriptException {
-		super.installFilesFromPluginZip(zipFile, pluginId, configuration);
+		super.installFilesFromPluginZip(zipFile, pluginId);
 
 		String birtPluginBaseDirectory = ((ComExtensionSystemConfiguration) configuration).getBirtPluginBaseDirectory();
 		
@@ -55,8 +54,8 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 	}
 	
 	@Override
-	protected void uninstallPlugin( String pluginId, ExtensionSystemConfiguration configuration) {
-		super.uninstallPlugin( pluginId, configuration);
+	public void uninstallPlugin(String pluginId) {
+		super.uninstallPlugin(pluginId);
 		
 		String birtHostUser = ((ComExtensionSystemConfiguration) configuration).getBirtHostUser();
 		String birtHost = ((ComExtensionSystemConfiguration) configuration).getBirtHost();
@@ -83,11 +82,12 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 			entry = entries.nextElement();
 			
 			// Entry is a directory? Skip further processing and go to next entry
-			if( entry.isDirectory())
+			if( entry.isDirectory()) {
 				continue;
+			}
 			
 			if( entry.getName().startsWith( ComExtensionConstants.PLUGIN_BIRT_ZIP_BASE)) {
-				if( logger.isInfoEnabled()) {	
+				if( logger.isInfoEnabled()) {
 					logger.info( "Found file to install to BIRT: " + entry.getName());
 				}
 				
@@ -100,7 +100,7 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 		}
 		
 		if( logger.isInfoEnabled()) {
-			logger.info( "No files found for BIRT");	
+			logger.info( "No files found for BIRT");
 		}
 		
 		return false;
@@ -109,8 +109,9 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 	private void installRemoteBirtFiles( ZipFile zipFile, String pluginId, String remoteDirectory, String host, String hostUser) throws IOException {
 		// Check, if we have something to do here
 		if( !hasFilesForBirt( zipFile)) {
-			if( logger.isInfoEnabled())
+			if( logger.isInfoEnabled()) {
 				logger.info( "No files found to install to BIRT");
+			}
 			
 			return;
 		}
@@ -230,8 +231,9 @@ public class ComPluginInstallerImpl extends PluginInstallerImpl {
 			while( entries.hasMoreElements()) {
 				entry = entries.nextElement();
  
-				if( !entry.getName().startsWith( entryNameStart))
+				if( !entry.getName().startsWith( entryNameStart)) {
 					continue;
+				}
 				
 				translatedName = entry.getName().substring( entryNameStart.length());
 				

@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.birtreport.dto;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public enum FilterType {
     FILTER_NO_FILTER(0),

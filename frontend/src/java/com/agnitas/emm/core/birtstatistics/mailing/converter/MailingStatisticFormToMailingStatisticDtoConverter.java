@@ -10,34 +10,18 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.converter;
 
-import java.time.format.DateTimeFormatter;
-import javax.servlet.http.HttpServletRequest;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.birtstatistics.DateMode;
-import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.BirtStatForm;
-import org.agnitas.util.AgnUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+
 @Component
-public class MailingStatisticFormToMailingStatisticDtoConverter implements Converter<BirtStatForm, MailingStatisticDto> {
-
-    private final HttpServletRequest request;
-
-    @Autowired
-    public MailingStatisticFormToMailingStatisticDtoConverter(final HttpServletRequest request) {
-        this.request = request;
-    }
-
+public class MailingStatisticFormToMailingStatisticDtoConverter implements Converter<MailingStatisticForm, MailingStatisticDto> {
     @Override
-    public MailingStatisticDto convert(final BirtStatForm form) {
-        final MailingStatisticDto dto = new MailingStatisticDto();
-        dto.setReportName(form.getReportName());
-        dto.setType(StatisticType.getByCode(form.getReportName()));
+    public MailingStatisticDto convert(MailingStatisticForm form) {
+        MailingStatisticDto dto = new MailingStatisticDto();
+        dto.setType(form.getStatisticType());
         dto.setShortname(form.getShortname());
         dto.setDateMode(form.getDateMode());
         dto.setSelectedTargets(form.getSelectedTargets());
@@ -45,19 +29,9 @@ public class MailingStatisticFormToMailingStatisticDtoConverter implements Conve
         dto.setShowNetto(form.isShowNetto());
         dto.setMaxDomains(form.getMaxDomains());
         dto.setMailingId(form.getMailingID());
+        dto.setSector(form.getSector());
+        dto.setLinkId(form.getUrlID());
 
-        ComAdmin admin = AgnUtils.getAdmin(request);
-        assert admin != null;
-        final DateTimeFormatter dateFormatter = admin.getDateFormatter();
-
-        dto.setStartDate(form.getStartDate().get(dateFormatter));
-        dto.setEndDate(form.getEndDate().get(dateFormatter));
-
-        if(form.getDateMode() == DateMode.LAST_TENHOURS || form.getDateMode() == DateMode.SELECT_DAY){
-            dto.setHourScale(true);
-        } else {
-            dto.setHourScale(false);
-        }
         return dto;
     }
 }

@@ -13,7 +13,7 @@ package com.agnitas.emm.core.useractivitylog.dao;
 import java.util.Date;
 
 import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ComLoggedUserAction extends LoggedUserAction {
 	private final String supervisorName;

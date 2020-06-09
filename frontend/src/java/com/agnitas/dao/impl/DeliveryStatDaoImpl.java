@@ -21,7 +21,6 @@ import org.springframework.jdbc.core.RowMapper;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.beans.impl.MailingBackendLog;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DeliveryStatDao;
 
 public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao {
@@ -97,31 +96,11 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 		}
 		return totalMails;
 	}
-
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean cancelDelivery(int companyID, int mailingID) {
-		try {
-			if (getGenerationStatus(companyID, mailingID) == 0) {
-				update(logger, "DELETE FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = 'W'", companyID, mailingID);
-				return true;
-			}
-		} catch (Exception e) {
-			logger.error("cancelDelivery: " + e.getMessage(), e);
-			return false;
-		}
-		return false;
-	}
 	
 	@Override
 	public boolean deleteMaildropStatusByCompany(int companyID) {
 		update(logger, "DELETE FROM maildrop_status_tbl WHERE company_id = ?", companyID);
 		return selectInt(logger, "SELECT COUNT(*) FROM maildrop_status_tbl WHERE company_id = ?", companyID) == 0;
-	}
-
-	private int getGenerationStatus(int companyId, int mailingId) {
-		return selectIntWithDefaultValue(logger, "SELECT genstatus FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = 'W'", -1, companyId, mailingId);
 	}
 
 	private class MailingBackendLogRowMapper implements RowMapper<MailingBackendLog> {

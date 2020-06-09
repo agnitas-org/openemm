@@ -201,3 +201,22 @@ Please note that depending on the state, the state icon in the headline has to b
   position: relative;
   bottom: 10px;
 }
+
+.overlay-box {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right:0;
+  z-index: 1100;
+  background-color: rgba(0,0,0,0.5);
+
+  .overlay-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 420px;
+    margin: -80px 0 0 -210px;
+    z-index: 1101;
+  }
+}

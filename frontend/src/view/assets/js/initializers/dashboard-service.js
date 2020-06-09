@@ -198,7 +198,7 @@
           var viewChartTitle = DashboardStatisticsService.roundTo(data['openersPercent'][0] * 100, 1) + '%*';
           c3.generate(DashboardStatisticsService.data.viewChartData.build(viewChartTitle, rowNames, rowValues));
 
-          AGN.Initializers.Equalizer();
+          AGN.Lib.CoreInitializer.run('equalizer');
         }
       });
     },

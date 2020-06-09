@@ -33,7 +33,7 @@ import org.agnitas.util.importvalues.NullValuesAction;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ImportProfileAction;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -166,10 +166,6 @@ public class ImportProfileForm extends StrutsFormBase {
     }
 
     public List<ImportProcessAction> getImportProcessActions() {
-        return importProcessActions;
-    }
-
-    public List<ImportProcessAction> getImportProcessActions(List<ImportProcessAction> importProcessActions) {
         return importProcessActions;
     }
 

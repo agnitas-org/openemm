@@ -33,7 +33,7 @@ public class PluginInstallerImpl implements PluginInstaller {
 
 	private static final Logger logger = Logger.getLogger(PluginInstallerImpl.class);
 
-	private final ExtensionSystemConfiguration configuration;
+	protected final ExtensionSystemConfiguration configuration;
 	private final JspRestoreUtil jspRestoreUtil;
 	private final DatabaseScriptExecutor databaseScriptExecutor;
 	
@@ -97,9 +97,9 @@ public class PluginInstallerImpl implements PluginInstaller {
 		
 		
 		try {
-			installFilesFromPluginZip(zipFile, pluginId, configuration);
+			installFilesFromPluginZip(zipFile, pluginId);
 
-			postInstallationProcessing(pluginId, configuration);
+			postInstallationProcessing(pluginId);
 		} catch(IOException e) {
 			logger.error("Error installing plugin files", e);
 			
@@ -121,7 +121,7 @@ public class PluginInstallerImpl implements PluginInstaller {
 		}
 	}
 	
-	protected void installFilesFromPluginZip(ZipFile zipFile, String pluginId, ExtensionSystemConfiguration configuration) throws IOException, ZipEntryNotFoundException, DatabaseScriptException {
+	protected void installFilesFromPluginZip(ZipFile zipFile, String pluginId) throws IOException, ZipEntryNotFoundException, DatabaseScriptException {
 		String pluginDirectory = this.configuration.getPluginDirectory(pluginId);
 		String jspBackupDirectory = this.configuration.getJspBackupDirectory(pluginId);
 		String jspDirectory = this.configuration.getJspWorkingDirectory(pluginId);
@@ -141,8 +141,8 @@ public class PluginInstallerImpl implements PluginInstaller {
 		installDatabaseScripts(zipFile, databaseScriptsDirectory);
 	}
 
-	protected void postInstallationProcessing(String pluginId, ExtensionSystemConfiguration configuration) throws DatabaseScriptException, IOException {
-		this.databaseScriptExecutor.execute(new File(this.configuration.getDatabaseInstallScript(pluginId)), pluginId);
+	protected void postInstallationProcessing(String pluginId) throws DatabaseScriptException, IOException {
+		this.databaseScriptExecutor.execute(new File(configuration.getDatabaseInstallScript(pluginId)), pluginId);
 		
 		this.jspRestoreUtil.createWorkingJspsFromBackupDirectory(pluginId);
 	}
@@ -176,7 +176,7 @@ public class PluginInstallerImpl implements PluginInstaller {
 		}
 		
 		try {
-			this.databaseScriptExecutor.execute(new File(this.configuration.getDatabaseDeinstallScript(pluginId)), pluginId);
+			this.databaseScriptExecutor.execute(new File(configuration.getDatabaseDeinstallScript(pluginId)), pluginId);
 		} catch(DatabaseScriptException e) {
 			logger.error("Error executing deinstallation script", e);
 		}
@@ -251,12 +251,14 @@ public class PluginInstallerImpl implements PluginInstaller {
 		while(entries.hasMoreElements()) {
 			entry = entries.nextElement();
 
-			if(!entry.getName().startsWith(entryNameStart))
+			if(!entry.getName().startsWith(entryNameStart)) {
 				continue;
+			}
 			
 			if(excludeUnderscoredDirectories && entry.getName().startsWith(entryNameStart + "_")) {
-				if(logger.isInfoEnabled())
+				if(logger.isInfoEnabled()) {
 					logger.info("skipping underscored directory " + entry.getName());
+				}
 				
 				continue;
 			}
@@ -311,10 +313,6 @@ public class PluginInstallerImpl implements PluginInstaller {
 
 	@Override
 	public void uninstallPlugin(String pluginId) {
-		uninstallPlugin(pluginId, this.configuration);
-	}
-	
-	protected void uninstallPlugin(String pluginId, ExtensionSystemConfiguration configuration) {
 		removePluginFiles(pluginId);
 	}
 }

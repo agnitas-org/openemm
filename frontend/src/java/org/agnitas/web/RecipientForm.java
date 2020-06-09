@@ -15,10 +15,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.ImageButton;
+import org.agnitas.emm.core.recipient.dto.RecipientFrequencyCounterDto;
 import org.agnitas.target.TargetOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
@@ -31,13 +33,15 @@ import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.list.GrowthList;
 import org.apache.commons.collections4.list.LazyList;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
+
+import com.agnitas.emm.core.recipient.service.RecipientType;
 
 public class RecipientForm extends StrutsFormBase  {
 	private static final long serialVersionUID = -1626162472029428066L;
@@ -116,7 +120,7 @@ public class RecipientForm extends StrutsFormBase  {
     protected boolean overview = true;	// recipient overview or recipient search?
 
     protected ActionMessages messages;
-    protected ActionMessages errors;
+    protected ActionErrors errors;
 
     protected boolean deactivatePagination;
 
@@ -126,6 +130,11 @@ public class RecipientForm extends StrutsFormBase  {
 
     protected String datePickerFormat;
     private boolean advancedSearch;
+
+    private int mailingId;
+    private String mailingName;
+
+    private RecipientFrequencyCounterDto frequencyCounterDto;
 
     public RecipientForm() {
     	updateButton = new ImageButton();
@@ -154,8 +163,9 @@ public class RecipientForm extends StrutsFormBase  {
     	super.reset(mapping, request);
 
         // Reset all image buttons
-        for(ImageButton button : targetRemoveList)
-        	button.clearButton();
+        for(ImageButton button : targetRemoveList) {
+			button.clearButton();
+		}
         targetAddButton.clearButton();
         updateButton.clearButton();
         deleteButton.clearButton();
@@ -180,6 +190,9 @@ public class RecipientForm extends StrutsFormBase  {
 
         setNumberOfRows(-1);
         selectedFields = ArrayUtils.EMPTY_STRING_ARRAY;
+
+        mailingId = 0;
+        mailingName = null;
     }
     
     public void resetSearch() {
@@ -227,7 +240,7 @@ public class RecipientForm extends StrutsFormBase  {
      */
     @Override
 	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
+        errors = new ActionErrors();
 
         if (request.getParameter("trgt_clear") != null) {
             setRecipientID(0);
@@ -525,6 +538,10 @@ public class RecipientForm extends StrutsFormBase  {
     public String getUser_type() {
         return this.user_type;
     }
+    
+    public boolean isDefaultUserType() {
+        return StringUtils.isBlank(user_type) || user_type.equals(RecipientType.ALL_RECIPIENTS.getLetter());
+    }
 
     /**
      * Setter for property user_type.
@@ -532,7 +549,7 @@ public class RecipientForm extends StrutsFormBase  {
      * @param user_type New value of property user_type.
      */
     public void setUser_type(String user_type) {
-        this.user_type=user_type;
+        this.user_type = user_type;
     }
 
     public  String getTargetShortname() {
@@ -680,15 +697,15 @@ public class RecipientForm extends StrutsFormBase  {
         return errors;
     }
 
-    public void addErrors(ActionMessages errors) {
+    public void addErrors(ActionMessages newErrors) {
         if (this.errors == null) {
-            this.errors = new ActionMessages();
+            this.errors = new ActionErrors();
         }
-        this.errors.add(errors);
+        this.errors.add(newErrors);
     }
 
     public void resetErrors() {
-        this.errors = new ActionMessages();
+        this.errors = new ActionErrors();
     }
 
     public ImageButton getUpdate() {
@@ -737,8 +754,9 @@ public class RecipientForm extends StrutsFormBase  {
 	 * @param index index to be removed
 	 */
 	private void safeRemove(List<?> list, int index) {
-		if (list.size() > index && index >= 0)
+		if (list.size() > index && index >= 0) {
 			list.remove(index);
+		}
 	}
 
 	public int getNumTargetNodes() {
@@ -973,7 +991,6 @@ public class RecipientForm extends StrutsFormBase  {
         firstname = "";
         lastname = "";
         email = "";
-        user_type = "";
         column = new CaseInsensitiveMap<>();
         mailing = new HashMap<>();
     }
@@ -1022,4 +1039,77 @@ public class RecipientForm extends StrutsFormBase  {
 		return this.advancedSearch;
 	}
 
+    public void setMailingId(int mailingId) {
+        this.mailingId = mailingId;
+    }
+
+    public int getMailingId() {
+        return mailingId;
+    }
+
+    public void setMailingName(String mailingName) {
+        this.mailingName = mailingName;
+    }
+
+    public String getMailingName() {
+        return mailingName;
+    }
+
+    public RecipientSearchParams generateSearchParams(){
+        final RecipientSearchParams result = new RecipientSearchParams();
+        result.setMailingListId(getListID());
+        result.setTargetGroupId(getTargetID());
+        result.setUserStatus(getUser_status());
+        result.setUserType(getUser_type());
+        result.setFirstName(getSearchFirstName());
+        result.setLastName(getSearchLastName());
+        result.setEmail(getSearchEmail());
+        return result;
+    }
+
+    public void restoreSearchParams(final RecipientSearchParams searchParams) {
+        setListID(searchParams.getMailingListId());
+        setTargetID(searchParams.getTargetGroupId());
+        setUser_status(searchParams.getUserStatus());
+        setUser_type(searchParams.getUserType());
+        setSearchFirstName(searchParams.getFirstName());
+        setSearchLastName(searchParams.getLastName());
+        setSearchEmail(searchParams.getEmail());
+    }
+    
+    /**
+     * Get index of conditional field
+     *
+     * @param field
+     * @return found index of field column otherwise return -1
+     */
+    public int findConditionalIndex(String field) {
+	    final List<String> columns = getAllColumnsAndTypes();
+		
+		int index = 0;
+		for (String columnToCheck : columns) {
+			if (columnToCheck.equals(field)) {
+				return index;
+			}
+			index++;
+		}
+		
+		return -1;
+    }
+    
+    public void cleanRulesForBasicSearch() {
+        if (StringUtils.isNotBlank(getSearchFirstName()) || StringUtils.isNotBlank(getSearchLastName()) || StringUtils.isNotBlank(getSearchEmail())) {
+			for (int index = getNumTargetNodes(); index >= 0; index--) {
+				removeRule(index);
+			}
+		}
+    }
+
+    public RecipientFrequencyCounterDto getFrequencyCounterDto() {
+        return frequencyCounterDto;
+    }
+
+    public void setFrequencyCounterDto(RecipientFrequencyCounterDto frequencyCounterDto) {
+        this.frequencyCounterDto = frequencyCounterDto;
+    }
 }

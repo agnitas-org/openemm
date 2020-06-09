@@ -12,7 +12,7 @@ package com.agnitas.emm.core.target.eql.emm.querybuilder.parser;
 
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractEqlNode;
 import com.agnitas.emm.core.target.eql.ast.AnnotationBooleanEqlNode;

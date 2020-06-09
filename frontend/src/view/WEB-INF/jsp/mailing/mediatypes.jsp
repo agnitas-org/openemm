@@ -9,9 +9,9 @@
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 
-<c:set var="sentMail" value="${mailingBaseForm.worldMailingSend}"/>
+<c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
 <emm:ShowByPermission token="mailing.content.change.always">
-    <c:set var="sentMail" value="false"/>
+    <c:set var="isMailingEditable" value="${true}"/>
 </emm:ShowByPermission>
 
 <c:if test="${not mailingBaseForm.isMailingGrid}">
@@ -33,43 +33,41 @@
                 </div>
                 <div class="col-sm-8">
                     <ul class="list-group">
-                        <c:forEach items="${mailingBaseForm.priorities}" var="prio">
-                            <c:set var="mediaTypeValue" value="${mailingBaseForm.mediaTypeLabelsLowerCase[prio]}"/>
+                        <c:forEach items="${mailingBaseForm.priorities}" var="mediaTypeCode">
+                            <c:set var="mediaTypeName" value="${mailingBaseForm.mediaTypeLabelsLowerCase[mediaTypeCode]}"/>
                             <c:choose>
                                 <c:when test="${mailingBaseForm.isMailingGrid}">
-                                    <c:if test="${mediaTypeValue eq 'email'}">
-                                        <emm:ShowByPermission token="mediatype.${mediaTypeValue}">
+                                    <c:if test="${mediaTypeName eq 'email'}">
+                                        <emm:ShowByPermission token="mediatype.${mediaTypeName}">
                                             <li class="list-group-item checkbox">
-                                                <c:if test="${!sentMail}">
-                                                    <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${prio}]" value="false"/>
+                                                <c:if test="${isMailingEditable}">
+                                                    <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
                                                 </c:if>
                                                 <label>
-                                                    <agn:agnCheckbox property="useMediaType[${prio}]"
-                                                                     value="true" disabled="true"/>
-                                                    <bean:message key="mailing.MediaType.${prio}"/>
+                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="true"/>
+                                                    <bean:message key="mailing.MediaType.${mediaTypeName}"/>
                                                 </label>
                                             </li>
                                         </emm:ShowByPermission>
                                     </c:if>
                                 </c:when>
                                 <c:otherwise>
-                                    <c:if test="${mediaTypeValue eq 'email'}">
-                                        <emm:ShowByPermission token="mediatype.${mediaTypeValue}">
+                                    <c:if test="${mediaTypeName eq 'email'}">
+                                        <emm:ShowByPermission token="mediatype.email">
                                             <li class="list-group-item checkbox">
-                                                <c:if test="${!sentMail}">
-                                                    <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${prio}]" value="false"/>
+                                                <c:if test="${isMailingEditable}">
+                                                    <input type="hidden" name="__STRUTS_CHECKBOX_useMediaType[${mediaTypeCode}]" value="false"/>
                                                 </c:if>
                                                 <label>
-                                                    <agn:agnCheckbox property="useMediaType[${prio}]"
-                                                                     value="true" disabled="${sentMail}" data-form-action="9" />
-                                                    <bean:message key="mailing.MediaType.${prio}"/>
+                                                    <agn:agnCheckbox property="useMediaType[${mediaTypeCode}]" value="true" disabled="${not isMailingEditable}" data-form-action="9" />
+                                                    <bean:message key="mailing.MediaType.email"/>
                                                 </label>
-                                                <c:if test="${mailingBaseForm.useMediaType[prio]}">
+                                                <c:if test="${mailingBaseForm.useMediaType[mediaTypeCode]}">
                                                     <div class="list-group-item-controls">
-                                                        <a href="#" data-form-set="activeMedia:${prio}" data-form-action="21">
+                                                        <a href="#" data-form-set="activeMedia:${mediaTypeCode}" data-form-action="21">
                                                             <i class="icon icon-chevron-circle-down"></i>
                                                         </a>
-                                                        <a href="#" data-form-set="activeMedia:${prio}" data-form-action="20">
+                                                        <a href="#" data-form-set="activeMedia:${mediaTypeCode}" data-form-action="20">
                                                             <i class="icon icon-chevron-circle-up"></i>
                                                         </a>
                                                     </div>
@@ -77,7 +75,7 @@
                                             </li>
                                         </emm:ShowByPermission>
                                     </c:if>
-                                    <c:if test="${mediaTypeValue ne 'email'}">
+                                    <c:if test="${mediaTypeName ne 'email'}">
                                         <%@include file="/WEB-INF/jsp/mailing/media/meditypes-list-item.jspf"%>
                                     </c:if>
                                 </c:otherwise>

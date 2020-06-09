@@ -15,9 +15,9 @@ import java.util.List;
 
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SortCriterion;
-import com.agnitas.emm.core.supervisor.common.SortDirection;
+import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
+import com.agnitas.emm.util.SortDirection;
 import com.agnitas.web.mvc.Popups;
 
 /**
@@ -35,7 +35,7 @@ public interface ComSupervisorService {
 	 * 
 	 * @throws SupervisorException on errors listing all supervisors
 	 */
-	List<Supervisor> listSupervisors(SortCriterion criterion, SortDirection direction) throws SupervisorException;
+	List<Supervisor> listSupervisors(SupervisorSortCriterion criterion, SortDirection direction) throws SupervisorException;
 
 	/**
 	 * Returns supervisor for given ID. 

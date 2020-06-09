@@ -1,6 +1,9 @@
 <script id="mailing-content-table-entry-template" type="text/x-mustache-template">
-    <tr data-dyn-name-id="{{- id }}"
-        data-action="createContentEditorModal">
+    {{ if (editable) { }}
+    <tr data-dyn-name-id="{{- id }}" data-action="createContentEditorModal">
+    {{ } else { }}
+    <tr>
+    {{ } }}
         <td class="align-top">
             <strong>{{- name }}</strong>
         </td>

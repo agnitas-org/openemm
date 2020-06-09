@@ -30,10 +30,8 @@ import com.agnitas.emm.springws.subscriptionrejection.service.SubscriptionReject
 
 //Removed annotation to get noticed about deprecated base class @SuppressWarnings("deprecation")
 public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
-
 	/** The logger. */
-	@SuppressWarnings("hiding")
-	private static final transient Logger logger = Logger.getLogger( AddSubscriberEndpoint.class);
+	private static final transient Logger classLogger = Logger.getLogger( AddSubscriberEndpoint.class);
 	
 	@Resource
 	private RecipientService recipientService;
@@ -47,8 +45,8 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered AddSubscriberEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered AddSubscriberEndpoint.invokeInternal()");
 		}
 			
 		final AddSubscriberRequest request = (AddSubscriberRequest) arg0;
@@ -59,14 +57,14 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		if(this.subscriptionRejectionService != null) {
 			this.subscriptionRejectionService.checkSubscriptionData(companyID, model);
 		} else {
-			if(logger.isDebugEnabled()) {
-				logger.debug("No subscription rejection service set");
+			if(classLogger.isDebugEnabled()) {
+				classLogger.debug("No subscription rejection service set");
 			}
 		}
 			
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Calling recipient service layer");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Calling recipient service layer");
 		}
 
 		String username = Utils.getUserName();
@@ -74,16 +72,16 @@ public class AddSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 		response.setCustomerID(recipientService.addSubscriber(model, username, companyID, userActions));
 		Utils.writeLog(userActivityLogService, userActions);
 
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving AddSubscriberEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving AddSubscriberEndpoint.invokeInternal()");
 		}
 
 		return response;
 	}
 	
 	static RecipientModel parseModel(AddSubscriberRequest request) {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Parsing recipient model");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Parsing recipient model");
 		}
 		
 		RecipientModel model = new RecipientModel();

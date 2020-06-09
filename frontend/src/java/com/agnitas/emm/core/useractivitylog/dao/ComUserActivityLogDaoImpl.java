@@ -21,7 +21,7 @@ import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.UserActivityLogActions;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;

@@ -3,11 +3,12 @@
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.GregorianCalendar" %>
 <%@ page import="com.agnitas.beans.DeliveryStat" %>
-<%@ page import="com.agnitas.web.ComMailingSendAction" %>
+<%@ page import="com.agnitas.emm.core.target.eql.codegen.resolver.MailingType" %>
+<%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
 <%@ page import="org.agnitas.beans.Mailing" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -25,29 +26,31 @@
 <%--@elvariable id="CAN_ENABLE_SEND_WORLDMAILING" type="java.lang.Boolean"--%>
 
 
-<c:set var="TYPE_NORMAL" value="<%= Mailing.TYPE_NORMAL %>" scope="request" />
-<c:set var="TYPE_FOLLOWUP" value="<%= Mailing.TYPE_FOLLOWUP %>" scope="request" />
-<c:set var="TYPE_ACTIONBASED" value="<%= Mailing.TYPE_ACTIONBASED %>" scope="request" />
-<c:set var="TYPE_DATEBASED" value="<%= Mailing.TYPE_DATEBASED %>" scope="request" />
-<c:set var="TYPE_INTERVAL" value="<%= Mailing.TYPE_INTERVAL %>" scope="request" />
-<c:set var="ACTION_SAVE_STATUSMAIL_RECIPIENTS" value="<%= ComMailingSendAction.ACTION_SAVE_STATUSMAIL_RECIPIENTS %>" scope="page" />
-<c:set var="ACTION_SAVE_STATUSMAIL_ONERRORONLY" value="<%= ComMailingSendAction.ACTION_SAVE_STATUSMAIL_ONERRORONLY %>" scope="page" />
-<c:set var="ACTION_VIEW_DELSTATBOX" value="<%= MailingSendAction.ACTION_VIEW_DELSTATBOX %>" scope="page" />
-<c:set var="ACTION_DEACTIVATE_MAILING" value="<%= MailingSendAction.ACTION_DEACTIVATE_MAILING %>" scope="page" />
-<c:set var="ACTION_ACTIVATE_INTERVALMAILING" value="<%= ComMailingSendAction.ACTION_ACTIVATE_INTERVALMAILING%>" scope="page" />
-<c:set var="ACTION_DEACTIVATE_INTERVALMAILING" value="<%= ComMailingSendAction.ACTION_DEACTIVATE_INTERVALMAILING %>" scope="page" />
-<c:set var="ACTION_ACTIVATE_CAMPAIGN" value="<%= MailingSendAction.ACTION_ACTIVATE_CAMPAIGN %>" scope="page" />
-<c:set var="ACTION_SEND_ADMIN" value="<%= MailingSendAction.ACTION_SEND_ADMIN %>" scope="page" />
-<c:set var="ACTION_SEND_TEST" value="<%= MailingSendAction.ACTION_SEND_TEST %>" scope="page" />
+<c:set var="TYPE_NORMAL" value="<%=MailingTypes.NORMAL.getCode()%>" scope="request" />
+<c:set var="TYPE_FOLLOWUP" value="<%=MailingTypes.FOLLOW_UP.getCode()%>" scope="request" />
+<c:set var="TYPE_ACTIONBASED" value="<%=MailingTypes.ACTION_BASED.getCode()%>" scope="request" />
+<c:set var="TYPE_DATEBASED" value="<%=MailingTypes.DATE_BASED.getCode()%>" scope="request" />
+<c:set var="TYPE_INTERVAL" value="<%=MailingTypes.INTERVAL.getCode()%>" scope="request" />
+<c:set var="ACTION_SAVE_STATUSMAIL_RECIPIENTS" value="<%=ComMailingSendActionBasic.ACTION_SAVE_STATUSMAIL_RECIPIENTS%>" scope="page" />
+<c:set var="ACTION_SAVE_STATUSMAIL_ONERRORONLY" value="<%=ComMailingSendActionBasic.ACTION_SAVE_STATUSMAIL_ONERRORONLY%>" scope="page" />
+<c:set var="ACTION_VIEW_DELSTATBOX" value="<%=MailingSendAction.ACTION_VIEW_DELSTATBOX%>" scope="page" />
+<c:set var="ACTION_DEACTIVATE_MAILING" value="<%=MailingSendAction.ACTION_DEACTIVATE_MAILING%>" scope="page" />
+<c:set var="ACTION_ACTIVATE_INTERVALMAILING" value="<%=ComMailingSendActionBasic.ACTION_ACTIVATE_INTERVALMAILING%>" scope="page" />
+<c:set var="ACTION_DEACTIVATE_INTERVALMAILING" value="<%=ComMailingSendActionBasic.ACTION_DEACTIVATE_INTERVALMAILING%>" scope="page" />
+<c:set var="ACTION_ACTIVATE_CAMPAIGN" value="<%=MailingSendAction.ACTION_ACTIVATE_CAMPAIGN%>" scope="page" />
+<c:set var="ACTION_SEND_ADMIN" value="<%=MailingSendAction.ACTION_SEND_ADMIN%>" scope="page" />
+<c:set var="ACTION_SEND_TEST" value="<%=MailingSendAction.ACTION_SEND_TEST%>" scope="page" />
 <c:set var="ACTION_ACTIVATE_RULEBASED" value="<%=MailingSendAction.ACTION_ACTIVATE_RULEBASED%>" scope="page" />
-<c:set var="ACTION_VIEW_SEND" value="<%= MailingSendAction.ACTION_VIEW_SEND %>" scope="page" />
-<c:set var="ACTION_VIEW_SEND2" value="<%= MailingSendAction.ACTION_VIEW_SEND2 %>" scope="page" />
-<c:set var="ACTION_CHECK_LINKS" value="<%= MailingSendAction.ACTION_CHECK_LINKS %>" scope="page" />
-<c:set var="ACTION_UNLOCK_SEND" value="<%= ComMailingSendAction.ACTION_UNLOCK_SEND %>" scope="page" />
-<c:set var="ACTION_PRIORITIZATION_SWITCHING" value="<%= ComMailingSendAction.ACTION_PRIORITIZATION_SWITCHING %>" scope="page" />
-<c:set var="STATUS_SENT" value="<%= DeliveryStat.STATUS_SENT %>" scope="page" />
+<c:set var="ACTION_VIEW_SEND" value="<%=MailingSendAction.ACTION_VIEW_SEND%>" scope="page" />
+<c:set var="ACTION_VIEW_SEND2" value="<%=MailingSendAction.ACTION_VIEW_SEND2%>" scope="page" />
+<c:set var="ACTION_CHECK_LINKS" value="<%=MailingSendAction.ACTION_CHECK_LINKS%>" scope="page" />
+<c:set var="ACTION_UNLOCK_SEND" value="<%=ComMailingSendActionBasic.ACTION_UNLOCK_SEND%>" scope="page" />
+<c:set var="STATUS_SENT" value="<%=DeliveryStat.STATUS_SENT%>" scope="page" />
 <c:set var="ADMIN_TARGET_SINGLE_RECIPIENT" value="${-1}" scope="page" />
+<c:set var="ACTION_CREATE_EXTERNAL" value="<%=ComMailingSendActionBasic.ACTION_CREATE_EXTERNAL%>" scope="page" />
 
+<c:set var="ACTION_BASED_MAILING_TYPE" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page" />
+<c:set var="ACTION_PRIORITIZATION_SWITCHING" value="<%=ComMailingSendActionBasic.ACTION_PRIORITIZATION_SWITCHING%>" scope="page" />
 <c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
 <c:set var="isWorkflowDriven" value="${not empty workflowParameters and workflowParameters.workflowId > 0}"/>
 
@@ -232,9 +235,8 @@
 										</div>
 									</div>
 
-
 									<div class="form-group">
-										<div class="col-sm-offset-4 col-sm-8">
+										<div class="col-sm-offset-1 col-sm-11">
 											<div class="btn-group">
 												<a href="#"
 												   id="adminSendButton"
@@ -255,6 +257,26 @@
 														<bean:message key="testMail" />
 													</span>
 												</a>
+												
+												<c:if test="${mailingSendForm.mayCreateExternal}">
+													<a href="#" class="btn btn-regular btn-primary"
+													   data-action-value="${ACTION_CREATE_EXTERNAL}"
+													   data-action="start-delivery">
+														<i class="icon icon-send-o"></i>
+														<span class="text">
+															<bean:message key="createExternalMailing" />
+														</span>
+													</a>
+												</c:if>
+												
+												<c:if test="${not empty mailingSendForm.externalEditorLink}">
+													<a href="${mailingSendForm.externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
+														<i class="icon icon-send-o"></i>
+														<span class="text">
+															<bean:message key="openExternalEditor" />
+														</span>
+													</a>
+												</c:if>
 											</div>
 										</div>
 									</div>
@@ -292,7 +314,6 @@
 									</div>
 								</c:otherwise>
 							</c:choose>
-
 						</div>
 						<!-- Tile Content END -->
 					</div>
@@ -324,7 +345,13 @@
 										</logic:equal>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_ACTIONBASED}">
 											<bean:message key="mailing.send.active.event" /><br>
-											<bean:message key="mailing.send.deactivate" />
+											<c:if test="${not empty mailingSendForm.bounceFilterNames}">
+												<bean:message key="warning.mailing.mailloop.binding" arg0="${mailingSendForm.bounceFilterNames}"/>
+											</c:if>
+
+											<c:if test="${empty mailingSendForm.bounceFilterNames}">
+												<bean:message key="mailing.send.deactivate" />
+											</c:if>
 										</logic:equal>
 										<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_DATEBASED}">
 											<bean:message key="mailing.send.active.date" /><br>
@@ -363,9 +390,19 @@
 
 								<%-- Deativate buttons--%>
 								<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_ACTIONBASED}">
+									<c:set var="canBeDeactivated" value="${false}"/>
+
+
 									<logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
 										<emm:ShowByPermission token="mailing.send.world">
-											<div class="form-group">
+											<c:if test="${empty mailingSendForm.bounceFilterNames}">
+												<c:set var="canBeDeactivated" value="${true}"/>
+											</c:if>
+										</emm:ShowByPermission>
+									</logic:equal>
+
+									<c:if test="${canBeDeactivated}">
+										<div class="form-group">
 												<div class="col-sm-4">
 													<label class="control-label">
 														<bean:message key="MailingDeactivate" />
@@ -397,8 +434,7 @@
 												</div>
 
 											</div>
-										</emm:ShowByPermission>
-									</logic:equal>
+									</c:if>
 								</logic:equal>
 
 								<logic:equal name="mailingSendForm" property="mailingtype" value="${TYPE_INTERVAL}">
@@ -734,14 +770,14 @@
 														</c:url>
 
 														<c:choose>
-															<c:when test="${mailingSendForm.approximateMaxSize < mailingSendForm.sizeWarningThreshold}">
-																<c:set var="configureButtonAction" value="configure-delivery" />
+															<c:when test="${mailingSendForm.approximateMaxSizeWithoutExternalImages > mailingSendForm.sizeErrorThreshold}">
+																<c:set var="configureButtonAction" value="configure-delivery-mailing-size-error" />
 															</c:when>
-															<c:when test="${mailingSendForm.approximateMaxSizeWithoutExternalImages < mailingSendForm.sizeErrorThreshold}">
+															<c:when test="${mailingSendForm.approximateMaxSize > mailingSendForm.sizeWarningThreshold}">
 																<c:set var="configureButtonAction" value="configure-delivery-mailing-size-warning" />
 															</c:when>
 															<c:otherwise>
-																<c:set var="configureButtonAction" value="configure-delivery-mailing-size-error" />
+																<c:set var="configureButtonAction" value="configure-delivery" />
 															</c:otherwise>
 														</c:choose>
 
@@ -861,6 +897,9 @@
 						<!-- Tile Content END -->
 					</div>
 					<!-- Tile END -->
+				</logic:equal>
+				<logic:equal name="mailingSendForm" property="mailingtype" value="${ACTION_BASED_MAILING_TYPE}">
+					<%@ include file="mailing-send-dependents-list.jsp"%>
 				</logic:equal>
 			</div>
 			<!-- Col END -->

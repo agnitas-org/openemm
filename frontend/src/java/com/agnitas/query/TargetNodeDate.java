@@ -16,7 +16,7 @@ import java.io.Serializable;
 
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetOperator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @deprecated

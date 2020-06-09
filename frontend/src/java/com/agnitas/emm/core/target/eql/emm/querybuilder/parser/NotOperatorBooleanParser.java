@@ -24,7 +24,10 @@ public class NotOperatorBooleanParser extends GenericEqlNodeParser<NotOperatorBo
     @Override
     protected QueryBuilderGroupNode parse(NotOperatorBooleanEqlNode node, QueryBuilderGroupNode groupNode, Set<String> profileFields) throws EqlToQueryBuilderConversionException {
         //Get rid of obligatory wrapping parenthesis
-        AbstractEqlNode child = ((AnnotationBooleanEqlNode) node.getChild()).getChild();
+        AbstractEqlNode child = node.getChild();
+        if (child instanceof AnnotationBooleanEqlNode) {
+            child = ((AnnotationBooleanEqlNode) node.getChild()).getChild();
+        }
         EqlNodeParser<?> parser = configuration.getParserMapping().get(child.getClass());
         if (parser != null) {
             parser.parse(child, groupNode, profileFields);

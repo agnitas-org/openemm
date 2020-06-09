@@ -1,4 +1,4 @@
-(function() {
+(function($) {
 
     var MailingEditorBase = function(data, campaignManager, submitWorkflowForm) {
 
@@ -1521,7 +1521,7 @@
                 jQuery(self.containerId + "-transferAllSettings").parent().parent().show();
             }
 
-            jQuery(self.containerId + "-transferAllSettings").unbind().click(function() {
+            jQuery(self.containerId + "-transferAllSettings").off().on("click", function() {
                 var isChecked = jQuery(this).prop('checked');
                 jQuery(self.containerId + "-transferArchive").prop('checked', isChecked);
                 jQuery(self.containerId + "-transferMailingList").prop('checked', isChecked);
@@ -1641,4 +1641,4 @@
 
     AGN.Lib.WM.MailingEditorBase = MailingEditorBase;
 
-})();
+})(jQuery);

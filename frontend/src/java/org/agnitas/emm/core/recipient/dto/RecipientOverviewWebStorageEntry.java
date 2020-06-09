@@ -16,13 +16,17 @@ import java.util.Collections;
 import java.util.List;
 
 import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.agnitas.web.RecipientAction;
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
+
 public class RecipientOverviewWebStorageEntry extends RowsCountWebStorageEntry {
-    private static final int MAX_FIELDS_COUNT = RecipientAction.MAX_SELECTED_FIELDS_COUNT;
-    private static final List<String> DEFAULT_FIELDS = Arrays.asList(RecipientAction.COLUMN_GENDER, RecipientAction.COLUMN_FIRSTNAME, RecipientAction.COLUMN_LASTNAME);
+    private static final int MAX_FIELDS_COUNT = RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
+    private static final List<String> DEFAULT_FIELDS = Arrays.asList(COLUMN_GENDER, COLUMN_FIRSTNAME, COLUMN_LASTNAME);
 
     @JsonProperty("fields")
     private List<String> selectedFields = DEFAULT_FIELDS;

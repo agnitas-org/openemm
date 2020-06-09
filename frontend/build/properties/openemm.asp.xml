@@ -16,10 +16,10 @@
 		<ini>
 			<domain>openemm.org</domain>
 			<mailer>Agnitas OpenEMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}</mailer>
-			<metadir>/home/openemm/var/spool/META</metadir>
-			<xmlback>/home/openemm/bin/xmlback</xmlback>
-			<account_logfile>/home/openemm/log/account.log</account_logfile>
-			<directdir>/home/openemm/var/spool/DIRECT</directdir>
+			<metadir>${home}/var/spool/META</metadir>
+			<xmlback>${home}/bin/xmlback</xmlback>
+			<account_logfile>${home}/log/account.log</account_logfile>
+			<directdir>${home}/var/spool/DIRECT</directdir>
 		</ini>
 	</mailgun>
 	

@@ -22,7 +22,6 @@ import javax.servlet.ServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -39,8 +38,8 @@ public class BirtNoDocumentParameterInterceptor implements Filter {
 	protected ConfigService configService;
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-    	this.filterConfig = filterConfig;
+    public void init(FilterConfig filterConfigParameter) throws ServletException {
+    	this.filterConfig = filterConfigParameter;
     }
 
     @Override
@@ -63,7 +62,7 @@ public class BirtNoDocumentParameterInterceptor implements Filter {
 
     private void error(ServletRequest request, ServletResponse response) throws ServletException, IOException {
         request.setAttribute("error", new Exception("Using __document parameter is denied"));
-		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.BirtErrorPage));
+		RequestDispatcher dispatcher = request.getRequestDispatcher(getConfigService().getValue(ConfigValue.BirtErrorPage));
         dispatcher.forward(request, response);
     }
 

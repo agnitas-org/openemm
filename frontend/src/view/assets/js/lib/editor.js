@@ -28,7 +28,7 @@
       id = _.uniqueId('Editor');
       $containerEditor = $('<div id="' + id + '" class="form-control"></div>');
       $containerEditor.css('height', this.isFullHeight ? '100%' : (this.height + 'px'));
-      $containerEditor.insertAfter(this.el);
+      $containerEditor.insertAfter($(this.el));
     }
 
     this.el.hide();

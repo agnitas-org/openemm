@@ -1,5 +1,5 @@
 (function () {
-    AGN.Initializers.TargetGroupQueryBuilderExtend = function () {
+    AGN.Lib.CoreInitializer.new('target-group-query-builder-extend', function() {
       var MIN_EXPECTED_SIZE = 2;
       var Utils = {};
 
@@ -59,13 +59,25 @@
                     }
                 });
 
-                if (rules && rules.rules && rules.rules.length) {
-                    this.initialRule = false;
-                } else {
+                if (this.isEmptyOrInitial(rules)) {
                     this.initialRule = true;
                     rules.rules = [{initialRule: true, empty: true}];
+                } else {
+                    this.initialRule = false;
                 }
                 return originalInit.call(this, rules);
+            },
+
+            isEmptyOrInitial: function(data) {
+                if (!data || !data.rules || !data.rules.length) {
+                    return true;
+                }
+
+                if (data.rules.length === 1 && (data.rules[0].initialRule || data.rules[0].empty) ) {
+                    return true;
+                }
+
+                return false;
             },
 
             optionsByType: {
@@ -240,23 +252,40 @@
                 $('.initial-rule').removeClass('initial-rule');
             },
 
+            isInitial: function(root) {
+                if (root.length === 1 && root[0].$el.hasClass('initial-rule')) {
+                    return true;
+                }
+
+                if (this.initialRule && root.length === 1) {
+                    root[0].$el.addClass('initial-rule');
+                    return true;
+                }
+
+                return false;
+            },
+
             validate: function(options) {
                 var self = this;
                 var root = self.model.root.rules;
 
-                if (root.length === 1 && root[0].$el.hasClass('initial-rule')) {
-                    self.clearErrors();
-                    return;
+                var validationOptions = _.clone(options);
+                validationOptions = $.extend({
+                  skip_filter_validation: true,
+                  skip_empty: false
+                }, validationOptions);
+
+                if (validationOptions.skip_filter_validation) {
+                    validationOptions.skip_empty = true;
                 }
 
-                if (this.initialRule && root.length === 1) {
+                if (this.isInitial(root)) {
                     self.clearErrors();
-                    root[0].$el.addClass('initial-rule');
-                    return;
+                    return true;
                 }
 
                 self.clearInitialRuleSettings();
-                originalValidate.call(this, options);
+                return originalValidate.call(this, validationOptions);
             },
 
             getRuleInput: function (rule, value_id) {
@@ -835,12 +864,12 @@
                             .find(this.constructor.selectors.error_container).eq(0)
                             .attr('data-tooltip', errorMessage);
 
-                        AGN.Initializers.Tooltip(node.$el);
+                        AGN.Lib.CoreInitializer.run('tooltip', node.$el);
                     }
                 }
             }
         })
-    };
+    });
 
     function generateDateFormatSelect(availableFormats) {
         var resultMarkup = [];

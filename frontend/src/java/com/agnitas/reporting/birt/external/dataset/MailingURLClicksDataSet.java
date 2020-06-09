@@ -25,8 +25,8 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
@@ -43,10 +43,6 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	
 	private static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";
-	}
-	
-	private static String getRdirLogTableName(int companyId) {
-		return "rdirlog_" + companyId + "_tbl";
 	}
 
 	public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargets, String recipientsType) throws Exception {
@@ -202,7 +198,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 				+ " admin_link,"
 				+ " deleted"
 			+ " FROM rdir_url_tbl"
-			+ " WHERE mailing_id = ?"
+			+ " WHERE mailing_id = ? AND deleted = 0"
 			+ " ORDER BY url_id";
 		
 		List<Map<String, Object>> resultAllLinks = select(logger, queryAllLinks, mailingID);

@@ -27,8 +27,8 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -140,6 +140,22 @@ public class ProfileFieldsController {
         return "settings_profile_field_view";
     }
 
+    @RequestMapping("/profiledb/{fieldname}/dependents.action")
+    public String dependents(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model, Popups popups) {
+        int companyId = admin.getCompanyID();
+
+        ComProfileField field = profileFieldService.getProfileField(companyId, fieldName);
+        if (field == null) {
+            popups.alert("Error");
+            return "redirect:/profiledb.action";
+        }
+
+        model.addAttribute("fieldname", fieldName);
+        model.addAttribute("dependents", profileFieldService.getDependents(companyId, fieldName));
+
+        return "settings_profile_field_dependents_list";
+    }
+
     @PostMapping("/profiledb/save.action")
     public String save(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Popups popups) {
         if (StringUtils.isBlank(profileForm.getFieldname())) {
@@ -158,7 +174,7 @@ public class ProfileFieldsController {
             if (!popups.hasAlertPopups()) {
                 if (isNewField ? createField(admin, profileForm) : updateField(admin, field, profileForm)) {
                     popups.success("default.changes_saved");
-                    return String.format("redirect:/profiledb/%s/view.action", profileForm.getFieldname());
+                    return "redirect:/profiledb.action";
                 } else {
                     popups.alert("Error");
                 }

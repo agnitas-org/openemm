@@ -15,7 +15,7 @@ import java.util.Locale;
 import javax.servlet.jsp.JspException;
 
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.struts.Globals;
 import org.apache.struts.taglib.TagUtils;
 import org.apache.struts.taglib.bean.MessageTag;
@@ -142,7 +142,7 @@ public class AgnMessageTag extends MessageTag {
 				return Functions.escapeXml(message);
 
 			case ESCAPE_MODE_JS:
-				return StringEscapeUtils.escapeJavaScript(message);
+				return StringEscapeUtils.escapeEcmaScript(message);
 
 			default:
 				return message;
@@ -188,10 +188,12 @@ public class AgnMessageTag extends MessageTag {
                     return ESCAPE_MODE_JS;
                 case ESCAPE_MODE_NONE:
                     return ESCAPE_MODE_NONE;
+				default:
+					throw exception("Invalid escapeMode attribute value: '" + escapeMode + "', expected 'js', 'html' or 'none'");
             }
+        } else {
+        	throw exception("Invalid escapeMode attribute value: '" + escapeMode + "', expected 'js', 'html' or 'none'");
         }
-
-        throw exception("Invalid escapeMode attribute value: '" + escapeMode + "', expected 'js', 'html' or 'none'");
     }
 
     private JspException exception(String errorMessage) {

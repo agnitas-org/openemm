@@ -10,6 +10,7 @@
 
 package org.agnitas.dao;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ public interface MailingDao extends ApplicationContextAware {
      *  Could not be used in fact because the column rdir_domain does not exist in mailinglist_tbl
      *
      */
-	String getAutoURL(int mailingID, @VelocityCheck int companyID);
+	String getMailingRdirDomain(int mailingID, @VelocityCheck int companyID);
 
 	/**
 	 * Returns all (non-deleted) mailings as a list of lightweight objects.
@@ -147,15 +148,25 @@ public interface MailingDao extends ApplicationContextAware {
 	List<LightweightMailing> getLightweightMailings( @VelocityCheck int companyID);
 
 	/**
+	 * Returns all (non-deleted) mailings and templates by given ids as a list of lightweight objects.
+	 *
+	 * @param companyId company ID.
+	 * @param mailingIds a collection of mailing ids.
+	 *
+	 * @return list of lightweight mailing objects
+	 */
+	List<LightweightMailing> getLightweightMailings(@VelocityCheck int companyId, Collection<Integer> mailingIds);
+
+	/**
 	 * Selects all non-deleted mailings of certain company and creates paginated list according to given criteria of sorting and pagination
 	 *
 	 * @param companyID an identifier of a current user's company.
 	 * @param props filtering, sorting and pagination parameters for mailing list selection.
 	 *
 	 * @return PaginatedList of MailingBase
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	PaginatedListImpl<Map<String, Object>> getMailingList(@VelocityCheck int companyID, MailingsListProperties props);
+	PaginatedListImpl<Map<String, Object>> getMailingList(@VelocityCheck int companyID, int adminId, MailingsListProperties props);
 
 	/**
      * Creates empty paginated list
@@ -262,8 +273,9 @@ public interface MailingDao extends ApplicationContextAware {
      * @param companyID
      *              Id of the company that created a mailing/template
      * @return  true - it's template, false - it's mailing
+     * @throws Exception
      */
-	boolean checkMailingReferencesTemplate(int templateID, @VelocityCheck int companyID);
+	boolean checkMailingReferencesTemplate(int templateID, @VelocityCheck int companyID) throws Exception;
 
     /**
      * Deletes all dyn content by dyn tag name
@@ -372,9 +384,10 @@ public interface MailingDao extends ApplicationContextAware {
      *
      * @param companyID
      *                  Id of the company that sent the mailings
-     * @return  List of MailingBase bean objects
+     * @param adminId
+	 * @return  List of MailingBase bean objects
      */
-	List<MailingBase> getMailingsForComparation( @VelocityCheck int companyID);
+	List<MailingBase> getMailingsForComparation(@VelocityCheck int companyID, int adminId);
 
     /**
      * Loads list of templates of certain company

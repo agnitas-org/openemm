@@ -21,9 +21,6 @@
                             </a>
                         </li>
                     </ul>
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i class="icon icon-times-circle"></i>
-                    </button>
                 </div>
                 {{ } }}
                 <div class="modal-fixed-body">

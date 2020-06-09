@@ -29,7 +29,7 @@ public class ActionOperationSubscribeCustomerDaoImpl extends AbstractActionOpera
 	protected void processGetOperation(ActionOperationSubscribeCustomerParameters operation) {
 		Map<String, Object> row = selectObject(logger, "select double_check, key_column, double_opt_in from actop_subscribe_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
 			@Override
-			public Map<String, Object> mapRow(ResultSet resultSet, int row) throws SQLException {
+			public Map<String, Object> mapRow(ResultSet resultSet, int rowIndex) throws SQLException {
 				Map<String, Object> map = new HashMap<>(3);
 				map.put("double_check", resultSet.getBoolean("double_check"));
 				map.put("key_column", resultSet.getString("key_column"));

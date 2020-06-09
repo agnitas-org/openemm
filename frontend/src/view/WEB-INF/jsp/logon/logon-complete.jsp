@@ -5,6 +5,7 @@
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 
 <%--@elvariable id="webStorageBundleNames" type="java.util.List"--%>
+<%--@elvariable id="isFrameShown" type="java.lang.Boolean"--%>
 
 <!DOCTYPE html>
 <html>
@@ -18,14 +19,20 @@
 
         <title><s:message code="logon.title"/></title>
 
+        <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
+
         <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body>
         <form action="${startPageLink}" data-form="static" method="POST" data-initializer="logon-complete">
             <%-- To be populated by JS code --%>
             <input type="hidden" name="webStorageJson" value=""/>
-
-            <script id="config:logon-complete" type="application/json">${emm:toJson(webStorageBundleNames)}</script>
+            <script id="config:logon-complete" type="application/json">
+                {
+                    "webStorageBundleNames": ${emm:toJson(webStorageBundleNames)},
+                    "isFrameShown": ${isFrameShown}
+                }
+            </script>
         </form>
     </body>
 </html>

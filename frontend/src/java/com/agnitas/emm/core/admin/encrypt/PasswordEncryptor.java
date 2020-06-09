@@ -19,7 +19,10 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
@@ -37,36 +40,23 @@ public class PasswordEncryptor {
 	/** Fixed charset used to read salt from file. */
 	private static final String SALT_CHARSET = "ISO8859_1";
 	
-	/** Hex encoded salt. */
-	private final String hexSalt;
+	/** Salt bytes. */
+	private byte[] hexSaltBytes;
 	
 	/** Encoder for SHA-1 hash. */
-	private final Sha1Encoder sha1Encoder;
+	private final Sha1Encoder sha1Encoder = new Sha1Encoder();
 	
 	/** Encoder for SHA-512 hash. */
-	private final Sha512Encoder sha512Encoder;
+	private final Sha512Encoder sha512Encoder = new Sha512Encoder();
 	
 	/** UTF-8 encoding. */
 	private static final Charset UTF_8 = StandardCharsets.UTF_8;
 	
-	/**
-	 * Creates a new password encryptor instance.
-	 * 
-	 * @param file File containing the salt
-	 * 
-	 * @throws IOException on reading salt
-	 */
-	public PasswordEncryptor(final File file) throws IOException {
-		this.sha1Encoder = new Sha1Encoder();
-		this.sha512Encoder = new Sha512Encoder();
-
-		try {
-			this.hexSalt = toPasswordHexString( readSaltFromFile( file));
-		} catch( IOException e) {
-			logger.fatal( "unable to read salt from file: " + file.getAbsolutePath());
-			
-			throw e;
-		}
+	private ConfigService configService;
+	
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 	
 	/**
@@ -124,12 +114,22 @@ public class PasswordEncryptor {
 	 * @throws UnsupportedEncodingException 
 	 */
 	private final byte[] encryptSalt(final int obfuscatingValue, final String encoding) throws Exception {
-		byte[] hexSaltBytes;
-		if (encoding != null) {
-			hexSaltBytes = hexSalt.getBytes(encoding);
-		} else {
-			hexSaltBytes = hexSalt.getBytes();
+		if (hexSaltBytes == null) {
+			String saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
+			try {
+				String hexSalt = toPasswordHexString(readSaltFromFile(new File(saltFilePath)));
+				if (encoding != null) {
+					hexSaltBytes = hexSalt.getBytes(encoding);
+				} else {
+					hexSaltBytes = hexSalt.getBytes();
+				}
+			} catch( IOException e) {
+				logger.fatal( "unable to read salt from file: " + saltFilePath);
+				
+				throw e;
+			}
 		}
+		
 		return sha1Encoder.encode(plus(hexSaltBytes, Integer.toString(obfuscatingValue, 16).getBytes("UTF-8")));
 	}
 	
@@ -243,5 +243,4 @@ public class PasswordEncryptor {
 	private final String computeSupervisorPasswordHash(final String password, final int supervisorID, final ByteArrayEncoder encoder) throws Exception {
 		return encrypt(password, supervisorID, "UTF-8", encoder);
 	}
-
 }

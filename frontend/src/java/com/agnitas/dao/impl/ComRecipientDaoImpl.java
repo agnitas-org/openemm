@@ -15,9 +15,11 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -39,7 +41,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.BindingEntry;
@@ -81,8 +82,8 @@ import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.support.DataAccessUtils;
@@ -123,17 +124,13 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComRecipientDaoImpl.class);
 
-	/**
-	 * Regexp pattern for date arithmetics.
-	 */
-	private static final Pattern DATE_ARITHMETICS_PATTERN = Pattern.compile("^\\s*(SYSDATE|CURRENT_TIMESTAMP)\\s*(?:(\\+|-)\\s*(\\d+(?:\\.\\d+)?)\\s*)?$");
-
 	private static final String[] MAILINGLIST_VALUE_FIELDS = {
 		ComRecipientHistory.USER_TYPE,
 		ComRecipientHistory.USER_STATUS,
 		ComRecipientHistory.USER_REMARK,
 		ComRecipientHistory.EXIT_MAILING_ID,
-		ComRecipientHistory.EMAIL};
+		ComRecipientHistory.EMAIL
+	};
 
 	private static final List<String> SUPPLEMENTAL_DATE_COLUMN_SUFFIXES = Arrays.asList(
 			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY,
@@ -141,7 +138,8 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR,
 			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND,
 			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE,
-			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR);
+			ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR
+	);
 
 	/** Services accessing configuration data. */
 	protected ConfigService configService;
@@ -291,7 +289,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			allowedRecipientNumber = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyID);
 		}
 		if (allowedRecipientNumber >= 0) {
-			int finalRecipientNumber = getAllRecipientsCount(companyID) + count;
+			int finalRecipientNumber = getNumberOfRecipients(companyID) + count;
 			if (finalRecipientNumber > allowedRecipientNumber) {
 				return false;
 			} else {
@@ -395,30 +393,50 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	@Override
-	public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int pageSize, String sortCriterion, boolean sortAscending, List<String> columns) {
+	public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int pageSize, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception {
         throw new UnsupportedOperationException("Get mailing recipients is unsupported.");
 	}
-
-	private List<Recipient> extractRecipients(@VelocityCheck int companyId, List<Map<String, Object>> maps) {
-		List<Recipient> result = new ArrayList<>();
-		if (maps != null && !maps.isEmpty()) {
-			for (Map<String, Object> row : maps) {
-				Recipient recipient = recipientFactory.newRecipient();
-				recipient.setCompanyID(companyId);
-
-				for (Entry<String, Object> entry : row.entrySet()) {
-					if (entry.getValue() == null) {
-						recipient.setCustParameters(entry.getKey(), "");
-					} else if (entry.getValue() instanceof Number) {
-						recipient.setCustParameters(entry.getKey(), AgnUtils.stripTrailingZeros(entry.getValue().toString()));
-					} else {
-						recipient.setCustParameters(entry.getKey(), entry.getValue().toString());
-					}
-				}
-				result.add(recipient);
-			}
+	
+	@Override
+	public List<Recipient> getDuplicateRecipients(@VelocityCheck int companyId, String email, String select, Object[] queryParams) throws Exception {
+    	logger.warn("Unsupported method getDuplicateRecipients()");
+    	return new ArrayList<>();
+	}
+	
+	public static class RecipientRowMapper implements RowMapper<Recipient> {
+		
+		private final RecipientFactory recipientFactory;
+		private final int companyId;
+		
+		public RecipientRowMapper(RecipientFactory recipientFactory, int companyId) {
+			this.recipientFactory = Objects.requireNonNull(recipientFactory);
+			this.companyId = companyId;
 		}
-		return result;
+		
+		@Override
+		public Recipient mapRow(ResultSet resultSet, int i) throws SQLException {
+			Recipient recipient = recipientFactory.newRecipient(companyId);
+			
+			ResultSetMetaData metaData = resultSet.getMetaData();
+			for (int column = 1; column <= resultSet.getMetaData().getColumnCount(); column++) {
+				String columnLabel = metaData.getColumnLabel(column);
+				
+				Object value = resultSet.getObject(columnLabel);
+				String stringValue;
+				if (value == null) {
+					stringValue = "";
+				} else if (value instanceof Number) {
+					stringValue = AgnUtils.stripTrailingZeros(value.toString());
+				} else if (value instanceof Date || value instanceof Timestamp) {
+					stringValue = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(value);
+				} else {
+					stringValue = value.toString();
+				}
+				
+				recipient.setCustParameters(columnLabel, stringValue);
+			}
+			return recipient;
+		}
 	}
 
 	public class MailingRecipientStatRow_RowMapper implements RowMapper<MailingRecipientStatRow> {
@@ -455,7 +473,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Override
 	public PaginatedListImpl<Recipient> getRecipients(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int pageSize) throws Exception {
 		String modifiedSqlStatementForData = sqlStatementForData;
-		if (!modifiedSqlStatementForData.toUpperCase().startsWith("SELECT * FROM ")) {
+		if (!StringUtils.startsWithIgnoreCase(modifiedSqlStatementForData, "SELECT * FROM ")) {
 			throw new Exception("Invalid select for recipients, without leading 'select * from '");
 		} else {
 			modifiedSqlStatementForData = modifiedSqlStatementForData.substring(14);
@@ -463,10 +481,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	
 		// TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
 		final boolean useUnsharpRecipientQuery = configService.useUnsharpRecipientQuery(companyID);
-		if (!modifiedSqlStatementForData.toLowerCase().contains("where")) {
-			modifiedSqlStatementForData += " WHERE " + (!useUnsharpRecipientQuery ? ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD : "0") + " = 0";
+		String unsharpRecipientQuery = (!useUnsharpRecipientQuery ? ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD : "0") + " = 0";
+		if (StringUtils.containsIgnoreCase(modifiedSqlStatementForData, "where")) {
+			modifiedSqlStatementForData += " AND " + unsharpRecipientQuery;
 		} else {
-			modifiedSqlStatementForData += " AND " + (!useUnsharpRecipientQuery ? ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD : "0") + " = 0";
+			modifiedSqlStatementForData += " WHERE " + unsharpRecipientQuery;
 		}
 
 		boolean respectHideSign = configService.getBooleanValue(ConfigValue.RespectHideDataSign, companyID);
@@ -486,37 +505,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				modifiedSqlStatementForData = "SELECT " + StringUtils.join(columns, ", ") + " FROM " + modifiedSqlStatementForData + " LIMIT 0, " + pageSize;
 			}
 		} else {
-			String sortClause = "";
-		
-			if (StringUtils.isNotBlank(sortCriterion)) {
-				// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
-				try {
-					if (DbUtilities.getColumnDataType(getDataSource(), getCustomerTableName(companyID), sortCriterion).getSimpleDataType() == SimpleDataType.Characters) {
-						if (isOracleDB()) {
-							sortClause = " ORDER BY LOWER(" + sortCriterion + ")" ;
-						} else {
-							// MySQL DESC sorts null-values to the end by default, oracle DESC sorts null-values to the top
-							// MySQL ASC sorts null-values to the top by default, oracle ASC sorts null-values to the end
-							if (sortedAscending) {
-								sortClause = " ORDER BY IF(" + sortCriterion + " = '' OR " + sortCriterion + " IS NULL, 1, 0), LOWER(" + sortCriterion + ")" ;
-							} else {
-								sortClause = " ORDER BY IF(" + sortCriterion + " = '' OR " + sortCriterion + " IS NULL, 0, 1), LOWER(" + sortCriterion + ")" ;
-							}
-						}
-					} else {
-						sortClause = " ORDER BY " + sortCriterion;
-					}
-				
-					if (sortedAscending) {
-						sortClause = sortClause + " ASC";
-					} else {
-						sortClause = sortClause + " DESC";
-					}
-				} catch (Exception e) {
-					logger.error("Invalid sort field", e);
-				}
-			}
-
+			String sortClause = getSortClauseForRecipients(companyID, sortCriterion, sortedAscending);
 			pageNumber = AgnUtils.getValidPageNumber(totalRows, pageNumber, pageSize);
 
 			int offset = pageNumber * pageSize;
@@ -529,42 +518,159 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			}
 		}
 
+		try {
+			List<Recipient> recipientList = getRecipientList(companyID, modifiedSqlStatementForData, sqlParametersForData, useUnsharpRecipientQuery);
+			return new PaginatedListImpl<>(recipientList, totalRows, pageSize, pageNumber, sortCriterion, sortedAscending);
+		} catch(SQLException e) {
+			logger.error("Caught SQL exception", e);
+			return null;
+		}
+	}
+	
+	@Override
+	public PaginatedListImpl<Recipient> getDuplicatePaginatedRecipientList(int companyID, Set<String> columns, String statement, Object[] parameters, String sortCriterion, boolean sortedAscending, int pageNumber, int pageSize) throws Exception {
+		// TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
+		// TODO: bounce load scripts are inside statement
+		final boolean useUnsharpRecipientQuery = configService.useUnsharpRecipientQuery(companyID);
+		int totalRows = getNumberOfRecipients(companyID, statement, parameters);
+		
+		String modifiedSqlStatementForData = statement;
+		
+		int maxRecipients = companyDao.getCompany(companyID).getMaxRecipients();
+		if (maxRecipients > 0 && totalRows > maxRecipients) {
+			// if the maximum number of recipients to show is exceeded, only the first page of unsorted recipients is shown to discharge the database and its performance
+			pageNumber= 1;
+			if (isOracleDB()) {
+				modifiedSqlStatementForData = String.format("SELECT %s FROM (%s) WHERE rownum BETWEEN 1 AND %d",
+						StringUtils.join(columns, ", "),
+						modifiedSqlStatementForData, pageSize);
+			} else {
+				modifiedSqlStatementForData = String.format("SELECT %s FROM (%s) LIMIT %d",
+						StringUtils.join(columns, ", "),
+						modifiedSqlStatementForData, pageSize);
+			}
+		} else {
+			String sortClause = getSortClauseForRecipients(companyID, sortCriterion, "res." + sortCriterion, sortedAscending);
+			
+			pageNumber = AgnUtils.getValidPageNumber(totalRows, pageNumber, pageSize);
+			int offset = pageNumber * pageSize;
+			
+			if (isOracleDB()) {
+				modifiedSqlStatementForData = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + modifiedSqlStatementForData + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
+				parameters = AgnUtils.extendObjectArray(parameters, (offset - pageSize + 1), offset);
+			} else {
+				modifiedSqlStatementForData = modifiedSqlStatementForData + " " + sortClause + " LIMIT ?, ?";
+				parameters = AgnUtils.extendObjectArray(parameters, (offset - pageSize), pageSize);
+			}
+		}
+		
+		try {
+			List<Recipient> recipientList = getRecipientList(companyID, modifiedSqlStatementForData, parameters, useUnsharpRecipientQuery);
+			return new PaginatedListImpl<>(recipientList, totalRows, pageSize, pageNumber, sortCriterion, sortedAscending);
+
+		} catch (SQLException e) {
+			logger.error("Failed getting duplicate recipients: ", e);
+			
+			return null;
+		}
+	}
+	
+	@Override
+	public int getNumberOfRecipients(int companyId) {
+		return getNumberOfRecipients(companyId, false);
+	}
+	
+	
+	
+	protected List<Recipient> getRecipientList(int companyID, String statement, Object[] parameters, boolean useUnsharpRecipientQuery) throws SQLException {
 		try (Connection connection = getDataSource().getConnection()) {
 			try {
 				// TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
 				if (useUnsharpRecipientQuery) {
 					setRuleOptimizerMode(connection, true);
 				}
-
+				
 				final SingleConnectionDataSource scds = new SingleConnectionDataSource(connection, true);
 				final JdbcTemplate template = new JdbcTemplate(scds);
-
-				List<Map<String, Object>> tmpList = template.queryForList(modifiedSqlStatementForData, sqlParametersForData);
-				List<Recipient> result = extractRecipients(companyID, tmpList);
-
-				return new PaginatedListImpl<>(result, totalRows, pageSize, pageNumber, sortCriterion, sortedAscending);
+				RecipientRowMapper rowMapper = new RecipientRowMapper(recipientFactory, companyID);
+				
+				return template.query(statement, parameters, rowMapper);
+				
 			} finally {
 				// TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
 				if (useUnsharpRecipientQuery) {
 					setRuleOptimizerMode(connection, false);
 				}
 			}
-		} catch(SQLException e) {
-			logger.error("Caught SQL exception", e);
-
-			return null;
 		}
+	}
+	
+	private String getSortClauseForRecipients(int companyID, String sortCriterion, boolean sortedAscending) {
+		return getSortClauseForRecipients(companyID, sortCriterion, sortCriterion, sortedAscending);
+	}
+	
+	private String getSortClauseForRecipients(int companyID, String columnName, String sortCriterion, boolean sortedAscending) {
+		String sortClause = "";
+		if (StringUtils.isNotBlank(sortCriterion)) {
+			// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
+			try {
+				if (DbUtilities.getColumnDataType(getDataSource(), getCustomerTableName(companyID), columnName).getSimpleDataType() == SimpleDataType.Characters) {
+					if (isOracleDB()) {
+						sortClause = " ORDER BY LOWER(" + sortCriterion + ")" ;
+					} else {
+						// MySQL DESC sorts null-values to the end by default, oracle DESC sorts null-values to the top
+						// MySQL ASC sorts null-values to the top by default, oracle ASC sorts null-values to the end
+						if (sortedAscending) {
+							sortClause = " ORDER BY IF(" + sortCriterion + " = '' OR " + sortCriterion + " IS NULL, 1, 0), LOWER(" + sortCriterion + ")" ;
+						} else {
+							sortClause = " ORDER BY IF(" + sortCriterion + " = '' OR " + sortCriterion + " IS NULL, 0, 1), LOWER(" + sortCriterion + ")" ;
+						}
+					}
+				} else {
+					sortClause = " ORDER BY " + sortCriterion;
+				}
+				
+				if (sortedAscending) {
+					sortClause = sortClause + " ASC";
+				} else {
+					sortClause = sortClause + " DESC";
+				}
+			} catch (Exception e) {
+				logger.error("Invalid sort field", e);
+			}
+		}
+		return sortClause;
+	}
+	
+	@Override
+	public int getNumberOfRecipients(int companyId, boolean ignoreBounceLoadValue) {
+		String tableName = getCustomerTableName(companyId);
+
+		if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
+			if (ignoreBounceLoadValue) {
+				return selectInt(logger, String.format("SELECT COUNT(*) FROM %s", tableName));
+			} else {
+				return selectInt(logger, String.format("SELECT COUNT(*) FROM %s WHERE %s = 0", tableName, ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD));
+			}
+		}
+
+		return 0;
 	}
 
 	/**
 	 * sqlStatementPartForData may not include the "select * from "-part (stripped sql select statement)
 	 */
 	@Override
-	public int getNumberOfRecipients(@VelocityCheck int companyID, String sqlStatementPartForData, Object[] parametersForData) {
-		String selectTotalRows = "SELECT COUNT(*) FROM " + sqlStatementPartForData;
+	public int getNumberOfRecipients(@VelocityCheck int companyID, String statement, Object[] parameters) {
+		String selectTotalRows;
+		if (StringUtils.startsWithIgnoreCase(statement, "SELECT * FROM")) {
+			selectTotalRows = StringUtils.replaceOnce(statement, "SELECT * FROM", "SELECT COUNT(*) FROM");
+		} else {
+			selectTotalRows = "SELECT COUNT(*) FROM " + statement;
+		}
 
 		try {
-			return selectRecipients(companyID, Integer.class, selectTotalRows, parametersForData);
+			return selectRecipients(companyID, Integer.class, selectTotalRows, parameters);
 		} catch (Exception e) {
 			logger.error("Error occurred: " + e.getMessage(), e);
 		}
@@ -756,17 +862,6 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		}
 	}
 
-	@Override
-	public int getAllRecipientsCount(int companyID) {
-		String tableName = getCustomerTableName(companyID);
-
-		if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
-			return selectInt(logger, String.format("SELECT COUNT(*) FROM %s WHERE %s = 0", tableName, ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD));
-		}
-
-		return 0;
-	}
-
 	/**
 	 * Find Subscriber by providing a column-name and a value and an customer object. Fills the customer_id of this customer object if found. Only exact matches possible.
 	 *
@@ -786,17 +881,21 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				if (keyColumnType.toUpperCase().startsWith("VARCHAR") || keyColumnType.equalsIgnoreCase("CHAR")) {
 					if ("email".equalsIgnoreCase(keyColumn)) {
 						value = AgnUtils.normalizeEmail(value);
-						custList = select(logger, "SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE email = ? AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0", value == null ? null : value.toLowerCase());
+						if (!AgnUtils.isEmailValid(value)) {
+							throw new Exception("Invalid search value for email key column");
+						} else {
+							custList = select(logger, "SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE email = ? AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0", value == null ? null : value.toLowerCase());
+						}
 					} else {
 						custList = select(logger, "SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE LOWER(cust." + SafeString.getSafeDbColumnName(keyColumn) + ") = ? AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0", value == null ? null : value.toLowerCase());
 					}
 				} else {
-					int intValue = 0;
 					if (AgnUtils.isNumber(value)) {
-						intValue = Integer.parseInt(value);
+						int intValue = Integer.parseInt(value);
+						custList = select(logger, "SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE cust." + SafeString.getSafeDbColumnName(keyColumn) + " = ? AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0", intValue);
+					} else {
+						throw new Exception("Invalid search value for numeric key column");
 					}
-
-					custList = select(logger, "SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE cust." + SafeString.getSafeDbColumnName(keyColumn) + " = ? AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0", intValue);
 				}
 
 				// cannot use queryForInt, because of possible existing duplicates
@@ -928,7 +1027,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
     @Override
     public List<ComRecipientMailing> getMailingsSentToRecipient(int customerID, int companyID) {
-        final int trackingDays = isMailtrackingEnabled(companyID) ? companyDao.getSuccessDataExpirePeriod(companyID) : 0;
+        final int trackingDays = isMailtrackingEnabled(companyID) ? configService.getIntegerValue(ConfigValue.ExpireSuccess, companyID) : 0;
         if (trackingDays <= 0) {
             return new ArrayList<>();
         } else {
@@ -960,7 +1059,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public PaginatedListImpl<ComRecipientMailing> getMailingsSentToRecipient(int customerID, int companyID, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending) {
-		final int trackingDays = isMailtrackingEnabled(companyID) ? companyDao.getSuccessDataExpirePeriod(companyID) : 0;
+		final int trackingDays = isMailtrackingEnabled(companyID) ? configService.getIntegerValue(ConfigValue.ExpireSuccess, companyID) : 0;
 
 		Map<String, String> sortableColumns = new CaseInsensitiveMap<>();
 		sortableColumns.put("sendDate", "send_date");
@@ -2121,11 +2220,22 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteAllNoBindings(@VelocityCheck int companyID, String toBeDeletedTable) {
+		final int stepsize = 100000;
+		int touchedLines = 0;
 		String delete = "DELETE FROM " + getCustomerTableName(companyID)
-			+ " WHERE customer_id NOT IN (SELECT customer_id FROM " + getCustomerBindingTableName(companyID) + ") AND customer_id IN (SELECT * FROM " + toBeDeletedTable + ")";
-
-		update(logger, delete);
-		update(logger, "DROP TABLE " + toBeDeletedTable);
+			+ " WHERE NOT EXISTS (SELECT 1 FROM " + getCustomerBindingTableName(companyID) + " bind WHERE "+ getCustomerTableName(companyID) + ".customer_id = bind.customer_id)"
+			+ " AND EXISTS (SELECT 1 FROM " + toBeDeletedTable + " temp WHERE "+ getCustomerTableName(companyID) + ".customer_id = temp.customer_id)";
+		
+		if (isOracleDB()) {
+			delete += " AND ROWNUM <= ?";
+		} else {
+			delete += "LIMIT ?";
+		}
+		do {
+			touchedLines = update(logger, delete, stepsize);
+		} while (touchedLines == stepsize);
+		
+		execute(logger, "DROP TABLE " + toBeDeletedTable);
 	}
 
 	@Override
@@ -2135,11 +2245,15 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			optionalTablespacePart = " TABLESPACE data_temp";
 		}
 	
-		String tableName = "tmp_" + String.valueOf(System.currentTimeMillis()) + "_delete_tbl";
+		String tableName = "tmp_" + String.valueOf(System.currentTimeMillis()) + "del_tbl";
 
-		String sql = "CREATE TABLE " + tableName + optionalTablespacePart + " AS (" + "SELECT customer_id FROM " + getCustomerTableName(companyID)
-			+ " WHERE customer_id IN (SELECT customer_id FROM " + getCustomerBindingTableName(companyID) + " WHERE mailinglist_id = " + mailinglistID + "))";
+		String sql = "CREATE TABLE " + tableName + optionalTablespacePart + " AS (" + "SELECT customer_id FROM " + getCustomerTableName(companyID) + " cust "
+			+ " WHERE EXISTS (SELECT 1 FROM " + getCustomerBindingTableName(companyID) + " bind WHERE cust.customer_id = bind.customer_id AND mailinglist_id = " + mailinglistID + "))";
+		
 		update(logger, String.format(sql, mailinglistID));
+		
+		sql = "CREATE INDEX " + tableName + "_idx ON " + tableName + " (customer_id)";
+		execute(logger, sql);
 		return tableName;
 	}
 
@@ -2327,15 +2441,27 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			throw new RuntimeException("Invalid customerID list size");
 		}
 
-		StringBuilder whereStringBuilder = new StringBuilder(" WHERE customer_id IN (");
-		whereStringBuilder.append(StringUtils.join(list, ", "));
-		whereStringBuilder.append(')');
-		String where = whereStringBuilder.toString();
+		String where = " WHERE customer_id IN (" + StringUtils.join(list, ", ") + ')';
 
 		select(logger, "SELECT * FROM " + getCustomerBindingTableName(companyID) + where + " FOR UPDATE");
 		select(logger, "SELECT * FROM " + getCustomerTableName(companyID) + where + " FOR UPDATE");
 		update(logger, "DELETE FROM " + getCustomerBindingTableName(companyID) + where);
 		update(logger, "DELETE FROM " + getCustomerTableName(companyID) + where);
+	}
+	
+	@Override
+	public void deleteDuplicateRecipients(@VelocityCheck int companyID, List<Integer> list, String email) {
+		if (list == null || list.size() < 1) {
+			throw new RuntimeException("Invalid customerID list size");
+		}
+		
+		String where = " WHERE " + makeBulkInClauseForInteger("customer_id", list);
+		String whereExtended = where + " AND LOWER(email) = ?";
+
+		select(logger, "SELECT * FROM " + getCustomerBindingTableName(companyID) + where + " FOR UPDATE");
+		select(logger, "SELECT * FROM " + getCustomerTableName(companyID) + whereExtended + " FOR UPDATE", email);
+		update(logger, "DELETE FROM " + getCustomerBindingTableName(companyID) + where);
+		update(logger, "DELETE FROM " + getCustomerTableName(companyID) + whereExtended, email);
 	}
 
 	@Override
@@ -2457,7 +2583,10 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark) {
+	public void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark) throws Exception {
+		// Check for valid UserStatus code
+		UserStatus.getUserStatusByID(newStatus);
+		
 		String query = "SELECT customer_id FROM " + getCustomerTableName(companyId) + " WHERE " + columnName + " = ?";
 		List<Integer> list = select(logger, query, new IntegerRowMapper(), columnValue);
 
@@ -2470,7 +2599,10 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int newStatus, String remark) {
+	public void updateStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int newStatus, String remark) throws Exception {
+		// Check for valid UserStatus code
+		UserStatus.getUserStatusByID(newStatus);
+		
 		String query = "SELECT customer_id FROM " + getCustomerTableName(companyId) + " WHERE email LIKE ?";
 		List<Integer> list = select(logger, query, new IntegerRowMapper(), emailPattern);
 
@@ -2552,11 +2684,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		if (columnType == Types.NUMERIC) {
 			switch (updateType) {
 				case ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY:
-					updateStatement.append(getIfNull() + "(" + columnName + ", 0) + ?");
+					updateStatement.append("COALESCE(" + columnName + ", 0) + ?");
 					break;
 
 				case ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY:
-					updateStatement.append(getIfNull() + "(" + columnName + ", 0) - ?");
+					updateStatement.append("COALESCE(" + columnName + ", 0) - ?");
 					break;
 
 				case ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE:
@@ -2596,50 +2728,55 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 			value = updateValue;
 		} else if (columnType == Types.TIMESTAMP) {
-			switch (updateType) {
-				case ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY:
+			if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY) {
+				if (isOracleDB()) {
 					updateStatement.append(columnName + " + ?");
-					break;
-	
-				case ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY:
-					updateStatement.append(columnName + " - ?");
-					break;
-	
-				case ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE:
-					break;
-					
-				default:
-					throw new Exception("Invalid update value type");
-			}
-		
-			if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY || updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
+				} else {
+					// 86400 seconds per day, this factor is used to adopt MySQL date calucation to Oracle date calculation
+					updateStatement.append(columnName + " + INTERVAL (? * 86400) SECOND");
+				}
 				try {
 					value = Double.parseDouble(updateValue);
 				} catch (Exception e) {
-					value = 0.0;
+					throw new Exception("Invalid value for increment of '" + columnName + "': " + updateValue);
 				}
-			} else {
-				Matcher matcher = DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
-			
+			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
+				if (isOracleDB()) {
+					updateStatement.append(columnName + " - ?");
+				} else {
+					// 86400 seconds per day, this factor is used to adopt MySQL date calucation to Oracle date calculation
+					updateStatement.append(columnName + " - INTERVAL (? * 86400) SECOND");
+				}
+				try {
+					value = Double.parseDouble(updateValue);
+				} catch (Exception e) {
+					throw new Exception("Invalid value for decrement of '" + columnName + "': " + updateValue);
+				}
+			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
+				Matcher matcher = ActionOperationUpdateCustomerParameters.DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
 				if (matcher.matches()) {
 					updateStatement.append("CURRENT_TIMESTAMP");
-				
 					if (matcher.group(2) != null) {
-						updateStatement.append(matcher.group(2));	// Is safe, because group 2 must match "+" or "-" according to reg exp.
-					
+						// Is safe, because group 2 must match "+" or "-" according to reg exp.
+						updateStatement.append(matcher.group(2));
 						if (isOracleDB()) {
 							updateStatement.append(" ?");
 						} else {
-							updateStatement.append(" INTERVAL (? * 86400) SECOND"); // 86400 seconds per day, this factor is used to adopt MySQL date calucation to Oracle date calculation
+							// 86400 seconds per day, this factor is used to adopt MySQL date calucation to Oracle date calculation
+							updateStatement.append(" INTERVAL (? * 86400) SECOND");
 						}
-
 						value = Double.parseDouble(matcher.group(3));
 					}
-				
 				} else {
-					updateStatement.append("TO_DATE(?, 'yyyymmdd')");
+					if (isOracleDB()) {
+						updateStatement.append("TO_DATE(?, 'yyyymmdd')");
+					} else {
+						updateStatement.append("STR_TO_DATE(?, '%Y%m%d')");
+					}
 					value = updateValue;
 				}
+			} else {
+				throw new Exception("Invalid update value type");
 			}
 		}
 
@@ -2803,15 +2940,6 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 		return whereSubStatement;
 	}
-
-	private static final void replaceEmptyStringsWithNull(final Map<String, Object> map) {
-		for (Map.Entry<String, Object> entry : map.entrySet()) {
-			Object value = entry.getValue();
-			if (value instanceof String) {
-				entry.setValue(StringUtils.trimToNull((String) value));
-			}
-		}
-	}
 	
 	private static Object replaceEmptyStringsWithNull(Object value) {
 		if (value instanceof String) {
@@ -2883,6 +3011,22 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		// Keep in mind that recipientId can be equal to 0.
 		String sqlCheckAddressInUse = String.format("SELECT COUNT(*) FROM %s WHERE LOWER(email) = ? AND customer_id <> ?", getCustomerTableName(companyId));
 		return selectInt(logger, sqlCheckAddressInUse, StringUtils.trimToEmpty(email).toLowerCase(), recipientId) > 0;
+	}
+	
+	@Override
+	public int getRecipientIdByAddress(String email, int recipientId, @VelocityCheck int companyId) {
+		if (StringUtils.isBlank(email) || companyId <= 0) {
+			return 0;
+		}
+
+		// Keep in mind that recipientId can be equal to 0.
+		String sqlCheckAddressInUse = String.format("SELECT customer_id FROM %s WHERE LOWER(email) = ? AND customer_id <> ?", getCustomerTableName(companyId));
+		if (isOracleDB()) {
+		    sqlCheckAddressInUse += " AND ROWNUM=1";
+        } else {
+            sqlCheckAddressInUse += " LIMIT 1";
+        }
+		return selectInt(logger, sqlCheckAddressInUse, StringUtils.trimToEmpty(email).toLowerCase(), recipientId);
 	}
 
 	@Override
@@ -3005,5 +3149,38 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		}
 
 		return datasourceDescription;
+	}
+
+	@Override
+	public List<Integer> getMailingRecipientIds(int companyID, int mailinglistID, MediaTypes mediaTypes, String fullTargetSql, List<UserStatus> userstatusList) {
+		String sql = "SELECT cust.customer_id FROM customer_" + companyID + "_tbl cust, customer_" + companyID + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND bind.mailinglist_id = ? AND bind.mediatype = ?";
+		if (StringUtils.isNotBlank(fullTargetSql)) {
+			sql += " AND (" + fullTargetSql + ")";
+		}
+		List<Object> parameter = new ArrayList<>();
+		parameter.add(mailinglistID);
+		parameter.add(mediaTypes.getMediaCode());
+		if (userstatusList != null && !userstatusList.isEmpty()) {
+			sql += " AND user_status IN (" + AgnUtils.repeatString("?", userstatusList.size(), ", ") + ")";
+			for (UserStatus userstatus : userstatusList) {
+				parameter.add(userstatus.getStatusCode());
+			}
+		}
+		return select(logger, sql, new IntegerRowMapper(), parameter.toArray(new Object[0]));
+	}
+
+	@Override
+	public void logMailingDelivery(int companyID, int maildropStatusID, int customerID, int mailingID) {
+		update(logger, "INSERT INTO mailtrack_" + companyID + "_tbl (maildrop_status_id, customer_id, mailing_id, timestamp) VALUES (?, ?, ?, ?)", maildropStatusID, customerID, mailingID, new Date());
+	}
+
+	@Override
+	public DbColumnType getColumnDataType(int companyId, String columnName) throws Exception {
+		DbColumnType columnDataType = DbUtilities.getColumnDataType(getDataSource(), "customer_" + companyId + "_tbl", columnName);
+		if (columnDataType != null) {
+			return columnDataType;
+		} else {
+			throw new Exception("Unknown column '" + columnName + "' in company '" + companyId + "'");
+		}
 	}
 }

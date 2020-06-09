@@ -18,29 +18,26 @@ import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticJobRequest;
 import com.agnitas.emm.springws.jaxb.MailingSummaryStatisticJobResponse;
 import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-@SuppressWarnings("deprecation")
 public class MailingSummaryStatisticJobEndpoint extends AbstractMarshallingPayloadEndpoint {
-	
-	@SuppressWarnings("hiding")
-	private static final Logger logger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
+	private static final Logger classLogger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
 
-	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService; 
-	private ObjectFactory comObjectFactory; 
+	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService;
+	private ObjectFactory comObjectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered MailingSummaryStatisticJobEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingSummaryStatisticJobEndpoint.invokeInternal()");
 		}
 		
 		MailingSummaryStatisticJobRequest request = (MailingSummaryStatisticJobRequest) arg0;
 		MailingSummaryStatisticJobResponse response = comObjectFactory.createMailingSummaryStatisticJobResponse();
 		
-		int id = mailingSummaryStatisticJobService.startSummaryStatisticJob(request.getMailingID(), 
+		int id = mailingSummaryStatisticJobService.startSummaryStatisticJob(request.getMailingID(),
 				request.getTargetGroups(), null /*request.getRecipientsType()*/);
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving MailingSummaryStatisticJobEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving MailingSummaryStatisticJobEndpoint.invokeInternal()");
 		}
 		
 		response.setStatisticJobID(id);

@@ -14,35 +14,41 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.admin.AdminException;
+import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
-import com.agnitas.web.ComAdminForm;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
+import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
 public interface AdminService {
-    
+
     /**
      * Returns admin by it's user name.
-     * 
+     *
      * @param username user name
      * @param supervisorName supervisor name
      * @param password password of supervisor
-     * 
+     *
      * @return {@link ComAdmin} for given user name
      * @throws SupervisorException
      * @throws AdminException
      */
 	ComAdmin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException;
+	Optional<ComAdmin> findAdminByCredentials(final String username, final String password);
 
 	Map<String, String> mapIdToUsernameByCompanyAndEmail(int companyId);
 
@@ -52,14 +58,12 @@ public interface AdminService {
 
     Map<Integer, String> getAdminsNamesMap(@VelocityCheck int companyId);
 
-    /**
-     * Removes admin and his preferences
-     * @param deletingAdminID this admin will be deleted
-     * @param editorAdminID who performs this action
-     */
-    void deleteAdmin(int companyID, int deletingAdminID, int editorAdminID);
+	ServiceResult<ComAdmin> isPossibleToDeleteAdmin(int adminId, @VelocityCheck int companyId);
 
-    AdminSavingResult saveAdmin(ComAdminForm form, ComAdmin editorAdmin);
+	ServiceResult<ComAdmin> delete(ComAdmin admin, int adminIdToDelete);
+    boolean deleteAdmin(final int adminID, final int companyID);
+
+    AdminSavingResult saveAdmin(AdminForm form, ComAdmin editorAdmin);
 
     /**
      * Save the permissions for an admin.
@@ -79,10 +83,12 @@ public interface AdminService {
 
     ComAdmin getAdmin(int adminID, int companyID);
 
+    String getAdminName(int adminID, @VelocityCheck int companyID);
+
     int getNumberOfAdmins();
 
     boolean adminExists(String username);
-    
+
     boolean adminLimitReached(@VelocityCheck int companyID);
 
     List<AdminGroup> getAdminGroups(@VelocityCheck int companyID);
@@ -106,6 +112,7 @@ public interface AdminService {
             int pageNumber,
             int pageSize);
 
+    List<AdminEntry> listAdminsByCompanyID(final int companyID);
     List<AdminEntry> getAdminEntriesForUserActivityLog(ComAdmin admin);
 
     PasswordState getPasswordState(ComAdmin admin);
@@ -115,6 +122,21 @@ public interface AdminService {
     boolean setPassword(int adminId, @VelocityCheck int companyId, String password);
 
 	boolean checkBlacklistedAdminNames(String username);
-    
+
     Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit);
+
+    ComAdminPreferences getAdminPreferences(int adminId);
+
+    List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck int companyID);
+
+	Optional<ComAdmin> getAdminByName(String username);
+	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
+	ComAdmin getOldestAdminOfCompany(int companyId);
+
+	void save(ComAdmin admin) throws Exception;
+
+	boolean isAdminPassword(ComAdmin admin, String password);
+	boolean isEnabled(ComAdmin admin);
+	ComAdmin getAdminByLogin(String name, String password);
+
 }

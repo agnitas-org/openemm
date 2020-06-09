@@ -60,12 +60,28 @@ public class CodeGenerator {
 	 * @throws CodeGeneratorException on errors during code generation
 	 */
 	public void generateCode(final BooleanExpressionTargetRuleEqlNode root, final CodeGeneratorCallback callback) throws CodeGeneratorException {
-		doGenerateCode(root, callback);
+		generateCode(root, callback, CodeGenerationFlags.DEFAULT_FLAGS);
 	}
 	
-	protected final void doGenerateCode(final BooleanExpressionTargetRuleEqlNode root, final CodeGeneratorCallback callback) throws CodeGeneratorException {
+	/**
+	 * Generate code for given syntax tree root.
+	 *  
+	 * @param root root node of syntax tree
+	 * @param callback callback to generate target code for visited node
+	 * @param flags flags to alter behavior of code generation
+	 * 
+	 * @throws CodeGeneratorException on errors during code generation
+	 */
+	public void generateCode(final BooleanExpressionTargetRuleEqlNode root, final CodeGeneratorCallback callback, final CodeGenerationFlags flags) throws CodeGeneratorException {
+		doGenerateCode(
+				root, 
+				callback, 
+				flags != null ? flags : CodeGenerationFlags.DEFAULT_FLAGS);
+	}
+	
+	protected final void doGenerateCode(final BooleanExpressionTargetRuleEqlNode root, final CodeGeneratorCallback callback, final CodeGenerationFlags flags) throws CodeGeneratorException {
 		try {
-			final BooleanExpressionTargetRuleEqlNode transformedRoot = ShiftNotDownTransform.shiftNotDown(root);
+			final BooleanExpressionTargetRuleEqlNode transformedRoot = ShiftNotDownTransform.shiftNotDown(root, flags);
 			
 			if(root.getChild().isPresent()) {
 				handleAbstractBooleanEqlNode(transformedRoot.getChild().get(), callback);

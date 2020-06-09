@@ -25,6 +25,8 @@ public class MailinglistDto {
 	private Date creationDate;
 	
 	private int targetId;
+
+	private boolean frequencyCounterEnabled;
 	
 	public int getId() {
 		return id;
@@ -72,5 +74,13 @@ public class MailinglistDto {
 	
 	public void setTargetId(int targetId) {
 		this.targetId = targetId;
+	}
+
+	public boolean isFrequencyCounterEnabled() {
+		return frequencyCounterEnabled;
+	}
+
+	public void setFrequencyCounterEnabled(boolean frequencyCounterEnabled) {
+		this.frequencyCounterEnabled = frequencyCounterEnabled;
 	}
 }

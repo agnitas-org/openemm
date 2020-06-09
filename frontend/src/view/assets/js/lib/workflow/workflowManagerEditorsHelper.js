@@ -1,4 +1,4 @@
-(function() {
+(function($) {
   var EditorsHelper = function(campaignManager, nodeFactory, campaignManagerSettings) {
 
     this.editors = [];
@@ -21,7 +21,7 @@
         open: function(event, ui) {
           var title = self.getEditorPanel(node.type).parent().find('.ui-dialog-title');
           title.empty();
-          title.append('<span class="dialog-title-image">' + self.curEditor.getTitle() + '</span>');
+          title.append($('<span class="dialog-title-image">' + self.curEditor.getTitle() + '</span>'));
           title.find(".dialog-title-image").css("background-image", "url(' " + campaignManagerSettings.imagePath + nodeFactory.getSmallImageForNode(node) + "')");
 
           if (node.type == nodeFactory.NODE_TYPE_RECIPIENT) {
@@ -337,4 +337,4 @@
   }
 
   AGN.Lib.WM.EditorsHelper = EditorsHelper;
-})();
+})(jQuery);

@@ -15,9 +15,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:component-scan base-package="org.agnitas" />
-	<context:component-scan base-package="com.agnitas" />
-		
+	<context:component-scan base-package="org.agnitas, com.agnitas">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+
 	<bean name="TargetGroupEditorContentSynchronizer" class="com.agnitas.emm.core.target.web.util.EditorContentSynchronizer">
 		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
 		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
@@ -37,10 +39,6 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
-	<bean name="/followupstats" class="com.agnitas.emm.core.mailing.web.ComFollowUpStatsAction">
-		<property name="followUpStatsService" ref="followUpStatsService" />
-	</bean>
-
 	<bean name="/mailingParameter" class="com.agnitas.emm.core.mailing.web.ComMailingParameterAction">
 		<property name="mailingParameterService" ref="MailingParameterService" />
 		<property name="mailingService" ref="MailingService" />
@@ -49,28 +47,18 @@
 		<property name="mailingParameterLogService" ref="mailingParameterLogService"/>
 	</bean>
 
-	<bean name="/recipientsreport" class="com.agnitas.emm.core.recipientsreport.web.RecipientsReportAction">
-		<property name="recipientsReportService" ref="RecipientsReportService"/>
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="webStorage" ref="WebStorage" />
-		<property name="mimeTypeService" ref="MimeTypeService" />
-	</bean>
-
 	<bean name="/mcomponents" class="com.agnitas.web.ComMailingComponentsAction">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
-		<property name="componentDao" ref="MailingComponentDao" />
-		<property name="linkDao" ref="TrackableLinkDao" />
 		<property name="mailingComponentService" ref="mailingComponentService" />
 		<property name="mailingBaseService" ref="MailingBaseService" />
 		<property name="previewImageService" ref="PreviewImageService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="componentService" ref="componentService"/>
 		<property name="sFtpHelperFactory" ref="SFtpHelperFactory"/>
 		<property name="maildropService" ref="MaildropService" />
-        <property name="mailinglistService" ref="MailinglistService"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-    </bean>
+		<property name="linkService" ref="TrackeableLinkService"/>
+	</bean>
 
 	<bean name="/formcomponents" class="com.agnitas.web.FormComponentsAction">
 		<property name="userFormDao" ref="UserFormDao" />
@@ -121,7 +109,8 @@
 		<property name="workflowService" ref="WorkflowService"/>
 		<property name="agnTagService" ref="AgnTagService"/>
         <property name="userActivityLogService" ref="UserActivityLogService"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />    </bean>
+		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+	</bean>
 
 	<!-- Same type, same setup as "/target"-->
 	<bean name="/mwNewTarget" parent="/target" />
@@ -132,35 +121,16 @@
 		<property name="targetCopyService" ref="TargetCopyService" />
 		<property name="targetFactory" ref="TargetFactory" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="mailingService" ref="MailingBaseService"/>
 		<property name="eqlFacade" ref="EqlFacade"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-        <property name="birtStatisticsService" ref="BirtStatisticsService"/>
-	</bean>
-
-	<bean name="/admin" class="com.agnitas.web.ComAdminAction">
-		<property name="targetDao" ref="TargetDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="adminGroupDao" ref="AdminGroupDao" />
-		<property name="adminPreferencesDao" ref="AdminPreferencesDao" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="layoutBaseDao" ref="EmmLayoutBaseDao" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="comCSVService" ref="CSVService" />
-		<property name="comPDFService" ref="PDFService" />
-		<property name="passwordCheck" ref="PasswordCheck" />
-		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="adminService" ref="AdminService"/>
-		<property name="adminChangesLogService" ref="adminChangesLogService"/>
-		<property name="adminDao" ref="AdminDao"/>
 		<property name="webStorage" ref="WebStorage" />
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+		<property name="gridService" ref="GridServiceWrapper" />
+		<property name="birtStatisticsService" ref="BirtStatisticsService"/>
+		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean name="/selfservice" class="com.agnitas.web.ComUserSelfServiceAction">
-		<property name="adminDao" ref="AdminDao" />
+		<property name="adminService" ref="AdminService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="adminGroupDao" ref="AdminGroupDao" />
 		<property name="adminPreferencesDao" ref="AdminPreferencesDao" />
@@ -188,22 +158,6 @@
 	<bean name="/revokeSupervisorLoginPermission" class="com.agnitas.web.ComUserSelfServiceRevokeSupervisorLoginPermissionAction">
 		<property name="supervisorLoginPermissionService" ref="SupervisorLoginPermissionService" />
 		<property name="userActivityLogService" ref="UserActivityLogService" />
-	</bean>
-
-	<bean name="/action" class="com.agnitas.web.ComEmmActionAction">
-		<property name="campaignDao" ref="CampaignDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="emmActionDao" ref="EmmActionDao" />
-		<property name="emmActionService" ref="EmmActionService" />
-		<property name="emmActionFactory" ref="EmmActionFactory" />
-		<property name="actionOperationFactory" ref="ActionOperationFactory" />
-		<property name="velocityDirectiveScriptValidator" ref="VelocityDirectiveScriptValidator" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="userFormDao" ref="UserFormDao"/>
-		<property name="recipientDao" ref="RecipientDao" />
-        <property name="webStorage" ref="WebStorage" />
-		<property name="blacklistService" ref="BlacklistService"/>
 	</bean>
 
 	<bean name="/importwizard" class="com.agnitas.web.ComImportWizardAction">
@@ -235,11 +189,6 @@
 		<property name="mimeTypeWhitelistService" ref="MimeTypeWhitelistService" />
     </bean>
 
-	<bean name="/mailing_stat_plugins" class="com.agnitas.reporting.birt.web.ComMailingReportPluginListAction">
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-	</bean>
-
 	<bean name="/trackuserformlink" class="com.agnitas.userform.trackablelinks.web.ComTrackableUserFormLinkAction">
 		<property name="userFormDao" ref="UserFormDao" />
 		<property name="configService" ref="ConfigService" />
@@ -257,14 +206,6 @@
 	<bean name="/convert_actions" class="com.agnitas.temporary.actions.ComConvertActionsAction">
 		<property name="emmActionDao" ref="EmmActionDao" />
 		<property name="emmActionService" ref="EmmActionService" />
-	</bean>			
-	
-	<bean name="/convert_mailloops" class="com.agnitas.emm.core.mailloop.web.ConvertMailloopAutoresponderAction">
-		<property name="mailloopDao" ref="MailloopDao" />
-		<property name="mailinglistDao" ref="MailinglistDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="dataSource" ref="dataSource" />
 	</bean>
 	
 	<bean name="/salutation" class="org.agnitas.web.SalutationAction">
@@ -275,33 +216,6 @@
 		<property name="futureHolder" ref="futureHolder" />
 		<property name="webStorage" ref="WebStorage" />
 	</bean>
-
-	<bean name="/mailing_compare" class="com.agnitas.web.ComCompareMailingAction">
-		<property name="birtservice" ref="MailingStatBIRTService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="targetDao" ref="TargetDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="targetService" ref="targetService"/>
-		<property name="mailinglistService" ref="MailinglistService"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-	</bean>
-
-	<bean name="/mailing_stat2" class="com.agnitas.reporting.birt.web.ComMailingStatAction">
-		<property name="birtservice" ref="MailingStatBIRTService" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="adminPreferencesDao" ref="AdminPreferencesDao" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="targetService" ref="targetService"/>
-		<property name="mailinglistService" ref="MailinglistService"/>
-		<property name="birtReportService" ref="BirtReportService" />
-		<property name="configService" ref="ConfigService" />
-        <property name="mailingBaseService" ref="MailingBaseService"/>
-        <property name="birtStatisticsService" ref="BirtStatisticsService" />
-        <property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-        <property name="gridServiceWrapper" ref="GridServiceWrapper"/>
-    </bean>
 
 	<bean name="/sendMailloopAutoresponder" class="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailAction">
 		<property name="mailloopService" ref="MailloopService" />
@@ -330,26 +244,6 @@
 		<property name="gridService" ref="GridServiceWrapper"/>
 	</bean>
 
-	<bean name="/mailing_stat" class="com.agnitas.reporting.birt.web.ComMailingBIRTStatAction">
-		<property name="birtservice" ref="MailingStatBIRTService" />
-		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-        <property name="mailinglistService" ref="MailinglistService"/>
-        <property name="targetService" ref="targetService"/>
-		<property name="webStorage" ref="WebStorage"/>
-		<property name="gridService" ref="GridServiceWrapper"/>
-	</bean>
-
-	<bean name="/recipient_stats" class="com.agnitas.reporting.birt.web.ComRecipientStatAction">
-		<property name="birtservice" ref="MailingStatBIRTService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="targetService" ref="targetService"/>
-		<property name="mailinglistService" ref="MailinglistService"/>
-		<property name="configService" ref="ConfigService" />
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-	</bean>
-
 	<bean name="/mailingbase" class="com.agnitas.web.ComMailingBaseAction">
 		<property name="configService" ref="ConfigService" />
 		<property name="futureHolder" ref="futureHolder" />
@@ -360,7 +254,6 @@
 		<property name="dynamicTagDao" ref="DynamicTagDao" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="campaignDao" ref="CampaignDao" />
-		<!-- property name="mailingComponentDao" ref="MailingComponentDao" /-->
 		<property name="mailingFactory" ref="MailingFactory" />
 		<property name="characterEncodingValidator" ref="CharacterEncodingValidator" />
 		<property name="previewImageService" ref="PreviewImageService" />
@@ -370,7 +263,6 @@
 		<property name="linkService" ref="LinkService" />
 		<property name="maildropService" ref="MaildropService" />
 		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="deliveryStatService" ref="mailingDeliveryStatService"/>
 		<property name="javaMailService" ref="JavaMailService" />
         <property name="conversionService" ref="conversionService"/>
         <property name="copyMailingService" ref="CopyMailingService"/>
@@ -381,10 +273,13 @@
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="gridService" ref="GridServiceWrapper"/>
         <property name="targetService" ref="targetService"/>
+        <property name="mailingStopService" ref="MailingStopService" />
+        <property name="agnTagService" ref="AgnTagService"/>
     </bean>
 
 	<bean name="/mailingcontent" class="com.agnitas.web.ComMailingContentAction">
 		<property name="actionDao" ref="EmmActionDao" />
+		<property name="mailingService" ref="MailingService"/>
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingFactory" ref="MailingFactory" />
@@ -401,7 +296,6 @@
 		<property name="adminPreferencesDao" ref="AdminPreferencesDao" />
 		<property name="tagSyntaxChecker" ref="TagSyntaxChecker" />
 		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="linkService" ref="LinkService" />
 		<property name="maildropService" ref="MaildropService" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
         <property name="gridServiceWrapper" ref="GridServiceWrapper"/>
@@ -412,6 +306,24 @@
         <property name="userActivityLogService" ref="UserActivityLogService" />
         <property name="companyDao" ref="CompanyDao" />
         <property name="userFormExecutionService" ref="UserFormExecutionService" />
+    </bean>
+
+    <bean name="/optimize" class="com.agnitas.mailing.autooptimization.web.ComOptimizationAction">
+        <property name="optimizationService" ref="optimizationService" />
+        <property name="optimizationScheduleService" ref="optimizationScheduleService" />
+        <property name="userActivityLogService" ref="UserActivityLogService" />
+        <property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
+        <property name="birtStatisticsService" ref="BirtStatisticsService"/>
+    </bean>
+
+    <bean name="/optimize_ajax" class="com.agnitas.mailing.autooptimization.web.ComOptimizationAjaxAction">
+        <property name="optimizationService" ref="optimizationService" />
+        <property name="optimizationStatService" ref="OptimizationStatService" />
+    </bean>
+
+    <bean name="/optimize_schedule" class="com.agnitas.mailing.autooptimization.web.ComOptimizationScheduleAction">
+        <property name="optimizationService" ref="optimizationService" />
+        <property name="optimizationScheduleService" ref="optimizationScheduleService" />
     </bean>
 
 </beans>

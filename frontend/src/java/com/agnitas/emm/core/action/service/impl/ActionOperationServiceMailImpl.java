@@ -28,7 +28,7 @@ import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class ActionOperationServiceMailImpl implements EmmActionOperation {

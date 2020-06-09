@@ -1,4 +1,4 @@
-<%@page import="org.apache.commons.lang.StringUtils"%>
+<%@page import="org.apache.commons.lang3.StringUtils"%>
 <%@page import="org.agnitas.dao.UserStatus"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.agnitas.emm.core.Permission"%>
@@ -44,8 +44,9 @@
 <c:set var="MODE_EDIT_READONLY" value="<%= ProfileField.MODE_EDIT_READONLY %>"/>
 <c:set var="MODE_EDIT_NOT_VISIBLE" value="<%= ProfileField.MODE_EDIT_NOT_VISIBLE %>"/>
 
-<c:set var="ACTION_CONFIRM_DELETE" value="<%= RecipientAction.ACTION_CONFIRM_DELETE %>" scope="page" />
-<c:set var="ACTION_CHECK_ADDRESS" value="<%= ComRecipientAction.ACTION_CHECK_ADDRESS %>" scope="page" />
+<c:set var="ACTION_CONFIRM_DELETE" value="<%= RecipientAction.ACTION_CONFIRM_DELETE %>"     scope="page" />
+<c:set var="ACTION_CHECK_ADDRESS" value="<%= ComRecipientAction.ACTION_CHECK_ADDRESS %>"    scope="page" />
+<c:set var="ACTION_VIEW" value="<%= ComRecipientAction.ACTION_VIEW %>"                      scope="page" />
 
 <c:choose>
     <c:when test="${recipientForm.recipientID == 0}">
@@ -87,11 +88,16 @@
         <c:param name="recipientID" value="${recipientForm.recipientID}"/>
     </c:url>
 
+    <c:url var="userViewLinkPattern" value="/recipient.do?recipientID={recipient-ID}">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+    </c:url>
+
     <c:if test="${isRecipientEmailInUseWarningEnabled}">
         <script type="application/json" data-initializer="recipient-view">
             {
               "urls": {
-                "CHECK_ADDRESS": "${checkAddressLink}"
+                "CHECK_ADDRESS": "${checkAddressLink}",
+                "EXISTING_USER_URL_PATTERN": "${userViewLinkPattern}"
               }
             }
         </script>
@@ -215,6 +221,9 @@
                                 </ul>
                             </div>
                         </div>
+
+                        <%@include file="recipient-freq-counter.jspf" %>
+
 	                </div>
                 </div>
             </div>
@@ -227,7 +236,7 @@
                 <div class="tile-content">
                     <div class="tile-content-forms">
                         <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>" useCustomSorting="true"
-                            hide="email, title, gender, mailtype, firstname, lastname, change_date, bounceload, facebook_status, foursquare_status, google_status, xing_status, twitter_status, sys_tracking_veto, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status">
+                            hide="email, title, gender, mailtype, firstname, lastname, change_date, bounceload, facebook_status, foursquare_status, google_status, xing_status, twitter_status, sys_tracking_veto, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status, freq_count_day, freq_count_week, freq_count_month">
 
                             <%--@elvariable id="_agnTbl_data_type" type="java.lang.String"--%>
                             <%--@elvariable id="_agnTbl_column_name" type="java.lang.String"--%>
@@ -244,9 +253,6 @@
                                 <c:set var="column_name" value="${_agnTbl_column}"/>
                             </c:if>
 
-                            <c:set var="propNameDateDay" value="column(${column_name}_DAY_DATE)"/>
-                            <c:set var="propNameDateMonth" value="column(${column_name}_MONTH_DATE)"/>
-                            <c:set var="propNameDateYear" value="column(${column_name}_YEAR_DATE)"/>
                             <c:set var="propName" value="column(${column_name})"/>
 
                             <c:choose>
@@ -299,31 +305,20 @@
                                                                 <html:option value="${selectedDateMilliseconds}"><fmt:formatDate value="${selectedDate}" pattern="${adminDateFormat}" timeZone="${adminTimeZone}" /></html:option>
                                                             </c:if>
                                                         </agn:agnSelect>
-
-                                                        <agn:agnHidden property="${propNameDateDay}" data-date-split-target="DAY"/>
-                                                        <agn:agnHidden property="${propNameDateMonth}" data-date-split-target="MONTH"/>
-                                                        <agn:agnHidden property="${propNameDateYear}" data-date-split-target="YEAR"/>
                                                     </div>
                                                 </c:when>
                                                 <c:otherwise>
-	                                                <c:choose>
-	                                                	<c:when test="${isWritable}">
-		                                                    <div class="col-sm-2">
-		                                                        <html:text property="${propNameDateDay}" styleClass="form-control" readonly="${not isWritable}" />
-		                                                    </div>
-		                                                    <div class="col-sm-2">
-		                                                        <html:text property="${propNameDateMonth}" styleClass="form-control" readonly="${not isWritable}" />
-		                                                    </div>
-		                                                    <div class="col-sm-4">
-		                                                        <html:text property="${propNameDateYear}" styleClass="form-control" readonly="${not isWritable}" />
-		                                                    </div>
-		                                                </c:when>
-		                                                <c:otherwise>
-		                                                	<div class="col-sm-8">
-		                                                		<html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}" />
-		                                                    </div>
-		                                                </c:otherwise>
-	                                                </c:choose>
+	                                                <div class="col-sm-8">
+	                                               		<c:choose>
+		                                                	<c:when test="${isWritable}">
+		                                                		<c:set var="currentValue"><bean:write name="recipientForm" property="${propName}"/></c:set>
+		                                                		<input name="${propName}" value="${currentValue}" class="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
+			                                                </c:when>
+			                                                <c:otherwise>
+			                                                	<html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}" />
+			                                                </c:otherwise>
+	                                                	</c:choose>
+													</div>
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>
@@ -398,7 +393,8 @@
                         String tmpUserType = null;
                         String tmpUserRemark = null;
                         java.util.Date tmpUserDate = null;
-                        DateFormat aFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY));
+                        SimpleDateFormat aFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY));
+                        aFormat.applyPattern(aFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
                         boolean aMType = false;
                         int k = 0;
 
@@ -408,7 +404,7 @@
                         Integer mi;
 
                         // for emm:ShowByPermission keys
-                        String[] ES = {"email", "fax", "print", "mms", "sms"};
+                        String[] ES = {"email", "fax", "post", "mms", "sms"};
 
                         cust.setCompanyID(AgnUtils.getCompanyID(request));
                         cust.setCustomerID(recipient.getRecipientID());

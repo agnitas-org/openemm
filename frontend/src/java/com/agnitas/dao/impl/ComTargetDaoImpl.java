@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,43 +34,48 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.TargetLightImpl;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeProperties;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.phloc.commons.collections.pair.Pair;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.target.TargetRepresentation;
 import org.agnitas.target.TargetRepresentationFactory;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_SQL_PATTERN;
 
 /**
  * Implementation of {@link ComTargetDao}.
  */
-public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
+public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetDao {
 	
 	/** Maximum length of target SQL. */
 	public static final int TARGET_GROUP_SQL_MAX_LENGTH = 4000;
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComTargetDaoImpl.class);
-    
+
     /** Facade for EQL feature */
 	private EqlFacade eqlFacade;
 	
@@ -118,6 +124,17 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 			sql += " AND deleted <> 1";
 		}
 		return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("target_shortname"), companyId, targetId);
+	}
+
+	@Override
+	public boolean isTargetNameInUse(@VelocityCheck int companyId, String targetName, boolean includeDeleted) {
+		String sqlGetCount = "SELECT COUNT(*) FROM dyn_target_tbl WHERE company_id = ? AND target_shortname = ?";
+
+		if (!includeDeleted) {
+			sqlGetCount += " AND deleted <> 1";
+		}
+
+		return selectInt(logger, sqlGetCount, companyId, targetName) > 0;
 	}
 
 	@Override
@@ -183,7 +200,9 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	@Override
 	public Map<Integer, TargetLight> getAllowedTargetLights(@VelocityCheck int companyID) {
 		Map<Integer, TargetLight> targets = new HashMap<>();
-		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, invalid FROM dyn_target_tbl WHERE company_id = ? ORDER BY target_id";
+		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, complexity, invalid " +
+				"FROM dyn_target_tbl WHERE company_id = ? " +
+				"ORDER BY target_id";
 
 		List<TargetLight> list = select(logger, sql, targetLightRowMapper, companyID);
 
@@ -259,9 +278,9 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		/*
 		 *  This check is only used to check, if SQL got too large and make valid SQL returning no recipients.
 		 *  The exception itself is thrown after saving the target group.
-		 *  When throwing exception here, neither EQL nor other properties are udpated in / inserted to DB 
+		 *  When throwing exception here, neither EQL nor other properties are udpated in / inserted to DB
 		 *  so the user will loose any modifications done in UI.
-		 *  
+		 * 
 		 *  This is done to get EQL saved to DB.
 		 */
 		if(StringUtils.length(target.getTargetSQL()) > TARGET_GROUP_SQL_MAX_LENGTH) {
@@ -284,12 +303,12 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				if (target.getCreationDate() == null) {
 					// some tests set the creationdate
 					target.setCreationDate(new Date());
-				} 
+				}
 				
 				if (isOracleDB()) {
 					int nextTargetId = selectInt(logger, "SELECT dyn_target_tbl_seq.NEXTVAL FROM DUAL");
 					target.setId(nextTargetId);
-					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, invalid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 							target.getId(),
 							target.getCompanyID(),
 							target.getTargetSQL(),
@@ -302,12 +321,13 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 							BooleanUtils.toInteger(target.getComponentHide()),
 							BooleanUtils.toInteger(hidden),
                             target.getEQL(),
+                            target.getComplexityIndex(),
                             target.isValid() ? 0 : 1	// Note: Property is "valid", table column is "invalid"!
 					);
 				} else {
-					String insertStatement = "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, invalid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					String insertStatement = "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-					Object[] paramsWithNext = new Object[12];
+					Object[] paramsWithNext = new Object[13];
 					paramsWithNext[0] = target.getCompanyID();
 					paramsWithNext[1] = target.getTargetSQL();
 					paramsWithNext[2] = target.getTargetName();
@@ -319,13 +339,14 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
                     paramsWithNext[8] = BooleanUtils.toInteger(target.getComponentHide());
                     paramsWithNext[9] = BooleanUtils.toInteger(hidden);
                     paramsWithNext[10] = target.getEQL();
-                    paramsWithNext[11] = target.isValid() ? 0 : 1;	// Note: Property is "valid", table column is "invalid"!
+                    paramsWithNext[11] = target.getComplexityIndex();
+                    paramsWithNext[12] = target.isValid() ? 0 : 1;	// Note: Property is "valid", table column is "invalid"!
                     
                     int targetID = insertIntoAutoincrementMysqlTable(logger, "target_id", insertStatement, paramsWithNext);
 					target.setId(targetID);
 				}
 			} else {
-				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, invalid=?, component_hide = ? WHERE target_id = ? AND company_id = ?",
+				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, complexity = ?, invalid=?, component_hide = ? WHERE target_id = ? AND company_id = ?",
 					target.getTargetSQL(),
 					target.getTargetName(),
 					target.getTargetDescription(),
@@ -333,6 +354,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 					target.getChangeDate(),
 					BooleanUtils.toInteger(target.isAdminTestDelivery()),
 					target.getEQL(),
+					target.getComplexityIndex(),
 					target.isValid() ? 0 : 1,	// Note: Property is "valid", table column is "invalid"!
 					BooleanUtils.toInteger(target.getComponentHide()),
 					target.getId(),
@@ -368,7 +390,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 
 	@Override
 	public ComTarget getTarget(int targetID, @VelocityCheck int companyID) {
-		final String sqlGetTarget = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
+		final String sqlGetTarget = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, invalid, component_hide FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
 
 		if (isOracleDB()) {
 			return selectObjectDefaultNull(logger, "SELECT * FROM (" + sqlGetTarget + ") WHERE ROWNUM = 1", targetRowMapperWithEql, targetID, companyID);
@@ -389,7 +411,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	public ComTarget getTargetByName(String targetName, @VelocityCheck int companyID) {
 		final StringBuilder sqlQueryBuilder = new StringBuilder();
 
-		final List<String> columns = new ArrayList<>(Arrays.asList(
+		final List<String> columns = Arrays.asList(
 				"target_id",
 				"company_id",
 				"target_description",
@@ -402,9 +424,10 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				"admin_test_delivery",
 				"locked",
 				"invalid",
+				"COALESCE(complexity, -1) AS complexity",
 				"component_hide",
 				"eql"
-		));
+		);
 
 		if (isOracleDB()) {
 			sqlQueryBuilder.append("SELECT * FROM (");
@@ -424,23 +447,6 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		}
 
 		return selectObjectDefaultNull(logger, sqlQueryBuilder.toString(), targetRowMapperWithEql, companyID, targetName);
-	}
-
-	/**
-	 * Target group names are not unique
-	 * 
-	 * @param targetName
-	 * @param companyID
-	 * @return
-	 */
-	@Override
-	public List<TargetLight> getTargetLightsByName(String targetName, @VelocityCheck int companyID, boolean allowDeleted) {
-		String sqlQuery = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0) AND target_shortname = ?";
-		if (!allowDeleted) {
-			sqlQuery += " AND deleted != 1";
-		}
-
-		return select(logger, sqlQuery, targetLightRowMapper, companyID, targetName);
 	}
 
 	@Override
@@ -606,7 +612,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 			deliveryCondition += "admin_test_delivery = 1";
 		}
 		
-		String sql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, invalid, component_hide, eql";
+		String sql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, COALESCE(complexity, -1) AS complexity, invalid, component_hide, eql";
 		
 		sql += " FROM dyn_target_tbl WHERE company_id = ? AND (" + deliveryCondition + ")";
 
@@ -647,10 +653,20 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		return getTargetLightsBySearchParameters(companyID, includeDeleted, worldDelivery, adminTestDelivery, content, false, false, "");
 	}
 
-    @Override
+	@Override
+	public List<TargetLight> getLimitingTarget(@VelocityCheck int companyId) {
+		return getTargetLightsBySearchParameters(companyId, false, true, true, false, false, false, "", true);
+	}
+
+	@Override
 	public List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content, boolean isSearchName, boolean isSearchDescription, String searchText) {
+		return getTargetLightsBySearchParameters(companyId, includeDeleted, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, false);
+	}
+
+	@Override
+	public List<TargetLight> getTargetLightsBySearchParameters(@VelocityCheck int companyId, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content, boolean isSearchName, boolean isSearchDescription, String searchText, boolean isAltg) {
 		List<Object> selectParameter = new ArrayList<>();
-		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, creation_date, change_date, deleted, locked, invalid, component_hide"
+		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, creation_date, change_date, deleted, locked, invalid, component_hide, complexity"
 			+ " FROM dyn_target_tbl"
 			+ " WHERE company_id = ?"
 				+ " AND (hidden IS NULL or hidden = 0)";
@@ -658,6 +674,10 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		
 		if (!includeDeleted) {
 			selectSql += " AND deleted = 0";
+		}
+
+		if(isAltg) {
+			selectSql += " AND is_access_limiting = 1";
 		}
 		
 		if (content) {
@@ -819,7 +839,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		
 		String deleted = includeDeleted ? "" : " AND deleted=0 ";
 		
-		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, target_representation, target_sql, deleted, creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0) " + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetRowMapperWithEql, companyID);
+		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, target_representation, target_sql, deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, invalid, component_hide FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0) " + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetRowMapperWithEql, companyID);
 	}
 
 	/**
@@ -841,6 +861,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				readTarget.setChangeDate(resultSet.getTimestamp("change_date"));
 				readTarget.setAdminTestDelivery(resultSet.getBoolean("admin_test_delivery"));
 				readTarget.setLocked(resultSet.getBoolean("locked"));
+				readTarget.setComplexityIndex(resultSet.getInt("complexity"));
 				readTarget.setValid(!resultSet.getBoolean("invalid"));
 				readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
 				
@@ -962,12 +983,13 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 				readTarget.setChangeDate(resultSet.getDate("change_date"));
 				readTarget.setDeleted(resultSet.getInt("deleted"));
 				readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
+				readTarget.setComplexityIndex(resultSet.getInt("complexity"));
 				readTarget.setValid(!resultSet.getBoolean("invalid"));
-				
+
 				if (DbUtilities.resultsetHasColumn(resultSet, "invalid")) {
 					readTarget.setValid(!resultSet.getBoolean("invalid"));
 				}
-				
+
 				return readTarget;
 			} catch (Exception e) {
 				throw new SQLException("Cannot create TargetLight item from ResultSet row", e);
@@ -1004,13 +1026,13 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		
 		String deleted = includeDeleted ? "" : " AND deleted = 0";
 		
-		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetLightRowMapper, companyID);
+		return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY target_shortname", targetLightRowMapper, companyID);
 	}
 
 	@Override
 	public List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds) {
 		if (CollectionUtils.isNotEmpty(targetIds)) {
-			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid " +
+			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid " +
 					"FROM dyn_target_tbl " +
 					"WHERE company_id = ? AND COALESCE(deleted, 0) = 0 AND COALESCE(hidden, 0) = 0 AND admin_test_delivery = 0 " +
 					"AND target_id NOT IN (" + StringUtils.join(targetIds, ", ") + ") " +
@@ -1025,7 +1047,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 	@Override
 	public List<TargetLight> getChoosenTargetLights(String targetExpression, int companyID) {
 		if (StringUtils.isNotEmpty(targetExpression)) {
-			return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY target_shortname", targetLightRowMapper);
+			return select(logger, "SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY target_shortname", targetLightRowMapper);
 		} else {
 			return new ArrayList<>();
 		}
@@ -1041,7 +1063,7 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
-		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, invalid ")
+		sqlQueryBuilder.append("SELECT target_id, company_id, target_description, target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid ")
 				.append("FROM dyn_target_tbl ")
 				.append("WHERE (company_id = ? OR company_id = 0) AND deleted = 0 ");
 		sqlParameters.add(companyID);
@@ -1097,18 +1119,40 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 
 		return patterns;
 	}
-	
+
 	@Override
 	public boolean isOracle() {
 		return super.isOracleDB();
 	}
 
 	@Override
-	public final List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId) {
-		String sql = "SELECT target_id, target_shortname, company_id, eql, target_representation FROM dyn_target_tbl WHERE company_id = ? AND deleted = 0";
-		return select(logger, sql, rawTargetGroupRowMapper, companyId);
+	public final List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId, String ...eqlRawFragments) {
+		String sqlGetAll = "SELECT target_id, target_shortname, company_id, eql, target_representation FROM dyn_target_tbl "
+				+ "WHERE company_id = ? AND deleted = 0";
+
+		if (eqlRawFragments.length > 0) {
+			List<Object> sqlParameters = new ArrayList<>(eqlRawFragments.length + 1);
+			int validFragmentsCount = 0;
+
+			sqlParameters.add(companyId);
+
+			for (String fragment : eqlRawFragments) {
+				if (StringUtils.isNotEmpty(fragment)) {
+					sqlParameters.add("%" + fragment.toLowerCase() + "%");
+					validFragmentsCount++;
+				}
+			}
+
+			if (validFragmentsCount > 0) {
+				String sql = sqlGetAll + " AND " + AgnUtils.repeatString("LOWER(eql) LIKE ?", validFragmentsCount, " AND ");
+
+				return select(logger, sql, rawTargetGroupRowMapper, sqlParameters.toArray());
+			}
+		}
+
+		return select(logger, sqlGetAll, rawTargetGroupRowMapper, companyId);
 	}
-    
+
     @Override
     public List<RawTargetGroup> getTargetsCreatedByWorkflow(@VelocityCheck int companyId, boolean onlyEmptyEQL) {
 	    String sql = "SELECT target_id, target_shortname, company_id, eql, target_representation " +
@@ -1120,18 +1164,23 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
         
         return select(logger, sql, rawTargetGroupRowMapper, companyId, WORKFLOW_TARGET_NAME_SQL_PATTERN);
 	}
-	
+
 	@Override
-	public List<Integer> getTargetIdsCreatedByWorkflow(int companyId) {
-		return select(logger,
-				"SELECT target_id FROM dyn_target_tbl WHERE hidden = 1 AND target_shortname like ? AND company_id = ?",
-				new IntegerRowMapper(), WORKFLOW_TARGET_NAME_SQL_PATTERN, companyId);
+	public void saveComplexityIndices(@VelocityCheck int companyId, Map<Integer, Integer> complexities) {
+		if (MapUtils.isNotEmpty(complexities)) {
+			List<Object[]> sqlParameters = complexities.entrySet()
+					.stream()
+					.map(entry -> new Object[]{entry.getValue(), entry.getKey(), companyId})
+					.collect(Collectors.toList());
+
+			batchupdate(logger, "UPDATE dyn_target_tbl SET complexity = ? WHERE target_id = ? AND company_id = ?", sqlParameters);
+		}
 	}
-	
+
 	@Override
 	public List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
 		List<Object> selectParameter = new ArrayList<>();
-		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide " +
+		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, target_representation, deleted, creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide, COALESCE(complexity, -1) AS complexity " +
 				" FROM dyn_target_tbl WHERE company_id = ? AND target_shortname = ? AND target_sql = ?" +
 				" AND (hidden IS NULL or hidden = 0)";
 		selectParameter.add(companyId);
@@ -1150,5 +1199,138 @@ public class ComTargetDaoImpl extends BaseDaoImpl implements ComTargetDao {
 		}
 
 		return select(logger, selectSql, targetRowMapperWithEql,  selectParameter.toArray());
+	}
+
+	@Override
+	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId,
+																				Set<TargetGroupDependentType> allowedTypes, int pageNumber,
+																				int pageSize, String sortColumn, String order) {
+		final boolean isOracle = isOracle();
+		final boolean isFilterDisabled = CollectionUtils.isEmpty(allowedTypes);
+		final boolean sortAscending = AgnUtils.sortingDirectionToBoolean(order, true);
+
+		List<String> sqlSubQueries = new ArrayList<>();
+		List<Object> sqlParameters = new ArrayList<>();
+
+		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.MAILING)) {
+			sqlSubQueries.add(getSqlDependentMailings(isOracle));
+			sqlParameters.add(TargetGroupDependentType.MAILING.getId());
+			sqlParameters.add(companyId);
+			sqlParameters.add(targetId);
+		}
+
+		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.MAILING_CONTENT)) {
+			sqlSubQueries.add(getSqlDependentMailingContents(isOracle));
+			sqlParameters.add(TargetGroupDependentType.MAILING_CONTENT.getId());
+			sqlParameters.add(companyId);
+			sqlParameters.add(targetId);
+		}
+
+		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.REPORT)) {
+			sqlSubQueries.add(getSqlDependentReports(isOracle));
+			sqlParameters.add(TargetGroupDependentType.REPORT.getId());
+			sqlParameters.add(companyId);
+			sqlParameters.add(targetId);
+		}
+
+		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.EXPORT_PROFILE)) {
+			sqlSubQueries.add(getSqlDependentExportPredefs());
+			sqlParameters.add(TargetGroupDependentType.EXPORT_PROFILE.getId());
+			sqlParameters.add(companyId);
+			sqlParameters.add(targetId);
+		}
+
+		String sqlGetDependents = "SELECT * FROM (" + StringUtils.join(sqlSubQueries, " UNION ALL ") + ") T1";
+
+		return selectPaginatedList(logger, sqlGetDependents, null, StringUtils.trimToNull(sortColumn), sortAscending, pageNumber, pageSize, new DependentMapper(), sqlParameters.toArray());
+	}
+
+	@Override
+	public Map<Integer, Integer> getTargetComplexityIndices(@VelocityCheck int companyId) {
+		String sqlGetComplexityIndices = "SELECT target_id, COALESCE(complexity, -1) AS complexity FROM dyn_target_tbl WHERE company_id = ? AND COALESCE(hidden, 0) = 0";
+
+		Map<Integer, Integer> map = new HashMap<>();
+		query(logger, sqlGetComplexityIndices, new ComplexityIndicesCallbackHandler(map), companyId);
+		return map;
+	}
+
+	@Override
+	public Integer getTargetComplexityIndex(@VelocityCheck int companyId, int targetId) {
+		String sqlGetComplexityIndex = "SELECT COALESCE(complexity, -1) FROM dyn_target_tbl " +
+			"WHERE target_id = ? AND company_id = ? AND COALESCE(hidden, 0) = 0";
+
+		return selectWithDefaultValue(logger, sqlGetComplexityIndex, Integer.class, null, targetId, companyId);
+	}
+
+	@Override
+	public List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(@VelocityCheck int companyId) {
+		String sqlGetTargets = "SELECT target_id, eql FROM dyn_target_tbl WHERE company_id = ? AND complexity IS NULL";
+
+		return select(logger, sqlGetTargets, new TargetEqlMapper(), companyId);
+	}
+
+	private static String getSqlDependentMailings(boolean isOracle) {
+		return "SELECT ? AS type, mailing_id AS id, shortname AS name FROM mailing_tbl " +
+				"WHERE company_id = ? AND deleted = 0 AND (" + ComMailingDaoImpl.createTargetExpressionRestriction(isOracle) + ")";
+	}
+
+	private static String getSqlDependentReports(boolean isOracle) {
+		return "SELECT DISTINCT ? AS type, rep.report_id AS id, rep.shortname AS name " +
+				"FROM birtreport_parameter_tbl param INNER JOIN birtreport_tbl rep ON rep.report_id = param.report_id " +
+				"WHERE rep.company_id = ? AND param.parameter_name = 'selectedTargets' " +
+				"AND param.parameter_value NOT IN (' ') " +
+				(isOracle ?
+						"AND INSTR(',' || parameter_value || ',', ',' || ? || ',') <> 0 "
+						:
+						"AND INSTR(CONCAT(',', parameter_value, ','), CONCAT(',', ?, ',')) <> 0 "
+				);
+	}
+
+	private static String getSqlDependentExportPredefs() {
+		return "SELECT ? AS type, export_predef_id AS id, shortname AS name FROM export_predef_tbl " +
+				"WHERE deleted = 0 AND company_id = ? AND target_id = ?";
+	}
+
+	private static String getSqlDependentMailingContents(boolean isOracle) {
+		String sql;
+
+		if (isOracle) {
+			sql = "SELECT DISTINCT ? AS type, m.mailing_id AS id, m.shortname || ' (' || n.dyn_name || ')' AS name ";
+		} else {
+			sql = "SELECT DISTINCT ? AS type, m.mailing_id AS id, CONCAT(m.shortname, ' (' , n.dyn_name , ')') AS name ";
+		}
+
+		return sql + "FROM dyn_content_tbl c " +
+				"JOIN mailing_tbl m ON m.deleted = 0 AND c.mailing_id = m.mailing_id " +
+				"JOIN dyn_name_tbl n ON n.deleted = 0 AND c.dyn_name_id = n.dyn_name_id " +
+				"WHERE c.company_id = ? AND c.target_id = ?";
+	}
+
+	private static class DependentMapper implements RowMapper<Dependent<TargetGroupDependentType>> {
+		@Override
+		public Dependent<TargetGroupDependentType> mapRow(ResultSet rs, int i) throws SQLException {
+			return TargetGroupDependentType.fromId(rs.getInt("type"), false)
+					.forId(rs.getInt("id"), rs.getString("name"));
+		}
+	}
+
+	private static class TargetEqlMapper implements RowMapper<Pair<Integer, String>> {
+		@Override
+		public Pair<Integer, String> mapRow(ResultSet rs, int i) throws SQLException {
+			return new Pair<>(rs.getInt("target_id"), rs.getString("eql"));
+		}
+	}
+
+	private static class ComplexityIndicesCallbackHandler implements RowCallbackHandler {
+		private Map<Integer, Integer> map;
+
+		public ComplexityIndicesCallbackHandler(Map<Integer, Integer> map) {
+			this.map = Objects.requireNonNull(map);
+		}
+
+		@Override
+		public void processRow(ResultSet rs) throws SQLException {
+			map.put(rs.getInt("target_id"), rs.getInt("complexity"));
+		}
 	}
 }

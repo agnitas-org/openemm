@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class BirtReporUtils {
 
@@ -53,7 +53,9 @@ public class BirtReporUtils {
         ACTIVITY_ANALYSIS("activityAnalysis"),
         OPENERS_AFTER_DEVICE("openersAfterDevice"),
         CLICKERS_AFTER_DEVICE("clickersAfterDevice"),
-        MAILING_TYPE("mailingType");
+        MAILING_TYPE("mailingType"),
+		SENT_MAILS("sentMails"),
+        OPENERS("openers");
 
 		private final String value;
 
@@ -98,8 +100,12 @@ public class BirtReporUtils {
 	}
 
     public static boolean isOptionAllowed(String optionName, String figuresOptions) {
+       return isOptionAllowed(BirtReportFigure.getFigureForValue(optionName), figuresOptions);
+    }
+    
+    public static boolean isOptionAllowed(BirtReportFigure option, String figuresOptions) {
         List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
-        return figures.contains(BirtReportFigure.getFigureForValue(optionName));
+        return figures.contains(option);
     }
 
     public static boolean isAnyOptionAllowed(String[] options, String figuresOptions) {

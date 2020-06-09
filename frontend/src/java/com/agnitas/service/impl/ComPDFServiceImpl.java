@@ -10,29 +10,46 @@
 
 package com.agnitas.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
-
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.service.ComPDFService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.AdminGroup;
+import org.springframework.beans.factory.annotation.Required;
 
 public class ComPDFServiceImpl implements ComPDFService {
-	/** DAO for accessing admin group data. */
-	protected ComAdminGroupDao adminGroupDao;
-	
+    /** DAO for accessing admin group data. */
+    protected ComAdminGroupDao adminGroupDao;
+    
     @Required
-	public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
-		this.adminGroupDao = adminGroupDao;
-	}
-	
-	@Override
-    public void writeUsersPDF(List<AdminEntry> users, Document document) throws DocumentException {
+    public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
+        this.adminGroupDao = adminGroupDao;
+    }
+
+    @Override
+    public byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users) throws DocumentException, IOException {
+        Document document = new Document();
+        byte[] pdfFileBytes;
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            PdfWriter.getInstance(document, outputStream);
+            document.open();
+            writeUsersPDF(users, document);
+            document.close();
+            pdfFileBytes = outputStream.toByteArray();
+        }
+
+        return pdfFileBytes;
+    }
+
+    private void writeUsersPDF(List<AdminEntry> users, Document document) throws DocumentException {
         PdfPTable table = new PdfPTable(5);
         writeUserTableHeaders(table);
         writeUserTableRows(users, table);
@@ -54,9 +71,9 @@ public class ComPDFServiceImpl implements ComPDFService {
             table.addCell(user.getFullname());
             table.addCell(user.getEmail());
             List<AdminGroup> adminGroups = adminGroupDao.getAdminGroupByAdminID(user.getId());
-        	for (AdminGroup adminGroup : adminGroups) {
-        		table.addCell(adminGroup.getShortname());
-        	}
+            for (AdminGroup adminGroup : adminGroups) {
+                table.addCell(adminGroup.getShortname());
+            }
         }
     }
 }

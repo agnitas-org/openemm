@@ -14,12 +14,8 @@ import java.util.List;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Component;
 
-@Component
 public interface ExtendedConversionService extends ConversionService {
-
     <S, T> List<T> convert(List<S> collection, Class<S> sourceType, Class<T> targetType);
-
     <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType);
 }

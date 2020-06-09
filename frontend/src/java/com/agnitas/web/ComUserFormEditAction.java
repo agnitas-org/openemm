@@ -33,6 +33,7 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.LinkService;
 import com.agnitas.emm.core.LinkService.LinkScanResult;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.userform.bean.UserForm;
@@ -40,12 +41,13 @@ import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
 import com.agnitas.web.forms.ComUserFormEditForm;
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
+import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.service.UserFormImporter;
-import org.agnitas.service.UserFormImporter.UserFormImportResult;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.GuiConstants;
@@ -55,8 +57,8 @@ import org.agnitas.web.UserFormEditForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -78,6 +80,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
     public static final int ACTION_SAVE_ACTIVENESS = ACTION_SECOND_LAST + 3;
     public static final int ACTION_IMPORT = ACTION_SECOND_LAST + 4;
     public static final int ACTION_EXPORT = ACTION_SECOND_LAST + 5;
+    public static final int ACTION_IMPORT_TEMPLATES = ACTION_SECOND_LAST + 6;
 
     private ComCompanyDao companyDao;
     
@@ -105,6 +108,9 @@ public class ComUserFormEditAction extends UserFormEditAction {
             return "import";
         case ACTION_EXPORT:
             return "export";
+        
+        case ACTION_IMPORT_TEMPLATES:
+            return "import_templates";
             
         default:
             return super.subActionMethodName(subAction);
@@ -119,8 +125,8 @@ public class ComUserFormEditAction extends UserFormEditAction {
      * already been completed.
      *
      * @param form
-     * @param req
-     * @param res
+     * @param request
+     * @param response
      * @param mapping The ActionMapping used to select this instance
      * @return the action to forward to.
      * @throws Exception 
@@ -194,7 +200,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 return super.execute(mapping, form, request, response);
             	
             case ACTION_VIEW:
-                WorkflowUtils.updateForwardParameters(request);
+                updateForwardParameters(request);
                 Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                 if (forwardTargetItemId != null && forwardTargetItemId != 0) {
                     userFormEditForm.setFormID(forwardTargetItemId);
@@ -204,7 +210,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
             	return super.execute(mapping, userFormEditForm, request, response);
             	
             case ACTION_NEW:
-                WorkflowUtils.updateForwardParameters(request);
+                updateForwardParameters(request);
                 Integer forwardTargetItemIdNew = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
                 if (forwardTargetItemIdNew != null && forwardTargetItemIdNew != 0) {
                     userFormEditForm.setFormID(forwardTargetItemIdNew);
@@ -223,35 +229,22 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 userFormEditForm.setAction(ACTION_LIST);
                 return super.execute(mapping, form, request, response);
                 
+            case ACTION_IMPORT_TEMPLATES:
             case ACTION_IMPORT:
-            	if (userFormEditForm.getUploadFile() != null) {
-            		if (userFormEditForm.getUploadFile().getFileSize() == 0) {
-            			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.file.missingOrEmpty"));
-            			return mapping.findForward("import");
-            		} else {
-                		try (InputStream input = userFormEditForm.getUploadFile().getInputStream()) {
-                			// Import userform data from upload file
-                			UserFormImportResult result = userFormImporter.importUserFormFromJson(admin.getCompanyID(), input);
-	                		messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.imported"));
-	                		for (String warningKey : result.getWarningKeys()) {
-	                			messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(warningKey));
-	                		}
-	                		writeUserActivityLog(AgnUtils.getAdmin(request), "import userform", result.getUserFormID());
-	                		
-	                		// View the imported userform
-                			userFormEditForm.setFormID(result.getUserFormID());
-	                        loadUserForm(userFormEditForm, request);
-	                        loadEmmActions(request);
-	                        userFormEditForm.setAction(UserFormEditAction.ACTION_SAVE);
-	                        return mapping.findForward("view");
-                		} catch (Exception e) {
-                			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.userform.import"));
-                			return mapping.findForward("import");
-						}
-            		}
-            	} else {
-            		return mapping.findForward("import");
-            	}
+                boolean success = performFormsImport(userFormEditForm, request, mapping, errors, messages);
+                if (!errors.isEmpty()) {
+                    saveErrors(request, errors);
+                }
+                
+                if (!messages.isEmpty()) {
+                    saveMessages(request, messages);
+                }
+                
+                if (success) {
+                    return  mapping.findForward("view");
+                } else {
+                    return viewInitialImport(userFormEditForm.getAction(), request, mapping);
+                }
 
             case ACTION_EXPORT:
             	UserForm userForm = userFormDao.getUserForm(userFormEditForm.getFormID(), admin.getCompanyID());
@@ -292,7 +285,58 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 return super.execute(mapping, form, request, response);
         }
     }
+    
+    
+    private boolean performFormsImport(ComUserFormEditForm userFormEditForm, HttpServletRequest request, ActionMapping mapping, ActionMessages errors, ActionMessages messages) throws Exception {
+        ComAdmin admin = AgnUtils.getAdmin(request);
+        if (userFormEditForm.getUploadFile() == null) {
+           return false;
+        }
+        
+        if (userFormEditForm.getUploadFile() != null && userFormEditForm.getUploadFile().getFileSize() == 0) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.file.missingOrEmpty"));
+            return false;
+        }
+        
+        FormImportResult result = null;
+        try (InputStream input = userFormEditForm.getUploadFile().getInputStream()) {
+            // Import userform data from upload file
+            result = userFormImporter.importUserFormFromJson(admin.getCompanyID(), input);
+        } catch (Exception e) {
+            logger.error("Mailing import failed", e);
+            result = FormImportResult.builder().setSuccess(false).addError("error.userform.import").build();
+        }
+        
+        
+        if (result.isSuccess()) {
+            messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("userform.imported"));
+            for (Map.Entry<String, Object[]> warningEntry : result.getWarnings().entrySet()) {
+                messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(warningEntry.getKey(), warningEntry.getValue()));
+            }
+            writeUserActivityLog(AgnUtils.getAdmin(request), "import userform", result.getUserFormID());
 
+            // View the imported userform
+            userFormEditForm.setFormID(result.getUserFormID());
+            loadUserForm(userFormEditForm, request);
+            loadEmmActions(request);
+            userFormEditForm.setAction(UserFormEditAction.ACTION_SAVE);
+            return true;
+        } else {
+            for (Map.Entry<String, Object[]> errorEntry : result.getErrors().entrySet()) {
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(errorEntry.getKey(), errorEntry.getValue()));
+            }
+            return false;
+        }
+    }
+    
+    private ActionForward viewInitialImport(int action, HttpServletRequest request, ActionMapping mapping) {
+        if (action == ACTION_IMPORT_TEMPLATES && AgnUtils.getAdmin(request).permissionAllowed(Permission.TEMP_BETA)) {
+            return mapping.findForward("importView");
+        }
+        
+        return mapping.findForward("import");
+    }
+    
     /**
      * Save a user form.
      * Writes the data of a form to the database.
@@ -346,10 +390,10 @@ public class ComUserFormEditAction extends UserFormEditAction {
         
 		// Check for not measurable links
 		if (successLinks.getNotTrackableLinks().size() > 0) {
-		    actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", "success", StringEscapeUtils.escapeHtml(successLinks.getNotTrackableLinks().get(0))));
+		    actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", "success", StringEscapeUtils.escapeHtml4(successLinks.getNotTrackableLinks().get(0))));
 		}
 		if (errorLinks.getNotTrackableLinks().size() > 0) {
-		    actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", "error", StringEscapeUtils.escapeHtml(errorLinks.getNotTrackableLinks().get(0))));
+		    actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", "error", StringEscapeUtils.escapeHtml4(errorLinks.getNotTrackableLinks().get(0))));
 		}
 
 		// Check for not errorneous links
@@ -358,7 +402,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
 				new ActionMessage("error.mailing.links.errorneous",
 		    		successLinks.getErrorneousLinks().size(),
 		    		"success",
-		    		StringEscapeUtils.escapeHtml(successLinks.getErrorneousLinks().get(0).getLinkText()),
+		    		StringEscapeUtils.escapeHtml4(successLinks.getErrorneousLinks().get(0).getLinkText()),
 		    		I18nString.getLocaleString(successLinks.getErrorneousLinks().get(0).getErrorMessageKey(), AgnUtils.getLocale(req))));
 		}
 		if (errorLinks.getErrorneousLinks().size() > 0) {
@@ -366,7 +410,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
 		    	new ActionMessage("error.mailing.links.errorneous",
 	    			errorLinks.getErrorneousLinks().size(),
 		    		"error",
-		    		StringEscapeUtils.escapeHtml(errorLinks.getErrorneousLinks().get(0).getLinkText()),
+		    		StringEscapeUtils.escapeHtml4(errorLinks.getErrorneousLinks().get(0).getLinkText()),
 		    		I18nString.getLocaleString(errorLinks.getErrorneousLinks().get(0).getErrorMessageKey(), AgnUtils.getLocale(req))));
 		}
 
@@ -414,7 +458,7 @@ public class ComUserFormEditAction extends UserFormEditAction {
                 comTrackableUserFormLink.setFullUrl(link);
                 comTrackableUserFormLink.setCompanyID(companyId);
                 comTrackableUserFormLink.setFormID(aUserForm.getId());                    // Warning! This sets form ID 0 to new links! Must be updated when saving the form!!!!
-                comTrackableUserFormLink.setUsage(ComTrackableUserFormLink.TRACKABLE_NO);
+                comTrackableUserFormLink.setUsage(BaseTrackableLink.TRACKABLE_NO);
                 comTrackableUserFormLink.setActionID(0);
                 comTrackableUserFormLink.setShortname("");
                 
@@ -535,6 +579,10 @@ public class ComUserFormEditAction extends UserFormEditAction {
         redirect.addParameter("forwardParams", req.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS).toString()
                 + ";elementValue=" + Integer.toString(formId));
         return redirect;
+    }
+
+    private void updateForwardParameters(HttpServletRequest req) {
+        WorkflowUtils.updateForwardParameters(req);
     }
 
 	@Required

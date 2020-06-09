@@ -23,29 +23,26 @@ import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionRequest;
 import com.agnitas.emm.springws.jaxb.SetSubscriberBindingWithActionResponse;
 
 // not tested, leaved as an example of extension webservice
-@SuppressWarnings("deprecation")
 public class SetSubscriberBindingWithActionEndpoint extends AbstractMarshallingPayloadEndpoint {
-	
 	/** The logger. */
-	@SuppressWarnings("hiding")
-	private static final Logger logger = Logger.getLogger(SetSubscriberBindingWithActionEndpoint.class);
+	private static final Logger classLogger = Logger.getLogger(SetSubscriberBindingWithActionEndpoint.class);
 
 	@Resource
 	private ComBindingService bindingService;
 	@Resource
-	private ObjectFactory comObjectFactory; 
+	private ObjectFactory comObjectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered SetSubscriberBindingWithActionEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered SetSubscriberBindingWithActionEndpoint.invokeInternal()");
 		}
 		
 		SetSubscriberBindingWithActionRequest request = (SetSubscriberBindingWithActionRequest) arg0;
 		SetSubscriberBindingWithActionResponse response = comObjectFactory.createSetSubscriberBindingWithActionResponse();
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Parsing binding model");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Parsing binding model");
 		}
 		BindingModel model = new BindingModel();
 		model.setCustomerId(request.getCustomerID());
@@ -60,13 +57,13 @@ public class SetSubscriberBindingWithActionEndpoint extends AbstractMarshallingP
 		
 		final boolean runActionAsynchronous = request.isRunActionAsynchronous() == null ? false : request.isRunActionAsynchronous();
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Calling binding service layer");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Calling binding service layer");
 		}
 		response.setValue( bindingService.setBindingWithActionId(model, runActionAsynchronous));
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving SetSubscriberBindingWithActionEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving SetSubscriberBindingWithActionEndpoint.invokeInternal()");
 		}
 		
 		return response;

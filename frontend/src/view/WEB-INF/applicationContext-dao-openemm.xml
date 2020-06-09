@@ -19,12 +19,12 @@
 		<lookup-method name="getBeanDataSource" bean="dataSource"/>
 		<lookup-method name="getBeanDatasourceDescriptionDao" bean="DatasourceDescriptionDao"/>
 		<lookup-method name="getBeanCompanyDao" bean="CompanyDao"/>
-		<lookup-method name="getBeanAdminDao" bean="AdminDao"/>
 		<lookup-method name="getBeanDynamicTagDao" bean="DynamicTagDao"/>
 		<lookup-method name="getBeanMailingDao" bean="MailingDao"/>
 		<lookup-method name="getBeanMaildropStatusDao" bean="MaildropStatusDao"/>
 		<lookup-method name="getBeanMailingParameterDao" bean="MailingParameterDao"/>
-		<lookup-method name="getBeanLoginTrackDao" bean="LoginTrackDao"/>
+		<lookup-method name="getBeanGuiLoginTrackDao" bean="GuiLoginTrackDao"/>
+		<lookup-method name="getBeanWsLoginTrackDao" bean="WsLoginTrackDao"/>
 		<lookup-method name="getBeanUndoMailingDao" bean="UndoMailingDao"/>
 		<lookup-method name="getBeanUndoMailingComponentDao" bean="UndoMailingComponentDao"/>
 		<lookup-method name="getBeanUndoDynContentDao" bean="UndoDynContentDao"/>
@@ -55,7 +55,6 @@
 		<property name="databaseInformation" ref="DatabaseInformation" />
 		<property name="configService" ref="ConfigService" />
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
-		<property name="companyDao" ref="CompanyDao" />
 		<property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator" />
         <property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
         <property name="dynamicTagDao" ref="DynamicTagDao"/>
@@ -71,6 +70,7 @@
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="adminGroupDao" ref="AdminGroupDao" />
 		<property name="companyDao" ref="CompanyDao" />
+		<property name="mailinglistApprovalDao" ref="MailinglistApprovalDao" />
 		<property name="configService" ref="ConfigService" />
 		
 		<!-- For RDIR: Set "passwordEncryptor" and "supervisorDao" to null -->
@@ -121,9 +121,4 @@
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
 
-<!-- ============================================================================================================================== Login -->
-	<bean id="LoginTrackDao" class="org.agnitas.dao.impl.LoginTrackDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
 </beans>

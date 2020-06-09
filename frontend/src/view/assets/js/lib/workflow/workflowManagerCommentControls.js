@@ -1,4 +1,4 @@
-(function(){
+(function($){
     var Popover = AGN.Lib.Popover;
 
     var MAILING_TYPES = ["mailing", "actionbased_mailing", "datebased_mailing", "followup_mailing"];
@@ -54,20 +54,22 @@
     CommentControls.prototype.getMailingThumbnail = _.memoize(function(mailingId) {
         var self = this;
         var img = '';
-        jQuery.ajax({
-            type: "POST",
-            url: self.mailingThumbnailURL,
-            async: false,
-            data: {
-                mailingId: mailingId
-            },
-            success: function (componentId) {
-                if (componentId > 0) {
-                    img = new Image;
-                    img.src = self.componentURL.replace("{component-id}", componentId);
+        if (!self.isPdf) {
+            $.ajax({
+                type: "POST",
+                url: self.mailingThumbnailURL,
+                async: false,
+                data: {
+                    mailingId: mailingId
+                },
+                success: function (componentId) {
+                    if (componentId > 0) {
+                        img = new Image;
+                        img.src = self.componentURL.replace("{component-id}", componentId);
+                    }
                 }
-            }
-        });
+            });
+        }
         return img;
     });
 
@@ -170,12 +172,13 @@
     CommentControls.prototype.showCommentFootnote = function($icon, commentText) {
         var self = this;
         var footnoteId = "icon-footnote-" + self.commentCounter;
-
-        $("#footnotes-container table#comment-footnotes-list").append("<tr id=\"" + footnoteId + "\"><td>" + self.commentCounter + ". " + commentText + "</td></tr>");
-        $icon.append("<a aria-describedby=\"footnote-label\" href=\"#" + footnoteId + "\"><span class='icon-footnote-number badge badge-info'>" + self.commentCounter + "</span>");
+        var $row = $("<tr id=\"" + footnoteId + "\"><td>" + self.commentCounter + ". " + commentText + "</td></tr>");
+        var link = $("<a aria-describedby=\"footnote-label\" href=\"#" + footnoteId + "\"><span class='icon-footnote-number badge badge-info'>" + self.commentCounter + "</span>");
+        $("#footnotes-container table#comment-footnotes-list").append($row);
+        $icon.append(link);
 
         self.commentCounter++;
     };
 
     AGN.Lib.WM.CommentControls = CommentControls;
-})();
+})(jQuery);

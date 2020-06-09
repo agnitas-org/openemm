@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -30,4 +33,9 @@ public interface ComUserformService extends UserformService {
     List<UserForm> getUserForms(@VelocityCheck int companyId);
 
     UserAction setActiveness(@VelocityCheck int companyId, Map<Integer, Boolean> activeness);
+    
+	PaginatedListImpl<UserFormDto> getUserFormsWithActionData(ComAdmin admin, String sort, String order, int page,
+			int numberOfRows, UserFormFilter filter);
+	
+	UserFormDto getUserForm(@VelocityCheck int companyId, int formId) throws Exception;
 }

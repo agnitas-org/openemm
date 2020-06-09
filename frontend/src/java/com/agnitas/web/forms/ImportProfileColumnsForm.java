@@ -25,7 +25,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.web.ImportProfileAction;
 import org.agnitas.web.forms.ImportBaseFileForm;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;

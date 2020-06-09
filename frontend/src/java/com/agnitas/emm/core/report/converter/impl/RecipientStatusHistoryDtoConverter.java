@@ -14,8 +14,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 import org.agnitas.beans.BindingEntry;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.ComRecipientHistory;
@@ -91,7 +91,7 @@ public class RecipientStatusHistoryDtoConverter implements GenericLocalizableCon
      * @return translated Value.
      */
 	private String getNewTranslatedValue(String changeValue, String changedField, Locale locale) {
-		String deletedText = I18nString.getLocaleString("Deleted", locale);
+		String deletedText = I18nString.getLocaleString("target.Deleted", locale);
 
 		// in case of we don't have the rule for current kind of change we return value without any changes
 		RecipientMutableFields fieldByText = RecipientMutableFields.getByCode(changedField);

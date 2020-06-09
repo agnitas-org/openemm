@@ -42,26 +42,6 @@ public class MailloopImpl implements Mailloop {
 	private String forwardEmail;
 
 	/**
-	 * Holds value of property arSender.
-	 */
-	private String arSender;
-
-	/**
-	 * Holds value of property arSubject.
-	 */
-	private String arSubject;
-
-	/**
-	 * Holds value of property arText.
-	 */
-	private String arText;
-
-	/**
-	 * Holds value of property arHtml.
-	 */
-	private String arHtml;
-
-	/**
 	 * Holds value of property doForward.
 	 */
 	private boolean doForward;
@@ -150,46 +130,6 @@ public class MailloopImpl implements Mailloop {
 	@Override
 	public void setForwardEmail(String forwardEmail) {
 		this.forwardEmail = forwardEmail;
-	}
-
-	@Override
-	public String getArSender() {
-		return arSender;
-	}
-
-	@Override
-	public void setArSender(String arSender) {
-		this.arSender = arSender;
-	}
-
-	@Override
-	public String getArSubject() {
-		return arSubject;
-	}
-
-	@Override
-	public void setArSubject(String arSubject) {
-		this.arSubject = arSubject;
-	}
-
-	@Override
-	public String getArText() {
-		return arText;
-	}
-
-	@Override
-	public void setArText(String arText) {
-		this.arText = arText;
-	}
-
-	@Override
-	public String getArHtml() {
-		return arHtml;
-	}
-
-	@Override
-	public void setArHtml(String arHtml) {
-		this.arHtml = arHtml;
 	}
 
 	@Override

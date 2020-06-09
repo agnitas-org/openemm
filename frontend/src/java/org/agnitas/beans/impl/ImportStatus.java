@@ -74,6 +74,8 @@ public class ImportStatus implements CustomerImportStatus {
 	private List<Integer> firstErrorLineNumbers = new ArrayList<>();
 
 	private List<String> firstErrorTypes = new ArrayList<>();
+	
+	private List<String> firstErrorColumns = new ArrayList<>();
 
 	private int alreadyInDb;
 	
@@ -91,7 +93,7 @@ public class ImportStatus implements CustomerImportStatus {
 
 	private File duplicateInCsvOrDbRecipientsCsvFile;
 	
-	private Set<String> getErrorColumns = new HashSet<>();
+	private Set<String> errorColumns = new HashSet<>();
 
 	private Map<Integer, Integer> mailinglistStatistics = new HashMap<>();
 	
@@ -287,8 +289,8 @@ public class ImportStatus implements CustomerImportStatus {
 	}
 
 	@Override
-	public Object getError(ImportErrorType id) {
-		Object ret = errors.get(id);
+	public Object getError(ImportErrorType importErrorType) {
+		Object ret = errors.get(importErrorType);
 
 		if (ret == null) {
 			return new Integer(0);
@@ -299,13 +301,13 @@ public class ImportStatus implements CustomerImportStatus {
 	
 	/**
 	 * Getter Method used only within JSPs
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	@Override
 	public Object getError(String idString) {
 		try {
-			ImportErrorType id = ImportErrorType.fromString(idString);
-			return getError(id);
+			ImportErrorType importErrorType = ImportErrorType.fromString(idString);
+			return getError(importErrorType);
 		} catch (Exception e) {
 			logger.error("Cannot get error data: " + e.getMessage(), e);
 			return new Integer(0);
@@ -313,14 +315,14 @@ public class ImportStatus implements CustomerImportStatus {
 	}
 
 	@Override
-	public void addError(ImportErrorType id) {
+	public void addError(ImportErrorType importErrorType) {
 		Integer old = null;
 
-		old = errors.get(id);
+		old = errors.get(importErrorType);
 		if (old != null) {
-			errors.put(id, new Integer(old.intValue() + 1));
+			errors.put(importErrorType, new Integer(old.intValue() + 1));
 		} else {
-			errors.put(id, new Integer(1));
+			errors.put(importErrorType, new Integer(1));
 		}
 	}
 
@@ -422,9 +424,10 @@ public class ImportStatus implements CustomerImportStatus {
 		return deletedEntries;
 	}
 
-	public void addToFirstErrors(int lineNumber, ReasonCode importErrorType) {
+	public void addToFirstErrors(int lineNumber, ReasonCode importErrorType, String columnName) {
 		firstErrorLineNumbers.add(lineNumber);
 		firstErrorTypes.add(importErrorType.toString());
+		firstErrorColumns.add(columnName);
 	}
 
 	public List<Integer> getFirstErrorLineNumbers() {
@@ -435,9 +438,14 @@ public class ImportStatus implements CustomerImportStatus {
 		return firstErrorTypes;
 	}
 
+	public List<String> getFirstErrorColumns() {
+		return firstErrorColumns;
+	}
+
 	public void clearFirstErrors() {
 		firstErrorLineNumbers.clear();
 		firstErrorTypes.clear();
+		firstErrorColumns.clear();
 	}
 
 	@Override
@@ -482,12 +490,12 @@ public class ImportStatus implements CustomerImportStatus {
 
 	@Override
 	public void addErrorColumn(String columnName) {
-		getErrorColumns.add(columnName);
+		errorColumns.add(columnName);
 	}
 
 	@Override
 	public Set<String> getErrorColumns() {
-		return getErrorColumns;
+		return errorColumns;
 	}
 	
 	@Override

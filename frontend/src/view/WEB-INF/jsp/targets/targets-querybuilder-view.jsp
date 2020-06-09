@@ -1,5 +1,9 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@page import="org.agnitas.target.TargetNode"%>
+<%@page import="org.agnitas.util.AgnUtils"%>
+<%@page import="org.agnitas.web.TargetForm"%>
 <%@page import="com.agnitas.web.ComTargetAction"%>
-<%@ page language="java" import="org.agnitas.target.TargetNode, org.agnitas.util.AgnUtils, org.agnitas.web.TargetForm" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
@@ -8,6 +12,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="editTargetForm" type="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm"--%>
+<%--@elvariable id="mailTrackingAvailable" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_SAVE" 						value="<%= ComTargetAction.ACTION_SAVE %>" 						scope="page" />
 <c:set var="ACTION_CLONE" 						value="<%= ComTargetAction.ACTION_CLONE %>" 					scope="page" />
@@ -25,6 +30,10 @@
 
 <c:set var="OPERATOR_IS" value="<%= TargetNode.OPERATOR_IS.getOperatorCode() %>" scope="page" />
 <c:set var="OPERATOR_MOD" value="<%= TargetNode.OPERATOR_MOD.getOperatorCode() %>" scope="page" />
+
+<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
+<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
+<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
 
 <c:if test="${editTargetForm.locked}">
 	<c:set var="TARGET_LOCKED" value="true" scope="request" />
@@ -55,26 +64,20 @@
 
 <%--@elvariable id="QueryBuilderTargetGroupForm"--%>
 
-<agn:agnForm action="/targetQB" id="targetForm" data-form="resource" >
+<agn:agnForm action="/targetQB" id="targetForm" data-form="resource" data-initializer="target-group-query-builder">
 	<html:hidden property="targetID" />
 	<html:hidden property="format" />
 	<html:hidden property="workflowForwardParams" />
 	<html:hidden property="workflowId" />
 	<html:hidden property="locked" />
+	<html:hidden property="method" value="save" />
 
-
-	<script id="target-group-query-builder" type="application/json">
+	<script id="config:target-group-query-builder" type="application/json">
 		{
-			"jSessionId": "${pageContext.session.id}",
-			"helpLanguage": "${helplanguage}",
-			"isTargetGroupLocked": "${editTargetForm.locked}",
-			"WORKFLOW_URLS": {
-				"getAllMailingSorted": "<c:url value='/workflow/getAllMailingSorted.action'/>",
-				"getMailingLinks": "<c:url value='/workflow/getMailingLinks.action'/>"
-			}
+			"mailTrackingAvailable": ${not empty mailTrackingAvailable ? mailTrackingAvailable : false},
+			"isTargetGroupLocked": ${editTargetForm.locked}
 		}
 	</script>
-
 
 	<div class="tile">
 		<div class="tile-header">
@@ -120,19 +123,46 @@
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline">
-				<bean:message key="target.TargetDefinition" />
+				<bean:message key="target.TargetDefinition"/>
 			</h2>
+
 			<ul class="tile-header-nav">
 				<li class="${QB_EDITOR_TAB_ACTIVE_CLASS}">
-					<a href="#" data-toggle-tab="#tab-targetgroupQueryBuilderEditor" data-form-set="method: 'viewQB'" data-form-submit><bean:message key="default.basic" /></a>
+					<a href="#" data-toggle-tab="#tab-targetgroupQueryBuilderEditor" data-action="switch-tab-viewQB">
+						<bean:message key="default.basic"/>
+					</a>
 				</li>
 				<li class="${EQL_EDITOR_TAB_ACTIVE_CLASS}">
-					<a href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-form-set="method: 'viewEQL'" data-form-submit>
-						<bean:message key="default.advanced" />
+					<a href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-action="switch-tab-viewEQL">
+						<bean:message key="default.advanced"/>
 					</a>
 				</li>
 			</ul>
+
+			<ul class="tile-header-actions">
+				<li class="status">
+					<label><bean:message key="target.group.complexity"/>:</label>
+					<c:choose>
+						<c:when test="${editTargetForm.complexityGrade eq COMPLEXITY_GREEN}">
+							<div class="form-badge complexity-green bold">
+								<bean:message key="target.group.complexity.low"/>
+							</div>
+						</c:when>
+						<c:when test="${editTargetForm.complexityGrade eq COMPLEXITY_YELLOW}">
+							<div class="form-badge complexity-yellow bold" data-tooltip="<bean:message key="warning.target.group.performance.yellow"/>">
+								<bean:message key="target.group.complexity.medium"/>
+							</div>
+						</c:when>
+						<c:when test="${editTargetForm.complexityGrade eq COMPLEXITY_RED}">
+							<div class="form-badge complexity-red bold" data-tooltip="<bean:message key="warning.target.group.performance.red"/>">
+								<bean:message key="target.group.complexity.high"/>
+							</div>
+						</c:when>
+					</c:choose>
+				</li>
+			</ul>
 		</div>
+
 		<div class="tile-content tile-content-forms">
 			<c:if test="${editTargetForm.format == 'qb'}">
 				<div id="tab-targetgroupQueryBuilderEditor" ${QB_EDITOR_DIV_SHOW_STATE}>
@@ -190,7 +220,7 @@
 					</div>
 					<ul class="tile-header-actions">
 						<li>
-							<button type="button" class="btn btn-regular btn-primary" data-form-set="showStatistic: true, method: save" data-form-submit>
+							<button type="button" class="btn btn-regular btn-primary" data-form-set="showStatistic: true" data-form-submit="">
 								<i class="icon icon-refresh"></i>
 								<span class="text"><bean:message key="button.save.evaluate" /></span>
 							</button>
@@ -208,15 +238,3 @@
 	</emm:ShowByPermission>
 
 </agn:agnForm>
-
-<script>
-  (function(){
-		AGN.Lib.Action.new({'click': '[data-form-submit]'}, function() {
-		  var btn = this.el;
-		  var dataValue = btn.data('form-set');
-		  if (dataValue && dataValue.includes('method:save')) {
-		  	jQuery('#targetgroup-querybuilder').trigger('save-target-group');
-		  }
-		});
-  })();
-</script>

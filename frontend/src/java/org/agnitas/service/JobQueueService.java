@@ -20,7 +20,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
@@ -30,6 +30,7 @@ import org.springframework.context.ApplicationContextAware;
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.impl.DaoLookupFactory;
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
 import com.agnitas.service.MailNotificationService;
 import com.agnitas.service.impl.ServiceLookupFactory;
 
@@ -38,16 +39,63 @@ public class JobQueueService implements ApplicationContextAware {
 	
 	private JobQueueDao jobQueueDao;
 	private ConfigTableDao configDao;
+	private ComBirtReportDao birtReportDao;
 	private ApplicationContext applicationContext;
 	private BeanLookupFactory beanLookupFactory;
 	private DaoLookupFactory daoLookupFactory;
 	private ServiceLookupFactory serviceLookupFactory;
 	private MailNotificationService mailNotificationService;
 	private ConfigService configService;
+	
 	private Date lastCheckAndRunJobTime = null;
 
 	private List<JobWorker> queuedJobWorkers= new ArrayList<>();
 	private List<JobDto> queuedJobsTodo = new ArrayList<>();
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+	
+	@Required
+	public void setJobQueueDao(JobQueueDao jobQueueDao) {
+		this.jobQueueDao = jobQueueDao;
+	}
+
+	@Required
+	public void setConfigTableDao(ConfigTableDao configDao) {
+		this.configDao = configDao;
+	}
+	
+	@Required
+	public void setBirtReportDao(ComBirtReportDao birtReportDao) {
+		this.birtReportDao = birtReportDao;
+	}
+
+	@Required
+	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
+		this.beanLookupFactory = beanLookupFactory;
+	}
+
+	@Required
+	public void setDaoLookupFactory(DaoLookupFactory daoLookupFactory) {
+		this.daoLookupFactory = daoLookupFactory;
+	}
+
+	@Required
+	public void setServiceLookupFactory(ServiceLookupFactory serviceLookupFactory) {
+		this.serviceLookupFactory = serviceLookupFactory;
+	}
+
+	@Required
+	public void setMailNotificationService(MailNotificationService mailNotificationService) {
+		this.mailNotificationService = mailNotificationService;
+	}
 	
 	public synchronized void checkAndRunJobs() {
 		logger.info("Looking for queued jobs to execute");
@@ -133,7 +181,7 @@ public class JobQueueService implements ApplicationContextAware {
 				} catch (Exception e) {
 					jobToStart.setNextStart(null);
 					jobToStart.setLastResult("Cannot calculate next start!");
-					jobQueueDao.updateJobStatus(jobToStart);
+					jobQueueDao.updateJob(jobToStart);
 				}
 				
 				if (jobQueueDao.initJobStart(jobToStart.getId(), jobToStart.getNextStart())) {
@@ -153,7 +201,7 @@ public class JobQueueService implements ApplicationContextAware {
 						jobToStart.setRunning(false);
 						jobToStart.setNextStart(null);
 						jobToStart.setLastResult("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
-						jobQueueDao.updateJobStatus(jobToStart);
+						jobQueueDao.updateJob(jobToStart);
 					}
 				}
 			}
@@ -169,7 +217,7 @@ public class JobQueueService implements ApplicationContextAware {
 	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		JobWorker worker = (JobWorker) Class.forName(jobToStart.getRunClass()).newInstance();
 		worker.setJob(jobToStart);
-		worker.setService(this);
+		worker.setJobQueueService(this);
 		worker.setApplicationContext(applicationContext);
 		worker.setBeanLookupFactory(beanLookupFactory);
 		worker.setDaoLookupFactory(daoLookupFactory);
@@ -186,15 +234,7 @@ public class JobQueueService implements ApplicationContextAware {
 		checkAndStartNewWorkers();
 	}
 	
-	public void setJobQueueDao(JobQueueDao jobQueueDao) {
-		this.jobQueueDao = jobQueueDao;
-	}
-	
-	public void setConfigTableDao(ConfigTableDao configDao) {
-		this.configDao = configDao;
-	}
-	
-	private boolean checkActiveNode() {
+	public boolean checkActiveNode() {
 		// Using direct access for no caching delay time of changes
 		try {
 			boolean isActive = configDao.getJobqueueHostStatus(AgnUtils.getHostName()) > 0;
@@ -240,7 +280,7 @@ public class JobQueueService implements ApplicationContextAware {
 				} catch (Exception e) {
 					jobToStart.setNextStart(null);
 					jobToStart.setLastResult("Cannot calculate next start!");
-					jobQueueDao.updateJobStatus(jobToStart);
+					jobQueueDao.updateJob(jobToStart);
 					throw new Exception("Cannot calculate next start!");
 				}
 				
@@ -260,7 +300,7 @@ public class JobQueueService implements ApplicationContextAware {
 						jobToStart.setRunning(false);
 						jobToStart.setNextStart(null);
 						jobToStart.setLastResult("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
-						jobQueueDao.updateJobStatus(jobToStart);
+						jobQueueDao.updateJob(jobToStart);
 						throw new Exception("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
 					}
 				} else {
@@ -268,32 +308,6 @@ public class JobQueueService implements ApplicationContextAware {
 				}
 			}
 		}
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
-	
-	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
-		this.beanLookupFactory = beanLookupFactory;
-	}
-
-	public void setDaoLookupFactory(DaoLookupFactory daoLookupFactory) {
-		this.daoLookupFactory = daoLookupFactory;
-	}
-	
-	public void setServiceLookupFactory(ServiceLookupFactory serviceLookupFactory) {
-		this.serviceLookupFactory = serviceLookupFactory;
-	}
-	
-	public void setMailNotificationService(MailNotificationService mailNotificationService) {
-		this.mailNotificationService = mailNotificationService;
-	}
-
-	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
 	}
 
 	public boolean isStatusOK() {
@@ -310,5 +324,9 @@ public class JobQueueService implements ApplicationContextAware {
 
 	public List<JobDto> selectErrorneousJobs() {
 		return jobQueueDao.selectErrorneousJobs();
+	}
+
+	public boolean isReportOK() {
+		return birtReportDao.selectErrorneousReports().size() == 0;
 	}
 }

@@ -14,8 +14,6 @@ import org.agnitas.util.DateUtilities;
 
 public interface Constants {
 	String DATE_PATTERN_FULL = DateUtilities.YYYY_MM_DD_HH_MM;
-	String DATE_PATTERN = DateUtilities.YYYY_MM_DD;
-	String SEPARATOR = System.getProperty("file.separator");
 
 	int MILLISECONDS_PER_MINUTE = 60 * 1000;
 	int MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE;

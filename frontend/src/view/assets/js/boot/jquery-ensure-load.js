@@ -6,7 +6,7 @@
         if(this.complete) {
           handler.call(this);
         } else {
-          $(this).load(handler);
+          $(this).on("load", handler);
         }
       });
     }

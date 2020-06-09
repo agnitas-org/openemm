@@ -28,7 +28,7 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.stat.URLStatEntry;
 import org.agnitas.stat.impl.URLStatEntryImpl;
 import org.agnitas.util.SafeString;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 

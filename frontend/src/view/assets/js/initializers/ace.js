@@ -41,20 +41,12 @@ Class           | Used for
 ```
 */
 
-
-(function(){
-
-  var Editor = AGN.Lib.Editor;
-
-  AGN.Initializers.Ace = function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
-    _.each($scope.find('.js-editor, .js-editor-text, .js-editor-eql, .js-editor-css'), function(textArea) {
-      Editor.get($(textArea));
-    })
-
+AGN.Lib.CoreInitializer.new('ace', function($scope) {
+  if (!$scope) {
+    $scope = $(document);
   }
 
-})();
+  _.each($scope.find('.js-editor, .js-editor-text, .js-editor-eql, .js-editor-css'), function(textArea) {
+    AGN.Lib.Editor.get($(textArea));
+  });
+});

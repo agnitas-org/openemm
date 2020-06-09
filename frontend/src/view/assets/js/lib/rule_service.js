@@ -434,9 +434,7 @@
   }
 
   function initSelect2($select) {
-    if ("Select" in AGN.Initializers) {
-      AGN.Initializers.Select($select.parent());
-    }
+    AGN.Lib.CoreInitializer.run('select', $select.parent());
   }
 
   function appendOption(select, selectedValue, value, text) {

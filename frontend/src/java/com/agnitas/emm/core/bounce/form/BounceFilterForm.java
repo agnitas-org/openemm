@@ -10,26 +10,15 @@
 
 package com.agnitas.emm.core.bounce.form;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
-import org.hibernate.validator.constraints.Email;
-
 public class BounceFilterForm {
 
     private int id;
-
-    @NotNull(message = "error.name.is.empty")
-    @Size(min = 3, message = "error.name.too.short")
     private String shortName;
-
     private String description;
-
-    @Email(message = "error.invalidFilterEmail")
     private String filterEmail;
-
-    @Email(message = "error.invalidForwardEmail")
     private String forwardEmail;
+
+    private boolean ownForwardEmailSelected;
 
     private boolean doForward;
 
@@ -42,15 +31,6 @@ public class BounceFilterForm {
     private boolean doAutoRespond;
 
     private int arMailingId;
-
-    @Email(message = "error.invalidAutoresponderEmail")
-    private String arSenderAddress;
-
-    private String arSubject;
-
-    private String arText;
-
-    private String arHtml;
 
     private String securityToken;
 
@@ -92,6 +72,14 @@ public class BounceFilterForm {
 
     public void setForwardEmail(String forwardEmail) {
         this.forwardEmail = forwardEmail;
+    }
+
+    public boolean isOwnForwardEmailSelected() {
+        return ownForwardEmailSelected;
+    }
+
+    public void setOwnForwardEmailSelected(boolean ownForwardEmailSelected) {
+        this.ownForwardEmailSelected = ownForwardEmailSelected;
     }
 
     public boolean isDoForward() {
@@ -140,38 +128,6 @@ public class BounceFilterForm {
 
     public void setArMailingId(int arMailingId) {
         this.arMailingId = arMailingId;
-    }
-
-    public String getArSenderAddress() {
-        return arSenderAddress;
-    }
-
-    public void setArSenderAddress(String arSenderAddress) {
-        this.arSenderAddress = arSenderAddress;
-    }
-
-    public String getArSubject() {
-        return arSubject;
-    }
-
-    public void setArSubject(String arSubject) {
-        this.arSubject = arSubject;
-    }
-
-    public String getArText() {
-        return arText;
-    }
-
-    public void setArText(String arText) {
-        this.arText = arText;
-    }
-
-    public String getArHtml() {
-        return arHtml;
-    }
-
-    public void setArHtml(String arHtml) {
-        this.arHtml = arHtml;
     }
 
     public String getSecurityToken() {

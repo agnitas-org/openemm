@@ -19,6 +19,7 @@ import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.beans.Mailing;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
@@ -167,12 +168,12 @@ public class MailingSendForm extends StrutsFormBase {
     /**
      * Holds mailing size threshold (in bytes) that triggers a warning message.
      */
-    private int sizeWarningThreshold;
+    private long sizeWarningThreshold;
 
     /**
      * Holds mailing size threshold (in bytes) that triggers an error message.
      */
-    private int sizeErrorThreshold;
+    private long sizeErrorThreshold;
 
     private boolean isPrioritizationDisallowed;
     
@@ -206,7 +207,9 @@ public class MailingSendForm extends StrutsFormBase {
     private int stepping = 0;
     
     private int blocksize = 0;
-
+    private String bounceFilterNames;
+    private boolean reloadPreview;
+    
     /**
      * Reset all properties to their default values.
      *
@@ -220,7 +223,7 @@ public class MailingSendForm extends StrutsFormBase {
             GregorianCalendar aDate = new GregorianCalendar(aZone);
             sendHour = aDate.get(GregorianCalendar.HOUR_OF_DAY);
             sendMinute = aDate.get(GregorianCalendar.MINUTE);
-            previewFormat = Mailing.INPUT_TYPE_HTML;
+            previewFormat = MailingPreviewHelper.INPUT_TYPE_HTML;
             sendStat = new HashMap<>();
         } catch (Exception e) {
             // do nothing
@@ -945,19 +948,19 @@ public class MailingSendForm extends StrutsFormBase {
         this.approximateMaxSizeWithoutExternalImages = approximateMaxSizeWithoutExternalImages;
     }
 
-    public int getSizeWarningThreshold() {
+    public long getSizeWarningThreshold() {
         return sizeWarningThreshold;
     }
 
-    public void setSizeWarningThreshold(int sizeWarningThreshold) {
+    public void setSizeWarningThreshold(long sizeWarningThreshold) {
         this.sizeWarningThreshold = sizeWarningThreshold;
     }
 
-    public int getSizeErrorThreshold() {
+    public long getSizeErrorThreshold() {
         return sizeErrorThreshold;
     }
 
-    public void setSizeErrorThreshold(int sizeErrorThreshold) {
+    public void setSizeErrorThreshold(long sizeErrorThreshold) {
         this.sizeErrorThreshold = sizeErrorThreshold;
     }
 
@@ -975,5 +978,21 @@ public class MailingSendForm extends StrutsFormBase {
 
     public void setIsPrioritizationDisallowed(boolean isPrioritizationDisallowed) {
         this.isPrioritizationDisallowed = isPrioritizationDisallowed;
+    }
+    
+    public void setBounceFilterNames(String bounceFilterNames) {
+        this.bounceFilterNames = bounceFilterNames;
+    }
+    
+    public String getBounceFilterNames() {
+        return bounceFilterNames;
+    }
+    
+    public boolean getReloadPreview() {
+        return reloadPreview;
+    }
+    
+    public void setReloadPreview(boolean reloadPreview) {
+        this.reloadPreview = reloadPreview;
     }
 }

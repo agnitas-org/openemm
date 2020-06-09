@@ -1,10 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" import="
 	org.agnitas.util.AgnUtils,
 	com.agnitas.beans.ComAdmin,
-	com.agnitas.web.ComAdminAction,
 	java.util.Locale,
 	java.util.TimeZone,
 	java.text.DateFormat,
+	java.text.SimpleDateFormat,
 	org.agnitas.emm.core.logintracking.*" %>
 <%@ page import="com.agnitas.beans.ComAdminPreferences" %>
 <%@ page import="org.agnitas.emm.core.logintracking.bean.LoginData" %>
@@ -23,7 +23,6 @@
 	ComAdmin admin = AgnUtils.getAdmin(request);
 %>
 
-<c:set var="ACTION_VIEW" value="<%= ComAdminAction.ACTION_VIEW %>"/>
 <c:set var="START_PAGE_DASHBOARD" value="<%= ComAdminPreferences.START_PAGE_DASHBOARD %>"/>                    <%-- 0 --%>
 <c:set var="START_PAGE_CALENDAR" value="<%= ComAdminPreferences.START_PAGE_CALENDAR %>"/>                      <%-- 1 --%>
 
@@ -53,7 +52,6 @@
 <agn:agnForm id="adminForm" action="selfservice.do?action=save" data-form="search" data-form-focus="username">
     <html:hidden property="action"/>
     <html:hidden property="adminID"/>
-    <html:hidden property="previousAction" value="${ACTION_VIEW}"/>
 
     <div class="tile">
         <div class="tile-header">
@@ -357,7 +355,8 @@
             <div class="table-wrapper">
                 <%
                     Locale userLocale = AgnUtils.getAdmin(request).getLocale();
-                    DateFormat dateFormat = DateFormat.getDateTimeInstance( DateFormat.MEDIUM, DateFormat.LONG, userLocale);
+                	SimpleDateFormat dateFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance( DateFormat.MEDIUM, DateFormat.LONG, userLocale);
+                    dateFormat.applyPattern(dateFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
                 %>
 
                 <display:table
@@ -373,7 +372,7 @@
                         <%= dateFormat.format(((LoginData) loginData).getLoginTime()) %>
                         <%--								${loginData.loginTime} --%>
                     </display:column>
-                    <display:column headerClass="head_action" class="action" titleKey="warning.failed_login.ip">
+                    <display:column headerClass="head_action" class="action" titleKey="statistic.IPAddress">
                         ${loginData.loginIP}
                     </display:column>
                     <display:column headerClass="head_action" class="action" titleKey="warning.failed_login.status">

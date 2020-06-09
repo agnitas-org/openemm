@@ -21,7 +21,6 @@ import org.agnitas.emm.springws.jaxb.UpdateAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentResponse;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class UpdateAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

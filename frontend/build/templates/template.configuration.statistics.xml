@@ -46,16 +46,16 @@
 			<default_encoding>quoted-printable</default_encoding>
 			<default_charset>ISO-8859-1</default_charset>
 			<blocksize>1000</blocksize>
-			<metadir>/home/console/var/spool/META</metadir>
-			<xmlback>/home/console/bin/xmlback</xmlback>
-			<account_logfile>/home/console/var/log/account.log</account_logfile>
+			<metadir>${home}/var/spool/META</metadir>
+			<xmlback>${home}/bin/xmlback</xmlback>
+			<account_logfile>${home}/log/account.log</account_logfile>
 			<xmlvalidate>False</xmlvalidate>
 			<mail_log_number>400</mail_log_number>
 			<eol>LF</eol>
-			<mailer>Agnitas EMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}</mailer>
+			<mailer>Agnitas EMM</mailer>
 			<domain>xxx</domain>
 			<boundary>AGNITAS</boundary>
-			<directdir>/home/console/var/spool/DIRECT</directdir>
+			<directdir>${home}/var/spool/DIRECT</directdir>
 		</ini>
 	</mailgun>
 	
@@ -100,10 +100,6 @@
 		<velocity_log>${HOME}/logs/velocity</velocity_log>
 		<component>${HOME}/components/</component>
 	</directory>
-	
-	<security>
-		<salt-file>${HOME}/conf/keys/emm.salt</salt-file>
-	</security>
 	
 	<manual_install_path>${HOME}/webapps/manual</manual_install_path>
 	

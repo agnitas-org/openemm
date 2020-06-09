@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.target.eql.ast;
 
 import com.agnitas.emm.core.target.eql.ast.transform.ShiftNotDownTransform.SpecialNotOperatorHandling;
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -42,6 +43,12 @@ public final class RevenueByMailingRelationalEqlNode extends AbstractRelationalE
 	@Override	
 	public final void collectReferencedItems(final ReferenceCollector collector) {
 		collector.addMailingReference(mailingId);
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		visitor.leavingNode(this);
 	}
 
 }

@@ -10,10 +10,14 @@
 
 package org.agnitas.backend;
 
+import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -31,28 +35,31 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import org.agnitas.backend.dao.ConfigDAO;
+import org.agnitas.backend.dao.RecipientDAO;
 import org.agnitas.backend.dao.TagDAO;
 import org.agnitas.backend.dao.TitleDAO;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.preview.Page;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
-import org.agnitas.util.Config;
 import org.agnitas.util.Const;
 import org.agnitas.util.DBConfig;
 import org.agnitas.util.Log;
 import org.agnitas.util.Substitute;
 import org.agnitas.util.Title;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-
-import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 
 /** Class holding most of central configuration and global database
  * information
@@ -68,9 +75,10 @@ public class Data {
 	final public static int 	OPL_TOP = 1;
 	/** Constant for onepixellog: insertion at bottom */
 	final public static int 	OPL_BOTTOM = 2;
+	/** fqdn, hostname and version */
+	public static String		fqdn, hostname, user, home, version;
 	/** incarnation of invokation to create unique filenames */
 	static long			incarnation = 0;
-
 	/** all informations about the company of this mailing */
 	public Company			company;
 	/** all mailinglist related stuff of the mailinglist of this mailing */
@@ -108,7 +116,7 @@ public class Data {
 	/** Send samples of worldmailing to dedicated address(es) */
 	private String			sampleEmails = null;
 	/** write a DB record after creating that number of receiver */
-	private int			mailLogNumber = 0;
+	private int			mailLogNumber = 400;
 
 	/** the user_status for this query */
 	public long			defaultUserStatus = UserStatus.Active.getStatusCode();
@@ -118,6 +126,8 @@ public class Data {
 	public long[]			campaignUserStatus = null;
 	/** for campaign mailings, enforce sending ignoring mailinglist and user status */
 	public boolean			campaignForceSending = false;
+	/** for campaign mailings, enable target groups */
+	public boolean			campaignEnableTargetGroups = false;
 	/** for provider preview sending */
 	public String			providerEmail = null;
 	/** for preview mailings use this for matching the customer ID */
@@ -132,6 +142,8 @@ public class Data {
 	public String			previewSelector = null;
 	/** for preview mailings if preview is cachable */
 	public boolean			previewCachable = true;
+	/** for enforcment of active target ids */
+	public long[]			previewTargetIDs = null;
 	/** for preview mailings to convert to entities */
 	public boolean			previewConvertEntities = false;
 	/** for preview mailings for ECS */
@@ -140,6 +152,8 @@ public class Data {
 	public boolean			previewCreateAll = false;
 	/** for preview mailings to create cachable image lings */
 	public boolean			previewCacheImages = true;
+	/** clear read data to anonymize input */
+	public boolean			previewClearData = false;
 	/** optional list of addresses to send bcc copy of mailing */
 	private List <String>		bcc = null;
 	private int			bccBaseIndex = 0;
@@ -152,6 +166,8 @@ public class Data {
 	public Map <String, Object>	staticMap = null;
 	/** optional infos for this mailing */
 	public Map <String, String>	mailingInfo = null;
+	/** keeps trakc of all config values from config tbl */
+	private ConfigDAO		configDao = null;
 	/** keeps track of already read EMMTags from database */
 	private TagDAO			tagDao = null;
 	/** instance to write logs to */
@@ -167,14 +183,8 @@ public class Data {
 	/** force start of new block */
 	public boolean			forceNewBlock = false;
 	/** EOL coding for spoolfiles */
-	public String			eol = "\r\n";
+	public String			eol = "\n";
 	
-	/** the base for the profile URL */
-	public String			profileURL = null;
-	public String			profileTag = "/p.html?";
-	/** the base for the unsubscribe URL */
-	public String			unsubscribeURL = null;
-	public String			unsubscribeTag = "/uq.html?";
 	/** the base for the auto URL */
 	public String			autoURL = null;
 	public String			autoTag = "/r.html?";
@@ -238,7 +248,7 @@ public class Data {
 	/** for building anonymized URLs */
 	public String			anonURL = null;
 	public String			anonTag = "/v.html?";
-	public int			mailingType = Const.Mailing.TYPE_NORMAL;
+	public int			mailingType = MailingType.NORMAL.getCode();
 	public String			workStatus = null;
 	/** mailing priority related */
 	public boolean			isPriorityMailing = false;
@@ -254,8 +264,6 @@ public class Data {
 	private String			imageTemplateNoCache = null;
 	private String			mediapoolTemplate = null;
 	private String			mediapoolTemplateNoCache = null;
-	private String			mediapoolBackgroundTemplate = null;
-	private String			mediapoolBackgroundTemplateNoCache = null;
 	/** media SQL restriction */
 	private String			mediaRestrictSQL = null;
 	/** optional referencing followup for non clickers */
@@ -278,6 +286,71 @@ public class Data {
 	/** my incarnation */
 	private long			inc = 0;
 
+	static {
+		try {
+			InetAddress	i = InetAddress.getLocalHost ();
+			
+			fqdn = i.getHostName ().toLowerCase ();
+			hostname = fqdn.split ("\\.", 2)[0];
+		} catch (UnknownHostException e) {
+			fqdn = hostname = "localhost";
+		}
+		user = System.getProperty ("user.name", "");
+		home = System.getProperty ("user.home", ".");
+		version = "unknown";
+		try {
+			Pattern	versionPattern = Pattern.compile ("[0-9]{2}\\.(01|04|07|10)\\.[0-9]{3}(\\.[0-9]{3})?$");
+			List <String>
+				seen = new ArrayList <> ();
+			
+			version = Stream.of ((System.getProperty ("java.class.path", "") + ":" + System.getenv ().getOrDefault ("CLASSPATH", "")).split (File.pathSeparator))
+				.map (p -> new File (p))
+				.filter (f -> f != null)
+				.map (f -> f.isFile () ? f.getParentFile () : f)
+				.distinct ()
+				.map (f -> {
+					try {
+						return f.getCanonicalPath ();
+					} catch (IOException e) {
+						return f.getAbsolutePath ();
+					}
+				})
+				.distinct ()
+				.flatMap (p -> Stream.of (p.split (File.separator)))
+				.distinct ()
+				.filter (f -> f.length () > 0)
+				.peek (f -> seen.add (f))
+				.map (f -> versionPattern.matcher (f))
+				.filter (m -> m.find ())
+				.map (m -> m.group ())
+				.findFirst ()
+				.orElse (version);
+			if ("unknown".equals (version)) {
+				try {
+					ResourceBundle	rsc = ResourceBundle.getBundle ("emm");
+					String		appVersion = rsc.getString ("ApplicationVersion");
+					
+					if (StringUtils.isNotEmpty (appVersion)) {
+						version = appVersion;
+					}
+				} catch (Exception e) {
+					// do nothing
+				}
+				if ("unknown".equals (version)) {
+					Log	log = new Log ("version", Log.INFO);
+				
+					log.out (Log.ERROR, "retrieve", "Failed to retrieve version in:");
+					for (String v : seen) {
+						log.out (Log.ERROR, "retrieve", "\t\"" + v + "\"");
+					}
+				}
+			}
+		} catch (Exception e) {
+			Log	log = new Log ("version", Log.INFO);
+			log.out (Log.ERROR, "retrieve", "Failed to retrieve version: " + e.toString (), e);
+		}
+	}
+			
 	/**
 	 * Constructor for the class
 	 * @param program the name of the program (for logging setup)
@@ -287,7 +360,7 @@ public class Data {
 	 */
 	public Data (String program, String status_id, String option) throws Exception {
 		setupLogging (program, (option == null || !option.equals ("silent")));
-		configuration (true);
+		configuration ();
 
 		logging (Log.DEBUG, "init", "Data read from " + cfg.getSource () + (status_id != null ? " for " + status_id : ""));
 		setupDatabase ();
@@ -309,6 +382,7 @@ public class Data {
 			if (islog (Log.DEBUG)) {
 				logSettings ();
 			}
+			mailing.setWorkStatus (Const.Workstatus.MAILING_STATUS_IN_GENERATION);
 		}
 	}
 	/**
@@ -349,9 +423,11 @@ public class Data {
 					String	fname = toRemove.remove (0);
 					File	file = new File (fname);
 
-					if (file.exists ())
-						if (! file.delete ())
+					if (file.exists ()) {
+						if (! file.delete ()) {
 							msg += "\trm " + fname + "\n";
+						}
+					}
 					file = null;
 				}
 			}
@@ -372,8 +448,9 @@ public class Data {
 		if (targetExpression != null) {
 			targetExpression = targetExpression.done ();
 		}
-		if (cnt > 0)
+		if (cnt > 0) {
 			throw new Exception ("Unable to cleanup:\n" + msg);
+		}
 		logging (Log.DEBUG, "deinit", "Cleanup done: " + msg);
 	}
 
@@ -382,7 +459,7 @@ public class Data {
 	 * @param conn optional database connection
 	 */
 	public void suspend () throws Exception {
-		if (maildropStatus.isCampaignMailing () || maildropStatus.isPreviewMailing ()) {
+		if (maildropStatus.isCampaignMailing () || maildropStatus.isVerificationMailing () || maildropStatus.isPreviewMailing ()) {
 			closeDatabase ();
 		}
 	}
@@ -392,7 +469,7 @@ public class Data {
 	 * @param conn optional database connection
 	 */
 	public void resume () throws Exception {
-		if (maildropStatus.isCampaignMailing () || maildropStatus.isPreviewMailing ()) {
+		if (maildropStatus.isCampaignMailing () || maildropStatus.isVerificationMailing () || maildropStatus.isPreviewMailing ()) {
 			if (dbase == null) {
 				setupDatabase ();
 			}
@@ -430,8 +507,6 @@ public class Data {
 		logging (Log.DEBUG, "init", "\tdefaultUserStatus = " + defaultUserStatus);
 		logging (Log.DEBUG, "init", "\tdbase = " + dbase);
 		logging (Log.DEBUG, "init", "\tsendSeconds = " + sendSeconds);
-		logging (Log.DEBUG, "init", "\tprofileURL = " + profileURL);
-		logging (Log.DEBUG, "init", "\tunsubscribeURL = " + unsubscribeURL);
 		logging (Log.DEBUG, "init", "\tautoURL = " + autoURL);
 		logging (Log.DEBUG, "init", "\tonePixelURL = " + onePixelURL);
 		logging (Log.DEBUG, "init", "\tmasterMailtype = " + masterMailtype);
@@ -472,22 +547,19 @@ public class Data {
 	 * Setup configuration
 	 * @param checkRsc first check for resource bundle
 	 */
-	private void configuration (boolean checkRsc) throws Exception {
-		boolean		done;
+	private void configuration () throws Exception {
+		boolean		done = false;
 
-		cfg = new Config (log, "mailout.");
-		done = false;
-		if (checkRsc) {
-			try {
-				ResourceBundle	rsc;
+		cfg = new Config (log, "mailout.ini.");
+		try {
+			ResourceBundle	rsc;
 
-				rsc = ResourceBundle.getBundle ("emm");
-				if (rsc != null) {
-					done = cfg.loadConfig (rsc, "mailout.ini", "mailgun.ini");
-				}
-			} catch (Exception e) {
-				// do nothing
+			rsc = ResourceBundle.getBundle ("emm");
+			if (rsc != null) {
+				done = cfg.loadConfig (rsc, "mailout.ini", "mailgun.ini");
 			}
+		} catch (Exception e) {
+			// do nothing
 		}
 		if (! done) {
 			cfg.loadConfig (INI_FILE);
@@ -500,6 +572,55 @@ public class Data {
 	private void configure () throws Exception {
 		String	val;
 
+		dbDriver = cfg.cget ("DB_DRIVER", dbDriver);
+		dbLogin = cfg.cget ("DB_LOGIN", dbLogin);
+		dbPassword = cfg.cget ("DB_PASSWORD", dbPassword);
+		dbConnect = cfg.cget ("SQL_CONNECT", dbConnect);
+		dbPoolsize = cfg.cget ("DB_POOLSIZE", dbPoolsize);
+		dbPoolgrow = cfg.cget ("DB_POOLGROW", dbPoolgrow);
+		dbID = cfg.cget ("DB_ID", cfg.cget ("DBID", "emm"));
+
+		DBConfig	dbcfg = new DBConfig ();
+
+		if (dbcfg.selectRecord (dbID)) {
+			dbMS = dbcfg.findInRecord ("dbms", dbMS);
+			dbLogin = dbcfg.findInRecord ("user", dbLogin);
+			dbPassword = dbcfg.findInRecord ("password", dbPassword);
+			dbDriver = dbcfg.findInRecord ("jdbc-driver", dbDriver);
+			dbConnect = dbcfg.findInRecord ("jdbc-connect", dbConnect);
+		} else {
+			if (DBase.DATASOURCE == null) {
+				logging (Log.WARNING, "cfg", "No entry for dbID " + dbID + " found.");
+			}
+		}
+		try {
+			DBase	temp = new DBase (this);
+			
+			try {
+				temp.setup ();
+				temp.initialize ();
+				if (configDao == null) {
+					configDao = new ConfigDAO (temp, user, fqdn, hostname);
+				}
+				logging (Log.DEBUG, "cfg", "Retrieving configuration from database for \"" + fqdn + "\" and \"" + hostname + "\" for version \"" + version + "\"");
+				Map <String, String>	entry = configEntry ("mailout");
+				
+				if (entry != null) {
+					for (Map.Entry <String, String> kv : entry.entrySet ()) {
+						String		name = kv.getKey ();
+						String		value = kv.getValue ();
+						
+						if ((name != null) && (value != null) && name.toLowerCase ().startsWith ("ini.")) {
+							cfg.set (name.substring (4), value);
+						}
+					}
+				}
+			} finally {
+				temp.done ();
+			}
+		} catch (Exception e) {
+			logging (Log.WARNING, "cfg", "Failed to (over)load data from database: " + e.toString ());
+		}
 		if ((val = cfg.cget ("LOGLEVEL")) != null) {
 			try {
 				logLevel = Log.matchLevel (val);
@@ -510,12 +631,6 @@ public class Data {
 				throw new Exception ("Loglevel must be a known string or a numerical value, not " + val, e);
 			}
 		}
-		dbDriver = cfg.cget ("DB_DRIVER", dbDriver);
-		dbLogin = cfg.cget ("DB_LOGIN", dbLogin);
-		dbPassword = cfg.cget ("DB_PASSWORD", dbPassword);
-		dbConnect = cfg.cget ("SQL_CONNECT", dbConnect);
-		dbPoolsize = cfg.cget ("DB_POOLSIZE", dbPoolsize);
-		dbPoolgrow = cfg.cget ("DB_POOLGROW", dbPoolgrow);
 		xmlBack = cfg.cget ("XMLBACK", xmlBack);
 		xmlValidate = cfg.cget ("XMLVALIDATE", xmlValidate);
 		if (((sampleEmails = cfg.cget ("SAMPLE_EMAILS", sampleEmails)) != null) &&
@@ -535,24 +650,8 @@ public class Data {
 		licenceID = cfg.cget ("LICENCE_ID", licenceID);
 		limitBlockOperations = cfg.cget ("LIMIT_BLOCK_OPERATIONS", limitBlockOperations);
 		limitBlockOperationsMax = cfg.cget ("LIMIT_BLOCK_OPERATIONS_MAX", limitBlockOperationsMax);
-		mfromDatabasePath = cfg.cget ("ENVELOPE_DATABASE", mfromDatabasePath);
-		dbID = cfg.cget ("DB_ID");
+		mfromDatabasePath = cfg.cget ("ENVELOPE_DATABASE", StringOps.makePath ("$home", mfromDatabasePath));
 		dbTempTablespace = cfg.cget ("DB_TEMP_TABLESPACE");
-		if (dbID != null) {
-			DBConfig	dbcfg = new DBConfig ();
-
-			if (dbcfg.selectRecord (dbID)) {
-				dbMS = dbcfg.findInRecord ("dbms", dbMS);
-				dbLogin = dbcfg.findInRecord ("user", dbLogin);
-				dbPassword = dbcfg.findInRecord ("password", dbPassword);
-				dbDriver = dbcfg.findInRecord ("jdbc-driver", dbDriver);
-				dbConnect = dbcfg.findInRecord ("jdbc-connect", dbConnect);
-			} else {
-				logging (Log.WARNING, "cfg", "No entry for dbID " + dbID + " found.");
-			}
-		} else {
-			logging (Log.DEBUG, "cfg", "No dbID found");
-		}
 		company = new Company (this);
 		company.configure (cfg);
 		mailinglist = new Mailinglist (this);
@@ -602,7 +701,7 @@ public class Data {
 
 	/**
 	 * query all basic information about this mailing
-	 * @param status_id the reference to the mailing
+	 * @param status_id the reference to the mailing or company and mailinglist
 	 */
 	@DaoUpdateReturnValueCheck
 	private void getMailingInformations (String status_id) throws Exception {
@@ -703,8 +802,8 @@ public class Data {
 		
 		List <Map <String, Object>>	rq;
 		rq = dbase.query (
-			"SELECT name, reftable, refsource, refcolumn, backref, joincondition, order_by, voucher " + 
-			"FROM reference_tbl " + 
+			"SELECT name, reftable, refsource, refcolumn, backref, joincondition, order_by, voucher, voucher_renew " +
+			"FROM reference_tbl " +
 			"WHERE company_id = :companyID AND (deleted IS NULL OR deleted = 0)",
 			"companyID", company.id ()
 		);
@@ -719,6 +818,7 @@ public class Data {
 				      dbase.asString (row.get ("joincondition")),
 				      dbase.asString (row.get ("order_by")),
 				      dbase.asInt (row.get ("voucher")) == 1,
+				      dbase.asInt (row.get ("voucher_renew")) == 1,
 				      true);
 		}
 		resolveReferenceAliases ();
@@ -774,18 +874,11 @@ public class Data {
 			logging (Log.DEBUG, "prio", "No mailing priority from template found");
 		}
 	}
-	private void retrieveLicenceID () throws Exception {
-		List <Map <String, Object>>	rq;
-		Map <String, Object>		row;
-
-		rq = dbase.query ("SELECT value FROM config_tbl WHERE class = :class AND name = :name", "class", "system", "name", "licence");
-		for (int n = 0; n < rq.size (); ++n) {
-			row = rq.get (n);
-
-			String	lstr = dbase.asString (row.get ("value"));
-			if (lstr != null) {
-				licenceID = StringOps.atoi (lstr, licenceID);
-			}
+	private void retrieveLicenceID () throws SQLException {
+		String	value = configValue ("system", "licence");
+		
+		if (value != null) {
+			licenceID = StringOps.atoi (value, licenceID);
 		}
 	}
 	private void retrieveMailingDynamicInformation () throws Exception {
@@ -814,90 +907,98 @@ public class Data {
 		usedMedia = 0;
 		for (Media tmp : media) {
 			switch (tmp.type) {
-			case Media.TYPE_EMAIL:
-				mediaEMail = tmp;
-				mailing.fromEmail (new EMail (findMediadata (tmp, "from")));
-				mailing.replyTo (new EMail (findMediadata (tmp, "reply")));
-				
-				String	env = findMediadata (tmp, "envelope");
-				
-				if (env != null) {
-					mailing.envelopeFrom (new EMail (env));
-				}
-				mailing.subject (findMediadata (tmp, "subject"));
-				masterMailtype = ifindMediadata (tmp, "mailformat", masterMailtype);
-				if (masterMailtype > Const.Mailtype.HTML_OFFLINE) {
-					masterMailtype = Const.Mailtype.HTML_OFFLINE;
-				}
-				mailing.encoding (findMediadata (tmp, "encoding", mailing.defaultEncoding ()));
-				mailing.charset (findMediadata (tmp, "charset", mailing.defaultCharset ()));
-				lineLength = ifindMediadata (tmp, "linefeed", lineLength);
+				case Media.TYPE_EMAIL:
+					mediaEMail = tmp;
+					mailing.fromEmail (new EMail (findMediadata (tmp, "from")));
+					mailing.replyTo (new EMail (findMediadata (tmp, "reply")));
+					
+					String	env = findMediadata (tmp, "envelope");
+					
+					if (env != null) {
+						mailing.envelopeFrom (new EMail (env));
+					}
+					mailing.subject (findMediadata (tmp, "subject"));
+					masterMailtype = ifindMediadata (tmp, "mailformat", masterMailtype);
+					if (masterMailtype > Const.Mailtype.HTML_OFFLINE) {
+						masterMailtype = Const.Mailtype.HTML_OFFLINE;
+					}
+					mailing.encoding (findMediadata (tmp, "encoding", mailing.defaultEncoding ()));
+					mailing.charset (findMediadata (tmp, "charset", mailing.defaultCharset ()));
+					lineLength = ifindMediadata (tmp, "linefeed", lineLength);
+							
+					String	opl = findMediadata (tmp, "onepixlog", "none");
 						
-				String	opl = findMediadata (tmp, "onepixlog", "none");
-					
-				if (opl.equals ("top"))
-					onepixlog = OPL_TOP;
-				else if (opl.equals ("bottom"))
-					onepixlog = OPL_BOTTOM;
-				else
-					onepixlog = OPL_NONE;
-				
-				followupReference = ifindMediadata (tmp, "followup_for", 0L);
-				if (! maildropStatus.isWorldMailing ()) {
-					followupReference = 0L;
-				}
-				if (followupReference > 0) {
-					followupMethod = findMediadata (tmp, "followup_method", null);
-				}
-				removeDuplicateEMails = bfindMediadata (tmp, "remove_dups", false);
-				if (bfindMediadata (tmp, "intelliad_enabled", false)) {
-					String	id = findMediadata (tmp, "intelliad_string", null);
-					
-					if (id != null) {
-						addTracker ("intelliAd", id);
+					if (opl.equals ("top")) {
+						onepixlog = OPL_TOP;
+					} else if (opl.equals ("bottom")) {
+						onepixlog = OPL_BOTTOM;
 					} else {
-						logging (Log.WARNING, "init", "Missing intelliAd ID string even if tracking for intelliAd is enabled");
+						onepixlog = OPL_NONE;
 					}
-				}
-				
-				String	bcc_recv = findMediadata (tmp, "bcc");
-				
-				if (bcc_recv != null) {
-					for (String recv : bcc_recv.split (", *")) {
-						addBcc (recv);
+					
+					followupReference = ifindMediadata (tmp, "followup_for", 0L);
+					if (! maildropStatus.isWorldMailing ()) {
+						followupReference = 0L;
 					}
-					if (bcc != null) {
-						bccBaseIndex = bcc.size ();
+					if (followupReference > 0) {
+						followupMethod = findMediadata (tmp, "followup_method", null);
 					}
-				}
-				break;
+					removeDuplicateEMails = bfindMediadata (tmp, "remove_dups", false);
+					if (bfindMediadata (tmp, "intelliad_enabled", false)) {
+						String	id = findMediadata (tmp, "intelliad_string", null);
+						
+						if (id != null) {
+							addTracker ("intelliAd", id);
+						} else {
+							logging (Log.WARNING, "init", "Missing intelliAd ID string even if tracking for intelliAd is enabled");
+						}
+					}
+					
+					String	bcc_recv = findMediadata (tmp, "bcc");
+					
+					if (bcc_recv != null) {
+						for (String recv : bcc_recv.split (", *")) {
+							addBcc (recv);
+						}
+						if (bcc != null) {
+							bccBaseIndex = bcc.size ();
+						}
+					}
+					break;
+				default:
+					break;
 			}
-			if (tmp.stat == Media.STAT_ACTIVE)
+			if (tmp.stat == Media.STAT_ACTIVE) {
 				if (! Bit.isset (availableMedias, tmp.type)) {
 					availableMedias = Bit.set (availableMedias, tmp.type);
 					++usedMedia;
 				}
+			}
 		}
 		if (usedMedia > 0) {
 			long	seen;
 			
-			if (usedMedia == 1)
+			if (usedMedia == 1) {
 				mediaRestrictSQL = "bind.mediatype = ";
-			else
+			} else {
 				mediaRestrictSQL = "bind.mediatype IN (";
+			}
 			seen = 0;
 			for (Media tmp : media) {
 				if (! Bit.isset (seen, tmp.type)) {
-					if (seen != 0)
+					if (seen != 0) {
 						mediaRestrictSQL += ", ";
+					}
 					mediaRestrictSQL += Integer.toString (tmp.type);
 					seen = Bit.set (seen, tmp.type);
 				}
 			}
-			if (usedMedia > 1)
+			if (usedMedia > 1) {
 				mediaRestrictSQL += ")";
-		} else
+			}
+		} else {
 			mediaRestrictSQL = null;
+		}
 		mailing.setEnvelopeFrom ();
 		company.infoAdd ("_envelope_from", mailing.getEnvelopeFrom ());
 		mailing.setEncoding ();
@@ -940,7 +1041,7 @@ public class Data {
 		String				query;
 		
 		query = "SELECT url_id, param_key, param_value " +
-			"FROM rdir_url_param_tbl " + 
+			"FROM rdir_url_param_tbl " +
 			"WHERE url_id IN (SELECT url_id FROM rdir_url_tbl WHERE mailing_id = :mailingID AND company_id = :companyID) AND param_type = :paramType " +
 			"ORDER BY param_key";
 		try {
@@ -978,9 +1079,6 @@ public class Data {
 		}
 	}
 	private void finalizeConfiguration () throws Exception {
-		List <Map <String, Object>>	rq;
-		Map <String, Object>		row;
-
 		setupSubstitution ();
 		
 		if (StringOps.atob (company.info ("opt-in-mailing", mailing.id ()), false)) {
@@ -991,8 +1089,6 @@ public class Data {
 		imageTemplateNoCache = company.infoSubstituted ("imagelink-template-no-cache", mailing.id (), "%(rdir-domain)/image/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
 		mediapoolTemplate = company.infoSubstituted ("imagelink-mediapool-template", mailing.id (), "%(rdir-domain)/mediapool_element/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
 		mediapoolTemplateNoCache = company.infoSubstituted ("imagelink-mediapool-template-no-cache", mailing.id (), "%(rdir-domain)/mediapool_element/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
-		mediapoolBackgroundTemplate = company.infoSubstituted ("imagelink-mediapool-background-template", mailing.id (), "%(rdir-domain)/bg_image/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
-		mediapoolBackgroundTemplateNoCache = company.infoSubstituted ("imagelink-mediapool-background-template-no-cache", mailing.id (), "%(rdir-domain)/bg_image/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
 
 		if (followupReference > 0) {
 			final int	METHOD_NON_OPENER = 0;
@@ -1001,7 +1097,7 @@ public class Data {
 			final int	METHOD_CLICKER = 3;
 			int		method = METHOD_NON_OPENER;
 			
-			if (followupMethod != null)
+			if (followupMethod != null) {
 				if (followupMethod.equals (Const.Mailing.TYPE_FOLLOWUP_NON_OPENER)) {
 					method = METHOD_NON_OPENER;
 				} else if (followupMethod.equals (Const.Mailing.TYPE_FOLLOWUP_OPENER)) {
@@ -1011,6 +1107,7 @@ public class Data {
 				} else if (followupMethod.equals (Const.Mailing.TYPE_FOLLOWUP_CLICKER)) {
 					method = METHOD_CLICKER;
 				}
+			}
 			if ((! company.mailtracking ()) && ((method == METHOD_NON_OPENER) || (method == METHOD_NON_CLICKER))) {
 				throw new Exception ("Request followupmail to " + followupReference + " for " + (followupMethod == null ? "non-opener" : followupMethod) + " requires active mailtracking");
 			}
@@ -1021,7 +1118,7 @@ public class Data {
 				if ((method == METHOD_NON_OPENER) || (method == METHOD_NON_CLICKER)) {
 					int	cnt;
 					
-					row = dbase.querys ("SELECT count(*) cnt FROM " + company.mailtrackingTable () + " WHERE maildrop_status_id = :statusID", "statusID", statusID);
+					Map <String, Object> row = dbase.querys ("SELECT count(*) cnt FROM " + company.mailtrackingTable () + " WHERE maildrop_status_id = :statusID", "statusID", statusID);
 					if (row == null) {
 						throw new Exception ("Failed to query reference mailingID " + followupReference + ", failed to count");
 					}
@@ -1051,10 +1148,12 @@ public class Data {
 		
 		String		temp;
 		
-		if ((temp = company.infoSubstituted ("message-domain")) != null)
+		if ((temp = company.infoSubstituted ("message-domain")) != null) {
 			mailing.domain (temp);
-		if ((temp = company.infoSubstituted ("message-mailer")) != null)
+		}
+		if ((temp = company.infoSubstituted ("message-mailer")) != null) {
 			mailing.mailer (temp);
+		}
 		if ((temp = company.info ("block-size", mailing.id ())) != null) {
 			mailing.blockSize (StringOps.atoi (temp, -1));
 		}
@@ -1063,6 +1162,9 @@ public class Data {
 		}
 		if ((temp = company.info ("force-sending", mailing.id ())) != null) {
 			campaignForceSending = StringOps.atob (temp, campaignForceSending);
+		}
+		if ((temp = company.info ("campaign-enable-target-groups", mailing.id ())) != null) {
+			campaignEnableTargetGroups = StringOps.atob (temp, campaignEnableTargetGroups);
 		}
 		if ((temp = company.info ("limit-block-operations", mailing.id ())) != null) {
 			limitBlockOperations = StringOps.atoi (temp, 0);
@@ -1075,32 +1177,33 @@ public class Data {
 		}
 		
 		String		url, tag;
-		if (rdirDomain == null)
+		if (rdirDomain == null) {
 			rdirDomain = company.infoSubstituted ("url-default");
-		if ((url = company.infoSubstituted ("url-profile")) != null)
-			profileURL = url;
-		if ((url = company.infoSubstituted ("url-unsubscribe")) != null)
-			unsubscribeURL = url;
-		if ((url = company.infoSubstituted ("url-auto")) != null)
+		}
+		if ((url = company.infoSubstituted ("url-auto")) != null) {
 			autoURL = url;
-		if ((url = company.infoSubstituted ("url-onepixel")) != null)
+		}
+		if ((url = company.infoSubstituted ("url-onepixel")) != null) {
 			onePixelURL = url;
-		if ((url = company.infoSubstituted ("url-anon")) != null)
+		}
+		if ((url = company.infoSubstituted ("url-anon")) != null) {
 			anonURL = url;
-		if ((tag = company.infoSubstituted ("url-profile-tag")) != null)
-			profileTag = tag;
-		if ((tag = company.infoSubstituted ("url-unsubscribe-tag")) != null)
-			unsubscribeTag = tag;
-		if ((tag = company.infoSubstituted ("url-auto-tag")) != null)
+		}
+		if ((tag = company.infoSubstituted ("url-auto-tag")) != null) {
 			autoTag = tag;
-		if ((tag = company.infoSubstituted ("url-onepixel-tag")) != null)
+		}
+		if ((tag = company.infoSubstituted ("url-onepixel-tag")) != null) {
 			onePixelTag = tag;
-		if ((tag = company.infoSubstituted ("url-anon-tag")) != null)
+		}
+		if ((tag = company.infoSubstituted ("url-anon-tag")) != null) {
 			anonTag = tag;
-		if (rdirDomain != null)
+		}
+		if (rdirDomain != null) {
 			company.infoAdd ("_rdir_domain", rdirDomain);
-		if (mailloopDomain != null)
+		}
+		if (mailloopDomain != null) {
 			company.infoAdd ("_mailloop_domain", mailloopDomain);
+		}
 		directPath = StringOps.atob (company.info ("direct-path", mailing.id ()), false);
 		if (rdirDomain != null) {
 			if (anonURL == null) {
@@ -1127,7 +1230,7 @@ public class Data {
 					
 				logging (Log.DEBUG, "priorty", "Looking for existing configuration for " + timeID);
 					
-				row = dbase.querys (configQuery, "companyID", company.id (), "variable", "last-run");
+				Map <String, Object> row = dbase.querys (configQuery, "companyID", company.id (), "variable", "last-run");
 				if (row != null) {
 					String	value = dbase.asString (row.get ("value"));
 						
@@ -1177,14 +1280,12 @@ public class Data {
 			logging (Log.DEBUG, "priority", "No priority found for this mailing");
 		}
 		if (rdirDomain != null) {
-			if (profileURL == null)
-				profileURL = rdirDomain + profileTag;
-			if (unsubscribeURL == null)
-				unsubscribeURL = rdirDomain + unsubscribeTag;
-			if (autoURL == null)
+			if (autoURL == null) {
 				autoURL = rdirDomain + autoTag;
-			if (onePixelURL == null)
+			}
+			if (onePixelURL == null) {
 				onePixelURL = rdirDomain + onePixelTag;
+			}
 		}
 	}
 	/**
@@ -1201,8 +1302,6 @@ public class Data {
 		msg = "";
 		if (maildropStatus.isWorldMailing ()) {
 			try {
-				List <Map <String, Object>>	rq;
-				Map <String, Object>		row;
 				long				nid;
 
 				checkDatabase ();
@@ -1239,6 +1338,7 @@ public class Data {
 		if ((! maildropStatus.isAdminMailing ()) &&
 		    (! maildropStatus.isTestMailing ()) &&
 		    (! maildropStatus.isCampaignMailing ()) &&
+		    (! maildropStatus.isVerificationMailing ()) &&
 		    (! maildropStatus.isRuleMailing ()) &&
 		    (! maildropStatus.isOnDemandMailing ()) &&
 		    (! maildropStatus.isWorldMailing ()) &&
@@ -1259,14 +1359,6 @@ public class Data {
 			sendSeconds = now;
 		}
 		currentSendDate = new Date (sendSeconds * 1000);
-		if ((profileURL == null) || (profileURL.length () == 0)) {
-			++cnt;
-			msg += "\tmissing or empty profile_url\n";
-		}
-		if ((unsubscribeURL == null) || (unsubscribeURL.length () == 0)) {
-			++cnt;
-			msg += "\tmissing or empty unsubscribe_url\n";
-		}
 		if ((autoURL == null) || (autoURL.length () == 0)) {
 			++cnt;
 			msg += "\tmissing or empty auto_url\n";
@@ -1284,8 +1376,9 @@ public class Data {
 			logging (Log.ERROR, "init", "Error configuration report:\n" + msg);
 			throw new Exception (msg);
 		}
-		if (msg.length () > 0)
+		if (msg.length () > 0) {
 			logging (Log.INFO, "init", "Configuration report:\n" + msg);
+		}
 	}
 	
 	private void addTracker (String name, String code) {
@@ -1350,17 +1443,20 @@ public class Data {
 		String	tmp = findMediadata (m, id, null);
 		boolean rc = dflt;
 
-		if (tmp != null)
-			if (tmp.length () == 0)
+		if (tmp != null) {
+			if (tmp.length () == 0) {
 				rc = true;
-			else {
+			} else {
 				String tok = tmp.substring (0, 1).toLowerCase ();
 
 				if (tok.equals ("t") || tok.equals ("y") ||
-					tok.equals ("+") || tok.equals ("1"))
+					tok.equals ("+") || tok.equals ("1")) {
 					rc = true;
-			} else
-				rc = false;
+				}
+			}
+		} else {
+			rc = false;
+		}
 		return rc;
 	}
 
@@ -1408,8 +1504,9 @@ public class Data {
 	}
 	
 	public void addMailingInfo (String name, String value) {
-		if (mailingInfo == null)
+		if (mailingInfo == null) {
 			mailingInfo = new HashMap <> ();
+		}
 		mailingInfo.put (name, value == null ? "" : value);
 	}
 	
@@ -1425,14 +1522,14 @@ public class Data {
 		}
 		return false;
 	}
-	public boolean addReference (String name, String table, String customerExpression, String keyColumn, String backRef, String joinCondition, String orderBy, boolean isVoucher, boolean overwrite) {
-		return doAddReference (new Reference (name, table, customerExpression, keyColumn, backRef, joinCondition, orderBy, isVoucher), overwrite);
+	public boolean addReference (String name, String table, String customerExpression, String keyColumn, String backRef, String joinCondition, String orderBy, boolean isVoucher, boolean voucherRenew, boolean overwrite) {
+		return doAddReference (new Reference (this, name, table, customerExpression, keyColumn, backRef, joinCondition, orderBy, isVoucher, voucherRenew), overwrite);
 	}
 	public boolean addReference (String ref, boolean overwrite) {
 		boolean	rc = false;
 		
 		if (ref != null) {
-			Reference	r = new Reference (ref.trim ());
+			Reference	r = new Reference (this, ref.trim ());
 			
 			if (r.valid ()) {
 				rc = doAddReference (r, overwrite);
@@ -1616,6 +1713,19 @@ public class Data {
 		}
 		return TimeZone.getTimeZone (timezone);
 	}
+	
+	public Map <String, String> configEntry (String configClass) throws SQLException {
+		if (configDao == null) {
+			configDao = new ConfigDAO (dbase, user, fqdn, hostname);
+		}
+		return configDao.getClassEntry (configClass);
+	}
+	
+	public String configValue (String configClass, String configName) throws SQLException {
+		Map <String, String>	entry = configEntry (configClass);
+		
+		return entry != null ? entry.get (configName) : null;
+	}
 
 	public Title getTitle (Long tid) throws SQLException {
 		if (titles == null) {
@@ -1735,6 +1845,31 @@ public class Data {
 				}
 				bccBaseIsBlacklistChecked = true;
 			}
+		} else {
+			previewClearData = false;
+			if (previewCustomerID == 0) {
+				logging (Log.DEBUG, "sanity", "No preview customer given, try find a valid admin/test recipient");
+
+				RecipientDAO	recipientDao = new RecipientDAO ();
+				if (mailing.exists () && (mailing.mailinglistID () > 0)) {
+					previewCustomerID = recipientDao.findAdminOrTestRecipientForMailinglist (dbase, company.id (), mailing.mailinglistID ());
+					if (previewCustomerID == 0) {
+						previewCustomerID = recipientDao.findAdminOrTestRecipient (dbase, company.id ());
+						if (previewCustomerID == 0) {
+							logging (Log.DEBUG, "sanity", "No admin/test customer for preview found");
+							previewCustomerID = recipientDao.findRecipient (dbase, company.id ());
+							if (previewCustomerID == 0) {
+								throw new Exception ("No customer at all in " + company.id () + " found.");
+							}
+							previewClearData = true;
+						} else {
+							logging (Log.DEBUG, "sanity", "Found customerID " + previewCustomerID);
+						}
+					} else {
+						logging (Log.DEBUG, "sanity", "Found customerID " + previewCustomerID + " for mailinglist " + mailing.mailinglistID ());
+					}
+				}
+			}
 		}
 	}
 
@@ -1745,8 +1880,9 @@ public class Data {
 			rc = codes.get (codeName);
 			if (rc == null) {
 				rc = new Code (this, codeName);
-				if (! rc.retrieveCode ())
+				if (! rc.retrieveCode ()) {
 					logging (Log.WARNING, "data", "Failed to retrieve code for block " + codeName);
+				}
 				codes.put (codeName, rc);
 			}
 		} catch (SQLException e) {
@@ -1796,10 +1932,11 @@ public class Data {
 		    maildropStatus.isOnDemandMailing ()) {
 			try {
 				if (newstatus == 0) {
-					if (maildropStatus.isRuleMailing () || maildropStatus.isOnDemandMailing ())
+					if (maildropStatus.isRuleMailing () || maildropStatus.isOnDemandMailing ()) {
 						newstatus = 1;
-					else
+					} else {
 						newstatus = 3;
+					}
 				}
 				maildropStatus.setGenerationStatus (0, newstatus);
 			} catch (Exception e) {
@@ -1828,30 +1965,34 @@ public class Data {
 	@DaoUpdateReturnValueCheck
 	public void toMailtrack () {
 		if (company.mailtracking ()) {
-//			long	chunks = limitBlockChunks ();		// not active due to performance issues
-			long	chunks = 1;
-			String	query = bigClause.mailtrackStatement (company.mailtrackingTable ());
+			if (company.mailtrackingExtended ()) {
+				logging (Log.DEBUG, "mailtrack", "Mailtrack will be written later");
+			} else {
+//				long	chunks = limitBlockChunks ();		// not active due to performance issues
+				long	chunks = 1;
+				String	query = bigClause.mailtrackStatement (company.mailtrackingTable ());
 
-			if (query != null) {
-				for (long chunk = 0; chunk < chunks; ++chunk) {
-					String	cquery = chunks == 1 ? query : query + " WHERE mod(customer_id, " + chunks + ") = " + chunk;
-					boolean	success= false;
-					int	retry = 3;
+				if (query != null) {
+					for (long chunk = 0; chunk < chunks; ++chunk) {
+						String	cquery = chunks == 1 ? query : query + " WHERE mod(customer_id, " + chunks + ") = " + chunk;
+						boolean	success= false;
+						int	retry = 3;
 
-					while ((! success) && (retry-- > 0)) {
-						try {
-							synchronized (company.mailtrackingTable ()) {
-								dbase.execute (cquery);
+						while ((! success) && (retry-- > 0)) {
+							try {
+								synchronized (company.mailtrackingTable ()) {
+									dbase.execute (cquery);
+								}
+								success= true;
+							} catch (Exception e) {
+								logging (Log.ERROR, "mailtrack", "Failed to write mailtracking using " + cquery + ": " + e.toString (), e);
 							}
-							success= true;
-						} catch (Exception e) {
-							logging (Log.ERROR, "mailtrack", "Failed to write mailtracking using " + cquery + ": " + e.toString (), e);
 						}
 					}
 				}
 			}
 		}
-		if ((mailingType == Const.Mailing.TYPE_INTERVAL) && (! maildropStatus.isAdminMailing ()) && (! maildropStatus.isTestMailing ())) {
+		if ((mailingType == MailingType.INTERVAL.getCode()) && (! maildropStatus.isAdminMailing ()) && (! maildropStatus.isTestMailing ())) {
 			String	intervalTrackTable = "interval_track_" + company.id () + "_tbl";
 			String	query = bigClause.intervalStatement (intervalTrackTable);
 			
@@ -1877,14 +2018,15 @@ public class Data {
 	private int obj2int (Object o, String what) throws Exception {
 		int	rc = 0;
 
-		if (o.getClass () == Integer.class)
+		if (o.getClass () == Integer.class) {
 			rc = ((Integer) o).intValue ();
-		else if (o.getClass () == Long.class)
+		} else if (o.getClass () == Long.class) {
 			rc = ((Long) o).intValue ();
-		else if (o.getClass () == String.class)
+		} else if (o.getClass () == String.class) {
 			rc = Integer.parseInt ((String) o);
-		else
+		} else {
 			typeerr (o, what);
+		}
 		return rc;
 	}
 
@@ -1897,14 +2039,15 @@ public class Data {
 	private long obj2long (Object o, String what) throws Exception {
 		long	rc = 0;
 
-		if (o.getClass () == Integer.class)
+		if (o.getClass () == Integer.class) {
 			rc = ((Integer) o).longValue ();
-		else if (o.getClass () == Long.class)
+		} else if (o.getClass () == Long.class) {
 			rc = ((Long) o).longValue ();
-		else if (o.getClass () == String.class)
+		} else if (o.getClass () == String.class) {
 			rc = Long.parseLong ((String) o);
-		else
+		} else {
 			typeerr (o, what);
+		}
 		return rc;
 	}
 
@@ -1917,12 +2060,13 @@ public class Data {
 	private boolean obj2bool (Object o, String what) throws Exception {
 		boolean rc = false;
 
-		if (o.getClass () == Boolean.class)
+		if (o.getClass () == Boolean.class) {
 			rc = ((Boolean) o).booleanValue ();
-		else if (o.getClass () == String.class)
+		} else if (o.getClass () == String.class) {
 			rc = Boolean.parseBoolean ((String) o);
-		else
+		} else {
 			typeerr (o, what);
+		}
 		return rc;
 	}
 
@@ -1935,10 +2079,11 @@ public class Data {
 	private Date obj2date (Object o, String what) throws Exception {
 		Date	rc = null;
 
-		if (o.getClass () == Date.class)
+		if (o.getClass () == Date.class) {
 			rc = (Date) o;
-		else
+		} else {
 			typeerr (o, what);
+		}
 		return rc;
 	}
 	
@@ -1962,7 +2107,7 @@ public class Data {
 	private long[] obj2longarray (Object o, String what) throws Exception {
 		List <Object>	in = obj2list (o);
 		long[]		rc = new long[in.size ()];
-		int		idx = 0;		
+		int		idx = 0;
 
 		for (Object e : in) {
 			rc[idx++] = obj2long (e, what);
@@ -1998,14 +2143,26 @@ public class Data {
 			if ((tmp = opts.get ("customer-id")) != null) {
 				campaignCustomerID = obj2long (tmp, "customer-id");
 				logging (Log.DEBUG, "options2", "--> customer-id = " + campaignCustomerID);
+			} else {
+				campaignCustomerID = 0;
 			}
 			if ((tmp = opts.get ("user-status")) != null) {
 				campaignUserStatus = obj2longarray (tmp, "user-status");
 				logging (Log.DEBUG, "options2", "--> user-status = " + campaignUserStatus);
+			} else {
+				campaignUserStatus = null;
 			}
 			if ((tmp = opts.get ("force-sending")) != null) {
 				campaignForceSending = obj2bool (tmp, "force-sending");
 				logging (Log.DEBUG, "options2", "--> force-sending = " + campaignForceSending);
+			} else {
+				campaignForceSending = false;
+			}
+			if ((tmp = opts.get ("campaign-enable-target-groups")) != null) {
+				campaignEnableTargetGroups = obj2bool (tmp, "campaign-enable-target-groups");
+				logging (Log.DEBUG, "options2", "--> campaign-enable-target-groups = " + campaignEnableTargetGroups);
+			} else {
+				campaignEnableTargetGroups = false;
 			}
 			if ((providerEmail = (String) opts.get ("provider-email")) != null) {
 				logging (Log.DEBUG, "options2", "--> provider-email = " + providerEmail);
@@ -2013,6 +2170,8 @@ public class Data {
 			if ((tmp = opts.get ("preview-for")) != null) {
 				previewCustomerID = obj2long (tmp, "preview-for");
 				logging (Log.DEBUG, "options2", "--> preview-for = " + previewCustomerID);
+			} else {
+				previewCustomerID = 0;
 			}
 			if ((previewOutput = (Page) opts.get ("preview-output")) != null) {
 				logging (Log.DEBUG, "options2", "--> preview-output = " + previewOutput);
@@ -2020,6 +2179,8 @@ public class Data {
 			if ((tmp = opts.get ("preview-anon")) != null) {
 				previewAnon = obj2bool (tmp, "preview-anon");
 				logging (Log.DEBUG, "options2", "--> preview-anon = " + previewAnon);
+			} else {
+				previewAnon = false;
 			}
 			if ((previewSelector = (String) opts.get ("preview-selector")) != null) {
 				logging (Log.DEBUG, "options2", "--> preview-selector= " + previewSelector);
@@ -2027,24 +2188,46 @@ public class Data {
 			if ((tmp = opts.get ("preview-cachable")) != null) {
 				previewCachable = obj2bool (tmp, "preview-cachable");
 				logging (Log.DEBUG, "options2", "--> preview-cachable = " + previewCachable);
+			} else {
+				previewCachable = true;
+			}
+			if ((tmp = opts.get ("preview-target-ids")) != null) {
+				previewTargetIDs = (long[]) tmp;
+				logging (Log.DEBUG, "options2", "--> preview-target-ids = " + previewTargetIDs);
+			} else {
+				previewTargetIDs = null;
 			}
 			if ((tmp = opts.get ("preview-convert-entities")) != null) {
 				previewConvertEntities = obj2bool (tmp, "preview-convert-entities");
 				logging (Log.DEBUG, "options2", "--> preview-convert-entities = " + previewConvertEntities);
+			} else {
+				previewConvertEntities = false;
 			}
 			if ((tmp = opts.get ("preview-ecs-uids")) != null) {
 				previewEcsUIDs = obj2bool (tmp, "preview-ecs-uids");
 				logging (Log.DEBUG, "options2", "--> preview-ecs-uids = " + previewEcsUIDs);
+			} else {
+				previewEcsUIDs = false;
 			}
+			
+			long	now = System.currentTimeMillis () / 1000;
 			if ((tmp = opts.get ("send-date")) != null) {
 				currentSendDate = obj2date (tmp, "send-date");
 				sendSeconds = currentSendDate.getTime () / 1000;
-
-				long	now = System.currentTimeMillis () / 1000;
 				if (sendSeconds < now) {
 					sendSeconds = now;
 				}
 				logging (Log.DEBUG, "options2", "--> send-date = " + currentSendDate);
+			} else {
+				currentSendDate = maildropStatus.sendDate ();
+			}
+			if (currentSendDate != null) {
+				sendSeconds = currentSendDate.getTime () / 1000;
+				if (sendSeconds < now) {
+					sendSeconds = now;
+				}
+			} else {
+				sendSeconds = now;
 			}
 
 			if ((tmp = opts.get ("step")) != null) {
@@ -2164,8 +2347,9 @@ public class Data {
 	 * @return the found string or null
 	 */
 	private String findInMap (Map <String, String> map, String colname) {
-		if ((map != null) && map.containsKey (colname))
+		if ((map != null) && map.containsKey (colname)) {
 			return map.get (colname);
+		}
 		return null;
 	}
 
@@ -2205,7 +2389,7 @@ public class Data {
 	/** If we have further restrictions due to reference mailing
 	 * @return extra subsulect or null
 	 */
-	public String getReferenceSubselect () {
+	public String getFollowupSubselect () {
 		return followupRefSQL;
 	}
 
@@ -2250,12 +2434,9 @@ public class Data {
 			image = new Image (0, name, name, null);
 			break;
 		case Imagepool.MEDIAPOOL:
+		case Imagepool.MEDIAPOOL_BACKGROUND:
 			template = nocache ? mediapoolTemplateNoCache : mediapoolTemplate;
 			image = imagepool.findMediapoolImage (name);
-			break;
-		case Imagepool.MEDIAPOOL_BACKGROUND:
-			template = nocache ? mediapoolBackgroundTemplateNoCache : mediapoolBackgroundTemplate;
-			image = imagepool.findMediapoolBackground (name);
 			break;
 		}
 		if ((image != null) && (template != null)) {
@@ -2266,7 +2447,7 @@ public class Data {
 			}
 			return link;
 		}
-		return name;	
+		return name;
 	}
 	
 	public List <BlockData> getUsedMediapoolImages () throws SQLException {
@@ -2284,10 +2465,12 @@ public class Data {
 	 * @param fname the filename
 	 */
 	public void markToRemove (String fname) {
-		if (toRemove == null)
+		if (toRemove == null) {
 			toRemove = new ArrayList <> ();
-		if (! toRemove.contains (fname))
+		}
+		if (! toRemove.contains (fname)) {
 			toRemove.add (fname);
+		}
 	}
 
 	/**
@@ -2304,8 +2487,9 @@ public class Data {
 	 * @param fname the filename
 	 */
 	public void unmarkToRemove (String fname) {
-		if ((toRemove != null) && toRemove.contains (fname))
+		if ((toRemove != null) && toRemove.contains (fname)) {
 			toRemove.remove (fname);
+		}
 	}
 
 	/**
@@ -2438,7 +2622,7 @@ public class Data {
 	}
 	
 	public boolean isDirect () {
-		return directPath && 
+		return directPath &&
 			(mailing.outputDirectory ("direct") != null) &&
 			maildropStatus.isCampaignMailing () &&
 			(mailing.stepping () == 0) &&
@@ -2494,7 +2678,7 @@ public class Data {
 	}
 
 	public String getDefaultMediaType () {
-		return maildropStatus.isCampaignMailing () ? Media.typeName (Media.TYPE_EMAIL) : null;
+		return maildropStatus.isCampaignMailing () || maildropStatus.isVerificationMailing () ? Media.typeName (Media.TYPE_EMAIL) : null;
 	}
 	
 	public long limitBlockOperations () {
@@ -2554,7 +2738,7 @@ public class Data {
 			}
 		}
 
-		extendURL.requestFields (this, predef);
+		extendURL.requestFields (predef);
 
 		if (references != null) {
 			for (Reference r : references.values ()) {
@@ -2734,8 +2918,9 @@ public class Data {
 		SimpleDateFormat	fmt = new SimpleDateFormat ("EEE, d MMM yyyy HH:mm:ss z",
 									new Locale ("en"));
 		fmt.setTimeZone (TimeZone.getTimeZone ("GMT"));
-		if (ts == null)
+		if (ts == null) {
 			ts = new Date ();
+		}
 		return fmt.format (ts);
 	}
 
@@ -2887,13 +3072,29 @@ public class Data {
 					int	cmp = -1;
 		
 					switch (day) {
-					case 0:	cmp = Calendar.MONDAY;		break;
-					case 1:	cmp = Calendar.TUESDAY;		break;
-					case 2:	cmp = Calendar.WEDNESDAY;	break;
-					case 3:	cmp = Calendar.THURSDAY;	break;
-					case 4:	cmp = Calendar.FRIDAY;		break;
-					case 5:	cmp = Calendar.SATURDAY;	break;
-					case 6:	cmp = Calendar.SUNDAY;		break;
+						case 0:
+							cmp = Calendar.MONDAY;
+							break;
+						case 1:
+							cmp = Calendar.TUESDAY;
+							break;
+						case 2:
+							cmp = Calendar.WEDNESDAY;
+							break;
+						case 3:
+							cmp = Calendar.THURSDAY;
+							break;
+						case 4:
+							cmp = Calendar.FRIDAY;
+							break;
+						case 5:
+							cmp = Calendar.SATURDAY;
+							break;
+						case 6:
+							cmp = Calendar.SUNDAY;
+							break;
+						default:
+							break;
 					}
 					buf.append (cmp == wday ? '1' : '_');
 				}
@@ -2970,31 +3171,49 @@ public class Data {
 			}
 		}
 		url = URLTable.get (rqurl);
-		if (url == null) synchronized (lock) {
-			NamedParameterJdbcTemplate	jdbc = null;
-			String				query = null;
-			List <Map <String, Object>>	rq;
-			Map <String, Object>		row;
-			
-			try {
-				long	urlID;
+		if (url == null) {
+			synchronized (lock) {
+				NamedParameterJdbcTemplate	jdbc = null;
+				String				query = null;
+				List <Map <String, Object>>	rq;
+				Map <String, Object>		row;
 				
-				urlID = 0;
-				jdbc = dbase.request ();
-				query = "SELECT url_id FROM rdir_url_tbl WHERE mailing_id = :mailingID AND company_id = :companyID AND full_url = :fullURL AND (deleted IS NULL OR deleted = 0)";
-				rq = dbase.query (jdbc, query, "mailingID", mailing.id (), "companyID", company.id (), "fullURL", rqurl);
-				if (rq.size () > 0) {
-					row = rq.get (0);
+				try {
+					long	urlID;
 					
-					urlID = dbase.asLong (row.get ("url_id"));
-				}
-				if (urlID == 0) {
-					if (dbase.isOracle ()) {
-						query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
-						urlID = dbase.queryLong (jdbc, query);
-						if (urlID > 0) {
-							query = "INSERT INTO rdir_url_tbl (url_id, full_url, mailing_id, company_id, " + dbase.measureType +", action_id, shortname, deep_tracking, relevance, alt_text, extend_url, admin_link) " +
-								"VALUES (:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :relevance, :altText, :extendURL, :adminLink)";
+					urlID = 0;
+					jdbc = dbase.request ();
+					query = "SELECT url_id FROM rdir_url_tbl WHERE mailing_id = :mailingID AND company_id = :companyID AND full_url = :fullURL AND (deleted IS NULL OR deleted = 0)";
+					rq = dbase.query (jdbc, query, "mailingID", mailing.id (), "companyID", company.id (), "fullURL", rqurl);
+					if (rq.size () > 0) {
+						row = rq.get (0);
+						
+						urlID = dbase.asLong (row.get ("url_id"));
+					}
+					if (urlID == 0) {
+						if (dbase.isOracle ()) {
+							query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
+							urlID = dbase.queryLong (jdbc, query);
+							if (urlID > 0) {
+								query = "INSERT INTO rdir_url_tbl (url_id, full_url, mailing_id, company_id, " + dbase.measureType +", action_id, shortname, deep_tracking, relevance, alt_text, extend_url, admin_link) " +
+									"VALUES (:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :relevance, :altText, :extendURL, :adminLink)";
+								dbase.update (jdbc, query,
+									      "urlID", urlID,
+									      "fullURL", rqurl,
+									      "mailingID", mailing.id (),
+									      "companyID", company.id (),
+									      "measure", 3,
+									      "actionID", 0,
+									      "shortname", (name == null ? "auto generated" : name),
+									      "deepTracking", 0,
+									      "relevance", 0,
+									      "altText", null,
+									      "extendURL", 0,
+									      "adminLink", (isAdminLink ? 1 : 0));
+							}
+						} else {
+							query = "INSERT INTO rdir_url_tbl (full_url, mailing_id, company_id, " + dbase.measureType +", action_id, shortname, deep_tracking, relevance, alt_text, extend_url, admin_link) " +
+								"VALUES (:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :relevance, :altText, :extendURL, :adminLink)";
 							dbase.update (jdbc, query,
 								      "urlID", urlID,
 								      "fullURL", rqurl,
@@ -3008,39 +3227,23 @@ public class Data {
 								      "altText", null,
 								      "extendURL", 0,
 								      "adminLink", (isAdminLink ? 1 : 0));
+							query = "SELECT last_insert_id()";
+							urlID = dbase.queryLong (jdbc, query);
 						}
-					} else {
-						query = "INSERT INTO rdir_url_tbl (full_url, mailing_id, company_id, " + dbase.measureType +", action_id, shortname, deep_tracking, relevance, alt_text, extend_url, admin_link) " +
-							"VALUES (:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :relevance, :altText, :extendURL, :adminLink)";
-						dbase.update (jdbc, query,
-							      "urlID", urlID,
-							      "fullURL", rqurl,
-							      "mailingID", mailing.id (),
-							      "companyID", company.id (),
-							      "measure", 3,
-							      "actionID", 0,
-							      "shortname", (name == null ? "auto generated" : name),
-							      "deepTracking", 0,
-							      "relevance", 0,
-							      "altText", null,
-							      "extendURL", 0,
-							      "adminLink", (isAdminLink ? 1 : 0));
-						query = "SELECT last_insert_id()";
-						urlID = dbase.queryLong (jdbc, query);
 					}
+					if (urlID > 0) {
+						url = new URL (urlID, rqurl, 3);
+						url.setAdminLink (isAdminLink);
+						URLlist.add (url);
+						URLTable.put (rqurl, url);
+						++urlcount;
+						logging (Log.VERBOSE, "rqurl", "Added missing URL " + rqurl);
+					}
+				} catch (Exception e) {
+					logging (Log.ERROR, "rqurl", "Failed to insert new URL " + rqurl + " into database: " + e.toString () + (query != null ? " (query " + query + ")" : ""), e);
+				} finally {
+					dbase.release (jdbc);
 				}
-				if (urlID > 0) {
-					url = new URL (urlID, rqurl, 3);
-					url.setAdminLink (isAdminLink);
-					URLlist.add (url);
-					URLTable.put (rqurl, url);
-					++urlcount;
-					logging (Log.VERBOSE, "rqurl", "Added missing URL " + rqurl);
-				}
-			} catch (Exception e) {
-				logging (Log.ERROR, "rqurl", "Failed to insert new URL " + rqurl + " into database: " + e.toString () + (query != null ? " (query " + query + ")" : ""), e);
-			} finally {
-				dbase.release (jdbc);
 			}
 		}
 		return url;

@@ -1,0 +1,49 @@
+<script id="target-group-save" type="text/x-mustache-template">
+    <div class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                    </button>
+                    <h4 class="modal-title"><bean:message key="recipient.saveSearch"/></h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label for="targetShortnameOverlay" class="control-label"><bean:message key="Name"/></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input type="text" id="targetShortnameOverlay" class="form-control" maxlength="99"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label for="targetDescriptionOverlay" class="control-label"><bean:message key="Description"/></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <textarea id="targetDescriptionOverlay" class="form-control" rows="5"
+                                      cols="32"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text"><bean:message key="button.Cancel"/></span>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-large"
+                                data-sync-from="#targetShortnameOverlay, #targetDescriptionOverlay"
+                                data-sync-to="#targetShortname, #targetDescription"
+                                data-form-set="needSaveTargetGroup: 'true'" data-form-target="#recipientForm"
+                                data-form-submit="" data-dismiss="modal">
+                            <i class="icon icon-check"></i>
+                            <bean:message key="button.Save"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

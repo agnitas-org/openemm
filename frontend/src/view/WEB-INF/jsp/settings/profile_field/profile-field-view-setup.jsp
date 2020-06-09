@@ -5,7 +5,6 @@
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 
-<c:set var="isTabsMenuShown" 		value="false" 				scope="request" />
 <c:set var="agnTitleKey" 			value="recipient.fields" 	scope="request" />
 <c:set var="agnSubtitleKey" 		value="recipient.fields" 	scope="request" />
 <c:set var="sidemenu_active" 		value="Recipients" 			scope="request" />
@@ -20,6 +19,9 @@
     <c:when test="${not empty TMP_FIELDNAME}">
         <c:set var="agnNavigationKey" 	value="profiledbEdit" 					scope="request" />
         <c:set var="agnHighlightKey" 	value="settings.EditProfileDB_Field" 	scope="request" />
+        <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavHrefParams}" property="fieldname" value="${TMP_FIELDNAME}"/>
+        </emm:instantiate>
     </c:when>
     <c:otherwise>
         <c:set var="agnNavigationKey" 	value="profiledb" 					scope="request" />

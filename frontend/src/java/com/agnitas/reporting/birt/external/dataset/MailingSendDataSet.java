@@ -17,10 +17,10 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-// ComDeliveryStatImpl sucks ... quite complicated , why ? 
+// ComDeliveryStatImpl sucks ... quite complicated , why ?
 public class MailingSendDataSet extends BIRTDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(MailingSendDataSet.class);
@@ -53,9 +53,9 @@ public class MailingSendDataSet extends BIRTDataSet {
 				result = selectInt(logger, "SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
 			} else {
 				String sql = "SELECT SUM(acc.no_of_mailings) FROM mailing_account_tbl acc"
-					+ " JOIN mailing_tbl mailing ON acc.mailing_id = mailing.mailing_id" 
-					+ " JOIN customer_" + companyId + "_binding_tbl bind ON mailing.mailinglist_id = bind.mailinglist_id" 
-					+ " JOIN customer_" + companyId + "_tbl cust ON bind.customer_id = cust.customer_id" 
+					+ " JOIN mailing_tbl mailing ON acc.mailing_id = mailing.mailing_id"
+					+ " JOIN customer_" + companyId + "_binding_tbl bind ON mailing.mailinglist_id = bind.mailinglist_id"
+					+ " JOIN customer_" + companyId + "_tbl cust ON bind.customer_id = cust.customer_id"
 					+ " WHERE acc.mailing_id = ?"
 					+ " AND " + targetSql;
 				result = selectInt(logger, sql, mailingID);
@@ -116,10 +116,10 @@ public class MailingSendDataSet extends BIRTDataSet {
      */
 	public Map<String, Object> getMailingStats(Integer mailingID) {
 		String sql = "SELECT"
-			+ " " + getIfNull() + "(SUM(no_of_mailings), 0) AS MAILS,"
+			+ " COALESCE(SUM(no_of_mailings), 0) AS MAILS,"
 			+ " MIN(timestamp) AS MINTIME,"
 			+ " MAX(timestamp) AS MAXTIME,"
-			+ " " + getIfNull() + "(SUM(no_of_bytes), 0) AS BYTES"
+			+ " COALESCE(SUM(no_of_bytes), 0) AS BYTES"
 			+ " FROM mailing_account_tbl"
 			+ " WHERE mailing_id = ? AND status_field NOT IN ('A', 'T')";
 		return selectSingleRow(logger, sql, mailingID);

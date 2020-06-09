@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
+import com.agnitas.emm.core.target.eql.ast.traversal.TraversalUtil;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -68,5 +70,14 @@ public class ConstantListEqlNode extends AbstractEqlNode {
 	@Override
 	public void collectReferencedItems(ReferenceCollector collector) {
 		// Nothing to do here
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		for(final AbstractEqlNode node : this.elements) {
+			TraversalUtil.traverse(node, visitor);
+		}
+		visitor.leavingNode(this);
 	}
 }

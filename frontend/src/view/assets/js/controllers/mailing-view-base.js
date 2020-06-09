@@ -5,6 +5,8 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
   var config;
   var isChangeMailing = false;
   var targetGroupIds = [];
+  var mailingListSelect;
+  var lastMailingListId = 0;
 
   this.addDomInitializer('mailing-view-base', function() {
     config = this.config;
@@ -18,6 +20,12 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
     $('#targetModeCheck')
       .closest('.form-group')
       .toggle(targetGroupIds.length > 1);
+    mailingListSelect = $('#settingsGeneralMailingList');
+
+    mailingListSelect.select2("readonly", false);
+    if (lastMailingListId  > 0) {
+      lastMailingListId = mailingListSelect.select2("val", lastMailingListId);
+    }
 
     updateGeneralMailingTypeView(config.mailingType);
   });
@@ -101,12 +109,15 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
       isChangeMailing = true;
   });
 
+  this.addAction({change: 'set-parent-mail-mailinglist'}, function () {
+    setMailingListSelectByFollowUpMailing();
+  });
+
   this.addAction({click: 'deleteMailingParameter'}, function() {
     var form = Form.get(this.el);
     var position = getPosition(this.el);
 
     var $tr = this.el.closest('tr');
-    Tooltip.remove($tr.all('[data-tooltip]'));
     $tr.remove();
 
     form.setValueOnce('scrollTop', Math.round(position));
@@ -126,13 +137,36 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
   this.addAction({change: 'change-general-mailing-type'}, function() {
     var self = this;
     var value = self.el.val();
-    updateGeneralMailingTypeView(value);
+    mailingListSelect.select2("readonly", false);
 
+    if(lastMailingListId > 0) {
+      mailingListSelect.select2("val", lastMailingListId);
+    }
+
+    updateGeneralMailingTypeView(value);
   });
 
+  this.addAction({change: 'save-mailing-list-id'}, function() {
+    if(config.TYPE_FOLLOWUP !== $('#settingsGeneralMailType').val()) {
+      lastMailingListId = this.el.select2("val");
+    }
+  });
+
+  function setMailingListSelectByFollowUpMailing() {
+    var selectedParentMailingId = $('#lightWeightMailingList').val();
+    var selectedParentMailingMailingListId = $('#parentmailing-' + selectedParentMailingId + '-mailinglist')
+      .attr('data-mailing-list-id');
+    mailingListSelect.select2("val", selectedParentMailingMailingListId);
+    mailingListSelect.select2("readonly", true);
+  }
+
   function updateGeneralMailingTypeView(value) {
+    var isFollowUpMailingType = config.TYPE_FOLLOWUP == value;
     if (config.followUpAllowed) {
-      toggle(config.TYPE_FOLLOWUP == value, '#followUpControls');
+      if(isFollowUpMailingType) {
+        setMailingListSelectByFollowUpMailing();
+      }
+      toggle(isFollowUpMailingType, '#followUpControls');
     }
 
     toggle(config.TYPE_INTERVAL == value, '#mailingIntervalContainer');

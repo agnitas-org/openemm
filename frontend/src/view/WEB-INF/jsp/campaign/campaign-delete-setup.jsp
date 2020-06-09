@@ -13,6 +13,6 @@
 <c:set var="sidemenu_active" 		value="Mailings" 								scope="request" />
 <c:set var="sidemenu_sub_active"	value="mailing.archive" 						scope="request" />
 <c:set var="agnHighlightKey" 		value="mailing.archive" 						scope="request" />
-<c:set var="agnHelpKey" 			value="archiveView" 							scope="request" />
+<c:set var="agnHelpKey" 			value="mailingArchive" 							scope="request" />
 
 

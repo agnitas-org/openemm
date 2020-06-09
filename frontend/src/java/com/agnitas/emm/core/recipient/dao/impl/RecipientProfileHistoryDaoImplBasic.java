@@ -38,7 +38,6 @@ public class RecipientProfileHistoryDaoImplBasic extends BaseDaoImpl implements 
 	/** The logger. */
 	private static final Logger logger = Logger.getLogger(RecipientProfileHistoryDaoImplBasic.class);
 	
-	
 	/**
 	 * Implementation of {@link RowMapper} for profile field history.
 	 */
@@ -113,7 +112,7 @@ public class RecipientProfileHistoryDaoImplBasic extends BaseDaoImpl implements 
 	@Override
 	public List<ComRecipientHistory> listProfileFieldHistory(final int recipientID, @VelocityCheck final int companyID) {
 		String recipientHistoryTable = buildHistoryTableName(companyID);
-		boolean isRecipientHistoryTableExist = DbUtilities.checkIfTableExists(getDataSource(), recipientHistoryTable);
+		boolean isRecipientHistoryTableExist = DbUtilities.checkIfTableOrSynonymExists(getDataSource(), recipientHistoryTable);
 
 		if (isRecipientHistoryTableExist) {
 			final String sql = "SELECT *" +
@@ -179,7 +178,7 @@ public class RecipientProfileHistoryDaoImplBasic extends BaseDaoImpl implements 
 		buffer.append("AFTER " + triggerEvent.sqlEventName + " ON " + buildSourceTableName(companyID) + " FOR EACH ROW" + (isOracleDB() ? " ENABLE" : "") + "\n");
 		buffer.append("  BEGIN\n");
 		
-		if(!isOracleDB()) {			
+		if(!isOracleDB()) {
 			buffer.append("    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION\n");
 			buffer.append("    BEGIN\n");
 			buffer.append("      GET DIAGNOSTICS CONDITION 1 @msg = MESSAGE_TEXT;\n");

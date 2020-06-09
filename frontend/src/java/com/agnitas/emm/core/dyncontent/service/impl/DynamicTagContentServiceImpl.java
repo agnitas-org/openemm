@@ -30,7 +30,8 @@ import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.annotation.Validate;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -41,6 +42,10 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 
 public class DynamicTagContentServiceImpl implements DynamicTagContentService, ApplicationContextAware {  // TODO: Do we really need to implement ApplicationContextAware? No better ideas here???
+
+	/** The logger. */
+	private static final transient Logger LOGGER = Logger.getLogger(DynamicTagContentServiceImpl.class);
+	
 	@Resource(name="DynamicTagContentDao")
 	private DynamicTagContentDao dynamicTagContentDao;
 	@Resource(name="MailingDao")
@@ -117,12 +122,16 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
         try {
         	mailing.buildDependencies(false, applicationContext);
         } catch (Exception e) {
+        	LOGGER.error(String.format("Error building dependencies of mailing %d", mailing.getId()), e);
+        	
         	throw new DynamicTagContentInvalid(e.getMessage());
         }
 
 		try {
 			mailingDao.saveMailing(mailing, false, false);
 		} catch (Exception e) {
+        	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
+        	
 			throw new DynamicTagContentInvalid(e.getMessage());
 		}
 
@@ -232,6 +241,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 		try {
         	mailing.buildDependencies(false, applicationContext);
         } catch (Exception e) {
+        	LOGGER.error(String.format("Error building dependencies of mailing %d", mailing.getId()), e);
+        	
         	throw new DynamicTagContentInvalid(e.getMessage());
         }
 		
@@ -239,6 +250,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 		try {
 			mailingDao.saveMailing(mailing, false, false);
 		} catch (Exception e) {
+        	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
+        	
 			throw new DynamicTagContentInvalid(e.getMessage());
 		}
 

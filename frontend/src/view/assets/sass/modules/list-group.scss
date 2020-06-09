@@ -258,6 +258,9 @@ parent: list_groups
   > .badge + .badge {
     margin-right: 5px;
   }
+  &.no-border{
+    border-width: 0px;
+  }
 }
 
 .list-group-item-nested {
@@ -386,9 +389,55 @@ a.list-group-item {
   .radio,
   .radio-inline,
   .checkbox,
-  .checkbox-inline {
+  .checkbox-inline,
+  .item-styled {
     padding-top: 0;
   }
+}
+
+.item-styled {
+  font-weight: 400;
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 0;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0.4em;
+    left: 0;
+  }
+}
+
+.item-style-sm:before {
+  width: 6px;
+  height: 6px;
+  top: 0.5em;
+}
+
+.item-style-md:before {
+  width: 8px;
+  height: 8px;
+}
+
+.circle-style:before {
+  border-radius: 50%;
+  -moz-border-radius: 50%;
+  -webkit-border-radius: 50%;
+  border:1px solid $c-gray-55;
+}
+
+.bullet-style:before {
+  border-radius: 50%;
+  -moz-border-radius: 50%;
+  -webkit-border-radius: 50%;
+  background-color: $c-gray-55;
+}
+
+.square-style:before {
+  //nothing styled
+  background-color: $c-gray-55;
 }
 
 .list-group-item-controls,

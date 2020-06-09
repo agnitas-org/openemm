@@ -14,6 +14,8 @@ import java.beans.PropertyDescriptor;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -54,9 +57,10 @@ import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.annotation.Validate;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DynTagException;
 import org.agnitas.util.HtmlUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
@@ -64,6 +68,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
@@ -77,23 +82,28 @@ import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.service.ComMailingContentService;
+import com.agnitas.util.OneOf;
 
 public abstract class MailingServiceImpl implements MailingService, ApplicationContextAware {
 	// TODO Remove ApplicationContextAware
 	
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(MailingServiceImpl.class);
-	
-    protected ConfigService configService;
+	private static final int DEFAULT_LOCKING_DURATION_SECONDS = 60; // 1 minute
+
+	protected ConfigService configService;
     
 	private JavaMailService javaMailService;
 
 	protected ApplicationContext applicationContext;
-	
+
 	@Resource(name="MailingDao")
 	protected ComMailingDao mailingDao;
 	
@@ -115,6 +125,12 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 
 	@Resource(name="MediatypeFactory")
 	private MediatypeFactory mediatypeFactory;
+	
+	@Resource(name="MailingBaseService")
+	private ComMailingBaseService mailingBaseService;
+	
+	@Resource(name="MailingContentService")
+	protected ComMailingContentService mailingContentService;
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -130,12 +146,27 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
-	
+
 	@Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
 
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
+	
+	@Required
+	public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
+		this.mailingBaseService = mailingBaseService;
+	}
+	
+	@Required
+	public void setMailingContentService(ComMailingContentService mailingContentService) {
+		this.mailingContentService = mailingContentService;
+	}
+	
 	protected abstract MailingService getSelfReference();
 		
 	@Override
@@ -170,8 +201,8 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
     }
 
     @Override
-	public List<LightweightMailing> getAllMailingNames(@VelocityCheck int companyID) {
-		return mailingDao.getMailingNames(companyID);
+	public List<LightweightMailing> getAllMailingNames(@VelocityCheck ComAdmin admin) {
+		return mailingDao.getMailingNames(admin.getCompanyID(), admin.getAdminID());
 	}
 
 	@Override
@@ -228,14 +259,15 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
         Mailing mailing = getMailing(model);
         if (maildrop.getGenStatus() == 1) {
             if (model.getMaildropStatus() == MaildropStatus.WORLD
-                    && mailing.getMailingType() != Mailing.TYPE_NORMAL) {
+                    && mailing.getMailingType() != MailingTypes.NORMAL.getCode()) {
                 throw new WorldMailingWithoutNormalTypeException();
             }
 
             mailing.triggerMailing(maildrop.getId(), new Hashtable<>(), applicationContext);
         }
 
-        if (!DateUtil.isDateForImmediateGeneration(maildrop.getGenDate()) && ((mailing.getMailingType() == Mailing.TYPE_NORMAL) || (mailing.getMailingType() == Mailing.TYPE_FOLLOWUP))) {
+        if (!DateUtil.isDateForImmediateGeneration(maildrop.getGenDate()) && ((mailing.getMailingType() == MailingTypes.NORMAL.getCode()) ||
+                (mailing.getMailingType() == MailingTypes.FOLLOW_UP.getCode()))) {
             if (maildrop.getStatus() == MaildropStatus.ADMIN.getCode()) {
                 mailingDao.updateStatus(maildrop.getMailingID(), "admin");
             } else if (maildrop.getStatus() == MaildropStatus.TEST.getCode()) {
@@ -279,11 +311,9 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 		this.mailingComponentDao = mailingComponentDao;
 	}
 	
-	@SuppressWarnings("null")
 	protected Mailing prepareMailingForAddOrUpdate(MailingModel model, Mailing aMailing, List<String> actions) throws MailinglistNotExistException {
         final String editKeyword = "edit ";
         StringBuilder actionMessage = new StringBuilder(editKeyword);
-        boolean logChanges = actions != null;
 		aMailing.setCompanyID(model.getCompanyId());
 		aMailing.setDescription(model.getDescription() != null ? model.getDescription() : "");
 		aMailing.setShortname(model.getShortname());
@@ -293,7 +323,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 			if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
 				throw new MailinglistNotExistException(model.getMailingId());
 			}
-            if (logChanges && aMailing.getMailinglistID() != model.getMailinglistId()) {
+            if (actions != null && aMailing.getMailinglistID() != model.getMailinglistId()) {
                 actionMessage.append("mailing list changed from ").append(aMailing.getMailinglistID()).append(" to ").append(model.getMailinglistId());
                 if (model.getMailinglistId() == 0) {
                 	//send mail
@@ -316,7 +346,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 				}
 				tGroups.add(targetID);
 			}
-            if (logChanges) {
+            if (actions != null) {
                 Set<Integer> oldGroups = new HashSet<>();
                 if(aMailing.getTargetGroups() != null) {
                     oldGroups.addAll(aMailing.getTargetGroups());
@@ -339,7 +369,7 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
             }
             aMailing.setTargetGroups(tGroups);
         } else {
-            if(logChanges && aMailing.getTargetGroups() != null && aMailing.getTargetGroups().size() > 0){
+            if(actions != null && aMailing.getTargetGroups() != null && aMailing.getTargetGroups().size() > 0){
                 actionMessage.append("removed ");
                 for (Integer next : aMailing.getTargetGroups()) {
                     actionMessage.append(next).append(", ");
@@ -347,14 +377,17 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
             }
 			aMailing.setTargetGroups(null);
 		}
-        if (actionMessage.length() != editKeyword.length()){
-            actionMessage.delete(actionMessage.length()-2,actionMessage.length()); //remove last two characters: comma and space
-            actionMessage.insert(editKeyword.length(),"target groups ");
-            actions.add(actionMessage.toString());
-            actionMessage.delete(editKeyword.length(), actionMessage.length());
-        }
+		
+		if (actions != null) {
+	        if (actionMessage.length() != editKeyword.length()){
+	            actionMessage.delete(actionMessage.length()-2,actionMessage.length()); //remove last two characters: comma and space
+	            actionMessage.insert(editKeyword.length(),"target groups ");
+	            actions.add(actionMessage.toString());
+	            actionMessage.delete(editKeyword.length(), actionMessage.length());
+	        }
+		}
 
-        if (logChanges && aMailing.getMailingType() != model.getMailingType().getValue()){
+        if (actions != null && aMailing.getMailingType() != model.getMailingType().getValue()){
             actionMessage.append("mailing type from ")
                     .append(MailingModel.getMailingType(aMailing.getMailingType()).getName())
                     .append(" to ")
@@ -462,8 +495,9 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
         	logger.info("send mailing id: " + mailing.getId() + " type: "+maildrop.getStatus());
         }
 
-		String strDate = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.UK)
-				.format(model.getSendDate());
+        SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.UK);
+        dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
+		String strDate = dateTimeFormat.format(model.getSendDate());
 		String description = String.format("Date: %s. Mailing %s(%d) %s", strDate, mailing.getShortname(), mailing.getId(), "normal");
 
         userActions.add(new UserAction("edit send date", description));
@@ -601,11 +635,11 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 	public Mailing getMailing(final int companyID, final int mailingID) {
 		final Mailing mailing = mailingDao.getMailing(mailingID, companyID);
 		
-		if (mailing == null || mailing.getId() == 0 || mailing.isIsTemplate()) {
+		if (mailing == null || mailing.getId() == 0) {
 			throw new MailingNotExistException();
+		} else {
+			return mailing;
 		}
-		
-		return mailing;
 	}
 
 	@Override
@@ -692,4 +726,60 @@ public abstract class MailingServiceImpl implements MailingService, ApplicationC
 		return this.targetDao.getTargetLights(companyID, targetIdList, false);
 	}
 
+	@Override
+	@Transactional
+	public boolean tryToLock(ComAdmin admin, int mailingId) {
+		return mailingDao.tryToLock(mailingId, admin.getAdminID(), admin.getCompanyID(), DEFAULT_LOCKING_DURATION_SECONDS, TimeUnit.SECONDS);
+	}
+	
+	@Override
+	public boolean isDeliveryComplete(final int companyID, final int mailingID) {
+		final LightweightMailing mailing = this.mailingDao.getLightweightMailing(companyID, mailingID);
+
+		return isDeliveryComplete(mailing);
+	}
+	
+	@Override
+	public final boolean isDeliveryComplete(final LightweightMailing mailing) {
+		return mailing.getWorkStatus().isPresent() && OneOf.oneObjectOf(mailing.getWorkStatus().get(), "mailing.status.sent", "mailing.status.norecipients");
+	}
+
+	@Override
+	public void updateStatus(int companyID, int mailingID, String status) {
+		this.mailingDao.updateStatus(mailingID, status);
+	}
+
+	@Override
+	public List<Integer> listFollowupMailingIds(int companyID, int mailingID, boolean includeUnscheduled) {
+		return this.mailingDao.getFollowupMailings(mailingID, companyID, includeUnscheduled);
+	}
+
+    @Override
+    public boolean generateMailingTextContentFromHtml(ComAdmin admin, int mailingId) throws Exception {
+		Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
+		if (mailing == null) {
+			return false;
+		}
+		
+		try {
+			mailingContentService.generateTextContent(mailing);
+		} catch (DynTagException e) {
+			logger.error("Error occurred while generating text content: " + e.getMessage(), e);
+			return false;
+		}
+		
+		List<String> dynNamesForDeletion = new ArrayList<>();
+		try {
+			mailing.buildDependencies(true, dynNamesForDeletion, applicationContext);
+		} catch (Exception e) {
+			logger.error("Error occurred while building dependencies: " + e.getMessage(), e);
+        	throw e;
+		}
+		
+		mailingDao.cleanupContentForDynNames(mailingId, admin.getCompanyID(), dynNamesForDeletion);
+		dynamicTagDao.markNamesAsDeleted(mailingId, dynNamesForDeletion);
+		mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
+		
+		return true;
+    }
 }

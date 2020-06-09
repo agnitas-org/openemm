@@ -19,30 +19,27 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.agnitas.ecs.backend.beans.ClickStatColor;
-import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
-import org.agnitas.ecs.backend.web.EmbeddedClickStatView;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.http.MediaType;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.ecs.service.EcsHeatMapOptions;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.core.workflow.service.GenerationPDFService;
 import com.agnitas.messages.I18nString;
+import org.agnitas.ecs.backend.beans.ClickStatColor;
+import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.http.MediaType;
 
 public class EcsServiceImpl implements EcsService {
     private static final Logger logger = Logger.getLogger(EcsServiceImpl.class);
@@ -67,25 +64,23 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File exportHeatMap(HttpServletRequest request, int mailingId, int recipientId, int viewMode, int previewSize) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    public File exportHeatMap(ComAdmin admin, String sessionId, EcsHeatMapOptions options) {
         if (admin == null) {
             return null;
         }
 
-        String title = mailingDao.getMailingName(mailingId, admin.getCompanyID());
-        return exportHeatMap(admin, request.getRequestedSessionId(), title, mailingId, recipientId, viewMode, previewSize);
+        String title = mailingDao.getMailingName(options.getMailingId(), admin.getCompanyID());
+        return exportHeatMap(admin, sessionId, title, options);
     }
-
+    
     @Override
-    public boolean exportHeatMap(HttpServletRequest request, HttpServletResponse response, int mailingId, int recipientId, int viewMode, int previewSize) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    public boolean exportHeatMap(ComAdmin admin, String sessionId, HttpServletResponse response, EcsHeatMapOptions options) {
         if (admin == null) {
             return false;
         }
 
-        String title = mailingDao.getMailingName(mailingId, admin.getCompanyID());
-        File document = exportHeatMap(admin, request.getRequestedSessionId(), title, mailingId, recipientId, viewMode, previewSize);
+        String title = mailingDao.getMailingName(options.getMailingId(), admin.getCompanyID());
+        File document = exportHeatMap(admin, sessionId, title, options);
 
         if (document != null && document.exists()) {
             if (document.length() > 0) {
@@ -115,9 +110,9 @@ public class EcsServiceImpl implements EcsService {
         return false;
     }
 
-    private File exportHeatMap(ComAdmin admin, String sessionId, String title, int mailingId, int recipientId, int viewMode, int previewSize) {
-        String url = getHeatMapUrl(admin, sessionId, mailingId, recipientId, viewMode, previewSize);
-        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, title == null ? "" : title, admin, "", PDF_ORIENTATION, PDF_FOOTER_MESSAGE_KEY);
+    private File exportHeatMap(ComAdmin admin, String sessionId, String title, EcsHeatMapOptions options) {
+        String url = getHeatMapUrl(admin, sessionId, options);
+        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, StringUtils.defaultString(title), admin, "", PDF_ORIENTATION, PDF_FOOTER_MESSAGE_KEY);
     }
 
     private String getExportFilename(String mailingName, Locale locale) {
@@ -127,15 +122,18 @@ public class EcsServiceImpl implements EcsService {
                 ".pdf";
     }
 
-    protected String getHeatMapUrl(ComAdmin admin, String sessionId, int mailingId, int recipientId, int viewMode, int previewSize) {
-        return configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl) +
-            EmbeddedClickStatView.PATH +
-            ";jsessionid=" + sessionId + "?" +
-            "mailingID=" + mailingId +
-            "&recipientId=" + recipientId +
-            "&viewMode=" + viewMode +
-            "&previewSize=" + previewSize +
-            "&language=" + admin.getAdminLang();
+    protected String getHeatMapUrl(ComAdmin admin, String sessionId, EcsHeatMapOptions options) {
+        return String.format("%s/ecs_view;jsessionid=%s?" +
+                "mailingID=%d&recipientId=%d&viewMode=%d&deviceType=%d&previewSize=%d&language=%s",
+                StringUtils.removeEnd(configService.getValue(ConfigValue.SystemUrl), "/"),
+                sessionId,
+                options.getMailingId(),
+                options.getRecipientId(),
+                options.getViewMode(),
+                options.getDeviceType(),
+                options.getPreviewSize(),
+                admin.getAdminLang());
+
     }
 
     @Required

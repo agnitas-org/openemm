@@ -28,9 +28,9 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.SafeString;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ComCampaignDao;
@@ -137,7 +137,8 @@ public class MailingDataSet extends BIRTDataSet {
 	public List<MailingData> getData(Integer mailingId, @VelocityCheck Integer companyId, String language,
             String startDate, String stopDate, Boolean hourScale) throws Exception {
 		Locale locale = new Locale(language);
-        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
+        SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		MailingData data = new MailingData();
 		LightMailing mailing = getMailing(mailingId, companyId);
 		String mtParam = getMailingMtParam(mailingId);
@@ -175,25 +176,25 @@ public class MailingDataSet extends BIRTDataSet {
 
 		try {
             if (dateFormats.isDateSlice()) {
-                data.startSending = dateFormat.format(dateFormats.getStartDateAsDate());
+                data.startSending = dateTimeFormat.format(dateFormats.getStartDateAsDate());
             } else {
-                data.startSending = dateFormat.format(mailStats.get("MINTIME"));
+                data.startSending = dateTimeFormat.format(mailStats.get("MINTIME"));
             }
 		} catch (Exception ex) {
 			data.startSending = "-";
 		}
 		try {
             if (dateFormats.isDateSlice()) {
-                data.stopSending = dateFormat.format(dateFormats.getStopDateAsDate());
+                data.stopSending = dateTimeFormat.format(dateFormats.getStopDateAsDate());
             } else {
-                data.stopSending = dateFormat.format(mailStats.get("MAXTIME"));
+                data.stopSending = dateTimeFormat.format(mailStats.get("MAXTIME"));
             }
 		} catch (Exception ex) {
 			data.stopSending = "-";
 		}
 		try {
 			Object scheduledSendDate = getScheduledSendTime(mailingId);
-			data.scheduledDate = scheduledSendDate == null ? "-" : dateFormat.format(scheduledSendDate);
+			data.scheduledDate = scheduledSendDate == null ? "-" : dateTimeFormat.format(scheduledSendDate);
 		} catch (Exception ex) {
 			data.scheduledDate = "-";
 		}
@@ -284,7 +285,8 @@ public class MailingDataSet extends BIRTDataSet {
 	 */
 	public List<MailingData> getData(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargetIds) {
 		Locale locale = new Locale(language);
-        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
+        SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
+		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		MailingData data = new MailingData();
 		LightMailing mailing = getMailing(mailingId, companyId);
 		String mtParam = getMailingMtParam(mailingId);
@@ -319,12 +321,12 @@ public class MailingDataSet extends BIRTDataSet {
 		}
 
 		try {
-			data.startSending = dateFormat.format(mailStats.get("MINTIME"));
+			data.startSending = dateTimeFormat.format(mailStats.get("MINTIME"));
 		} catch (Exception ex) {
 			data.startSending = "-";
 		}
 		try {
-			data.stopSending = dateFormat.format(mailStats.get("MAXTIME"));
+			data.stopSending = dateTimeFormat.format(mailStats.get("MAXTIME"));
 		} catch (Exception ex) {
 			data.stopSending = "-";
 		}
@@ -397,8 +399,12 @@ public class MailingDataSet extends BIRTDataSet {
 	}
 
     private LightMailingList getMailingList(@VelocityCheck int companyId, int mailingListId) {
-        return new LightMailingListDaoImpl(getDataSource()).getMailingList(mailingListId, companyId);
-    }
+		LightMailingList mailingList = new LightMailingListDaoImpl(getDataSource()).getMailingList(mailingListId, companyId);
+		if (mailingList == null) {
+			return new LightMailingList();
+		}
+		return mailingList;
+	}
 
     public String getMailingMtParam(Integer mailingId) {
     	List<Map<String,Object>> result = select(logger, "SELECT param FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = 0 AND status = 2", mailingId);
@@ -450,10 +456,10 @@ public class MailingDataSet extends BIRTDataSet {
 		
 		StringBuilder queryBuilder = new StringBuilder()
 			.append("SELECT")
-			.append(" ").append(getIfNull()).append("(SUM(no_of_mailings), 0) AS MAILS,")
+			.append(" ").append("COALESCE(SUM(no_of_mailings), 0) AS MAILS,")
 			.append(" MIN(timestamp) AS MINTIME,")
 			.append(" MAX(timestamp) AS MAXTIME,")
-			.append(" ").append(getIfNull()).append("(SUM(no_of_bytes), 0) AS BYTES")
+			.append(" ").append("COALESCE(SUM(no_of_bytes), 0) AS BYTES")
 			.append(" FROM mailing_account_tbl")
 			.append(" WHERE mailing_id = ?")
 			.append(" AND status_field NOT IN ('A', 'T', 'V')");
@@ -505,7 +511,7 @@ public class MailingDataSet extends BIRTDataSet {
 	 * @return int [noOfSoftbounces,noOfHardbounces]
 	 * @throws Exception
 	 */
-	int[] getBounces(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargets) throws Exception {
+	public int[] getBounces(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargets) throws Exception {
 		int soft = 0;
 		int hard = 0;
 		List<BouncesRow> list = new MailingBouncesDataSet().getBouncesWithDetail(companyId, mailingId, language, selectedTargets, MailingBouncesDataSet.BounceType.BOTH);
@@ -518,10 +524,6 @@ public class MailingDataSet extends BIRTDataSet {
 			}
 		}
 		return new int[]{soft,hard};
-	}
-	
-	int getOptOuts(Integer mailingId, Integer mailinglistId, @VelocityCheck Integer companyId, String targetSqlString) {
-		return new MailingOptOutDataSet().getTotalOptOut(mailingId, mailinglistId, companyId, targetSqlString);
 	}
 
     private List<Integer> parseMailingIds(String mailings) {

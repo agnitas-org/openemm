@@ -45,6 +45,9 @@
 .transparent {
   opacity: 0;
 }
+.translucent {
+  opacity: 0.5;
+}
 
 // Hide from screenreaders and browsers
 //
@@ -279,4 +282,20 @@
 
 .nowrap {
   white-space: nowrap;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.only-child-stub {
+  display: none;
+
+  &:only-child {
+    display: block;
+  }
+}
+
+.gray-text {
+  color: $c-gray-55;
 }

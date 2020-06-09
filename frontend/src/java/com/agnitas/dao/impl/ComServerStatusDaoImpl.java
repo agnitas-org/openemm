@@ -23,7 +23,7 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
@@ -46,10 +46,10 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	private static final String[] DB_VERSION_FIELD_NAMES = new String[]{DB_VERSION_FIELD_VERSION, DB_VERSION_FIELD_USER, DB_VERSION_FIELD_TIMESTAMP};
 	
 	private static final String CHECK_DB_CONNECTION = "SELECT 1 FROM DUAL";
-	private static final String SELECT_DB_VERSION_ORACLE = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '0*' || ? || '.0*' || ? || '.0*' || ?)";
-	private static final String SELECT_DB_VERSION_ORACLE_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '0*' || ? || '.0*' || ? || '.0*' || ? || '-hf' || ?)";
-	private static final String SELECT_DB_VERSION_MYSQL = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('0*', ?, '.0*', ?, '.0*', ?)";
-	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('0*', ?, '.0*', ?, '.0*', ?, '-hf', ?)";
+	private static final String SELECT_DB_VERSION_ORACLE = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '$')";
+	private static final String SELECT_DB_VERSION_ORACLE_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '-hf' || ? || '$')";
+	private static final String SELECT_DB_VERSION_MYSQL = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '$')";
+	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '-hf', ?, '$')";
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection

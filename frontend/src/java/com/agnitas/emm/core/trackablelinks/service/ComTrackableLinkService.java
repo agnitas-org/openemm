@@ -14,11 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.context.ApplicationContext;
-
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -26,6 +21,10 @@ import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
+import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Service interface for trackable links.
@@ -94,6 +93,8 @@ public interface ComTrackableLinkService {
 	 * @throws MailinglistNotExistException if mailing doesn't belong to the company.
      */
 	List<TrackableLinkListItem> getTrackableLinks(int mailingID, @VelocityCheck int companyId);
+	
+	List<ComTrackableLink> getTrackableLinks(@VelocityCheck int companyId, List<Integer> urlIds);
 
 	TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId);
 

@@ -258,7 +258,7 @@ public class BlockCollection {
 	}
 
 	/**
-	 * get all database fields for the conditions found in each single 
+	 * get all database fields for the conditions found in each single
 	 * block
 	 * 
 	 * @return a set of all found database fields
@@ -399,7 +399,7 @@ public class BlockCollection {
 						String	name = tag.mTagParameters.get ("name");
 
 						if ((name != null) && name.equals (b.cid)) {
-							b.cidEmit = tag.mTagValue;
+							b.cidEmit = tag.getTagValue ();
 							match = true;
 						}
 					} else if ((tag.tagType == EMMTag.TAG_INTERNAL) && (tag.tagSpec == EMMTag.TI_IMGLINK)) {
@@ -415,6 +415,8 @@ public class BlockCollection {
 				if ((! match) && b.isImage) {
 					b.cidEmit = data.defaultImageLink (b.cid, Imagepool.MAILING, false);
 				}
+				break;
+			default:
 				break;
 			}
 		}
@@ -556,8 +558,9 @@ public class BlockCollection {
 		String	rply;
 		
 		setupHeaderReplace ();
-		if ((rply = data.company.infoSubstituted ("header-reply-to", data.mailing.id (), headerReplace)) != null)
+		if ((rply = data.company.infoSubstituted ("header-reply-to", data.mailing.id (), headerReplace)) != null) {
 			return (rply.length () > 0 ? "HReply-To: " + rply + data.eol : rply);
+		}
 		if ((rply = data.mailing.getReplyToForHeader ()) != null) {
 			return "HReply-To: " + rply + data.eol;
 		}
@@ -574,7 +577,17 @@ public class BlockCollection {
 		env = envelopeFrom ();
 		extra.put ("envelope-from", env);
 		if ((method = data.company.infoSubstituted ("list-unsubscribe", data.mailing.id (), extra)) == null) {
-			method = (data.rdirDomain != null ? "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>, " : "") + "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
+			String	link = null;
+			if (data.rdirDomain != null) {
+				String	rdirContextLink = data.company.info ("rdir.UseRdirContextLinks");
+				
+				if ((rdirContextLink != null) && StringOps.atob (rdirContextLink, false)) {
+					link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
+				} else {
+					link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
+				}
+			}
+			method = (link != null ? (link + ", ") : "") + "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
 		} else {
 			method = method.trim ();
 			if (method.equals ("-")) {
@@ -662,14 +675,15 @@ public class BlockCollection {
 			BlockData	bd = c.get (n);
 			
 			if (bd.type == BlockData.HEADER) {
-				if (header == null)
+				if (header == null) {
 					header = bd;
-				else {
+				} else {
 					if (header.id < bd.id) {
 						c.remove (header);
 						header = bd;
-					} else
+					} else {
 						c.remove (bd);
+					}
 					--n;
 				}
 			}
@@ -785,8 +799,9 @@ public class BlockCollection {
 						}
 						tagTable.put(current_tag, ntag);
 						data.logging (Log.DEBUG, "collect", "Added Tag: " + current_tag);
-					} else
+					} else {
 						data.logging (Log.DEBUG, "collect", "Skip existing Tag: " + current_tag);
+					}
 				} catch (Exception e) {
 					data.logging (Log.ERROR, "collect", "Failed in collecting block " + name, e);
 					throw new Exception ("Error while trying to query block " + tag_counter + ": " + e.toString ());
@@ -841,8 +856,9 @@ public class BlockCollection {
 			if (end == -1) {
 				break;
 			}
-			if (res == null)
+			if (res == null) {
 				res = new StringBuffer (src.length ());
+			}
 			res.append (src.substring (cur, start));
 
 			String	cont = src.substring (start + 2, end);
@@ -888,7 +904,7 @@ public class BlockCollection {
 		for (int m = 0; m < count; ) {
 			TagPos	tp = pos.get (m);
 			EMMTag	tag = tagTable.get (tp.getTagname ());
-			String	value = tag.mTagValue;
+			String	value = tag.getTagValue ();
 
 			if (value == null) {
 				tag.fixedValue = false;
@@ -901,8 +917,9 @@ public class BlockCollection {
 				--count;
 				changed = true;
 			} else {
-				if ((tp.getContent () != null) && tp.getContent ().isParseable)
+				if ((tp.getContent () != null) && tp.getContent ().isParseable) {
 					parseFixedBlock (tp.getContent (), tagTable);
+				}
 				tp.relocateBy (offset);
 				++m;
 			}

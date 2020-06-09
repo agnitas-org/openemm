@@ -1,8 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
@@ -84,7 +84,10 @@
                 <c:set var="agnNavigationKey" 		value="mailingView"                         scope="request" />
             </c:otherwise>
         </c:choose>
-        <c:set var="agnNavHrefAppend"	value="&mailingID=${mailingId}&init=true"	scope="request" />
+        <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
+            <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+        </emm:instantiate>
     </c:otherwise>
 </c:choose>
 

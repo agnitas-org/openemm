@@ -1,6 +1,7 @@
 package com.agnitas.emm.core.mediatypes.common;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Objects;
 
 import com.agnitas.emm.core.Permission;
@@ -44,6 +45,12 @@ public enum MediaTypes {
 		this.defaultTypePriority = defaultTypePriority;
 		this.requiredPermission = Objects.requireNonNull(requiredPermission, "Required permission is null");
 		this.componentNames = Arrays.copyOf(componentNames, componentNames.length);
+	}
+	
+	public static final MediaTypes[] valuesSortedByCode() {
+		final MediaTypes[] array = MediaTypes.values();
+		Arrays.sort(array, Comparator.comparingInt(a -> a.code));
+		return array;
 	}
 	
 	public static final MediaTypes[] valuesSortedByDefaultValuePriority() {

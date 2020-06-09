@@ -12,7 +12,7 @@ package com.agnitas.dao.impl;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ComDkimDao;
@@ -32,7 +32,12 @@ public class ComDkimDaoImpl extends BaseDaoImpl implements ComDkimDao {
 		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
 			return false;
 		} else {
-			return selectInt(logger, "SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND domain = ? AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_start IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, domainname) > 0;
+			if (selectInt(logger, "SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_start IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, domainname) > 0) {
+				return true;
+			} else {
+				String mainDomainName = getDomainOfSubDomain(domainname);
+				return selectInt(logger, "SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_start IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, mainDomainName) > 0;
+			}
 		}
 	}
 	
@@ -51,4 +56,13 @@ public class ComDkimDaoImpl extends BaseDaoImpl implements ComDkimDao {
 			}
 		}
 	}
+	
+	private static String getDomainOfSubDomain(String domainName) {
+        String[] domainParts = domainName.split("\\.");
+		if (domainParts.length >= 2) {
+			return domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
+		} else {
+			return domainName;
+		}
+    }
 }

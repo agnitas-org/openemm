@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.birtreport.dto;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public enum PredefinedType {
     PREDEFINED_LAST_ONE("last_1", 1),

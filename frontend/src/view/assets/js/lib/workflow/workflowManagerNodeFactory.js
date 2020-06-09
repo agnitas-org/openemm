@@ -1,4 +1,4 @@
-(function() {
+(function($) {
 
   var DateTimeUtils = AGN.Lib.WM.DateTimeUtils,
     NodeFactory = {
@@ -54,7 +54,7 @@
         data: {},
         filled: false,
         element: element,
-        elementJQ: jQuery(element),
+        elementJQ: $(element),
         usedAnchors: [],
         isExpandable: false,
         iconTitle: "",
@@ -259,7 +259,7 @@
         data: {},
         filled: nodeData.filled,
         element: element,
-        elementJQ: jQuery(element),
+        elementJQ: $(element),
         isExpandable: false,
         usedAnchors: [],
         iconTitle: nodeData.iconTitle
@@ -366,8 +366,23 @@
 
     getReactionName: function(reaction) {
       return this.reactionRegistry[reaction].name;
+    },
+
+    getAutoOptWinnerLabelContent: function (winnerId, type, mailingId) {
+      var isCompatibleType = function(type) {
+        return !!type && (type == NodeFactory.NODE_TYPE_MAILING
+          || type == NodeFactory.NODE_TYPE_ACTION_BASED_MAILING
+          || type == NodeFactory.NODE_TYPE_DATE_BASED_MAILING
+          || type == NodeFactory.NODE_TYPE_FOLLOWUP_MAILING);
+      };
+
+      if (!!winnerId && isCompatibleType(type) && winnerId == mailingId) {
+        return '<span class="icon-fa5 icon-fa5-check"></span>';
+      } else {
+        return '';
+      }
     }
   };
 
   AGN.Lib.WM.NodeFactory = NodeFactory;
-})();
+})(jQuery);

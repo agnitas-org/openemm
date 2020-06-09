@@ -10,31 +10,38 @@
 
 package com.agnitas.emm.core.birtstatistics.enums;
 
+import com.agnitas.emm.core.birtstatistics.DateMode;
+
 public enum StatisticType {
-    SUMMARY("mailing_summary.rptdesign"),
-    CLICK_STATISTICS_PER_LINK("mailing_linkclicks.rptdesign"),
-    PROGRESS_OF_DELIVERY("mailing_delivery_progress.rptdesign"),
-    PROGRESS_OF_OPENINGS("mailing_net_and_gross_openings_progress.rptdesign"),
-    PROGRESS_OF_CLICKS("mailing_linkclicks_progress.rptdesign"),
-    TOP_DOMAINS("top_domains.rptdesign"),
-    BOUNCES("mailing_bounces.rptdesign");
+    
+    SUMMARY(DateMode.SELECT_MONTH),
+    SUMMARY_AUTO_OPT(DateMode.NONE),
+    CLICK_STATISTICS_PER_LINK,
+    PROGRESS_OF_DELIVERY(DateMode.LAST_TENHOURS),
+    PROGRESS_OF_OPENINGS(DateMode.LAST_TENHOURS),
+    PROGRESS_OF_CLICKS(DateMode.LAST_TENHOURS),
+    PROGRESS_OF_SINGLE_LINK_CLICKS(DateMode.LAST_TENHOURS),
+    TOP_DOMAINS,
+    BOUNCES,
+    BENCHMARK,
+    DEVICES_OVERVIEW,
+    TRACKING_POINT_WEEK_OVERVIEW(DateMode.LAST_TENHOURS),
+    SOCIAL_NETWORKS,
+    SIMPLE_TRACKING_POINT,
+    NUM_TRACKING_POINT_WEEK_OVERVIEW(DateMode.LAST_TENHOURS),
+    ALPHA_TRACKING_POINT;
 
-    private final String code;
+    private final DateMode dateMode;
 
-    StatisticType(String code) {
-        this.code = code;
+    StatisticType() {
+        this(DateMode.NONE);
     }
 
-    public String getCode() {
-        return code;
+    StatisticType(DateMode dateMode) {
+        this.dateMode = dateMode;
     }
 
-    public static StatisticType getByCode(final String code){
-        for (StatisticType type: StatisticType.values()) {
-            if(type.getCode().equals(code)){
-                return type;
-            }
-        }
-        return null;
+    public DateMode getDateMode() {
+        return dateMode;
     }
 }

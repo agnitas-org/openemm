@@ -1,6 +1,6 @@
-(function() {
+(function($) {
   function bind(thisArg, callback, returnValue) {
-    if ($.isFunction(callback)) {
+    if (typeof callback === "function") {
       var isReturnValueReplaced = arguments.length > 2;
       return function() {
         var value = callback.apply(thisArg, arguments);
@@ -24,13 +24,13 @@
     init: function(params) {
       $.extend(this, params);
 
-      $('#arrowButton').click(bind(this, this.arrowButtonClick));
-      $('#autoLayout, #autoLayoutItem').click(bind(this, this.doAutoLayout));
-      $('#deleteButton, #deleteItem').click(bind(this, this.deleteSelected));
-      $('#undoButton, #undoItem').click(bind(this, this.undoSelected, false));
-      $('#zoomMin, #zoomMinItem').click(bind(this, this.zoomMinSelected, false));
-      $('#zoomMiddle, #zoomMiddleItem').click(bind(this, this.zoomMiddleSelected, false));
-      $('#zoomMax, #zoomMaxItem').click(bind(this, this.zoomMaxSelected, false));
+      $('#arrowButton').on("click", bind(this, this.arrowButtonClick));
+      $('#autoLayout, #autoLayoutItem').on("click", bind(this, this.doAutoLayout));
+      $('#deleteButton, #deleteItem').on("click", bind(this, this.deleteSelected));
+      $('#undoButton, #undoItem').on("click", bind(this, this.undoSelected, false));
+      $('#zoomMin, #zoomMinItem').on("click", bind(this, this.zoomMinSelected, false));
+      $('#zoomMiddle, #zoomMiddleItem').on("click", bind(this, this.zoomMiddleSelected, false));
+      $('#zoomMax, #zoomMaxItem').on("click", bind(this, this.zoomMaxSelected, false));
     },
 
     arrowButtonClick: function() {
@@ -67,4 +67,4 @@
   };
 
   AGN.Lib.WM.CampaignManagerToolbar = CampaignManagerToolbar;
-})();
+})(jQuery);

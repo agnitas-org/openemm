@@ -36,7 +36,7 @@
 
 ;(function(){
 
-  AGN.Initializers.CheckboxHider = function($scope) {
+  AGN.Lib.CoreInitializer.new('checkbox-hider', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -65,7 +65,7 @@
       updateVisibleBySelect(selector, selectSelector, options);
       addSelectListener(selector, selectSelector, options);
     });
-  };
+  });
 
   function addCheckboxListener(selector, checkboxSelector, showIfChecked){
     checkboxSelector.change(function() {

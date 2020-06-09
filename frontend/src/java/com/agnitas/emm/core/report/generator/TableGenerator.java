@@ -14,9 +14,5 @@ import java.util.Collection;
 import java.util.Locale;
 
 public interface TableGenerator {
-
-    String TXT_GENERATOR = "TXT_GENERATOR";
-    String CSV_GENERATOR = "CSV_GENERATOR";
-
     String generate(Collection<?> collection, Locale locale);
 }

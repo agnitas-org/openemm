@@ -22,13 +22,12 @@ import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint
 
 import com.agnitas.emm.core.mailing.service.MailingService;
 
-@SuppressWarnings("deprecation")
 public class ListTemplatesEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private MailingService mailingService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

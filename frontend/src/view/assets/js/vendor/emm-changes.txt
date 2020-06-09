@@ -3,6 +3,7 @@
 - restored clickability within selected entries.
 - enabled re-triggering of killed events (e.g. mouseup and mousedown) but with ".sortable" suffix (to restore "sortable" widget functionality within select2 results).
 - added hierarchy mode support (when 'js-tree-select' class assigned), provided proper highlighting and selection for sub and super-items.
+- made document.body as Element prototype to prevent wkhtmltopdf errors
 
 2) ace/worker-html.js
 - removed error emit for 'almost-standards-doctype'.

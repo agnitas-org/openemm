@@ -48,6 +48,10 @@
 		<listener-class>org.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
 	</listener>
 
+	<!-- Check validity of installation configuration -->
+	<listener>
+		<listener-class>com.agnitas.emm.core.ConfigurationValidityCheckListener</listener-class>
+	</listener>
 
     <!--  EMM Servlets and Mappings -->
 

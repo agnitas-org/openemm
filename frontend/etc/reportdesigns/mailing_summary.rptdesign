@@ -8187,6 +8187,11 @@ dimension["CategoryGroup"]["category"]["category_index"] &lt;= CommonKeys.ACTIVI
                 <cell id="1052">
                     <property name="colSpan">2</property>
                     <property name="rowSpan">1</property>
+                    <text-data id="756">
+                        <property name="style">footnote</property>
+                        <property name="marginTop">0pt</property>
+                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailsize.explanation", reportContext.getLocale())</expression>
+                    </text-data>
                     <text-data id="755">
                         <property name="style">footnote</property>
                         <property name="marginTop">0pt</property>

@@ -161,7 +161,7 @@
                     <display:column headerClass="js-table-sort" titleKey="used">
                         <logic:greaterThan name="emmaction" property="used" value="0">
                            <span class="badge badge-highlighted" data-tooltip="<bean:message key="default.Name"/>: ${emmaction.formNames}">
-                                <bean:message key="Yes"/>
+                                <bean:message key="default.Yes"/>
                             </span>
                         </logic:greaterThan>
                         <logic:lessThan name="emmaction" property="used" value="1">
@@ -170,10 +170,10 @@
                     </display:column>
 
                     <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="creationDate" sortProperty="creationDate"/>
+                                    format="{0, date, ${adminDateFormat}}" property="creationDate" sortProperty="creationDate"/>
 
                     <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="changeDate" sortProperty="changeDate"/>
+                                    format="{0, date, ${adminDateFormat}}" property="changeDate" sortProperty="changeDate"/>
 
                     <display:column class="table-actions align-center js-checkable" headerClass="js-table-sort squeeze-column js-filter-activeness" titleKey="mailing.status.active"
                                     sortable="true" sortProperty="active">

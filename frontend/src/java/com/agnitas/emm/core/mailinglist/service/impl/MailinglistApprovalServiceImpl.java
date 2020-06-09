@@ -23,7 +23,7 @@ import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -132,11 +132,6 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
         return companyId > 0 && adminId > 0 && mailinglistApprovalDao.hasAnyDisabledMailingListsForAdmin(companyId, adminId);
     }
 
-    @Override
-    public List<Integer> getAdminsDisallowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId){
-        return mailinglistApprovalDao.getAdminsDisallowedToUseMailinglist(companyId, mailinglistId);
-    }
-    
     @Override
     public Set<Integer> getAdminsAllowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId){
         List<Integer> adminsDisallowedToUseMailinglist = mailinglistApprovalDao.getAdminsDisallowedToUseMailinglist(companyId, mailinglistId);

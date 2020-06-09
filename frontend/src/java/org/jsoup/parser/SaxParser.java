@@ -31,25 +31,26 @@ public class SaxParser {
         this.locale = locale;
     }
 
-    public SaxParser(SaxParsingHandler handler) {
-        this(handler, Locale.getDefault());
-    }
-
     public void parse(String content) throws ParsingException {
-        CharacterContentReader reader = new CharacterContentReader(content);
-        Tokeniser tokeniser = new SaxTokenizer(reader);
+        CharacterReader reader = new CharacterReader(content);
+        ParseErrorList errors = new ParseErrorList(1, 1);
+        Tokeniser tokeniser = new Tokeniser(reader, errors);
         Token token;
 
         do {
             try {
                 token = tokeniser.read();
+
+                if (errors.size() > 0) {
+                    ParseError e = errors.get(0);
+                    throw exception(Caret.at(content, e.getPosition()), "error.default.InvalidSyntax");
+                }
+
                 process(token);
-            } catch (TokenizerException e) {
-                throw exception(reader, "error.default.InvalidSyntax", e);
             } catch (SAXException e) {
-                throw exception(reader, e);
+                throw exception(Caret.at(content, reader.pos()), e);
             }
-        } while (token.type != Token.TokenType.EOF);
+        } while (!token.isEOF());
     }
 
     private void process(Token token) throws SAXException {
@@ -72,6 +73,8 @@ public class SaxParser {
             case EOF:
                 processEnd();
                 break;
+			default:
+				break;
         }
     }
 
@@ -99,46 +102,11 @@ public class SaxParser {
         handler.onEnd();
     }
 
-    private ParsingException exception(CharacterContentReader reader, Exception cause) {
-        return new ParsingException(reader.getCaret(), cause.getMessage(), cause);
+    private ParsingException exception(Caret caret, Exception cause) {
+        return new ParsingException(caret, cause.getMessage(), cause);
     }
 
-    private ParsingException exception(CharacterContentReader reader, String key, Exception cause) {
-        return new ParsingException(reader.getCaret(), I18nString.getLocaleString(key, locale), cause);
-    }
-
-    private static class SaxTokenizer extends Tokeniser {
-        public SaxTokenizer(CharacterReader reader) {
-            super(reader);
-        }
-
-        @Override
-        void error(TokeniserState state) {
-            super.error(state);
-            throw new TokenizerException();
-        }
-
-        @Override
-        void eofError(TokeniserState state) {
-            super.eofError(state);
-            throw new TokenizerException();
-        }
-    }
-
-    private static class CharacterContentReader extends CharacterReader {
-        private String content;
-
-        public CharacterContentReader(String content) {
-            super(content);
-            this.content = toString();
-        }
-
-        public Caret getCaret() {
-            return Caret.at(content, pos());
-        }
-    }
-
-    private static class TokenizerException extends RuntimeException {
-        private static final long serialVersionUID = 1766667657923635575L;
+    private ParsingException exception(Caret caret, String key) {
+        return new ParsingException(caret, I18nString.getLocaleString(key, locale));
     }
 }

@@ -36,7 +36,8 @@ public class ShowNavigationTagExtraInfo extends TagExtraInfo {
             new VariableInfo(prefix+"_navigation_token", "String", true, VariableInfo.NESTED),
             new VariableInfo(prefix+"_navigation_href", "String", true, VariableInfo.NESTED),
             new VariableInfo(prefix+"_navigation_navMsg", "String", true, VariableInfo.NESTED),
-            new VariableInfo(prefix+"_navigation_index", "Integer", true, VariableInfo.NESTED)
+            new VariableInfo(prefix+"_navigation_index", "Integer", true, VariableInfo.NESTED),
+            new VariableInfo(prefix+"_navigation_conditionSatisfied", "Boolean", true, VariableInfo.NESTED)
         };
     }
 }

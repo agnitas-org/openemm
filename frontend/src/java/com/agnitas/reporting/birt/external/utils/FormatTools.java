@@ -21,7 +21,7 @@ public class FormatTools {
 	 */
 	public static double roundDecimal(double value, int size) {
 		BigDecimal decimal = new BigDecimal( value );
-		decimal.setScale(size, BigDecimal.ROUND_HALF_UP);
+		decimal = decimal.setScale(size, BigDecimal.ROUND_HALF_UP);
 		return decimal.doubleValue();
 	}
 	

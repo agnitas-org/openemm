@@ -16,14 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.dao.ComMessageDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
-import com.agnitas.dao.ComMessageDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ComMessageDaoImpl extends BaseDaoImpl implements ComMessageDao {
 	private static final transient Logger logger = Logger.getLogger(ComMessageDaoImpl.class);
@@ -113,5 +113,13 @@ public class ComMessageDaoImpl extends BaseDaoImpl implements ComMessageDao {
 	            return false;
 	    	}
     	}
+    }
+    
+    @Override
+    public int getMessageKeysQuantity(String prefix, boolean isIncludeDeleted) {
+        String escapedPrefix = DbUtilities.escapeLikeExpression(prefix, '\\');
+        return selectInt(logger, "SELECT count(message_key) FROM messages_tbl WHERE message_key LIKE ? " +
+				(!isIncludeDeleted ? " AND deleted = 0" : "") +
+				" ORDER BY deleted DESC",escapedPrefix + "%");
     }
 }

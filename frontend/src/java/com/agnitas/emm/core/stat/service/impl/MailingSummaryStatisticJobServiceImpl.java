@@ -22,9 +22,8 @@ import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jsoup.helper.StringUtil;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,7 +127,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 	
 	@Override
 	public List<Integer> parseGroupList(String targetGroups) throws NumberFormatException {
-		if (StringUtil.isBlank(targetGroups)) {
+		if (StringUtils.isBlank(targetGroups)) {
 			return null;
 		}
 		List<String> tGroupsStr = Arrays.asList(targetGroups.split(","));

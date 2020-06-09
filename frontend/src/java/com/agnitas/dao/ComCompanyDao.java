@@ -23,6 +23,7 @@ import org.agnitas.util.Tuple;
 import com.agnitas.beans.ComCompany;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.premium.web.PremiumFeature;
 
 public interface ComCompanyDao {
 	
@@ -45,10 +46,7 @@ public interface ComCompanyDao {
 	 */
 	boolean isMailtrackingActive(@VelocityCheck int companyID);
 
-	/**
-	 * get the success_xx_tbl data lifetime (number of days)
-	 */
-	int getSuccessDataExpirePeriod(@VelocityCheck int companyID);
+	boolean isCreatorId(@VelocityCheck int companyId, int creatorId);
 
 	/**
 	 * get the rdir_domain value for this companyId
@@ -56,8 +54,6 @@ public interface ComCompanyDao {
 	String getRedirectDomain(@VelocityCheck int companyId);
 
 	List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId);
-		
-	int getMaxAdminMails(@VelocityCheck int companyID);
 	
 	List<ComCompany> getAllActiveCompaniesWithoutMasterCompany();
 	
@@ -82,8 +78,6 @@ public interface ComCompanyDao {
 	boolean createHistoryTables(int companyID);
 
 	PaginatedListImpl<CompanyEntry> getCompanyList(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
-
-	PaginatedListImpl<CompanyEntry> getCompanyListNew(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
 
     List<ComCompany> getAllActiveCompanies();
     
@@ -136,6 +130,8 @@ public interface ComCompanyDao {
 
 	List<Map<String, Object>> getReferenceTableSettings(int companyID);
 
+	void changeFeatureRights(PremiumFeature feature, int companyID, boolean activate);
+	
 	void changeFeatureRights(String featureName, int companyID, boolean activate);
 
 	int getPriorityCount(@VelocityCheck int companyId);
@@ -157,4 +153,10 @@ public interface ComCompanyDao {
 	List<Integer> getOpenEMMCompanyForClosing();
 
 	void addMissingForeignKeysForPreventTableDrop();
+	
+	int getParenCompanyId(int companyId);
+	
+	boolean createFrequencyFields(@VelocityCheck int companyID);
+
+	ComCompany getCompanyByName(String clientName);
 }

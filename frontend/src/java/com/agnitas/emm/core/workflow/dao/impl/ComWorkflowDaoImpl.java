@@ -14,8 +14,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,19 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.agnitas.beans.ComMailing;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
@@ -45,6 +34,19 @@ import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.PredicateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	private static final transient Logger logger = Logger.getLogger(ComWorkflowDaoImpl.class);
@@ -266,10 +268,27 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId) {
-    	return select(logger, "SELECT workflow_id, company_id, shortname, description, status, editor_position_left, editor_position_top, is_inner, general_start_date, general_end_date, end_type, general_start_reaction, general_start_event, workflow_schema FROM workflow_tbl WHERE company_id = ? AND is_inner = 0 " +
-                "ORDER BY CASE WHEN status = 2 THEN 3 WHEN status = 3 THEN 2 WHEN status = 1 OR status = 4 THEN status END, " +
-                "CASE WHEN status = 2 OR status = 3 OR status = 4 THEN general_start_date WHEN status = 1 THEN created END DESC", new WorkflowRowMapper(), companyId);
+    public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId) {
+        List<Object> parameters = new ArrayList<>();
+        String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
+                " wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
+                " wf.general_start_event, wf.workflow_schema FROM workflow_tbl wf " +
+                " LEFT JOIN workflow_dependency_tbl dep ON wf.workflow_id = dep.workflow_id AND wf.company_id = dep.company_id AND dep.type = ? " +
+                " WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
+        
+        parameters.add(WorkflowDependencyType.MAILINGLIST.getId());
+        parameters.add(companyId);
+        
+        if (adminId > 0 && isDisabledMailingListsSupported()) {
+            query += "AND dep.entity_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ";
+            parameters.add(adminId);
+        }
+        
+        query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
+                " CASE WHEN  wf.status = 2 OR  wf.status = 3 OR  wf.status = 4 THEN  wf.general_start_date WHEN  wf.status = 1 THEN  wf.created END DESC";
+        
+        
+    	return select(logger, query, new WorkflowRowMapper(), parameters.toArray());
     }
 
     @Override
@@ -378,7 +397,14 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
     @Override
     public List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, WorkflowDependency dependency, boolean exceptInactive) {
-        if (companyId <= 0 || dependency == null) {
+        return getDependentWorkflows(companyId, Collections.singletonList(dependency), exceptInactive);
+    }
+
+    @Override
+    public List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive) {
+        final Set<WorkflowDependency> filteredDependencies = new HashSet<>(CollectionUtils.emptyIfNull(dependencies));
+        CollectionUtils.filter(filteredDependencies, PredicateUtils.notNullPredicate());
+        if (companyId <= 0 || filteredDependencies.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -386,19 +412,32 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         List<Object> sqlParameters = new ArrayList<>();
 
         sqlBuilder.append("SELECT w.* FROM workflow_tbl w ")
-            .append("JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id ")
-            .append("WHERE w.company_id = ? AND dep.type = ? ");
+                .append("JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id ")
+                .append("WHERE w.company_id = ?  ");
 
         sqlParameters.add(companyId);
-        sqlParameters.add(dependency.getType().getId());
 
-        if (dependency.getEntityId() > 0) {
-            sqlBuilder.append("AND dep.entity_id = ? ");
-            sqlParameters.add(dependency.getEntityId());
-        } else {
-            sqlBuilder.append("AND dep.entity_name = ? ");
-            sqlParameters.add(dependency.getEntityName());
+        sqlBuilder.append("AND ( ");
+        boolean isFirstDependency = true;
+        for(WorkflowDependency dependency : filteredDependencies) {
+            if(!isFirstDependency){
+                sqlBuilder.append(" OR");
+            }
+            isFirstDependency = false;
+
+            sqlBuilder.append("(dep.type = ? ");
+            sqlParameters.add(dependency.getType().getId());
+
+            if (dependency.getEntityId() > 0) {
+                sqlBuilder.append("AND dep.entity_id = ? ");
+                sqlParameters.add(dependency.getEntityId());
+            } else {
+                sqlBuilder.append("AND dep.entity_name = ? ");
+                sqlParameters.add(dependency.getEntityName());
+            }
+            sqlBuilder.append(" )");
         }
+        sqlBuilder.append(" )");
 
         if (exceptInactive) {
             sqlBuilder.append("AND w.status IN (?, ?) ");
@@ -535,7 +574,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         update(logger, "DELETE FROM workflow_report_schedule_tbl WHERE company_id = ? AND workflow_id = ?", companyId, workflowId);
     }
 
-    private class WorkflowRowMapper implements RowMapper<Workflow> {
+    protected class WorkflowRowMapper implements RowMapper<Workflow> {
 		@Override
 		public Workflow mapRow(ResultSet resultSet, int row) throws SQLException {
             Workflow workflow = new Workflow();

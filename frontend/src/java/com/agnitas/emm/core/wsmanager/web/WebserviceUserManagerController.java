@@ -22,7 +22,7 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -86,7 +86,7 @@ public class WebserviceUserManagerController {
 
     @RequestMapping(value = "/users.action")
     public String list(ComAdmin admin, @ModelAttribute WebserviceUserListForm userListForm,
-                       @SuppressWarnings("unused") WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
+                       WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WS_MANAGER_OVERVIEW, userListForm);
 
         model.addAttribute("webserviceUserList",
@@ -157,6 +157,11 @@ public class WebserviceUserManagerController {
             valid = false;
         }
         
+        if (userForm.getCompanyId() <= 0) {
+            popups.field("company", "error.webserviceuser.no_company");
+            valid = false;
+        }
+        
         if (!validateMaxNumberWSUsers(popups)) {
             valid = false;
         }
@@ -220,9 +225,9 @@ public class WebserviceUserManagerController {
            	
 	            model.addAttribute("PERMISSIONS", permissions);
 	            model.addAttribute("PERMISSION_GROUPS", permissionGroups);
-	            model.addAttribute("PERMISSIONS_ENABLED", true); 
+	            model.addAttribute("PERMISSIONS_ENABLED", true);
             } else {
-	            model.addAttribute("PERMISSIONS_ENABLED", false); 
+	            model.addAttribute("PERMISSIONS_ENABLED", false);
             }
 
             writeUserActivityLog(admin, "view webservice user", getWsUserDescription(userForm));

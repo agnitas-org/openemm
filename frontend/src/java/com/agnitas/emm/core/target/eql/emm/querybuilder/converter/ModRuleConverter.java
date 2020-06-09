@@ -10,20 +10,17 @@
 
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
-import java.util.Arrays;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderHelper;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderOperator;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class ModRuleConverter implements RuleConverter {
     @Override
     public String convert(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException {
         validate(ruleNode);
-        Object[] values = (Object[]) ruleNode.getValue();
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(ruleNode);
         QueryBuilderOperator operator = QueryBuilderOperator.findByQueryBuilderName((String) values[1]);
         String strOperator = QueryBuilderHelper.relationalEqlOperator(operator);
         
@@ -31,8 +28,8 @@ public class ModRuleConverter implements RuleConverter {
     }
 
     private void validate(QueryBuilderRuleNode ruleNode) throws QueryBuilderToEqlConversionException {
-        Object[] values = (Object[]) ruleNode.getValue();
-        if (values.length != 3 || Arrays.stream(values).map(Object::toString).anyMatch(StringUtils::isBlank)) {
+        Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(ruleNode);
+        if (ArrayUtils.getLength(values) != 3 || QueryBuilderUtil.containsAnyEmptyValue(values)) {
             throw new QueryBuilderToEqlConversionException();
         }
     }

@@ -13,8 +13,7 @@ package org.agnitas.beans;
 import java.util.Date;
 
 public interface BlackListEntry {
-
     String getEmail();
-
+    String getReason();
     Date getDate();
 }

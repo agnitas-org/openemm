@@ -20,6 +20,8 @@ import com.agnitas.emm.core.maildrop.MaildropStatus;
 
 public interface MaildropService {		// TODO: Complete JavaDoc
 
+	public boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID);
+	
 	// TODO: Modify code to use this method
 	/**
 	 * Schedules mailing for immediate test delivery to admin recipients.
@@ -44,12 +46,6 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	 * Schedules mailing for worlds delivery.
 	 */
 	void scheduleWorldMailing(final int mailingID, final int companyID, final Date sendDate, final int mailsPerHour) throws MaildropException;
-	
-	// TODO: Modify code to use this method
-	/**
-	 * Cancels scheduled world delivery.
-	 */
-	void cancelWorldMailing(final int mailingID, final int companyID) throws MaildropException;
 
 	// TODO: Modify code to use this method
 	/**
@@ -83,7 +79,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	
 	// TODO: Modify code to use this method
 	boolean hasMaildropStatus(final int mailingID, final int companyID, final MaildropStatus... statusList);
-
+	
 	/**
 	 * Returns <code>true</code> is world mailing is sent or scheduled to send or action-based/date-based mailing is activated.
 	 * @return 
@@ -98,4 +94,5 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	 * @param customerIds a list of customer ids to associated with referenced maildrop entry.
 	 */
     void selectTestRecipients(@VelocityCheck int companyId, int maildropStatusId, List<Integer> customerIds);
+
 }

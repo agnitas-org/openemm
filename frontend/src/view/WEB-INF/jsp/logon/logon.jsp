@@ -7,6 +7,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="supportMailAddress" type="java.lang.String"--%>
 <%--@elvariable id="iframeUrl" type="java.lang.String"--%>
@@ -34,9 +35,11 @@
 
         <title>${title}</title>
 
+        <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
+
         <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
     </head>
-    <body>
+    <body data-initializer="logon" class="hidden">
         <div class="l-logon-mask">
             <mvc:form id="logon-form" servletRelativeAction="/logon.action" modelAttribute="form"
                       data-form="resource"
@@ -59,40 +62,44 @@
                         <img class="l-right-logo" src="${editionLogoSrc}" alt="Edition Logo"/>
                     </div>
 
-                    <s:bind path="username">
-                        <div class="form-group ${status.error ? 'has-alert has-feedback' : ''}">
-                            <div class="col-md-12">
-                                <label for="username" class="control-label">
-                                    <i class="icon icon-user"></i> <s:message code="logon.username"/>
-                                </label>
-                            </div>
-                            <div class="col-md-12">
-                                <mvc:text path="username" id="username" cssClass="form-control input-lg" maxlength="180" data-controls-group="input-mask" autocomplete="username"/>
 
-                                <c:if test="${status.error}">
-                                    <span class="icon icon-state-alert form-control-feedback"></span>
-                                    <form:errors path="username" cssClass="form-control-feedback-message" element="div" htmlEscape="true"/>
-                                </c:if>
-                            </div>
+                    <html:messages id="msg" property="username" message="false" >
+                        <c:set var="usernameErrorMessage" value="${msg}"/>
+                    </html:messages>
+                    <div class="form-group ${not empty usernameErrorMessage ? 'has-alert has-feedback' : ''}">
+                        <div class="col-md-12">
+                            <label for="username" class="control-label">
+                                <i class="icon icon-user"></i> <s:message code="logon.username"/>
+                            </label>
                         </div>
-                    </s:bind>
-                    <s:bind path="password">
-                        <div class="form-group ${status.error ? 'has-alert has-feedback' : ''}">
-                            <div class="col-md-12">
-                                <label for="password" class="control-label">
-                                    <i class="icon icon-key"></i> <s:message code="logon.password"/>
-                                </label>
-                            </div>
-                            <div class="col-md-12">
-                                <mvc:password path="password" id="password" cssClass="form-control input-lg" showPassword="true" data-controls-group="input-mask" autocomplete="current-password"/>
+                        <div class="col-md-12">
+                            <mvc:text path="username" id="username" cssClass="form-control input-lg" maxlength="180" data-controls-group="input-mask" autocomplete="username"/>
 
-                                <c:if test="${status.error}">
-                                    <span class="icon icon-state-alert form-control-feedback"></span>
-                                    <form:errors path="password" cssClass="form-control-feedback-message" element="div" htmlEscape="true"/>
-                                </c:if>
-                            </div>
+                            <c:if test="${not empty usernameErrorMessage}">
+                                <span class="icon icon-state-alert form-control-feedback"></span>
+                                <div class="form-control-feedback-message" >${fn:escapeXml(usernameErrorMessage)}</div>
+                            </c:if>
                         </div>
-                    </s:bind>
+                    </div>
+
+                    <html:messages id="msg" property="password" message="false" >
+                        <c:set var="passwordErrorMessage" value="${msg}"/>
+                    </html:messages>
+                    <div class="form-group ${not empty passwordErrorMessage ? 'has-alert has-feedback' : ''}">
+                        <div class="col-md-12">
+                            <label for="password" class="control-label">
+                                <i class="icon icon-key"></i> <s:message code="logon.password"/>
+                            </label>
+                        </div>
+                        <div class="col-md-12">
+                            <mvc:password path="password" id="password" cssClass="form-control input-lg" showPassword="true" data-controls-group="input-mask" autocomplete="current-password"/>
+
+                            <c:if test="${not empty passwordErrorMessage}">
+                                <span class="icon icon-state-alert form-control-feedback"></span>
+                                <div class="form-control-feedback-message">${fn:escapeXml(passwordErrorMessage)}</div>
+                            </c:if>
+                        </div>
+                    </div>
                     <div class="form-group l-login-button-group">
                         <div class="col-md-12">
                             <button type="submit" class="btn btn-primary btn-large btn-block" data-controls-group="input-mask">
@@ -117,7 +124,7 @@
                     </div>
                 </div>
 
-                <div id="notifications-container" data-initializer="logon-notification">
+                <div id="notifications-container">
                     <script type="text/javascript" data-message="">
                       <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
                       AGN.Lib.Messages('<s:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');

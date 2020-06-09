@@ -95,14 +95,16 @@ public class PageImpl implements Page {
 				int next = m.start ();
 				String	ch = m.group ();
 
-				if (pos < next)
+				if (pos < next) {
 					buf.append (s.substring (pos, next));
+				}
 				buf.append (textReplacement.get (ch));
 				pos = m.end ();
 			}
 			if (pos != 0) {
-				if (pos < slen)
+				if (pos < slen) {
 					buf.append (s.substring (pos));
+				}
 				s = buf.toString ();
 			}
 		}
@@ -153,16 +155,18 @@ public class PageImpl implements Page {
 			if (buf == null) {
 				buf = new StringBuffer (slen);
 			}
-			if (pos < m.start ())
+			if (pos < m.start ()) {
 				buf.append (s.substring (pos, m.start ()));
+			}
 			buf.append (s.substring (m.start (), m.start (1)));
 			buf.append ('#');
 			buf.append (s.substring (m.end (1), m.end ()));
 			pos = m.end ();
 		}
 		if (buf != null) {
-			if (pos < slen)
+			if (pos < slen) {
 				buf.append (s.substring (pos));
+			}
 			s = buf.toString ();
 		}
 		return s;
@@ -176,14 +180,16 @@ public class PageImpl implements Page {
 			int		pos = 0;
 			
 			while (m.find (pos)) {
-				if (pos < m.start ())
+				if (pos < m.start ()) {
 					buf.append (html.substring (pos, m.start ()));
+				}
 				buf.append (stripper (html.substring (m.start (), m.end ())));
 				pos = m.end ();
 			}
 			if (pos != 0) {
-				if (pos < htmlLength)
+				if (pos < htmlLength) {
 					buf.append (html.substring (pos));
+				}
 				html = buf.toString ();
 			}
 		}
@@ -322,18 +328,20 @@ public class PageImpl implements Page {
 					++count;
 				} else if ((pos = (byte) valid.indexOf (ch)) != -1) {
 					switch (count++) {
-					case 0:
-						val = pos << 18;
-						break;
-					case 1:
-						val |= pos << 12;
-						break;
-					case 2:
-						val |= pos << 6;
-						break;
-					case 3:
-						val |= pos;
-						break;
+						case 0:
+							val = pos << 18;
+							break;
+						case 1:
+							val |= pos << 12;
+							break;
+						case 2:
+							val |= pos << 6;
+							break;
+						case 3:
+							val |= pos;
+							break;
+						default:
+							break;
 					}
 				}
 				if (count == 4) {
@@ -342,8 +350,9 @@ public class PageImpl implements Page {
 					temp[tlen + 2] = (byte) (val & 0xff);
 					tlen += 3 - pad;
 					count = 0;
-					if (pad > 0)
+					if (pad > 0) {
 						break;
+					}
 				}
 			}
 			rc = Arrays.copyOf (temp, tlen);
@@ -373,9 +382,11 @@ public class PageImpl implements Page {
 								int		nlen = (field == null ? 1 : field.length + 1);
 								String[]	nfield = new String[nlen];
 
-								if (field != null)
-									for (int m = 0; m < field.length; ++m)
+								if (field != null) {
+									for (int m = 0; m < field.length; ++m) {
 										nfield[m] = field[m];
+									}
+								}
 								nfield[nlen - 1] = parsed[1];
 								header.put (key, nfield);
 							}

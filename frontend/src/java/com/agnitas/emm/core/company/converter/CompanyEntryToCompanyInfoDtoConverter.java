@@ -25,6 +25,8 @@ public class CompanyEntryToCompanyInfoDtoConverter implements Converter<CompanyE
         company.setId(companyEntry.getCompanyId());
         company.setName(companyEntry.getShortname());
         company.setDescription(companyEntry.getDescription());
+        company.setStatus(companyEntry.getStatus());
+        company.setTimestamp(companyEntry.getTimestamp());
 
         return company;
     }

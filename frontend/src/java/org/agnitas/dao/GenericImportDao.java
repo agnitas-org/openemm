@@ -19,7 +19,7 @@ import org.agnitas.service.GenericImportException.ReasonCode;
 import org.agnitas.service.UpdateMethod;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.ImportUtils.ImportErrorType;
-import org.agnitas.util.Tuple;
+import org.agnitas.util.Triple;
 
 public interface GenericImportDao {
 	String createTemporaryImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
@@ -64,7 +64,7 @@ public interface GenericImportDao {
 
 	boolean checkIfTableExists(String destinationTableName);
 
-	List<Tuple<Integer, ReasonCode>> getFirstErrorLines(String temporaryErrorTableName, int limit) throws Exception;
+	List<Triple<Integer, ReasonCode, String>> getFirstErrorLines(String temporaryErrorTableName, int limit) throws Exception;
 
 	CaseInsensitiveSet getPrimaryKeyColumns(String dbTableName) throws Exception;
 }

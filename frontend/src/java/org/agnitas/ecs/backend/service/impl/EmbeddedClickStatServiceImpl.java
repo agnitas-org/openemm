@@ -22,6 +22,7 @@ import org.agnitas.ecs.backend.service.UrlMaker;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -38,18 +39,22 @@ public abstract class EmbeddedClickStatServiceImpl implements EmbeddedClickStatS
 	public String getMailingContent(int mailingId, int recipientId) {
 		Preview preview =  previewFactory.createPreview();
 		String output = preview.makePreviewForHeatmap(mailingId, recipientId);
-		String content = output == null ? "" : output;
 		preview.done();
-		return content;
+		return StringUtils.defaultString(output);
 	}
 
 	@Override
 	public String addStatsInfo(String content, int mode, int mailingId, @VelocityCheck int companyId) throws Exception {
+		return addStatsInfo(content, mode, mailingId, companyId, 0);
+	}
+	
+	@Override
+	public String addStatsInfo(String content, int mode, int mailingId, int companyId, int deviceType) throws Exception {
 		try {
-			String finalHtml = content;
+			StringBuilder finalHtml = new StringBuilder(content);
 			// get click statistics and color values for stat-labels
 			List<ClickStatColor> rangeColors = ecsDao.getClickStatColors(companyId);
-			ClickStatInfo clickStatInfo = ecsDao.getClickStatInfo(companyId, mailingId, mode);
+			ClickStatInfo clickStatInfo = ecsDao.getClickStatInfo(companyId, mailingId, mode, deviceType);
 			// create hidden elements containing clicks stats - to be used by javascript to
 			// create clicks stat labels above the links
 			if(clickStatInfo != null) {
@@ -65,11 +70,11 @@ public abstract class EmbeddedClickStatServiceImpl implements EmbeddedClickStatS
 			        double percent = clickStatInfo.getPercentClicks().get(entry.getKey());
 			        String color = getColorForPercent(percent, rangeColors);
 			        String statInfo = createClickStatInfo(entry.getKey(), clicks, clickStatInfo.getClicksOverall().get(entry.getKey()), percent, color, urlMaker);
-			        finalHtml = finalHtml + statInfo;
+					finalHtml.append(statInfo);
 			    }
 			}
-			finalHtml = finalHtml + createNullColorInfoElement(rangeColors);
-			return finalHtml;
+			finalHtml.append(createNullColorInfoElement(rangeColors));
+			return finalHtml.toString();
 		} catch (Exception e) {
 			logger.error("Cannot addStatsInfo: " + e.getMessage(), e);
 			throw e;

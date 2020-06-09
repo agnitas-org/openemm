@@ -10,44 +10,14 @@
 
 package com.agnitas.emm.core.company.dto;
 
-import javax.validation.constraints.Size;
-
-import org.agnitas.emm.core.validator.annotation.Password;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotEmpty;
-
 public class CompanyAdminDto {
 
-    @Size.List({
-            @Size(min = 2, message = "error.name.too.short"),
-            @Size(max = 30, message = "error.name.too.long")
-    })
-    @NotEmpty(message = "error.name.is.empty")
     private String firstName;
-
-    @Size.List({
-            @Size(min = 2, message = "error.name.too.short"),
-            @Size(max = 30, message = "error.name.too.long")
-    })
-    @NotEmpty(message = "error.name.is.empty")
     private String lastName;
-
-    @Size.List({
-            @Size(min = 3, message = "error.username.tooShort"),
-            @Size(max = 100, message = "error.username.tooLong")
-    })
-    @NotEmpty(message = "error.username.required")
     private String username;
-
-    @Password()
-    @NotEmpty(message = "error.password.missing")
     private String password;
-
-    @Email(message = "error.email.invalid")
-    @NotEmpty(message = "error.email.empty")
+    private String passwordConfirm;
     private String email;
-
-    @Email(message = "error.email.invalid")
     private String statisticEmail;
 
     private int salutation;
@@ -110,6 +80,14 @@ public class CompanyAdminDto {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getPasswordConfirm() {
+        return passwordConfirm;
+    }
+
+    public void setPasswordConfirm(String passwordConfirm) {
+        this.passwordConfirm = passwordConfirm;
     }
 
     public String getEmail() {

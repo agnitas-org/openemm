@@ -18,10 +18,10 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MailingDataSet {
-	public static enum Field {
+	public enum Field {
 		Unknown(false, ""),
 
 		MailingId(false, "mailingid"),

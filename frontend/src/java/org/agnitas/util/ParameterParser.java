@@ -13,7 +13,7 @@ package org.agnitas.util;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class ParameterParser {
@@ -103,7 +103,7 @@ public class ParameterParser {
 		StringBuilder builder = new StringBuilder();
 		while (position < parameterString.length()) {
 			char c = parameterString.charAt(position);
-			if (Character.isLetterOrDigit(c) || c == '_' || c == '-') {
+			if (Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '@' || c == '$') {
 				position++;
 				builder.append(c);
 			} else if (Character.isWhitespace(c) || c == '=') {

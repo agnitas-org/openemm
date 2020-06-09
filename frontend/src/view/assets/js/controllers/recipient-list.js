@@ -116,6 +116,24 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   this.addAction({
+    'click': 'toggle-recipient-tab'
+  }, function () {
+    //imitate tab toggling for recipient tab overview
+    //necessary to redirect to specific link
+    var $el = $(this.el);
+    var siblings = $("[data-action='toggle-recipient-tab']");
+    _.each(siblings, function(sibling){
+      AGN.Lib.Storage.set('toggle_tab' + $(sibling).data('tab-id'), {hidden: true});
+    });
+
+    AGN.Lib.Storage.set('toggle_tab' + $el.data('tab-id'), {hidden: false});
+    var url = $el.data('url');
+    if (!!url) {
+      window.location.href = url;
+    }
+  });
+
+  this.addAction({
     'click': 'reset-search'
   }, function () {
     /* cleaning basic search */

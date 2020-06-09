@@ -1,4 +1,4 @@
-<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@page import="org.apache.commons.text.StringEscapeUtils"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"
          import="org.agnitas.util.*, java.util.*, java.text.*, org.agnitas.web.forms.*,  org.agnitas.web.*, com.agnitas.web.ComImportWizardForm, com.agnitas.web.ComImportWizardAction" errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
@@ -116,7 +116,8 @@
                                 <%
                                     Object leElement = null;
                                     Class leClass = null;
-                                    DateFormat aFormatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY));
+                                    SimpleDateFormat aFormatter = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY));
+                                    aFormatter.applyPattern(aFormatter.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
                                 %>
                                 <logic:iterate id="element2" indexId="element2idx" name="importWizardForm"
                                                offset="<%= Integer.toString(tmpOffset) %>" length="5" property="parsedContent"
@@ -128,7 +129,7 @@
                                                 if (leElement != null) {
                                                     leClass = leElement.getClass();
                                                     if (leClass.getName().equals("java.lang.String")) {
-                                                        value = StringEscapeUtils.escapeHtml((String) leElement);
+                                                        value = StringEscapeUtils.escapeHtml4((String) leElement);
                                                     } else if (leClass.getName().equals("java.lang.Double")) {
                                                         value = "" + ((Double) leElement).longValue();
                                                     }

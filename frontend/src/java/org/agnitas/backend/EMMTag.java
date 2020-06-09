@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.backend.dao.TagDAO;
+import org.agnitas.backend.tags.Tag;
 import org.agnitas.util.Log;
 import org.agnitas.util.Title;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -74,6 +75,7 @@ public class EMMTag {
 	public final static int	TI_SWYN = 14;
 	public final static int	TI_SENDDATE = 15;
 	public final static int	TI_GRIDPH = 16;
+	public final static int	TI_MODULE = 17;
 	/** Names of all internal tags */
 	final static String[]	TAG_INTERNALS = {
 		"agnDBV",
@@ -92,8 +94,11 @@ public class EMMTag {
 		null,
 		"agnSWYN",
 		"agnSENDDATE",
-		"gridPH"
+		"gridPH",
+		null
 	};
+	/** The generic tag reference for an extrernal implementation */
+	private Tag		tag;
 	/** The full name of this tag including all parameters */
 	public String		mTagFullname;
 	/** The name of the tag */
@@ -110,7 +115,7 @@ public class EMMTag {
 	/** Howto interpret this string */
 	public String		mSelectType;
 	/** Result of this tag, is set for each customer, if not fixed or global */
-	public String		mTagValue;
+	private String		mTagValue;
 	/** The tag type */
 	public int		 tagType;
 	/** The tag type specification */
@@ -123,6 +128,7 @@ public class EMMTag {
 	/** Internal used to format agnDB values */
 	public Column		dbColumn;
 	public Format		dbFormat;
+	public Expression	dbExpression;
 	/** Internal used for dynamic image names */
 	private String		imageSource;
 	private String		imagePatternName;
@@ -162,8 +168,9 @@ public class EMMTag {
 	 * @param data Reference to configuration
 	 * @param tag the tag itself
 	 */
-	public EMMTag (Data data, String tag) throws EMMTagException, SQLException {
-		mTagFullname = tag;
+	public EMMTag (Data data, String tagSpecification) throws EMMTagException, SQLException {
+		tag = null;
+		mTagFullname = tagSpecification;
 		mTagParameters = new HashMap <> ();
 		mTagAttributes = new ArrayList <> ();
 
@@ -210,7 +217,7 @@ public class EMMTag {
 				int pos, end;
 
 				pos = 0;
-				while ((pos = mSelectString.indexOf ("[", pos)) != -1)
+				while ((pos = mSelectString.indexOf ("[", pos)) != -1) {
 					if ((end = mSelectString.indexOf ("]", pos + 1)) != -1) {
 						String	id = mSelectString.substring (pos + 1, end);
 						String	rplc = substitute (data, id);
@@ -222,8 +229,10 @@ public class EMMTag {
 								(rplc == null ? "" : rplc) +
 								(end < mSelectString.length () - 1 ? mSelectString.substring (end + 1) : "");
 						pos += rplc.length () - (id.length () + 2) + 1;
-					} else
+					} else {
 						break;
+					}
+				}
 
 				// replace arguments of complex tags (in curly braces)
 				//
@@ -265,15 +274,18 @@ public class EMMTag {
 			" (" + (isComplex ? "complex," : "") + tagType + "," + tagSpec + ")" +
 			" = " +
 			(mSelectString == null ? "" : "[" + mSelectString + "]") +
-			(mTagValue == null ? "*unset*" : "\"" + mTagValue + "\"");
+			(getTagValue () == null ? "*unset*" : "\"" + getTagValue () + "\"");
 	}
 
-	public void setmTagValue(String mTagValue) {
-		this.mTagValue = mTagValue;
+	public void setTagValue (String value) {
+		if (tag != null) {
+			tag.value (value);
+		} else {
+			mTagValue = value;
+		}
 	}
-
-	public String getmTagValue() {
-		return mTagValue;
+	public String getTagValue () {
+		return tag != null ? tag.value () : mTagValue;
 	}
 
 	/**
@@ -285,6 +297,14 @@ public class EMMTag {
 	 * @throws EMMTagException
 	 */
 	public void initialize (Data data, boolean strict) throws EMMTagException {
+		switch (tagType) {
+			case TAG_INTERNAL:
+				initializeInternalTag (data, strict);
+				break;
+			default:
+				break;
+		}
+		
 		if (strict) {
 			if (mTagParameters.size () > 0) {
 				List <String> allowedParameters = new ArrayList <> ();
@@ -318,17 +338,11 @@ public class EMMTag {
 				}
 			}
 		}
-		switch (tagType) {
-		case TAG_INTERNAL:
-			initializeInternalTag (data, strict);
-			break;
-		}
-		
 		if (data.previewAnon) {
 			anon = mTagParameters.get ("anon");
 			if (anon != null) {
 				fixedValue = true;
-				mTagValue = anon;
+				setTagValue (anon);
 			}
 		}
 	}
@@ -345,7 +359,7 @@ public class EMMTag {
 			break;
 		case TI_DB:
 			if (dbColumn != null) {
-				mTagValue = dbColumn.get (dbFormat);
+				mTagValue = dbColumn.get (dbFormat, dbExpression);
 			}
 			if (punycodeValue && (mTagValue != null)) {
 				mTagValue = StringOps.punycodeEMail (mTagValue);
@@ -358,10 +372,13 @@ public class EMMTag {
 			break;
 		case TI_EMAIL:
 			switch (emailCode) {
-			case 1:
-				if (mTagValue != null)
-					mTagValue = StringOps.punycodeEMail (mTagValue.trim ());
-				break;
+				case 1:
+					if (mTagValue != null) {
+						mTagValue = StringOps.punycodeEMail (mTagValue.trim ());
+					}
+					break;
+				default:
+					break;
 			}
 			break;
 		case TI_SUBSCRIBERCOUNT:
@@ -373,17 +390,19 @@ public class EMMTag {
 				if (((format = mTagParameters.get ("format")) == null) &&
 					((str = mTagParameters.get ("type")) != null)) {
 					str = str.toLowerCase ();
-					if (str.equals ("us"))
+					if (str.equals ("us")) {
 						format = "#,###,###";
-					else if (str.equals ("de"))
+					} else if (str.equals ("de")) {
 						format = "#.###.###";
+					}
 				}
 				if ((str = mTagParameters.get ("round")) != null) {
 					try {
 						int round = Integer.parseInt (str);
 
-						if (round > 0)
+						if (round > 0) {
 							cnt = (cnt + round - 1) / round;
+						}
 					} catch (NumberFormatException e) {
 						// do nothing
 					}
@@ -394,10 +413,12 @@ public class EMMTag {
 					int last = -1;
 					mTagValue = "";
 
-					for (int n = len - 1; n >= 0; --n)
-						if (format.charAt (n) == '#')
+					for (int n = len - 1; n >= 0; --n) {
+						if (format.charAt (n) == '#') {
 							last = n;
-					for (int n = len - 1; n >= 0; --n)
+						}
+					}
+					for (int n = len - 1; n >= 0; --n) {
 						if (format.charAt (n) == '#') {
 							if (first || (cnt != 0)) {
 								if (n == last) {
@@ -410,10 +431,13 @@ public class EMMTag {
 								mTagValue = str + mTagValue;
 								first = false;
 							}
-						} else if ((n < last) || (cnt != 0))
+						} else if ((n < last) || (cnt != 0)) {
 							mTagValue = format.substring (n, n + 1) + mTagValue;
-				} else
+						}
+					}
+				} else {
 					mTagValue = Long.toString (cnt);
+				}
 			}
 			break;
 		case TI_DATE:			// is prepared here in initializeInternalTag () from check_tags
@@ -510,8 +534,13 @@ public class EMMTag {
 		case TI_CALL:
 			mTagValue = code.getCode ();
 			break;
+		default:
+			if (tag != null) {
+				tag.makeValue (cinfo);
+			}
+			break;
 		}
-		return mTagValue;
+		return getTagValue ();
 	}
 
 	/** Set link reference for image link tag
@@ -604,8 +633,14 @@ public class EMMTag {
 				}
 				break;
 			case TI_CALL:
-				if (code != null)
+				if (code != null) {
 					code.requestFields (predef, mTagParameters);
+				}
+				break;
+			default:
+				if (tag != null) {
+					tag.requestFields (predef);
+				}
 				break;
 			}
 		}
@@ -619,17 +654,20 @@ public class EMMTag {
 	public String getType () {
 		String	rc = mSelectType;
 		
-		if (tagType == TAG_INTERNAL)
+		if (tagType == TAG_INTERNAL) {
 			switch (tagSpec) {
-			case TI_CALL:
-				if ((func != null) && (code != null)) {
-					String	lang = code.getLanguage ();
-					String	name = code.getName ();
-					
-					rc += ":" + (lang == null ? "" : lang) + ":" + (name == null ? "" : name) + ":" + func;
-				}
-				break;
+				case TI_CALL:
+					if ((func != null) && (code != null)) {
+						String	lang = code.getLanguage ();
+						String	name = code.getName ();
+						
+						rc += ":" + (lang == null ? "" : lang) + ":" + (name == null ? "" : name) + ":" + func;
+					}
+					break;
+				default:
+					break;
 			}
+		}
 		return rc;
 	}
 
@@ -641,8 +679,8 @@ public class EMMTag {
 		return ((ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r') || (ch == '\f'));
 	}
 
-	private String clearify (String tag) {
-		return StringOps.removeEntities (tag).replaceAll ("[„“‚‘“”‘’«»‹›]", "\"").trim ();
+	private String clearify (String tagString) {
+		return StringOps.removeEntities (tagString).replaceAll ("[„“‚‘“”‘’«»‹›]", "\"").trim ();
 	}
 
 	/** Split a tag into its elements
@@ -660,136 +698,162 @@ public class EMMTag {
 		EscapedInValue,
 		InEscapedQuotedValue,
 		EscapedInEscapedQuotedValue
-	};
+	}
+	
 	private List <String> splitTag (Data data) throws EMMTagException {
 		int	tlen;
-		String	tag;
+		String tagString;
 
 		tlen = mTagFullname.length ();
 		if ((tlen > 0) && (mTagFullname.charAt (0) == '[')) {
-			tag = mTagFullname.substring (1);
+			tagString = mTagFullname.substring (1);
 			--tlen;
-		} else
-			tag = mTagFullname;
-		if ((tlen > 0) && (tag.charAt (tlen - 1) == ']'))
-			if ((tlen > 1) && (tag.charAt (tlen - 2) == '/'))
-				tag = tag.substring (0, tlen - 2);
-			else
-				tag = tag.substring (0, tlen - 1);
-		tag = clearify (tag);
-		tlen = tag.length ();
+		} else {
+			tagString = mTagFullname;
+		}
+		if ((tlen > 0) && (tagString.charAt (tlen - 1) == ']')) {
+			if ((tlen > 1) && (tagString.charAt (tlen - 2) == '/')) {
+				tagString = tagString.substring (0, tlen - 2);
+			} else {
+				tagString = tagString.substring (0, tlen - 1);
+			}
+		}
+		tagString = clearify (tagString);
+		tlen = tagString.length ();
 
 		List <String>	rc = new ArrayList <> ();
-		int		rccnt = 0;
+
 		State		state = State.SearchForName;
 		char		quote = '\0';
 		StringBuffer	scratch = new StringBuffer (tlen);
 
-		for (char ch : tag.toCharArray ()) {
+		for (char ch : tagString.toCharArray ()) {
 			switch (state) {
-			case SearchForName:
-				if (! isspace (ch)) {
-					scratch.setLength (0);
-					scratch.append (ch);
-					state = State.InName;
-				}
-				break;
-			case InName:
-				if (! isspace (ch)) {
-					scratch.append (ch);
-					if (ch == '=') {
-						state = State.SearchForValue;
-					}
-				} else {
-					state = State.SearchForEqualOrName;
-				}
-				break;
-			case SearchForEqualOrName:
-				if (! isspace (ch)) {
-					if (ch == '=') {
-						scratch.append (ch);
-						state = State.SearchForValue;
-					} else {
-						rc.add (scratch.toString ());
+				case SearchForName:
+					if (! isspace (ch)) {
 						scratch.setLength (0);
 						scratch.append (ch);
 						state = State.InName;
 					}
-				}
-				break;
-			case SearchForValue:
-				if (! isspace (ch)) {
-					if (ch == '\\') {
-						state = State.EscapedValue;
-					} else if ((ch == '"') || (ch == '\'')) {
+					break;
+				case InName:
+					if (! isspace (ch)) {
+						scratch.append (ch);
+						if (ch == '=') {
+							state = State.SearchForValue;
+						}
+					} else {
+						state = State.SearchForEqualOrName;
+					}
+					break;
+				case SearchForEqualOrName:
+					if (! isspace (ch)) {
+						if (ch == '=') {
+							scratch.append (ch);
+							state = State.SearchForValue;
+						} else {
+							rc.add (scratch.toString ());
+							scratch.setLength (0);
+							scratch.append (ch);
+							state = State.InName;
+						}
+					}
+					break;
+				case SearchForValue:
+					if (! isspace (ch)) {
+						if (ch == '\\') {
+							state = State.EscapedValue;
+						} else if ((ch == '"') || (ch == '\'')) {
+							quote = ch;
+							state = State.InQuotedValue;
+						} else {
+							scratch.append (ch);
+							state = State.InValue;
+						}
+					}
+					break;
+				case EscapedValue:
+					if ((ch == '"') || (ch == '\'')) {
 						quote = ch;
-						state = State.InQuotedValue;
+						state = State.InEscapedQuotedValue;
 					} else {
 						scratch.append (ch);
 						state = State.InValue;
 					}
-				}
-				break;
-			case EscapedValue:
-				if ((ch == '"') || (ch == '\'')) {
-					quote = ch;
-					state = State.InEscapedQuotedValue;
-				} else {
+					break;
+				case InQuotedValue:
+					if (ch == '\\') {
+						state = State.EscapedInQuotedValue;
+					} else if (ch == quote) {
+						rc.add (scratch.toString ());
+						state = State.SearchForName;
+					} else {
+						scratch.append (ch);
+					}
+					break;
+				case EscapedInQuotedValue:
+					scratch.append (ch);
+					state = State.InQuotedValue;
+					break;
+				case InValue:
+					if (isspace (ch)) {
+						rc.add (scratch.toString ());
+						state = State.SearchForName;
+					} else if (ch == '\\') {
+						state = State.EscapedInValue;
+					} else {
+						scratch.append (ch);
+					}
+					break;
+				case EscapedInValue:
 					scratch.append (ch);
 					state = State.InValue;
-				}
-				break;
-			case InQuotedValue:
-				if (ch == '\\') {
-					state = State.EscapedInQuotedValue;
-				} else if (ch == quote) {
-					rc.add (scratch.toString ());
-					state = State.SearchForName;
-				} else {
-					scratch.append (ch);
-				}
-				break;
-			case EscapedInQuotedValue:
-				scratch.append (ch);
-				state = State.InQuotedValue;
-				break;
-			case InValue:
-				if (isspace (ch)) {
-					rc.add (scratch.toString ());
-					state = State.SearchForName;
-				} else if (ch == '\\') {
-					state = State.EscapedInValue;
-				} else {
-					scratch.append (ch);
-				}
-				break;
-			case EscapedInValue:
-				scratch.append (ch);
-				state = State.InValue;
-				break;
-			case InEscapedQuotedValue:
-				if (ch == '\\') {
-					state = State.EscapedInEscapedQuotedValue;
-				} else {
-					scratch.append (ch);
-				}
-				break;
-			case EscapedInEscapedQuotedValue:
-				if (ch == quote) {
-					rc.add (scratch.toString ());
-					state = State.SearchForName;
-				} else {
-					scratch.append (ch);
-				}
-				break;
+					break;
+				case InEscapedQuotedValue:
+					if (ch == '\\') {
+						state = State.EscapedInEscapedQuotedValue;
+					} else {
+						scratch.append (ch);
+					}
+					break;
+				case EscapedInEscapedQuotedValue:
+					if (ch == quote) {
+						rc.add (scratch.toString ());
+						state = State.SearchForName;
+					} else {
+						scratch.append (ch);
+					}
+					break;
+				default:
+					break;
 			}
 		}
-		if (scratch.length () > 0) switch (state) {
-			case InName:
-			case SearchForEqualOrName:
-			case InValue:
-				rc.add (scratch.toString ());
-				break;
+		if (scratch.length () > 0) {
+			switch (state) {
+				case InName:
+				case SearchForEqualOrName:
+				case InValue:
+					rc.add (scratch.toString ());
+					break;
+				case EscapedInEscapedQuotedValue:
+					break;
+				case EscapedInQuotedValue:
+					break;
+				case EscapedInValue:
+					break;
+				case EscapedValue:
+					break;
+				case InEscapedQuotedValue:
+					break;
+				case InQuotedValue:
+					break;
+				case SearchForName:
+					break;
+				case SearchForValue:
+					break;
+				default:
+					break;
+			}
 		}
 		return rc;
 	}
@@ -805,8 +869,9 @@ public class EMMTag {
 		int slen = str.length ();
 
 		if (slen > 0) {
-			if ((slen >= 2) && (str.charAt (0) == '\'') && (str.charAt (slen - 1) == '\''))
+			if ((slen >= 2) && (str.charAt (0) == '\'') && (str.charAt (slen - 1) == '\'')) {
 				return true;
+			}
 			if (slen > 0) {
 				int n;
 				char	ch;
@@ -814,29 +879,36 @@ public class EMMTag {
 				n = 0;
 				while (n < slen) {
 					ch = str.charAt (n);
-					if (((n == 0) && (ch == '-')) || Character.isDigit (ch))
+					if (((n == 0) && (ch == '-')) || Character.isDigit (ch)) {
 						++n;
-					else
+					} else {
 						break;
+					}
 				}
-				if (n == slen)
+				if (n == slen) {
 					return true;
+				}
 			}
 		}
 		return false;
 	}
 
 	private String substitute (Data data, String id) {
-		if (id.equals ("licence-id"))
+		if (id.equals ("licence-id")) {
 			return Integer.toString (data.licenceID ());
-		if (id.equals ("company-id"))
+		}
+		if (id.equals ("company-id")) {
 			return Long.toString (data.company.id ());
-		if (id.equals ("mailinglist-id"))
+		}
+		if (id.equals ("mailinglist-id")) {
 			return Long.toString (data.mailinglist.id ());
-		if (id.equals ("mailing-id"))
+		}
+		if (id.equals ("mailing-id")) {
 			return Long.toString (data.mailing.id ());
-		if (id.equals ("rdir-domain"))
+		}
+		if (id.equals ("rdir-domain")) {
 			return data.rdirDomain;
+		}
 		return null;
 	}
 
@@ -847,8 +919,9 @@ public class EMMTag {
 			tagType = TAG_INTERNAL;
 			tagSpec = TI_CALL;
 		} else if ((tagType == TAG_DBASE) && (mSelectType != null)) {
-			if (mSelectType.equals ("COMPLEX"))
+			if (mSelectType.equals ("COMPLEX")) {
 				isComplex = true;
+			}
 		}
 	}
 
@@ -881,12 +954,17 @@ public class EMMTag {
 
 		int n;
 
-		for (n = 0; n < TAG_INTERNALS.length; ++n)
-			if (mTagName.equals (TAG_INTERNALS[n]))
+		for (n = 0; n < TAG_INTERNALS.length; ++n) {
+			if (mTagName.equals (TAG_INTERNALS[n])) {
 				break;
+			}
+		}
 		if (n < TAG_INTERNALS.length) {
 			tagType = TAG_INTERNAL;
 			tagSpec = n;
+		} else if (Tag.has (mTagName)) {
+			tagType = TAG_INTERNAL;
+			tagSpec = TI_MODULE;
 		} else {
 			tagType = TAG_DBASE;
 			tagSpec = 0;
@@ -901,85 +979,93 @@ public class EMMTag {
 	private void collectAllowedParameters (List <String> collect) {
 		collect.add ("anon");
 		switch (tagType) {
-		case TAG_DBASE:
-			collect.add ("*");
-			break;
-		case TAG_INTERNAL:
-			switch (tagSpec) {
-			case TI_DBV:
-			case TI_DB:
-				collect.add ("column");
-				collect.add ("format");
-				collect.add ("encode");
-				collect.add ("language");
-				collect.add ("country");
-				collect.add ("timezone");
-				collect.add ("code");
-				break;
-			case TI_IMAGE:
-				collect.add ("name");
-				collect.add ("source");
-				collect.add ("namepattern");
-				collect.add ("patternsource");
-				break;
-			case TI_EMAIL:
-				collect.add ("code");
-				break;
-			case TI_SUBSCRIBERCOUNT:
-				collect.add ("");
-				break;
-			case TI_DATE:
-				collect.add ("type");
-				collect.add ("column");
-				collect.add ("language");
-				collect.add ("base");
-				collect.add ("country");
-				collect.add ("timezone");
-				collect.add ("offset");
-				collect.add ("format");
-				collect.add ("expression");
-				break;
-			case TI_SYSINFO:
-				collect.add ("default");
-				break;
-			case TI_DYN:
-				collect.add ("name");
-				collect.add ("type");
-				collect.add ("filter");
-				collect.add ("onerror");
-				break;
-			case TI_DYNVALUE:
-				collect.add ("name");
-				break;
-			case TI_TITLE:
-			case TI_TITLEFULL:
-			case TI_TITLEFIRST:
-				collect.add ("type");
-				collect.add ("prefix");
-				collect.add ("postfix");
-				break;
-			case TI_IMGLINK:
-				collect.add ("name");
-				break;
-			case TI_CALL:
+			case TAG_DBASE:
 				collect.add ("*");
 				break;
-			case TI_SWYN:
-				collect.add ("networks");
-				collect.add ("title");
-				collect.add ("link");
-				collect.add ("selector");
-				collect.add ("bare");
-				collect.add ("size");
+			case TAG_INTERNAL:
+				switch (tagSpec) {
+					case TI_DBV:
+					case TI_DB:
+						collect.add ("column");
+						collect.add ("format");
+						collect.add ("expression");
+						collect.add ("encode");
+						collect.add ("language");
+						collect.add ("country");
+						collect.add ("timezone");
+						collect.add ("code");
+						break;
+					case TI_IMAGE:
+						collect.add ("name");
+						collect.add ("source");
+						collect.add ("namepattern");
+						collect.add ("patternsource");
+						break;
+					case TI_EMAIL:
+						collect.add ("code");
+						break;
+					case TI_SUBSCRIBERCOUNT:
+						collect.add ("");
+						break;
+					case TI_DATE:
+						collect.add ("type");
+						collect.add ("column");
+						collect.add ("language");
+						collect.add ("base");
+						collect.add ("country");
+						collect.add ("timezone");
+						collect.add ("offset");
+						collect.add ("format");
+						collect.add ("expression");
+						break;
+					case TI_SYSINFO:
+						collect.add ("default");
+						break;
+					case TI_DYN:
+						collect.add ("name");
+						collect.add ("type");
+						collect.add ("filter");
+						collect.add ("onerror");
+						break;
+					case TI_DYNVALUE:
+						collect.add ("name");
+						break;
+					case TI_TITLE:
+					case TI_TITLEFULL:
+					case TI_TITLEFIRST:
+						collect.add ("type");
+						collect.add ("prefix");
+						collect.add ("postfix");
+						break;
+					case TI_IMGLINK:
+						collect.add ("name");
+						break;
+					case TI_CALL:
+						collect.add ("*");
+						break;
+					case TI_SWYN:
+						collect.add ("networks");
+						collect.add ("title");
+						collect.add ("link");
+						collect.add ("selector");
+						collect.add ("bare");
+						collect.add ("size");
+						break;
+					case TI_SENDDATE:
+						collect.add ("format");
+						break;
+					case TI_GRIDPH:
+						collect.add ("name");
+						break;
+					default:
+						if (tag != null) {
+							tag.collectAllowedParameters (collect);
+						}
+						break;
+				}
 				break;
-			case TI_SENDDATE:
-				collect.add ("format");
+			default:
 				break;
-			case TI_GRIDPH:
-				collect.add ("name");
-				break;
-			}
-			break;
 		}
 	}
 
@@ -1001,8 +1087,9 @@ public class EMMTag {
 					char	ch = name.charAt (n);
 
 					if (((n == 0) && (! Character.isLetter (ch)) && (ch != '_')) ||
-					    ((n > 0) && (! Character.isLetterOrDigit (ch)) && (ch != '_')))
+					    ((n > 0) && (! Character.isLetterOrDigit (ch)) && (ch != '_'))) {
 						break;
+					}
 				}
 				if (n < len) {
 					name = name.substring (0, n);
@@ -1024,7 +1111,9 @@ public class EMMTag {
 	}
 	private String internalTagName () {
 		if (tagSpec == TI_CALL) {
-		    return "-function-";
+			return "-function-";
+		} else if (tag != null) {
+			return tag.name ();
 		}
 		return TAG_INTERNALS[tagSpec];
 	}
@@ -1038,7 +1127,8 @@ public class EMMTag {
 		case TI_DB:
 			mSelectString = mTagParameters.get ("column");
 			dbColumn = null;
-			dbFormat = new Format (mTagParameters.get ("format"), mTagParameters.get ("encode"),
+			dbFormat = new Format (mTagParameters.get ("format"),
+					       mTagParameters.get ("encode"),
 					       data.getLocale (mTagParameters.get ("language"), mTagParameters.get ("country")),
 					       data.getTimeZone (mTagParameters.get ("timezone")));
 			if (dbFormat.error () != null) {
@@ -1048,9 +1138,9 @@ public class EMMTag {
 				}
 			}
 			if (tagSpec == TI_DBV) {
-				if (mSelectString != null)
+				if (mSelectString != null) {
 					mSelectString = mSelectString.trim ().toLowerCase ();
-				else {
+				} else {
 					data.logging (Log.WARNING, "emmtag", mTagFullname + ": missing virtual column");
 					if (strict) {
 						throw new EMMTagException (data, this, "missing parameter \"column\"");
@@ -1078,6 +1168,26 @@ public class EMMTag {
 					}
 					dbColumn = col;
 				}
+			}
+			String	expression = mTagParameters.get ("expression");
+			
+			if (expression != null) {
+				try {
+					ExpressionBuilder	build = new ExpressionBuilder (expression.toLowerCase ());
+					
+					build.variable ("value");
+					if (dbColumn != null) {
+						build.variables (dbColumn.getName (), dbColumn.getQname ());
+					}
+					dbExpression = build.build ();
+				} catch (Exception e) {
+					data.logging (Log.WARNING, "emmtag", mTagFullname + ": invalid expression: " + e);
+					if (strict) {
+						throw new EMMTagException (data, this, "invalid \"expression\"");
+					}
+				}
+			} else {
+				dbExpression = null;
 			}
 			String	encode = mTagParameters.get ("code");
 				
@@ -1129,13 +1239,13 @@ public class EMMTag {
 		case TI_EMAIL:
 			emailCode = 0;
 			{
-				String	code = mTagParameters.get ("code");
+				String	tagCode = mTagParameters.get ("code");
 
-				if (code != null) {
-					if (code.equals ("punycode")) {
+				if (tagCode != null) {
+					if (tagCode.equals ("punycode")) {
 						emailCode = 1;
 					} else {
-						data.logging (Log.WARNING, "emmtag", mTagFullname + ": unknown coding for email found: " + code);
+						data.logging (Log.WARNING, "emmtag", mTagFullname + ": unknown coding for email found: " + tagCode);
 						if (strict) {
 							throw new EMMTagException (data, this, "invalid value for parameter \"code\"");
 						}
@@ -1154,10 +1264,11 @@ public class EMMTag {
 				String	country;
 				String	typestr;
 
-				if ((temp = mTagParameters.get ("type")) != null)
+				if ((temp = mTagParameters.get ("type")) != null) {
 					type = Integer.parseInt (temp);
-				else
+				} else {
 					type = 0;
+				}
 				if ((temp = mTagParameters.get ("column")) != null) {
 					dateColumn = findColumn (data, strict, temp);
 					if (dateColumn != null) {
@@ -1241,18 +1352,41 @@ public class EMMTag {
 						if (m.matches ()) {
 							s = m.group (2);
 							switch (m.group (1)) {
-							case "year":	index = 1;	break;
-							case "month":	index = 2;	break;
-							case "day":	index = 3;	break;
-							case "hour":	index = 4;	break;
-							case "minute":	index = 5;	break;
-							case "second":	index = 6;	break;
+								case "year":
+									index = 1;
+									break;
+								case "month":
+									index = 2;
+									break;
+								case "day":
+									index = 3;
+									break;
+								case "hour":
+									index = 4;
+									break;
+								case "minute":
+									index = 5;
+									break;
+								case "second":
+									index = 6;
+									break;
+								default:
+									break;
 							}
 						}
-						ExpressionBuilder	builder = new ExpressionBuilder (s);
-					
-						builder.variables ("year", "month", "day", "hour", "minute", "second");
-						dateExpressions[index] = builder.build ();
+						try {
+							ExpressionBuilder	builder = new ExpressionBuilder (s);
+						
+							builder.variables ("year", "month", "day", "hour", "minute", "second");
+							dateExpressions[index] = builder.build ();
+						} catch (Exception e) {
+							data.logging (Log.WARNING, "emmtag", mTagFullname + ": invalid expression: " + e);
+							if (strict) {
+								throw new EMMTagException (data, this, "invalid \"expression\"");
+							}
+							dateExpressions = null;
+							break;
+						}
 					}
 				} else {
 					dateExpressions = null;
@@ -1382,10 +1516,11 @@ public class EMMTag {
 			if ((n = cname.indexOf (':')) != -1) {
 				func = cname.substring (n + 1);
 				cname = cname.substring (0, n);
-			} else if (mTagName.length () > 3)
+			} else if (mTagName.length () > 3) {
 				func = mTagName.substring (3).toLowerCase ();
-			else
+			} else {
 				func = cname;
+			}
 			if ((cname == null) || ((code = data.findCode (cname)) == null)) {
 				data.logging (Log.WARNING, "emmtag", mTagFullname + ": no code \"" + cname + "\" for function '" + func + "' found");
 				if (strict) {
@@ -1412,8 +1547,9 @@ public class EMMTag {
 					String	nw = nwlist[n].trim ();
 					
 					if (nw.length () > 0) {
-						if (networks == null)
+						if (networks == null) {
 							networks = new ArrayList <> ();
+						}
 						networks.add (nw);
 					}
 				}
@@ -1438,6 +1574,15 @@ public class EMMTag {
 				if (mTagParameters.get ("name") == null) {
 					throw new EMMTagException (data, this, "Missing parameter \"name\"");
 				}
+			}
+			break;
+		default:
+			tag = Tag.get (mTagName);
+			if (tag != null) {
+				tag.setup (data, this, mTagFullname, mTagName, mTagParameters);
+				tag.initialize ();
+				globalValue = tag.isGlobalValue ();
+				fixedValue = tag.isFixedValue ();
 			}
 			break;
 		}

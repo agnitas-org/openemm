@@ -28,20 +28,13 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.text.StrLookup;
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Some useful string operations as static methods
  */
 public class StringOps {
-	/**
-	 * for strip off HTML code
-	 */
-	private static Pattern FINDHTML = Pattern.compile("<[ \t]*[!/?%a-z][^>]*>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
-
 	/**
 	 * translation table for transforming between HTML and text
 	 */
@@ -293,8 +286,9 @@ public class StringOps {
 			char ch = str.charAt(n);
 
 			r.append(ch);
-			if (ch == '\'')
+			if (ch == '\'') {
 				r.append(ch);
+			}
 		}
 		r.append('\'');
 		return r.toString();
@@ -320,8 +314,9 @@ public class StringOps {
 				char ch = str.charAt(n);
 
 				r.append(ch);
-				if ((ch == '\'') && (n + 1 < end) && (str.charAt(n + 1) == '\''))
+				if ((ch == '\'') && (n + 1 < end) && (str.charAt(n + 1) == '\'')) {
 					++n;
+				}
 			}
 			str = r.toString();
 		}
@@ -369,8 +364,9 @@ public class StringOps {
 				while (n < ilen) {
 					ch = in.charAt (n);
 					if (quote == '\0') {
-						if (ch == '>')
+						if (ch == '>') {
 							break;
+						}
 						if ((ch == '"') || (ch == '\'')) {
 							quote = ch;
 						}
@@ -389,8 +385,9 @@ public class StringOps {
 				cur = pos + 1;
 			}
 		}
-		if (cur < ilen)
+		if (cur < ilen) {
 			out.append (in.substring (cur));
+		}
 		return out.toString ();
 	}
 
@@ -400,6 +397,7 @@ public class StringOps {
 	 * @param inputString input string
 	 * @return            the HTML-cleared string
 	 */
+	private static Pattern FINDHTML = Pattern.compile("<[ \t]*[!/?%a-z][^>]*>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
 	public static String removeHTMLTagsAndEntities(String inputString) {
 		if (StringUtils.isEmpty(inputString)) {
 			return inputString;
@@ -407,7 +405,7 @@ public class StringOps {
 			Matcher regexMatcher = FINDHTML.matcher(inputString);
 			boolean hasNextMatch = regexMatcher.find();
 			if (!hasNextMatch) {
-				return StringEscapeUtils.unescapeHtml (inputString);
+				return StringEscapeUtils.unescapeHtml4(inputString);
 			} else {
 				StringBuffer returnValue = new StringBuffer(inputString.length());
 
@@ -427,7 +425,7 @@ public class StringOps {
 					returnValue.append(inputString.substring(endOfPreviousMatchingString));
 				}
 
-				return StringEscapeUtils.unescapeHtml (returnValue.toString());
+				return StringEscapeUtils.unescapeHtml4(returnValue.toString());
 			}
 		}
 	}
@@ -502,17 +500,19 @@ public class StringOps {
 	 * @return     the boolean value, if the string could be parsed, dflt otherwise
 	 */
 	public static boolean atob (String s, boolean dflt) {
-		if (s != null)
+		if (s != null) {
 			if (s.equalsIgnoreCase ("true") ||
 			    s.equalsIgnoreCase ("yes") ||
 			    s.equalsIgnoreCase ("on") ||
-			    s.equals ("+"))
+			    s.equals ("+")) {
 				return true;
-			else if (s.equalsIgnoreCase ("false") ||
+			} else if (s.equalsIgnoreCase ("false") ||
 				 s.equalsIgnoreCase ("no") ||
 				 s.equalsIgnoreCase ("off") ||
-				 s.equals ("-"))
+				 s.equals ("-")) {
 				return false;
+			}
+		}
 		return dflt;
 	}
 	/**
@@ -567,28 +567,6 @@ public class StringOps {
 		return rc;
 	}
 	
-	public static class Lookup extends StrLookup {
-		static private final Map<String, String>	env = System.getenv();
-		private String					source;
-		private Map<String, String>			map;
-
-		public Lookup (String nSource, Map<String, String> nMap) {
-			source = nSource;
-			map = nMap;
-		}
-
-		@Override
-		public String lookup (String key) {
-			String rc = map.getOrDefault(key, env.get(key));
-
-			if (rc == null) {
-				throw new RuntimeException(source + ": parameter missing: " + key);
-			} else {
-				return rc;
-			}
-		}
-	}
-	
 	/**
 	 * simple string template processor where a missing referenced token
 	 * will result in a RuntimeException. The operation system enviromen
@@ -599,16 +577,50 @@ public class StringOps {
 	 * @return     the processed string
 	 * @throws RuntimeException
 	 */
+	private static Pattern	FIND_PLACEHOLDER = Pattern.compile ("\\$\\$|\\$(\\{[^}]+\\}|[a-z_][a-z0-9_]*)", Pattern.MULTILINE | Pattern.DOTALL);
+	public static String fill (String s, Map <String, String> variables) {
+		StringBuffer		result = new StringBuffer ();
+		Matcher			m = FIND_PLACEHOLDER.matcher (s);
+		Map<String, String>	env = System.getenv ();
+		int			pos = 0;
+		int			start;
+		String			placeholder, replace;
+		
+		while (m.find (pos)) {
+			start = m.start ();
+			if (start > pos) {
+				result.append (s.substring (pos, start));
+			}
+			placeholder = m.group (1);
+			if (placeholder == null) {
+				replace = "$";
+			} else {
+				if (placeholder.startsWith ("{") && placeholder.endsWith ("}")) {
+					placeholder = placeholder.substring (1, placeholder.length () - 1);
+				}
+				replace = variables.get (placeholder);
+				if (replace == null) {
+					replace = env.get (placeholder);
+				}
+			}
+			result.append (replace != null ? replace : m.group ());
+			pos = m.end ();
+		}
+		if (pos < s.length ()) {
+			result.append (s.substring (pos));
+		}
+		return result.toString ();
+	}
+		
 	public static String fill (String s, Object ... param) {
 		Map <String, String>	p = new HashMap <> ();
 		
 		for (int n = 0; n + 1 < param.length; n += 2) {
 			p.put (param[n].toString (), param[n + 1].toString ());
 		}
-		return (new StrSubstitutor (new Lookup (s, p))).replace (s);
+		return fill (s, p);
 	}
 
-	public static final	String	pathHome = System.getProperty ("user.home", ".");
 	public static final	String	pathSeparator = System.getProperty ("file.separator", "/");
 	/**
 	 * Create a valid path for this operating system where each element
@@ -622,7 +634,7 @@ public class StringOps {
 	public static String makePath (Object ... elements) {
 		return Arrays
 			.stream (elements)
-			.map (element -> (element instanceof String) ? fill ((String) element, "home", pathHome) : element.toString ())
+			.map (element -> (element instanceof String) ? fill ((String) element, "home", Data.home, "user", Data.user) : element.toString ())
 			.reduce ((s, e) -> s + pathSeparator + e)
 			.orElse (".");
 	}

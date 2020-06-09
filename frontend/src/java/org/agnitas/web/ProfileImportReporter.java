@@ -44,7 +44,7 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -408,7 +408,7 @@ public class ProfileImportReporter {
 //			htmlContent.append("<table border=\"1\" bordercolor=\"" + borderColorCode + "\" cellspacing=\"0\" style=\"border-collapse: collapse; padding: 0px 5px 0px 5px;\">\n");
 //			htmlContent.append("<tr bgcolor=\"" + redColorCode + "\">\n");
 //			htmlContent.append("<font color=\"" + whiteColorCode + "\">\n");
-//			htmlContent.append("<td style=\"padding: 0px 5px 0px 5px;\"><b>").append(StringEscapeUtils.escapeHtml(I18nString.getLocaleString("error.export.recipient.binding.without.empty", locale))).append("</b></td>\n");
+//			htmlContent.append("<td style=\"padding: 0px 5px 0px 5px;\"><b>").append(StringEscapeUtils.escapeHtml4(I18nString.getLocaleString("error.export.recipient.binding.without.empty", locale))).append("</b></td>\n");
 //			htmlContent.append("</font>\n");
 //			htmlContent.append("</tr>\n");
 //			htmlContent.append("</table>\n");
@@ -524,10 +524,10 @@ public class ProfileImportReporter {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), "Invalid (\"" + e.getMessage() + "\")"));
 			}
 			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importWorker.getImportProfile().isNoHeaders() ? "Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(importWorker.getImportProfile().isZipped() ? "Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importWorker.getImportProfile().getZipPassword() != null ? "Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importWorker.getImportProfile().isAutoMapping() ? "Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importWorker.getImportProfile().isNoHeaders() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(importWorker.getImportProfile().isZipped() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importWorker.getImportProfile().getZipPassword() != null ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importWorker.getImportProfile().isAutoMapping() ? "default.Yes" : "No", locale)));
 
 			try {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.Delimiter", locale), Character.toString(Separator.getSeparatorById(importWorker.getImportProfile().getSeparator()).getValueChar())));
@@ -573,7 +573,7 @@ public class ProfileImportReporter {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("recipient.RecipientMailtype", locale) + " (" + I18nString.getLocaleString("import.profile.default", locale) + ")", "Invalid (\"" + e.getMessage() + "\")"));
 			}
 			
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.updateAllDuplicates", locale), I18nString.getLocaleString(importWorker.getImportProfile().getUpdateAllDuplicates() ? "Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.profile.updateAllDuplicates", locale), I18nString.getLocaleString(importWorker.getImportProfile().getUpdateAllDuplicates() ? "default.Yes" : "No", locale)));
 			
 			if (importWorker.getImportProfile().getImportProcessActionID() > 0) {
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("ImportProcessActionID", Integer.toString(importWorker.getImportProfile().getImportProcessActionID())));

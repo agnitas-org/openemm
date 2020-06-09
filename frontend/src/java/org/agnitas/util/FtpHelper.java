@@ -10,7 +10,6 @@
 
 package org.agnitas.util;
 
-import java.io.Closeable;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +23,7 @@ import org.apache.log4j.Logger;
  * The Class FtpHelper.
  * It uses FTP passive mode by default
  */
-public class FtpHelper implements Closeable {
+public class FtpHelper implements RemoteFileHelper {
 
 	/** The Constant logger. */
 	@SuppressWarnings("unused")
@@ -122,6 +121,7 @@ public class FtpHelper implements Closeable {
 	 *
 	 * @throws Exception the exception
 	 */
+	@Override
 	public void connect() throws Exception {
 		try {
 			ftpClient = new FTPClient();
@@ -144,6 +144,7 @@ public class FtpHelper implements Closeable {
 	 *
 	 * @param path the path
 	 */
+	@Override
 	public void cd(String path) throws Exception {
 		checkForConnection();
 		ftpClient.changeWorkingDirectory(path);
@@ -156,6 +157,7 @@ public class FtpHelper implements Closeable {
 	 * @return
 	 * @throws Exception
 	 */
+	@Override
 	public List<String> ls(String path) throws Exception {
 		checkForConnection();
 		String[] fileNames = ftpClient.listNames(path);
@@ -181,6 +183,7 @@ public class FtpHelper implements Closeable {
 	 * @return
 	 * @throws Exception
 	 */
+	@Override
 	public boolean directoryExists(String directoryPath) throws Exception {
 		checkForConnection();
 		ftpClient.changeWorkingDirectory(directoryPath);
@@ -199,6 +202,7 @@ public class FtpHelper implements Closeable {
 	 * @return
 	 * @throws Exception on invalid directory
 	 */
+	@Override
 	public boolean fileExists(String filePath) throws Exception {
 		checkForConnection();
 		return ftpClient.listFiles(filePath).length > 0;
@@ -210,6 +214,7 @@ public class FtpHelper implements Closeable {
 	 * @param in the in
 	 * @param dst the dst
 	 */
+	@Override
 	public void put(InputStream inputStream, String destination) throws Exception {
 		checkForConnection();
 		ftpClient.storeFile(destination, inputStream);
@@ -221,6 +226,7 @@ public class FtpHelper implements Closeable {
 	 * @param name the name
 	 * @return the input stream
 	 */
+	@Override
 	public InputStream get(String name) throws Exception {
 		checkForConnection();
 		InputStream inputStream = ftpClient.retrieveFileStream(name);

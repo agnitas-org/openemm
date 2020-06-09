@@ -10,19 +10,32 @@
 
 package com.agnitas.emm.core.action.operations;
 
-import javax.sql.DataSource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
-import org.apache.struts.action.ActionErrors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionMessage;
-import org.springframework.context.ApplicationContext;
+import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.beans.ComTrackpointDef;
+import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTrackpointDao;
+import com.agnitas.messages.I18nString;
 
 public class ActionOperationUpdateCustomerParameters extends AbstractActionOperationParameters {
+	/**
+	 * Regexp pattern for date arithmetics.
+	 */
+	public static final Pattern DATE_ARITHMETICS_PATTERN = Pattern.compile("^\\s*(SYSDATE|CURRENT_TIMESTAMP)\\s*(?:(\\+|-)\\s*(\\d+(?:\\.\\d+)?)\\s*)?$");
+	
     public static final int TYPE_INCREMENT_BY = 1;
     public static final int TYPE_DECREMENT_BY = 2;
     public static final int TYPE_SET_VALUE = 3;
@@ -78,28 +91,27 @@ public class ActionOperationUpdateCustomerParameters extends AbstractActionOpera
 	}
 	
 	@Override
-	public boolean validate(ActionErrors errors, ApplicationContext applicationContext) {
+	public boolean validate(ActionMessages errors, Locale locale, ComRecipientDao recipientDao, ComTrackpointDao trackpointDao) throws Exception {
+		DbColumnType dataType;
+		try {
+			dataType = recipientDao.getColumnDataType(getCompanyId(), columnName);
+		} catch (Exception e) {
+            errors.add("trackingPointId", new ActionMessage("error.action.dbAccess"));
+			return false;
+		}
+		SimpleDataType simpleDataType = dataType.getSimpleDataType();
+		
 		if (useTrack) {
-			DataSource ds = (DataSource) applicationContext.getBean("dataSource");
-			DbColumnType dt = null;
-			try {
-				dt = DbUtilities.getColumnDataType(ds, "customer_"+this.getCompanyId()+"_tbl", columnName);
-			} catch (Exception e) {
-	            errors.add("trackingPointId", new ActionMessage("error.action.dbAccess"));
-				return false;
-			}
-
 			if (trackingPointId == -1) {
-				if (dt.getSimpleDataType() != SimpleDataType.Numeric) {
-		            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dt.getTypeName()));
+				if (simpleDataType != SimpleDataType.Numeric) {
+		            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dataType.getTypeName()));
 					return false;
 				}
 				return true;
 			}
 			
-			ComTrackpointDao trackpointDao = (ComTrackpointDao) applicationContext.getBean("TrackpointDao");
 			if (trackpointDao != null) {
-				ComTrackpointDef tp = trackpointDao.get(trackingPointId, this.getCompanyId());
+				ComTrackpointDef tp = trackpointDao.get(trackingPointId, getCompanyId());
 				if (tp == null) {
 		            errors.add("trackingPointId", new ActionMessage("error.action.dbAccess"));
 					return false;
@@ -107,30 +119,107 @@ public class ActionOperationUpdateCustomerParameters extends AbstractActionOpera
 				
 				switch (tp.getType()) {
 					case ComTrackpointDef.TYPE_ALPHA:
-						if (dt.getSimpleDataType() != SimpleDataType.Characters) {
-				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Alphanumeric", dt.getTypeName()));
+						if (simpleDataType != SimpleDataType.Characters) {
+				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Alphanumeric", dataType.getTypeName()));
 							return false;
 						}
 						break;
 					case ComTrackpointDef.TYPE_NUM:
-						if (dt.getSimpleDataType() != SimpleDataType.Numeric) {
-				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dt.getTypeName()));
+						if (simpleDataType != SimpleDataType.Numeric) {
+				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Numeric", dataType.getTypeName()));
 							return false;
 						}
 						break;
 					case ComTrackpointDef.TYPE_SIMPLE:
-						if (dt.getSimpleDataType() != SimpleDataType.Numeric) {
-				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Simple", dt.getTypeName()));
+						if (simpleDataType != SimpleDataType.Numeric) {
+				            errors.add("trackingPointId", new ActionMessage("error.action.trackpoint.type", "Simple", dataType.getTypeName()));
 							return false;
 						}
 						break;
 					default:
-			            errors.add("Unkmow TP type and " + dt.getTypeName() + " column", new ActionMessage("error.action.trackpoint.type"));
+			            errors.add("Unkmow TP type and " + dataType.getTypeName() + " column", new ActionMessage("error.action.trackpoint.type"));
 						return false;
 				}
-				System.out.println("TP.type is " + tp.getType() + " Colum type is " + dt.toString());
+				System.out.println("TP.type is " + tp.getType() + " Colum type is " + dataType.toString());
 			}
 		}
+		
+    	if (StringUtils.isNotBlank(columnName)) {
+			switch (simpleDataType) {
+				case Blob:
+					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidFieldType", columnName));
+					return false;
+				case Date:
+					if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY) {
+						try {
+							Double.parseDouble(updateValue);
+							return true;
+						} catch (Exception e) {
+							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+							return false;
+						}
+					} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
+						try {
+							Double.parseDouble(updateValue);
+							return true;
+						} catch (Exception e) {
+							errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+							return false;
+						}
+					} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
+						Matcher matcher = DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
+						if (matcher.matches()) {
+							if (matcher.group(2) != null) {
+								// Is safe, because group 2 must match "+" or "-" according to reg exp.
+								try {
+									Double.parseDouble(matcher.group(3));
+									return true;
+								} catch (Exception e) {
+									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+									return false;
+								}
+							} else if (DbUtilities.isNowKeyword(updateValue)) {
+								updateValue = "CURRENT_TIMESTAMP";
+								return true;
+							} else {
+								SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+								format.setLenient(false);
+								try {
+									format.parse(updateValue);
+									return true;
+								} catch (ParseException e) {
+									errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+									return false;
+								}
+							}
+						} else {
+							try {
+								SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYYMMDD);
+								format.setLenient(false);
+								format.parse(updateValue);
+								return true;
+							} catch (Exception e) {
+								errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Date.getMessageKey(), locale), updateValue));
+								return false;
+							}
+						}
+					} else {
+						throw new Exception("Invalid update value type");
+					}
+				case Numeric:
+					if (AgnUtils.isDouble(updateValue)) {
+						return false;
+					} else {
+						errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.updatecustomer.invalidValueForType", columnName, I18nString.getLocaleString(SimpleDataType.Numeric.getMessageKey(), locale), updateValue));
+						return false;
+					}
+				case Characters:
+					// No special conditions for characters
+					return true;
+				default:
+					throw new Exception("Unknown db field type");
+			}
+        }
 		return true;
 	}
 }

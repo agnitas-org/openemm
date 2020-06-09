@@ -66,6 +66,8 @@ public class MailoutClient {
 				host = rsc.getString ("system.mailout");
 			} else 	if (rsc.containsKey ("system.mailgun")) {
 				host = rsc.getString ("system.mailgun");
+			} else {
+				host = "nfsserver";
 			}
 			if (rsc.containsKey ("port.mailout")) {
 				portValue = rsc.getString ("port.mailout");

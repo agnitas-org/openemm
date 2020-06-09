@@ -27,7 +27,7 @@ import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -73,77 +73,63 @@ public class ShowComponent extends HttpServlet {
      */
     @Override
     public void service(HttpServletRequest req, HttpServletResponse response) throws IOException, ServletException {
-        ServletOutputStream out=null;
-        long len=0;
-        int compId=0;
+        ServletOutputStream out;
+        long len;
+        int compId;
         
 		if (!AgnUtils.isUserLoggedIn(req)) {
             return;
         }
-        
-        try {
-            compId=Integer.parseInt(req.getParameter("compID"));
-        } catch (Exception e) {
-        	logger.warn( "Error converting " + (req.getParameter("compID") != null ? "'" + req.getParameter("compID") + "'" : req.getParameter("compID")) + " to integer", e);
-            return;
-        }
+	
+		String compIDParam = req.getParameter("compID");
+		compId = NumberUtils.toInt(compIDParam, -1);
+		
+		if (compId < 0) {
+			logger.warn("Error converting " + (compIDParam != null ? "'" + compIDParam + "'" : compIDParam) + " to integer");
+			return;
+		}
         
         if(compId==0) {
             return;
         }
-        
-        
-        int customerID = 0;
-        
-        String customerIDStr = req.getParameter("customerID");
-        if( StringUtils.isNumeric(customerIDStr)) {
-        	customerID = Integer.parseInt(customerIDStr);
-        }
+	
+		String customerIDStr = req.getParameter("customerID");
+		int customerID = NumberUtils.toInt(customerIDStr);
         
         MailingComponent comp = getComponentDao().getMailingComponent(compId, AgnUtils.getCompanyID(req));
         
 		if (comp != null) {
             try {
 				switch (MailingComponentType.getMailingComponentTypeByCode(comp.getType())) {
-				    case Image:
+					case Image:
 				    case HostedImage:
-				        if (comp.getBinaryBlock() != null) {
-				        response.setContentType(comp.getMimeType());
-				        out=response.getOutputStream();
-				        out.write(comp.getBinaryBlock());
-				        out.flush();
-				        out.close();
-				        }
-				        break;
-				    case ThumbnailImage:
-				        if (comp.getBinaryBlock() != null) {
-				        response.setContentType(comp.getMimeType());
-				        out=response.getOutputStream();
-				        out.write(comp.getBinaryBlock());
-				        out.flush();
-				        out.close();
-				        }
-				        break;
-				    case Attachment:
+					case ThumbnailImage:
+						if (comp.getBinaryBlock() != null) {
+							response.setContentType(comp.getMimeType());
+							out=response.getOutputStream();
+							out.write(comp.getBinaryBlock());
+							out.flush();
+							out.close();
+						}
+						break;
+					case Attachment:
 				    case PersonalizedAttachment:
 				        HttpUtils.setDownloadFilenameHeader(response, comp.getComponentName());
 				        response.setContentType(comp.getMimeType());
 				        out=response.getOutputStream();
 				       
-				        byte[] attachment = null;
+				        byte[] attachment;
 				        int mailingID = comp.getMailingID();
 				                            
-				        if (comp.getType() == MailingComponentType.PersonalizedAttachment.getCode()) {
-				        	Page page = null;
-				            if( customerID == 0 ){ // no customerID is available, take the 1st available test recipient
-				            	ComRecipientDao recipientDao = getRecipientDao();
-				                  Map<Integer,String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
-				                  customerID = recipientList.keySet().iterator().next();
+				        if (MailingComponentType.PersonalizedAttachment.getCode() == comp.getType()) {
+				        	Page page;
+				            if(customerID == 0){ // no customerID is available, take the 1st available test recipient
+				            	Map<Integer,String> recipientList = getRecipientDao().getAdminAndTestRecipientsDescription(comp.getCompanyID(), mailingID);
+				            	customerID = recipientList.keySet().iterator().next();
 				            }
 				            Preview preview = getPreviewFactory().createPreview();
 				            page = preview.makePreview(mailingID, customerID, false);
 				            attachment = page.getAttachment(comp.getComponentName());
-				            
 				        } else {
 				        	attachment = comp.getBinaryBlock();
 				        }

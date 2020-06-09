@@ -59,6 +59,9 @@ $c-white: #fff;
 
 $c-black: #000;
 
+// menu active
+$c-black-80: #38404a;
+
 // menu dropdown open bg
 $c-black-82: #2d2d2f;
 
@@ -164,6 +167,8 @@ $c-mailing-sent         : #387c00;
 $c-mailing-norecipients : $c-gray-44;
 $c-mailing-test         : #7f51b2;
 $c-mailing-admin        : #5e2b9c;
+$c-mailing-in-generation: #83b93c;
+$c-mailing-generation-finished    : #83b93c;
 
 
 $i-mailing-new          : $fa-var-file-o;
@@ -178,6 +183,8 @@ $i-mailing-sent         : $fa-var-paper-plane;
 $i-mailing-norecipients : $fa-var-paper-plane;
 $i-mailing-test         : $fa-var-flask;
 $i-mailing-admin        : $fa-var-lightbulb-o;
+$i-mailing-in-generation : $fa-var-cogs;
+$i-mailing-generation-finished    : $fa-var-cog;
 
 $mailing-states:(
   new          $c-mailing-new,
@@ -191,7 +198,9 @@ $mailing-states:(
   sent         $c-mailing-sent,
   norecipients $c-mailing-norecipients,
   test         $c-mailing-test,
-  admin        $c-mailing-admin
+  admin        $c-mailing-admin,
+  in-generation $c-mailing-in-generation,
+  generation-finished    $c-mailing-generation-finished
 );
 
 $message-states:(
@@ -221,7 +230,9 @@ $mailing-state-icons:(
   sent         $i-mailing-sent,
   norecipients $i-mailing-norecipients,
   test         $i-mailing-test,
-  admin        $i-mailing-admin
+  admin        $i-mailing-admin,
+  in-generation $i-mailing-in-generation,
+  generation-finished    $i-mailing-generation-finished
 );
 
 // Push Notifications
@@ -343,3 +354,8 @@ $shadows: (
   hard    '#{$shadow-hard}',
   hardest '#{$shadow-hardest}'
 );
+
+// colors indicating complexity (target groups)
+$c-complexity-green: #0ec050;
+$c-complexity-yellow: #f8c400;
+$c-complexity-red: #f7554e;

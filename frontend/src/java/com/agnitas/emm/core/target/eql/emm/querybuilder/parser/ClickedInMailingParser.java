@@ -25,7 +25,8 @@ public class ClickedInMailingParser extends GenericEqlNodeParser<ClickedInMailin
     		throw new EqlToQueryBuilderConversionException("Device query not supported by QueryBuilder");
     	}
     	
-        groupNode.addRule(new QueryBuilderRuleNode("clicked in mailing", "equal", new Object[] {node.getMailingId(), node.getLinkId()}));
+        int linkId = node.getLinkId() == null ? -1 : node.getLinkId();
+        groupNode.addRule(new QueryBuilderRuleNode("clicked in mailing", "equal", new Object[] {node.getMailingId(), linkId}));
         return groupNode;
     }
 

@@ -10,16 +10,33 @@
 
 package com.agnitas.service;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.agnitas.messages.Message;
 
 public class SimpleServiceResult extends ServiceResult<Void> {
+
+    public SimpleServiceResult(final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
+        super(null, success, successMessages, warningMessages, errorMessages);
+    }
     public SimpleServiceResult(boolean success, Message... messages) {
         super(null, success, messages);
     }
 
-    public SimpleServiceResult(boolean success, List<Message> messages) {
-        super(null, success, messages);
+    public static SimpleServiceResult simpleSuccess(final Message... successMessages) {
+        return new SimpleServiceResult(true, Arrays.asList(successMessages), null, null);
+    }
+
+    public static SimpleServiceResult simpleWarning(final Message... warningMessages) {
+        return new SimpleServiceResult(true, null, Arrays.asList(warningMessages), null);
+    }
+
+    public static SimpleServiceResult simpleWarning(final List<Message> warningMessages) {
+        return new SimpleServiceResult(true, null, warningMessages, null);
+    }
+
+    public static SimpleServiceResult simpleError(final List<Message> errorMessages) {
+        return new SimpleServiceResult(false, null, null, errorMessages);
     }
 }

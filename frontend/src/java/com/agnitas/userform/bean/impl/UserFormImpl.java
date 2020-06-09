@@ -27,7 +27,7 @@ import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.springframework.context.ApplicationContext;
@@ -206,8 +206,8 @@ public class UserFormImpl implements UserForm {
     }
     
     /**
-     * Getter for property sucessTemplate.
-     * @return Value of property sucessTemplate.
+     * Getter for property successTemplate.
+     * @return Value of property successTemplate.
      */
     @Override
 	public String getSuccessTemplate() {
@@ -215,7 +215,7 @@ public class UserFormImpl implements UserForm {
     }
     
     /**
-     * Setter for property sucessTemplate.
+     * Setter for property successTemplate.
      * @param successTemplate 
      */
     @Override
@@ -371,7 +371,7 @@ public class UserFormImpl implements UserForm {
 		boolean actionResult = evaluateAction(con, startAction, params, errors);
 
 		if (!actionResult) {
-			logger.error("Action Error: CompanyID=" + companyID + " ActionID=" + startActionID);
+			logger.error(String.format("Action Error: CompanyID=%d, ActionID=%d, error codes=%s", companyID, startActionID, errors));
 		} else if (logger.isDebugEnabled()) {
 			logger.debug("Action Result: CompanyID=" + companyID + " ActionID=" + startActionID + " " + actionResult);
 		}

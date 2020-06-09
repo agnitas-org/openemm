@@ -99,6 +99,7 @@ sqlScriptsToDo+=" ${scriptDir}/../userrights.sql ${scriptDir}/emm-mysql-messages
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mysql-messages-*.sql" | sort`;do
 	sqlScriptsToDo="${sqlScriptsToDo} ${sqlfilename}"
 done
+
 if [ -e "${scriptDir}/emm-mysql-test-post-update.sql" ]; then {
 	sqlScriptsToDo+=" ${scriptDir}/emm-mysql-test-post-update.sql"
 } fi

@@ -13,18 +13,15 @@ package com.agnitas.emm.core.calendar.service;
 import java.time.LocalDate;
 import java.util.Map;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.ComAdmin;
-
 import net.sf.json.JSONArray;
+import org.agnitas.beans.impl.PaginatedListImpl;
 
 public interface CalendarService {
 
-    PaginatedListImpl<Map<String, Object>> getUnsentMailings(@VelocityCheck int companyId, int listSize);
+    PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize);
 
-    PaginatedListImpl<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int listSize);
+    PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int listSize);
 
     JSONArray getMailings(ComAdmin admin, LocalDate startDate, LocalDate endDate);
 

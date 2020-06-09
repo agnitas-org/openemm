@@ -332,11 +332,13 @@ AGN.Lib.DomInitializer.new('upload', function($e) {
     $e.on('upload:reset', function() {
       removeAllRows();
       reset();
+      $e.trigger('reset-upload', $form);
     });
 
     $e.on('click', 'a[data-upload-reset], button[data-upload-reset]', function() {
       removeAllRows();
       reset();
+      $e.trigger('reset-upload', $form);
     });
   }
 

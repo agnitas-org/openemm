@@ -18,8 +18,8 @@ import java.util.Map.Entry;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jsoup.helper.StringUtil;
 import org.springframework.dao.DataAccessException;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
@@ -36,19 +36,16 @@ import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.StatisticEntry;
 import com.agnitas.reporting.birt.external.dataset.CommonKeysService;
 
-@SuppressWarnings("deprecation")
 public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPayloadEndpoint {
-	
-	@SuppressWarnings("hiding")
-	private static final Logger logger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
+	private static final Logger classLogger = Logger.getLogger(MailingSummaryStatisticJobEndpoint.class);
 
-	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService; 
-	private ObjectFactory comObjectFactory; 
+	private MailingSummaryStatisticJobService mailingSummaryStatisticJobService;
+	private ObjectFactory comObjectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered MailingSummaryStatisticResultEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingSummaryStatisticResultEndpoint.invokeInternal()");
 		}
 		
 		MailingSummaryStatisticResultRequest request = (MailingSummaryStatisticResultRequest) arg0;
@@ -66,7 +63,7 @@ public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPa
 			response.setItems(new Items());
 			addGroupStat(job.getId(), 0, response); // use target group ID = 0 for 'all subscribers'
 			
-			if (!StringUtil.isBlank(job.getTargetGroups())) {
+			if (StringUtils.isNotBlank(job.getTargetGroups())) {
 				try {
 					List<Integer> targetGroups = mailingSummaryStatisticJobService.parseGroupList(job.getTargetGroups());
 					for (Integer targetGroup : targetGroups) {
@@ -80,8 +77,8 @@ public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPa
 			}
 		}
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving MailingSummaryStatisticResultEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving MailingSummaryStatisticResultEndpoint.invokeInternal()");
 		}
 		
 		return response;
@@ -105,10 +102,10 @@ public class MailingSummaryStatisticResultEndpoint extends AbstractMarshallingPa
 			
 			response.getItems().getItem().add(groupStat);
 		} catch (DataAccessException e) {
-			logger.error("Failed statistic for targetGroupId " + targetGroupId, e);
+			classLogger.error("Failed statistic for targetGroupId " + targetGroupId, e);
 			if (targetGroupId == 1) {
 				// Failed with statistic of all recipients
-				throw e; 
+				throw e;
 			}
 		}
 	}

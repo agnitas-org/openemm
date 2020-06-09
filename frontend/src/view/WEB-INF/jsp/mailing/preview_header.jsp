@@ -32,11 +32,17 @@
                 <ul>
                     <li>
                         <label for="preview_customer_ATID" class="radio-inline"></label>
-                        <agn:agnRadio styleId="preview_customer_ATID" property="useCustomerEmail"  value="false" data-action="change-preview-customer-options" data-stored-field="${storedFieldsScope}"/>
-                        <select id="selectPreviewCustomerATID" name="previewCustomerATID" class="js-select" data-form-submit>
+                        <agn:agnRadio styleId="preview_customer_ATID" property="useCustomerEmail"  value="false"
+                                      data-action="change-preview-customer-options" data-stored-field="${storedFieldsScope}"/>
+                        <select id="selectPreviewCustomerATID" name="previewCustomerATID" class="js-select"
+                                data-action="change-header-data">
                             <option value="0" <c:if test="${mailingSendForm.previewCustomerATID == 0}">selected="selected"</c:if>><bean:message key="default.select.email"/></option>
                             <c:forEach var="recipient" items="${previewRecipients}">
-                                <option value="${recipient.key}" <c:if test="${mailingSendForm.previewCustomerATID == recipient.key || mailingSendForm.previewCustomerID == recipient.key}">selected="selected"</c:if>>${recipient.value}</option>
+                                <option value="${recipient.key}"
+                                    ${mailingSendForm.previewCustomerATID == recipient.key
+                                    or mailingSendForm.previewCustomerID == recipient.key ? 'selected="selected"' : ''}>
+                                ${recipient.value}
+                                </option>
                             </c:forEach>
                         </select>
                     </li>

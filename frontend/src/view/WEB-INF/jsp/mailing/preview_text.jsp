@@ -10,6 +10,6 @@
 <body>
 <%@include file="/WEB-INF/jsp/messages.jsp" %>
 
-<pre><bean:write name="mailingSendForm" property="preview"/></pre>
+<pre><bean:write name="mailingSendForm" property="preview" filter="false"/></pre>
 </body>
 </html>

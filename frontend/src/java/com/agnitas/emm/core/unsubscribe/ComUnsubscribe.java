@@ -24,6 +24,7 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -103,6 +104,7 @@ public final class ComUnsubscribe extends HttpServlet {
 		this.oneClickUnsubscription.performOneClickUnsubscription(uid, remark);
 	}
 	
+	@SuppressWarnings("unused")
 	private final void doUnsubscription(final ComExtensibleUID uid, final HttpServletRequest request) {
 		final Locale loc = request.getLocale();
 		final String remark = SafeString.getLocaleString("recipient.csa.optout.remark", loc);
@@ -111,7 +113,15 @@ public final class ComUnsubscribe extends HttpServlet {
 	}
 	
     private final ComExtensibleUID extractAndParseUID(final HttpServletRequest request) throws Exception {
-        final String uidString = request.getParameter("uid");
+        String uidString = request.getParameter("uid");
+        if (StringUtils.isBlank(uidString)) {
+        	String[] uriParts = StringUtils.strip(request.getRequestURI(), "/").split("/");
+			if (uriParts.length >= 2 && "uq.html".equals(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 2].length() > 10) {
+				uidString = uriParts[uriParts.length - 2];
+			} else if (uriParts.length >= 1 && StringUtils.isNotBlank(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 1].length() > 10) {
+				uidString = uriParts[uriParts.length - 1];
+			}
+        }
 
         if(uidString != null) {
         	return uidService.parse(uidString);

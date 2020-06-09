@@ -16,10 +16,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.service.AgnTagService;
 import org.agnitas.beans.Campaign;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingBase;
@@ -29,17 +34,12 @@ import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingBaseAction;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.service.AgnTagService;
 
 public class MailingBaseForm extends StrutsFormBase {
 	
@@ -53,33 +53,33 @@ public class MailingBaseForm extends StrutsFormBase {
     
     private String templateSort;
 
-	/** 
-     * Holds value of property mailinglistID. 
+	/**
+     * Holds value of property mailinglistID.
      */
     private int mailingID;
     
     /**
-     * Holds value of property campaignID. 
+     * Holds value of property campaignID.
      */
     private int campaignID;
     
     /**
-     * Holds value of property shortname. 
+     * Holds value of property shortname.
      */
     protected String shortname = "";
     
     /**
-     * Holds value of property description. 
+     * Holds value of property description.
      */
     private String description;
     
     /**
-     * Holds value of property emailCharset. 
+     * Holds value of property emailCharset.
      */
     private String emailCharset;
     
     /**
-     * Holds value of property action. 
+     * Holds value of property action.
      */
     protected int action;
     
@@ -89,22 +89,22 @@ public class MailingBaseForm extends StrutsFormBase {
     private int emailLinefeed;
     
     /**
-     * Holds value of property mailingType. 
+     * Holds value of property mailingType.
      */
     protected int mailingType;
     
     /**
-     * Holds value of property targetID. 
+     * Holds value of property targetID.
      */
     protected int targetID;
     
     /**
-     * Holds value of property mailinglistID. 
+     * Holds value of property mailinglistID.
      */
     protected int mailinglistID;
     
     /**
-     * Holds value of property templateID. 
+     * Holds value of property templateID.
      */
     private int templateID;
     
@@ -317,9 +317,10 @@ public class MailingBaseForm extends StrutsFormBase {
      */
     protected List<TargetLight> targetGroupsList;
 
+    protected Map<Integer, TargetComplexityGrade> targetComplexities;
     
-	/** 
-     * Creates a new instance of TemplateForm 
+	/**
+     * Creates a new instance of TemplateForm
      */
     public MailingBaseForm() {
     }
@@ -341,7 +342,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.mailinglistID = 0;
         this.templateID = 0;
         this.campaignID = 0;
-        this.mailingType = Mailing.TYPE_NORMAL;
+        this.mailingType = MailingTypes.NORMAL.getCode();
         
         this.shortname = "";
         this.description = "";
@@ -404,60 +405,60 @@ public class MailingBaseForm extends StrutsFormBase {
      */
     @Override
     public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
+        ActionErrors actionErrors = new ActionErrors();
 
         if (action == MailingBaseAction.ACTION_SAVE) {
             if (this.shortname.length() < 3) {
-                errors.add("shortname", new ActionMessage("error.name.too.short"));
+                actionErrors.add("shortname", new ActionMessage("error.name.too.short"));
             }
 
         	if (this.shortname.length() > 99) {
-                errors.add("shortname", new ActionMessage("error.shortname_too_long"));
+                actionErrors.add("shortname", new ActionMessage("error.shortname_too_long"));
             }
 
         	if (this.mailinglistID == 0) {
-        		errors.add("global", new ActionMessage("error.mailing.noMailinglist"));
+        		actionErrors.add("global", new ActionMessage("error.mailing.noMailinglist"));
         	}
 
             if (!this.isIsTemplate() && this.isNeedsTarget() && this.targetGroups == null) {
-                errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
+                actionErrors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
             }
 
             if (this.emailReplytoFullname != null && this.emailReplytoFullname.length() > 255) {
-                errors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
+                actionErrors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
             }
             if (getSenderFullname() != null && getSenderFullname().length() > 255) {
-                errors.add("senderFullname", new ActionMessage("error.sender_fullname_too_long"));
+                actionErrors.add("senderFullname", new ActionMessage("error.sender_fullname_too_long"));
             }
             if (this.emailReplytoFullname != null && this.emailReplytoFullname.trim().length() == 0) {
                 this.emailReplytoFullname = getSenderFullname();
             }
             
-            if (this.targetGroups == null && this.mailingType == Mailing.TYPE_DATEBASED) {
-                errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
+            if (this.targetGroups == null && this.mailingType == MailingTypes.DATE_BASED.getCode()) {
+                actionErrors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
             }
             
-            if (this.targetGroups == null && this.mailingType == Mailing.TYPE_INTERVAL) {
-                errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
+            if (this.targetGroups == null && this.mailingType == MailingTypes.INTERVAL.getCode()) {
+                actionErrors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
             }
 
             if (getMediaEmail().getFromEmail().length() < 3) {
-                errors.add("email", new ActionMessage("error.invalid.email"));
+                actionErrors.add("email", new ActionMessage("error.invalid.email"));
             }
             
             if (getEmailSubject().length() < 2) {
-                errors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
+                actionErrors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
             }
 
             try {
                 InternetAddress adr = new InternetAddress(getMediaEmail().getFromEmail());
                 String email = adr.getAddress();
                 if (!AgnUtils.isEmailValid(email)) {
-                    errors.add("sender", new ActionMessage("error.mailing.sender_adress"));
-                }              
+                    actionErrors.add("sender", new ActionMessage("error.mailing.sender_adress"));
+                }
             } catch (Exception e) {
                 if(!getMediaEmail().getFromEmail().contains("[agn")) {
-                    errors.add("sender", new ActionMessage("error.mailing.sender_adress"));
+                    actionErrors.add("sender", new ActionMessage("error.mailing.sender_adress"));
                 }
             }
 
@@ -467,7 +468,7 @@ public class MailingBaseForm extends StrutsFormBase {
                 agnTagService.getDynTags(getSenderFullname());
             } catch (Exception e) {
                 logger.error("validate: " + e);
-                errors.add("subject", new ActionMessage("error.template.dyntags"));
+                actionErrors.add("subject", new ActionMessage("error.template.dyntags"));
             }
 
             try {
@@ -475,39 +476,39 @@ public class MailingBaseForm extends StrutsFormBase {
                 agnTagService.resolveTags(getEmailSubject(), companyId, 0, 0, 0);
                 agnTagService.resolveTags(getSenderFullname(), companyId, 0, 0, 0);
             } catch (Exception e) {
-                errors.add("subject", new ActionMessage("error.personalization_tag"));
+                actionErrors.add("subject", new ActionMessage("error.personalization_tag"));
             }
 
 //            if(getTextTemplate().length() != 0) {
 //                // Just a syntax-check, no MailingID required
 //                aMailing = (Mailing) getWebApplicationContext().getBean("Mailing");
 //                aMailing.setCompanyID(this.getCompanyID(request));
-//                
+//
 //                try {
 //                    aMailing.personalizeText(this.getTextTemplate(), 0, this.getWebApplicationContext());
 //                } catch (Exception e) {
 //                    errors.add("texttemplate", new ActionMessage("error.personalization_tag"));
 //                }
-//                
+//
 //                try {
 //                    aMailing.findDynTagsInTemplates(getTextTemplate(), this.getWebApplicationContext());
 //                } catch (Exception e) {
 //                    errors.add("texttemplate", new ActionMessage("error.template.dyntags"));
 //                }
-//                
+//
 //            }
-//            
+//
 //            if(getHtmlTemplate().length() != 0) {
 //                // Just a syntax-check, no MailingID required
 //                aMailing = (Mailing) getWebApplicationContext().getBean("Mailing");
 //                aMailing.setCompanyID(this.getCompanyID(request));
-//                
+//
 //                try {
 //                    aMailing.personalizeText(this.getHtmlTemplate(), 0, this.getWebApplicationContext());
 //                } catch (Exception e) {
 //                    errors.add("texttemplate", new ActionMessage("error.personalization_tag"));
 //                }
-//                
+//
 //                try {
 //                    aMailing.findDynTagsInTemplates(getHtmlTemplate(), this.getWebApplicationContext());
 //                } catch (Exception e) {
@@ -516,7 +517,7 @@ public class MailingBaseForm extends StrutsFormBase {
 //                }
 //            }
         }
-        return errors;
+        return actionErrors;
     }
 
     @Override
@@ -572,7 +573,7 @@ public class MailingBaseForm extends StrutsFormBase {
         return shortname;
     }
     
-    /** 
+    /**
      * Setter for property shortname.
      *
      * @param shortname New value of property shortname.
@@ -590,7 +591,7 @@ public class MailingBaseForm extends StrutsFormBase {
         return this.description;
     }
     
-    /** 
+    /**
      * Setter for property description.
      *
      * @param description New value of property description.
@@ -626,7 +627,7 @@ public class MailingBaseForm extends StrutsFormBase {
         return this.action;
     }
     
-    /** 
+    /**
      * Setter for property action.
      *
      * @param action New value of property action.
@@ -635,7 +636,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.action = action;
     }
     
-    /** 
+    /**
      * Getter for property subject.
      *
      * @return Value of property subject.
@@ -644,7 +645,7 @@ public class MailingBaseForm extends StrutsFormBase {
         return getMediaEmail().getSubject();
     }
     
-    /** 
+    /**
      * Setter for property subject.
      *
      * @param subject New value of property subject.
@@ -653,7 +654,7 @@ public class MailingBaseForm extends StrutsFormBase {
         getMediaEmail().setSubject(subject);
     }
     
-    /** 
+    /**
      * Getter for property emailLinefeed.
      *
      * @return Value of property emailLinefeed.
@@ -689,7 +690,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.mailingType = mailingType;
     }
     
-    /** 
+    /**
      * Getter for property targetID.
      *
      * @return Value of property targetID.
@@ -707,7 +708,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.targetID = targetID;
     }
     
-    /** 
+    /**
      * Getter for property mailinglistID.
      *
      * @return Value of property mailinglistID.
@@ -1050,7 +1051,7 @@ public class MailingBaseForm extends StrutsFormBase {
     public void setEmailOnepixel(String emailOnepixel) {
         
         this.emailOnepixel = emailOnepixel;
-    }  
+    }
 
     protected Map<Integer, Mediatype> mediatypes;
     /**
@@ -1091,7 +1092,7 @@ public class MailingBaseForm extends StrutsFormBase {
      */
     public void setMediatypes(Map<Integer, Mediatype> mediatypes) {
         this.mediatypes = mediatypes;
-    }  
+    }
     
     /**
      * Holds value of property archived.
@@ -1315,17 +1316,19 @@ public class MailingBaseForm extends StrutsFormBase {
 	}
 	
 	public void setDynamicTemplateString( String dynamicTemplateString) {
-		if( dynamicTemplateString == null)
+		if( dynamicTemplateString == null) {
 			this.dynamicTemplate = false;
-		else
+		} else {
 			this.dynamicTemplate = dynamicTemplateString.equals( "on") || dynamicTemplateString.equals( "on") || dynamicTemplateString.equals( "true");
+		}
 	}
 
 	public String getDynamicTemplateString() {
-		if( dynamicTemplate)
+		if( dynamicTemplate) {
 			return "on";
-		else
+		} else {
 			return "";
+		}
 	}
 	
 	@Override
@@ -1357,11 +1360,19 @@ public class MailingBaseForm extends StrutsFormBase {
         this.mailingEditable = mailingEditable;
     }
     
-    public final void setTemplateSort(final String sort) {
+    public final void setTemplateSort(final String templateSort) {
     	this.templateSort = templateSort;
     }
     
     public final String getTemplateSort() {
     	return this.templateSort != null ? this.templateSort : "";
+    }
+
+    public Map<Integer, TargetComplexityGrade> getTargetComplexities() {
+        return targetComplexities;
+    }
+
+    public void setTargetComplexities(Map<Integer, TargetComplexityGrade> targetComplexities) {
+        this.targetComplexities = targetComplexities;
     }
 }

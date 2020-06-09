@@ -31,9 +31,8 @@ import org.agnitas.service.JobQueueService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComServerStatusDao;
@@ -56,9 +55,6 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
-		
-	@Autowired
-	private ServletContext servletContext;
 	
 	protected ComServerStatusDao serverStatusDao;
 	
@@ -117,7 +113,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 	
 	@Override
-	public Map<String, Object> getStatusProperties() throws Exception {
+	public Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception {
 		Map<String, Object> status = new LinkedHashMap<>();
 		
 		// Various times and paths
@@ -231,14 +227,14 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 	
 	@Override
-	public ServerStatus getServerStatus(ComAdmin admin) {
+	public ServerStatus getServerStatus(ServletContext servletContext, ComAdmin admin) {
 		String version = configService.getValue(ConfigValue.ApplicationVersion);
 		String installPath = servletContext.getRealPath("/");
 		SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
 		return ServerStatus.builder(version, installPath, admin.getLocale())
 				.database(serverStatusDao.getDbVendor(), getDbUrl(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
-				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), isDBStatusOK())
+				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), isDBStatusOK(), isReportStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
 				.build();
 	}
@@ -274,14 +270,14 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 	
 	@Override
-	public SimpleServiceResult sendDiagnosisInfo(ComAdmin admin, String sendDiagnosisEmail) {
+	public SimpleServiceResult sendDiagnosisInfo(ServletContext servletContext, ComAdmin admin, String sendDiagnosisEmail) {
 		boolean success = false;
 		Message message;
 		
 		try {
 			String subject = "Server status diagnosis data";
-			String textMessage = "Server status diagnosis data:\n " +
-					getStatusProperties().entrySet().stream()
+			String textMessage = "Server status diagnosis data:\n" +
+					getStatusProperties(servletContext).entrySet().stream()
 							.map(pair -> String.format("%s: %s", pair.getKey(), String.valueOf(pair.getValue())))
 							.collect(Collectors.joining("\n"));
 
@@ -337,7 +333,7 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 	
 	private boolean isOverallStatusOK() {
-		return isDBStatusOK() && isJobQueueRunning() && isJobQueueStatusOK() && !isImportStalling();
+		return isDBStatusOK() && isJobQueueRunning() && isJobQueueStatusOK() && !isImportStalling() && isReportStatusOK();
 	}
 
 	@Override
@@ -350,6 +346,12 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	public boolean isJobQueueStatusOK() {
 		// Only retrieve the status once per request for performance
 		return jobQueueService.isStatusOK();
+	}
+
+	@Override
+	public boolean isReportStatusOK() {
+		// Only retrieve the status once per request for performance
+		return jobQueueService.isReportOK();
 	}
 
 	@Override
@@ -395,5 +397,10 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	@Override
 	public List<String> killRunningImports() {
 		return serverStatusDao.killRunningImports();
+	}
+
+	@Override
+	public boolean checkActiveNode() {
+		return jobQueueService.checkActiveNode();
 	}
 }

@@ -10,8 +10,10 @@
 
 package org.agnitas.service;
 
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.target.TargetNodeFactory;
 import org.agnitas.target.TargetRepresentation;
 import org.agnitas.target.TargetRepresentationFactory;
@@ -20,5 +22,10 @@ import org.agnitas.web.RecipientForm;
 
 public interface RecipientQueryBuilder {
     TargetRepresentation createTargetRepresentationFromForm(RecipientForm form, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory, int companyID);
+    
     SqlPreparedStatementManager getSQLStatement(HttpServletRequest request, RecipientForm aForm, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory) throws Exception;
+    SqlPreparedStatementManager getSQLStatement(ComAdmin admin, RecipientSqlOptions options, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory) throws Exception;
+    
+    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientSqlOptions options, boolean includeBounceLoad) throws Exception;
+    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad) throws Exception;
 }

@@ -39,7 +39,7 @@ public class LongRunningSelectResultCacheDao extends BaseDaoImpl {
 		String cacheKey = statement + "\n" + Arrays.toString(parameter);
 		
 		try {
-			for (TimedKey timedKey : new ArrayList<TimedKey>(cache.keySet())) {
+			for (TimedKey timedKey : new ArrayList<>(cache.keySet())) {
 				if (timedKey.getValidUntil() != null && timedKey.getValidUntil().before(new Date())) {
 					// Clean up outtimed keys. Keep locked keys with validUntil null, because they are not done yet.
 					cache.remove(timedKey);
@@ -68,7 +68,7 @@ public class LongRunningSelectResultCacheDao extends BaseDaoImpl {
 			
 			return result;
 		} catch (Exception e) {
-			for (TimedKey key : new ArrayList<TimedKey>(cache.keySet())) {
+			for (TimedKey key : new ArrayList<>(cache.keySet())) {
 				if (key.getKeyString().equals(cacheKey)) {
 					cache.remove(key);
 				}

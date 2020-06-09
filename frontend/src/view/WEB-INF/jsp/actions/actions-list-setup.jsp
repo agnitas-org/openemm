@@ -15,15 +15,15 @@
 <c:set var="agnNavigationKey" 		value="Action" 				scope="request"/>
 <c:set var="agnTitleKey" 			value="Actions" 			scope="request"/>
 <c:set var="agnSubtitleKey" 		value="Actions" 			scope="request"/>
-<c:set var="sidemenu_active" 		value="SiteActions" 		scope="request"/>
+<c:set var="sidemenu_active" 		value="TriggerManagement" 	scope="request"/>
 <c:set var="sidemenu_sub_active" 	value="Actions" 			scope="request"/>
 <c:set var="agnHighlightKey" 		value="default.Overview"	scope="request"/>
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request"/>
-<c:set var="agnBreadcrumbsRootKey" 	value="SiteActions" 		scope="request"/>
+<c:set var="agnBreadcrumbsRootKey" 	value="TriggerManagement" 	scope="request"/>
 <c:set var="agnHelpKey" 			value="actionList" 			scope="request"/>
 
 <c:set var="agnSubtitleValue" scope="request">
-    <i class="icon icon-list-alt"></i> <bean:message key="Actions"/>
+    <i class="icon-fa5 icon-fa5-list-alt far"></i> <bean:message key="Actions"/>
 </c:set>
 
 <emm:ShowByPermission token="actions.change">

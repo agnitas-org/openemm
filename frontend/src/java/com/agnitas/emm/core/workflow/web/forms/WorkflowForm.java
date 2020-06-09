@@ -13,7 +13,7 @@ package com.agnitas.emm.core.workflow.web.forms;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.workflow.beans.Workflow;

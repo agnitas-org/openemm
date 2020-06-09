@@ -11,15 +11,21 @@
 package com.agnitas.service.impl;
 
 import java.util.List;
+import java.util.Set;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.converter.ConverterFactory;
+import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.DefaultConversionService;
 
 import com.agnitas.service.ExtendedConversionService;
+import org.springframework.stereotype.Service;
 
+@Service("conversionService")
 public class ExtendedDefaultConversionService extends DefaultConversionService implements ExtendedConversionService {
-
     public ExtendedDefaultConversionService() {
         super();
     }
@@ -45,5 +51,32 @@ public class ExtendedDefaultConversionService extends DefaultConversionService i
                 paginatedList.getPageNumber(),
                 paginatedList.getSortCriterion(),
                 paginatedList.getSortDirection().getName());
+    }
+
+    @Autowired(required = false)
+    public void setGenericConverters(Set<GenericConverter> genericConverters) {
+        if (genericConverters != null) {
+            for (GenericConverter converter : genericConverters) {
+                addConverter(converter);
+            }
+        }
+    }
+
+    @Autowired(required = false)
+    public void setConverters(Set<Converter<?, ?>> converters) {
+        if (converters != null) {
+            for (Converter<?, ?> converter : converters) {
+                addConverter(converter);
+            }
+        }
+    }
+
+    @Autowired(required = false)
+    public void setConverterFactories(Set<ConverterFactory<?, ?>> converterFactories) {
+        if (converterFactories != null) {
+            for (ConverterFactory<?, ?> converterFactory : converterFactories) {
+                addConverterFactory(converterFactory);
+            }
+        }
     }
 }

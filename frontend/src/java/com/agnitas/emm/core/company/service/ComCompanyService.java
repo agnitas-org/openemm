@@ -48,11 +48,19 @@ public interface ComCompanyService {
 
 	List<AdminEntry> getAdmins(int companyId);
 
-	int save(ComAdmin comAdmin, CompanyCreateForm form, Popups popups) throws Exception;
+	int save(ComAdmin comAdmin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;
 
 	int update(ComAdmin comAdmin, CompanyViewForm form) throws Exception;
 
     boolean deleteCompany(int companyIdForRemove);
+    
+    boolean deactivateCompany(int companyIdForDeactivation);
 
 	boolean isCompanyNameUnique(int companyId, String shortname);
+
+	boolean isCreatorId(@VelocityCheck int companyId, int creatorId);
+	
+	boolean createFrequencyFields(@VelocityCheck int companyID);
+	
+	String getStatus(int companyID);
 }

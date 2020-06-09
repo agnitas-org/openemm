@@ -10,12 +10,15 @@
 
 package com.agnitas.web;
 
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,10 +36,63 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.Mediatype;
+import org.agnitas.beans.factory.DynamicTagContentFactory;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
+import org.agnitas.exceptions.EncodingError;
+import org.agnitas.preview.AgnTagError;
+import org.agnitas.preview.AgnTagException;
+import org.agnitas.preview.TAGCheck;
+import org.agnitas.service.ImportResult;
+import org.agnitas.service.MailingExporter;
+import org.agnitas.service.MailingImporter;
+import org.agnitas.service.MailingsQueryWorker;
+import org.agnitas.service.UserMessageException;
+import org.agnitas.util.AgnTagUtils;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DynTagException;
+import org.agnitas.util.FileUtils;
+import org.agnitas.util.GuiConstants;
+import org.agnitas.util.HttpUtils;
+import org.agnitas.util.MissingEndTagException;
+import org.agnitas.util.SafeString;
+import org.agnitas.util.UnclosedTagException;
+import org.agnitas.util.ZipUtilities;
+import org.agnitas.web.MailingBaseAction;
+import org.agnitas.web.forms.MailingBaseForm;
+import org.agnitas.web.forms.WorkflowParameters;
+import org.agnitas.web.forms.WorkflowParametersHelper;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.ActionRedirect;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.ConversionService;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
@@ -54,8 +110,9 @@ import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.IntervalType;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
+import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
@@ -64,63 +121,14 @@ import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
-import com.agnitas.service.ComMailingLightVO;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingLightService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.forms.ComMailingBaseForm;
+
 import net.sf.json.JSONObject;
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.Mediatype;
-import org.agnitas.beans.factory.DynamicTagContentFactory;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.Constants;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
-import org.agnitas.exceptions.EncodingError;
-import org.agnitas.preview.AgnTagError;
-import org.agnitas.preview.AgnTagException;
-import org.agnitas.preview.TAGCheck;
-import org.agnitas.service.ImportResult;
-import org.agnitas.service.MailingExporter;
-import org.agnitas.service.MailingImporter;
-import org.agnitas.service.MailingsQueryWorker;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DynTagException;
-import org.agnitas.util.FileUtils;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MissingEndTagException;
-import org.agnitas.util.SafeString;
-import org.agnitas.util.UnclosedTagException;
-import org.agnitas.web.MailingBaseAction;
-import org.agnitas.web.forms.MailingBaseForm;
-import org.agnitas.web.forms.WorkflowParameters;
-import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.action.ActionRedirect;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.convert.ConversionService;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
@@ -133,9 +141,9 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 	public static final int ACTION_SAVE_FAX_BG = ACTION_MAILING_BASE_LAST + 2;
 
-	public static final int ACTION_VIEW_PRINT_BG = ACTION_MAILING_BASE_LAST + 3;
+	public static final int ACTION_VIEW_POST_BG = ACTION_MAILING_BASE_LAST + 3;
 
-	public static final int ACTION_SAVE_PRINT_BG = ACTION_MAILING_BASE_LAST + 4;
+	public static final int ACTION_SAVE_POST_BG = ACTION_MAILING_BASE_LAST + 4;
 
 	public static final int ACTION_CREATE_FOLLOW_UP = ACTION_MAILING_BASE_LAST + 5;
 
@@ -164,18 +172,20 @@ public class ComMailingBaseAction extends MailingBaseAction {
     public static final int ACTION_MAILING_TEMPLATES = ACTION_MAILING_BASE_LAST + 15;
 
     public static final int ACTION_MAILING_EXPORT = ACTION_MAILING_BASE_LAST + 16;
-
+    
     public static final int ACTION_MAILING_IMPORT = ACTION_MAILING_BASE_LAST + 17;
     
     public static final int ACTION_IS_ADVERTISING_CONTENT_TYPE = ACTION_MAILING_BASE_LAST + 18;
-
-	public static final int MAILING_PREVIEW_WIDTH = 300;
-
-	public static final int MAILING_PREVIEW_HEIGHT = 300;
-
+    
+    public static final int ACTION_IMPORT_TEMPLATES = ACTION_MAILING_BASE_LAST + 19;
+    
+    public static final int MAILING_PREVIEW_WIDTH = 300;
+    
+    public static final int MAILING_PREVIEW_HEIGHT = 300;
+    
     public static final String MAILING_ID = "mailingID";
     public static final String CAMPAIGN_ID = "campaignID";
-
+    
     private static final String[] RESERVED_PARAMETER_NAMES = new String[]{
             ComMailingParameterDao.PARAMETERNAME_INTERVAL,
             ComMailingParameterDao.PARAMETERNAME_ERROR,
@@ -184,7 +194,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
     
     private static final String ACTIVE_MAILING_STATUS = "mailing.status.active";
 
-	private ComMailingLightVO mailingLightService;
+    private ComMailingLightService mailingLightService;
 
 	private ComMailingBaseService mailingBaseService;
 
@@ -195,8 +205,6 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	private ComMailingParameterService mailingParameterService;
 
     private ComWorkflowService workflowService;
-
-    private ComMailingDeliveryStatService deliveryStatService;
 
     private LinkService linkService;
 
@@ -213,6 +221,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	protected MailingImporter mailingImporter;
 
 	protected GridServiceWrapper gridService;
+	
+	protected MailingStopService mailingStopService;
+
+    private AgnTagService agnTagService;
 
     @Override
     public String subActionMethodName(int subAction) {
@@ -260,6 +272,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
             return "mailing_export";
         case ACTION_MAILING_IMPORT:
             return "mailing_import";
+        case ACTION_IMPORT_TEMPLATES:
+            return "import_templates";
             
         case ACTION_IS_ADVERTISING_CONTENT_TYPE:
         	return "is_advertising_content_type";
@@ -270,7 +284,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
     }
 
 	@Override
-	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
+	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         ComAdmin admin = AgnUtils.getAdmin(request);
 
 		// Validate the request parameters specified by the user
@@ -298,7 +312,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 			switch (mailingBaseForm.getAction()) {
                 case ACTION_MAILING_TEMPLATES:
-                    request.setAttribute("localeDatePattern", AgnUtils.getDateFormatPattern(DateFormat.MEDIUM, admin));
+                    request.setAttribute("localeDatePattern", admin.getDateFormat().toPattern());
                     String sort = getSort(request, mailingBaseForm, true);
                  	String direction = mailingBaseForm.getDir();
                     mailingBaseForm.setTemplateMailingBases(mailingDao.getMailingTemplatesWithPreview(companyId, sort, direction));
@@ -311,6 +325,15 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
                 case ACTION_NEW:
                     List<Mailinglist> mlists = mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request));
+                    Map<String, String> map = AgnUtils.getReqParameters(request);
+                    int templateId = NumberUtils.toInt(map.get("templateID"));
+
+                    if (templateId == 0 && admin.permissionAllowed(Permission.MAILING_SETTINGS_HIDE)) {
+                        //could not create mailing without template if mailing.settings.hide permission activated
+                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
+                        saveErrors(request, errors);
+                        return mapping.findForward("messages");
+                    }
 
                     if (mlists.size() > 0) {
                         mailingBaseForm.setAction(ACTION_SAVE);
@@ -321,12 +344,12 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
                         mailingBaseForm.setMailingID(0);
                         mailingBaseForm.setGridTemplateId(0);
-                        Map<String, String> map = AgnUtils.getReqParameters(request);
-                        String templateIDString = map.get("templateID");
-                        if (templateIDString != null && !templateIDString.isEmpty()) {
-                            mailingBaseForm.setTemplateID(Integer.parseInt(templateIDString));
+
+                        if (templateId > 0) {
+                            mailingBaseForm.setTemplateID(templateId);
                             loadTemplateSettings(mailingBaseForm, request, true);
                         }
+
                         setMailingWorkflowParameters(request, mailingBaseForm);
                         String campaignIDString = map.get("campaignID");
                         if (campaignIDString != null && !campaignIDString.isEmpty()) {
@@ -417,7 +440,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                         showTagWarnings = BooleanUtils.toBoolean(request.getParameter("checkMailingTags"));
                     }
         
-					prepareMailingView(request, mailingBaseForm, session, showTagWarnings, errors);
+					prepareMailingView(request, mailingBaseForm, session, showTagWarnings, errors, messages);
 					destination = mapping.findForward("view");
                     writeUserActivityLog(AgnUtils.getAdmin(request), "view " + (mailingBaseForm.isIsTemplate() ? "template" : "mailing"),
                             mailingBaseForm.getShortname() + " (" + mailingBaseForm.getMailingID() + ")");
@@ -440,7 +463,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                             if (validatePlanDate(mailingBaseForm, request, errors)) {
                                 validateNeedTarget(mailingBaseForm, request, errors, messages);
 
-                                if (mailingBaseForm.getMailingType() == Mailing.TYPE_FOLLOWUP) {
+                                if (mailingBaseForm.getMailingType() == MailingTypes.FOLLOW_UP.getCode()) {
                                     validateFollowUpBaseMailing(mailingBaseForm, request, errors, messages);
                                 }
 
@@ -594,6 +617,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     updateForwardParameters(request, true);
                     destination = super.execute(mapping, form, request, response);
                     writeUserActivityLog(AgnUtils.getAdmin(request), "mailings list", "active tab - overview");
+                    
+                    AgnUtils.setAdminDateTimeFormatPatterns(request);
                     break;
 
                 case ACTION_SELECT_TEMPLATE:
@@ -632,47 +657,84 @@ public class ComMailingBaseAction extends MailingBaseAction {
                 	break;
                     
                 case ACTION_MAILING_IMPORT:
+                case ACTION_IMPORT_TEMPLATES:
                     if (mailingBaseForm.getUploadFile() == null) {
-                        destination = viewInitialImport(request, mapping);
+                        destination = viewInitialImport(mailingBaseForm.getAction(), request, mapping);
                         break;
                     }
-                    
+
                     if (mailingBaseForm.getUploadFile() != null && mailingBaseForm.getUploadFile().getFileSize() == 0) {
                         errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.file.missingOrEmpty"));
-                        destination = viewInitialImport(request, mapping);
+                        destination = viewInitialImport(mailingBaseForm.getAction(), request, mapping);
                         break;
                     }
-                    
+
                     ImportResult result = null;
-                    try (InputStream input = mailingBaseForm.getUploadFile().getInputStream()) {
-                        
-                        boolean importGridTemplateAllowed = admin.permissionAllowed(Permission.GRID_CHANGE) || configService.getBooleanValue(ConfigValue.GridTemplateImportAllowed, companyId);
-                        // Import mailing data from upload file
-                        result = mailingImporter.importMailingFromJson(admin.getCompanyID(), input, mailingBaseForm.isIsTemplate(), importGridTemplateAllowed, mailingBaseForm.isIsGrid());
-                        
-                    } catch (Exception e) {
-                        logger.error("Mailing import failed", e);
-                        result = ImportResult.builder().setSuccess(false).addError("error.mailing.import").build();
+                    if (mailingBaseForm.getUploadFile().getFileName().toLowerCase().endsWith(".json")) {
+	                    try (InputStream input = mailingBaseForm.getUploadFile().getInputStream()) {
+	                        boolean importGridTemplateAllowed = admin.permissionAllowed(Permission.GRID_CHANGE) || configService.getBooleanValue(ConfigValue.GridTemplateImportAllowed, companyId);
+	                        // Import mailing data from upload file
+	                        result = mailingImporter.importMailingFromJson(admin.getCompanyID(), input, mailingBaseForm.isIsTemplate(), importGridTemplateAllowed, mailingBaseForm.isIsGrid());
+	                    } catch (Exception e) {
+	                        logger.error("Mailing import failed", e);
+	                        result = ImportResult.builder().setSuccess(false).addError("error.mailing.import").build();
+	                    }
+                    } else if (mailingBaseForm.getUploadFile().getFileName().toLowerCase().endsWith(".zip")) {
+                    	// Unzip file to temp directory and import each included json file
+                		File tempZipFile = File.createTempFile("Mailing_Import", ".json.zip");
+                		File tempUnzippedDirectory = new File(tempZipFile.getAbsolutePath() + ".unzipped");
+                		try {
+	                    	try (InputStream inputZipped = mailingBaseForm.getUploadFile().getInputStream();
+	                    			FileOutputStream tempZipFileOutputStream = new FileOutputStream(tempZipFile)) {
+	                         	IOUtils.copy(inputZipped, tempZipFileOutputStream);
+	                    	}
+	                    	
+	                    	ZipUtilities.decompress(tempZipFile, tempUnzippedDirectory);
+	                    	
+	                    	for (File tempUnzippedImportFile : tempUnzippedDirectory.listFiles()) {
+	                    		if (tempUnzippedImportFile.getName().toLowerCase().endsWith(".json")) {
+	                    			try (InputStream dataInputStream = new FileInputStream(tempUnzippedImportFile)) {
+	    		                        boolean importGridTemplateAllowed = admin.permissionAllowed(Permission.GRID_CHANGE) || configService.getBooleanValue(ConfigValue.GridTemplateImportAllowed, companyId);
+	    		                        // Import mailing data from upload file
+	    		                        result = mailingImporter.importMailingFromJson(admin.getCompanyID(), dataInputStream, mailingBaseForm.isIsTemplate(), importGridTemplateAllowed, mailingBaseForm.isIsGrid());
+	    		                    } catch (Exception e) {
+	    		                        logger.error("Mailing import failed", e);
+	    		                        result = ImportResult.builder().setSuccess(false).addError("error.mailing.import").build();
+	    		                    }
+		                    	}
+	                    	}
+                		} finally {
+                			if (tempZipFile.exists()) {
+                				tempZipFile.delete();
+                			}
+                			if (tempUnzippedDirectory.exists()) {
+                				org.apache.commons.io.FileUtils.deleteDirectory(tempUnzippedDirectory);
+                			}
+                		}
+                    } else {
+                    	throw new Exception("Invalid file format");
                     }
-                    
-                    if (result.isSuccess()) {
+
+                    if (result == null) {
+                    	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.import.data.missing"));
+                    	destination = viewInitialImport(mailingBaseForm.getAction(), request, mapping);
+                    } else if (!result.isSuccess()) {
+                        for (Entry<String, Object[]> errorEntry : result.getErrors().entrySet()) {
+                            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(errorEntry.getKey(), errorEntry.getValue()));
+                        }
+                        destination = viewInitialImport(mailingBaseForm.getAction(), request, mapping);
+                    } else {
                         messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.imported"));
                         for (Entry<String, Object[]> warningEntry : result.getWarnings().entrySet()) {
                             messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(warningEntry.getKey(), warningEntry.getValue()));
                         }
                         writeUserActivityLog(AgnUtils.getAdmin(request), "import mailing", result.getMailingID());
-                        
-                        destination = viewImportedMailing(result, mailingBaseForm, request, mapping, session, errors);
-                    } else {
-                        for (Entry<String, Object[]> errorEntry : result.getErrors().entrySet()) {
-                            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(errorEntry.getKey(), errorEntry.getValue()));
-                        }
-                        
-                        destination = viewInitialImport(request, mapping);
+    
+                        destination = viewImportedMailing(result, mailingBaseForm, request, mapping, session, errors, messages);
                     }
                     
                 	break;
-                	
+                 
 				case ACTION_IS_ADVERTISING_CONTENT_TYPE:
 					int mailingId = NumberUtils.toInt(request.getParameter("mailingId"), -1);
 					boolean mailingSendAsAdvertising = mailingBaseService.isAdvertisingContentType(admin.getCompanyID(), mailingId);
@@ -706,15 +768,17 @@ public class ComMailingBaseAction extends MailingBaseAction {
 				mailingBaseForm.setTemplateShortname(SafeString.getLocaleString("mailing.No_Template", AgnUtils.getLocale(request)));
 			}
 
-            request.setAttribute("localeDatePattern", AgnUtils.getDateFormatPattern(DateFormat.MEDIUM, admin));
+            request.setAttribute("localeDatePattern", admin.getDateFormat().toPattern());
 
             mailingBaseForm.setTemplateMailingBases(mailingDao.getTemplateMailingsByCompanyID(companyId));
             prepareMailinglists(mailingBaseForm, AgnUtils.getAdmin(request));
             mailingBaseForm.setCampaigns(campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
             mailingBaseForm.setTargetGroupsList(targetService.getTargetLights(companyId, mailingBaseForm.getTargetGroups(), true));
             mailingBaseForm.setTargets(targetService.getTargetLights(companyId));
+            mailingBaseForm.setTargetComplexities(targetService.getTargetComplexities(companyId));
             mailingBaseForm.setSplitTargets(targetService.getSplitTargetLights(companyId, ""));
             mailingBaseForm.setSplitTargetsForSplitBase(targetService.getSplitTargetLights(companyId, mailingBaseForm.getSplitBase()));
+            loadReferenceTables(request, mailingBaseForm);
         }
 
 		if (destination != null) {
@@ -730,10 +794,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
 					mailingBaseForm.setFromCalendarPage(0);
 					return new ActionForward("/calendar.action");
 				} else {
-					request.setAttribute("localeTablePattern", AgnUtils.getDateTimeFormatPattern(DateFormat.MEDIUM, DateFormat.SHORT, admin));
+					request.setAttribute("localeTablePattern", admin.getDateTimeFormat().toPattern());
 				}
 			} else if ("view".equals(forward) || "grid_base".equals(forward)) {
-				request.setAttribute("localDatePattern", AgnUtils.getDatePickerFormatPattern(admin));
+				request.setAttribute("localDatePattern", admin.getDateFormat().toPattern());
                 setCanUserChangeGeneralSettings(mailingBaseForm, request);
 			}
 		}
@@ -765,7 +829,11 @@ public class ComMailingBaseAction extends MailingBaseAction {
 		return destination;
 	}
     
-    private ActionForward viewInitialImport(HttpServletRequest request, ActionMapping mapping) {
+    private ActionForward viewInitialImport(int action, HttpServletRequest request, ActionMapping mapping) {
+        if (ACTION_IMPORT_TEMPLATES == action && AgnUtils.getAdmin(request).permissionAllowed(Permission.TEMP_BETA)) {
+            return mapping.findForward("importView");
+        }
+    
         if (AgnUtils.interpretAsBoolean(request.getParameter("isTemplate"))) {
             return mapping.findForward("importTemplate");
         } else {
@@ -778,7 +846,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         return execute(mapping, form, request, response);
     }
     
-    protected ActionForward viewImportedMailing(final ImportResult result, final ComMailingBaseForm mailingBaseForm, final HttpServletRequest request, final ActionMapping mapping, final HttpSession session, ActionMessages errors) throws Exception {
+    protected ActionForward viewImportedMailing(final ImportResult result, final ComMailingBaseForm mailingBaseForm, final HttpServletRequest request, final ActionMapping mapping, final HttpSession session, ActionMessages errors, ActionMessages messages) throws Exception {
         mailingBaseForm.setMailingID(result.getMailingID());
         mailingBaseForm.setTemplateID(0);
     
@@ -789,10 +857,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	}
 
 	protected void prepareMailingView(HttpServletRequest req, ComMailingBaseForm mailingBaseForm, HttpSession session) throws Exception {
-        prepareMailingView(req, mailingBaseForm, session, false, null);
+        prepareMailingView(req, mailingBaseForm, session, false, null, null);
     }
     
-	protected void prepareMailingView(HttpServletRequest req, ComMailingBaseForm mailingBaseForm, HttpSession session, boolean showTagWarnings, ActionMessages errors) throws Exception {
+	protected void prepareMailingView(HttpServletRequest req, ComMailingBaseForm mailingBaseForm, HttpSession session, boolean showTagWarnings, ActionMessages errors, ActionMessages messages) throws Exception {
 		Integer forwardTargetItemId;
 		updateForwardParameters(req, true);
 		forwardTargetItemId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
@@ -809,7 +877,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
             }
         }
         
-        loadMailing(mailingBaseForm, req, true, showTagWarnings, errors);
+        loadMailing(mailingBaseForm, req, true, showTagWarnings, errors, messages);
 
 		if (mailingBaseForm.getWorkflowId() == 0) {
 		    Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
@@ -844,10 +912,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
             aForm.setTargetExpression(mailing.getTargetExpression());
             aForm.setComplexTargetExpression(mailing.hasComplexTargetExpression());
             if (mailing.getPlanDate() != null) {
-                SimpleDateFormat dateFormat = AgnUtils.getDatePickerFormat(admin, true);
+                SimpleDateFormat dateFormat = admin.getDateFormat();
                 aForm.setPlanDate(dateFormat.format(mailing.getPlanDate()));
             }
-            aForm.setMailingType(NumberUtils.toInt(forwardParams.get("mailingType"), Mailing.TYPE_NORMAL));
+            aForm.setMailingType(NumberUtils.toInt(forwardParams.get("mailingType"), MailingTypes.NORMAL.getCode()));
             aForm.setCampaignID(mailing.getCampaignID());
             aForm.setArchived(mailing.getArchived() == 1);
             aForm.setWorkflowId(workflowId);
@@ -898,7 +966,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         List<Integer> followupMailings = mailingDao.getFollowupMailings(mailingID, companyId, true);
         for (Integer followupMailingID : followupMailings) {
             ComMailing followupMailing = (ComMailing) mailingDao.getMailing(followupMailingID, companyId);
-            boolean deliveryCancelled = cancelMailingDelivery(Mailing.TYPE_FOLLOWUP, followupMailingID, followupMailing.getShortname(), req);
+            boolean deliveryCancelled = cancelMailingDelivery(MailingTypes.FOLLOW_UP.getCode(), followupMailingID, followupMailing.getShortname(), req);
             followupMailing.setParameters(mailingParameterService.getMailingParameters(companyId, followupMailingID));
             if (deliveryCancelled) {
                 mailingDao.updateStatus(followupMailingID, "canceled");
@@ -929,8 +997,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
         List<Integer> followupMailings = mailingDao.getFollowupMailings(mailingID, companyID, false);
         for (Integer followupMailingID : followupMailings) {
-            LightweightMailing followupMailing = mailingDao.getLightweightMailing(followupMailingID);
-            boolean deliveryCancelled = cancelMailingDelivery(Mailing.TYPE_FOLLOWUP, followupMailingID, followupMailing.getShortname(), req);
+            LightweightMailing followupMailing = mailingDao.getLightweightMailing(companyID, followupMailingID);
+            boolean deliveryCancelled = cancelMailingDelivery(MailingTypes.FOLLOW_UP.getCode(), followupMailingID, followupMailing.getShortname(), req);
             if (deliveryCancelled) {
                 mailingDao.updateStatus(followupMailingID, "canceled");
                 cancelDependentMailings(followupMailingID, req);
@@ -948,12 +1016,20 @@ public class ComMailingBaseAction extends MailingBaseAction {
      * @return
      */
     private boolean cancelMailingDelivery(int cachedMailtype, int mailingID, String shortname, HttpServletRequest req) {
-        boolean isDeliveryCanceled = deliveryStatService.cancelDelivery(AgnUtils.getCompanyID(req), mailingID);
-        if (isDeliveryCanceled) {
-            final String description = String.format("%s (%d) %s", shortname, mailingID, mailingTypeToString(cachedMailtype));
-            writeUserActivityLog(AgnUtils.getAdmin(req), "do cancel mailing", description);
-        }
-        return isDeliveryCanceled;
+    	try {
+	    	final boolean isDeliveryCancelled = this.mailingStopService.stopRegularMailing(AgnUtils.getCompanyID(req), mailingID, false);
+	    	
+	        if (isDeliveryCancelled) {
+	            final String description = String.format("%s (%d) %s", shortname, mailingID, mailingTypeToString(cachedMailtype));
+	            writeUserActivityLog(AgnUtils.getAdmin(req), "do cancel mailing", description);
+	        }
+	        
+	        return isDeliveryCancelled;
+    	} catch(final MailingStopServiceException e) {
+    		logger.error(String.format("Error stopping mailing %d", mailingID), e);
+    		
+    		return false;
+    	}
     }
 
     private boolean validatePlanDate(ComMailingBaseForm form, HttpServletRequest req, ActionMessages errors) {
@@ -962,7 +1038,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         if (StringUtils.isNotEmpty(planDateAsString)) {
             ComAdmin admin = AgnUtils.getAdmin(req);
             TimeZone timezone = AgnUtils.getTimeZone(admin);
-            DateFormat dateFormat = AgnUtils.getDatePickerFormat(admin, true);
+            DateFormat dateFormat = admin.getDateFormat();
 
             assert (admin != null);
 
@@ -1028,7 +1104,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
             messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.rulebased_without_target"));
         }
 
-		if (form.getMailingType() == Mailing.TYPE_DATEBASED || form.getMailingType() == Mailing.TYPE_INTERVAL) {
+		if (form.getMailingType() == MailingTypes.DATE_BASED.getCode() ||
+                form.getMailingType() == MailingTypes.INTERVAL.getCode()) {
             int workflowId = form.getWorkflowId();
 
             if (workflowId > 0) {
@@ -1058,14 +1135,15 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
             if (mailingDao.getLastSendDate(baseMailingId) == null) {
                 messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.followup.basemail_was_not_sent"));
-            } else if (!isBaseMailingTrackingDataAvailable(baseMailingId, AgnUtils.getCompanyID(req))) {
+            } else if (!isBaseMailingTrackingDataAvailable(baseMailingId, AgnUtils.getAdmin(req))) {
                 errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.followup.basemail_data_not_exists"));
             }
         }
     }
 
-    private boolean isBaseMailingTrackingDataAvailable(int baseMailingId, int companyId) {
-        List<ComMailing> availableBaseMailings = mailingDao.getMailings(companyId, ComMailingLightVO.TAKE_ALL_SNOWFLAKE_MAILINGS, "W", true);
+    private boolean isBaseMailingTrackingDataAvailable(int baseMailingId, ComAdmin admin) {
+        List<ComMailing> availableBaseMailings;
+        availableBaseMailings = mailingDao.getMailings(admin.getCompanyID(), admin.getAdminID(), ComMailingLightService.TAKE_ALL_MAILINGS, "W", true);
         // Check if base mailing tracking data is available
         for (ComMailing mailing : availableBaseMailings) {
             if (mailing.getId() == baseMailingId) {
@@ -1166,6 +1244,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
             mailing = gridService.createGridMailing(AgnUtils.getAdmin(request), templateId, options);
         } catch (LinkService.ParseLinkException e) {
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", e.getErrorLink()));
+            logger.error("Error occurred: " + e.getMessage(), e);
+            return false;
+        } catch (UserMessageException e) {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(e.getErrorMessageKey(), e.getAdditionalErrorData()));
             logger.error("Error occurred: " + e.getMessage(), e);
             return false;
         } catch (Exception e) {
@@ -1342,6 +1424,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         aMailing.setMailingType(form.getMailingType());
         aMailing.setMailingContentType(form.getMailingContentType());
         aMailing.setArchived(form.isArchived() ? 1 : 0);
+        aMailing.setFrequencyCounterDisabled(form.isFrequencyCounterDisabled());
 
 		if (form.getAssignTargetGroups() && !aMailing.hasComplexTargetExpression() || StringUtils.isBlank(aMailing.getTargetExpression())) {
 		    aMailing.setTargetExpression(generateTargetExpression(form));
@@ -1356,7 +1439,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         Date mailingPlanDate = null;
         if (StringUtils.isNotEmpty(form.getPlanDate())) {
             try {
-                mailingPlanDate = AgnUtils.getDatePickerFormat(admin, true).parse(form.getPlanDate());
+                mailingPlanDate = admin.getDateFormat().parse(form.getPlanDate());
             } catch (ParseException e) {
                 errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.wrong.plan.date.format"));
             }
@@ -1371,7 +1454,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
             media.setOnepixel(form.getEmailOnepixel());
             
             int mailingType = aMailing.getMailingType();
-			if (mailingType == Mailing.TYPE_FOLLOWUP) {
+			if (mailingType == MailingTypes.FOLLOW_UP.getCode()) {
                 String followUpMethod = form.getFollowUpMailingType();
 
                 // Assign follow-up parameters if available.
@@ -1389,7 +1472,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                 media.deleteFollowupParameters();
             }
             
-            if (mailingType != Mailing.TYPE_DATEBASED) {
+            if (mailingType != MailingTypes.DATE_BASED.getCode()) {
 			    media.deleteDateBasedParameters();
             }
 
@@ -1410,7 +1493,9 @@ public class ComMailingBaseAction extends MailingBaseAction {
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.content"));
 		}
 
-		validateMailingTagsAndComponents(aMailing, request, errors);
+		if (validateMailingListId(aMailing, request, errors)) {
+            validateMailingTagsAndComponents(aMailing, request, errors, messages);
+        }
 
 		aMailing.getComponents().forEach((name, component) -> {
 			if (component.getEmmBlock() != null) {
@@ -1426,7 +1511,9 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 		ComMailingContentChecker.checkHtmlWarningConditions(aMailing, messages);
 
-        mailingBaseService.doTextTemplateFilling(aMailing, admin, messages);
+        if (form.getUseMediaEmail()) {
+            mailingBaseService.doTextTemplateFilling(aMailing, admin, messages);
+        }
         mailingBaseService.saveMailingWithUndo(aMailing, admin.getAdminID(), AgnUtils.allowed(request, Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
         form.setMailingID(aMailing.getId());
         form.setGridTemplateId(gridTemplateId);
@@ -1440,6 +1527,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
             aMailing.setParameters(parameters);
 	    	setMailingParameters(admin, aMailing.getId(), parameters);
 	    }
+
+	    if (admin.permissionAllowed(Permission.TEMP_BETA)) {
+            saveReferenceContentSettings(form, request, errors, messages);
+        }
 
 		if (aMailing.isIsTemplate()) {
 			updateMailingsWithDynamicTemplate(aMailing, request);
@@ -1455,6 +1546,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
             }
         }
 	}
+
+    protected void saveReferenceContentSettings(ComMailingBaseForm mailingBaseForm, HttpServletRequest request, ActionMessages errors, ActionMessages messages) {
+	    // Do nothing.
+    }
 
     private void validateLinks(int companyId,  String htmlTemplate, int mailingId, int mailingListId, ActionMessages errors) {
 	    try {
@@ -1503,7 +1598,9 @@ public class ComMailingBaseAction extends MailingBaseAction {
     }
 
     @Override
-    protected MailingsQueryWorker createMailingsQueryWorker(ActionMessages errors, MailingBaseForm mailingBaseForm, HttpServletRequest req, int companyId, String types, boolean isTemplate, String sort, String direction, int page, int rownums, final boolean includeTargetGroups) throws Exception {
+    protected MailingsQueryWorker createMailingsQueryWorker(ActionMessages errors, MailingBaseForm mailingBaseForm, HttpServletRequest request, int companyId, int adminId, String types, boolean isTemplate, String sort, String direction, int page, int rownums, final boolean includeTargetGroups) throws Exception {
+    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	
         ComMailingBaseForm comMailingBaseForm = (ComMailingBaseForm) mailingBaseForm;
 
         MailingsListProperties mailingsListProps = new MailingsListProperties();
@@ -1566,8 +1663,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
             String filterSendDateBeginAsString = comMailingBaseForm.getFilterSendDateBegin();
             String filterSendDateEndAsString = comMailingBaseForm.getFilterSendDateEnd();
-            mailingsListProps.setSendDateBegin(getDate(filterSendDateBeginAsString));
-            mailingsListProps.setSendDateEnd(getDate(filterSendDateEndAsString));
+            mailingsListProps.setSendDateBegin(StringUtils.isBlank(filterSendDateBeginAsString) ? null : admin.getDateFormat().parse(filterSendDateBeginAsString));
+            mailingsListProps.setSendDateEnd(StringUtils.isBlank(filterSendDateEndAsString) ? null : admin.getDateFormat().parse(filterSendDateEndAsString));
 		}
 
         mailingsListProps.setSort(sort);
@@ -1576,19 +1673,16 @@ public class ComMailingBaseAction extends MailingBaseAction {
         mailingsListProps.setRownums(rownums);
         mailingsListProps.setIncludeTargetGroups(includeTargetGroups);
         mailingsListProps.setAdditionalColumns(getAdditionalColumns(mailingBaseForm));
-        mailingsListProps.setCreationDateBegin(getDate(comMailingBaseForm.getFilterCreationDateBegin()));
-        mailingsListProps.setCreationDateEnd(getDate(comMailingBaseForm.getFilterCreationDateEnd()));
+        mailingsListProps.setCreationDateBegin(StringUtils.isBlank(comMailingBaseForm.getFilterCreationDateBegin()) ? null : admin.getDateFormat().parse(comMailingBaseForm.getFilterCreationDateBegin()));
+        mailingsListProps.setCreationDateEnd(StringUtils.isBlank(comMailingBaseForm.getFilterCreationDateEnd()) ? null : admin.getDateFormat().parse(comMailingBaseForm.getFilterCreationDateEnd()));
+		mapExtendedProperties(mailingsListProps, request);
 
-        return new MailingsQueryWorker(mailingDao, companyId, mailingsListProps);
+        return new MailingsQueryWorker(mailingDao, companyId, adminId, mailingsListProps);
     }
 
-    private Date getDate(String dateStr) {
-        try {
-            return new SimpleDateFormat(Constants.DATE_PATTERN).parse(dateStr);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+	protected void mapExtendedProperties(final MailingsListProperties targetProperties, final HttpServletRequest request) {
+		// nothing to do by now
+	}
 
     /**
          * Format list split string from its name to human readable format.
@@ -1652,7 +1746,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
             }
         }
 
-        if (form.getMailingType() == Mailing.TYPE_INTERVAL) {
+        if (form.getMailingType() == MailingTypes.INTERVAL.getCode()) {
             String value = getIntervalParameterValue(form);
             parameters.addAll(generateIntervalParameters(admin, mailingId, value, previousReservedParameters, userActions));
         }
@@ -1752,7 +1846,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
                 		intervalPatternString.append(";");
                 	}
                 	intervalPatternString.append(weekdayOrdinal);
-                	intervalPatternString.append(DateUtilities.getWeekdayShortnameByID(i + 1));
+                	intervalPatternString.append(DateUtilities.getWeekdayShortnameIgnoreOtherLocale(i + 1));
                 	intervalPatternString.append(":" + timePattern);
                 }
             }
@@ -1773,7 +1867,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
             for (int i = 0; i < count; i++) {
                 if (days[i]) {
-                    weekdays.append(DateUtilities.getWeekdayShortnameByID(i + 1));
+                    weekdays.append(DateUtilities.getWeekdayShortnameIgnoreOtherLocale(i + 1));
                 }
             }
         }
@@ -1954,10 +2048,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	 */
 	@Override
 	protected void loadMailing(MailingBaseForm form, HttpServletRequest req) throws Exception {
-		loadMailing((ComMailingBaseForm) form, req, true, false, null);
+		loadMailing((ComMailingBaseForm) form, req, true, false, null, null);
 	}
 
-	protected void loadMailing(ComMailingBaseForm form, HttpServletRequest request, boolean preserveCmListSplit, boolean showTagWarnings, ActionMessages errors) throws Exception {
+	protected void loadMailing(ComMailingBaseForm form, HttpServletRequest request, boolean preserveCmListSplit, boolean showTagWarnings, ActionMessages errors, ActionMessages messages) throws Exception {
 	    final ComAdmin admin = AgnUtils.getAdmin(request);
 	    final int companyId = admin.getCompanyID();
 
@@ -1988,8 +2082,10 @@ public class ComMailingBaseAction extends MailingBaseAction {
         form.setSplitId(aMailing.getSplitID());
         form.setUseDynamicTemplate(aMailing.getUseDynamicTemplate());
         form.setIsTemplate(aMailing.isIsTemplate());
+        form.setMailingListFrequencyCountEnabled(mailinglistService.isFrequencyCounterEnabled(admin, aMailing.getMailinglistID()));
+        form.setFrequencyCounterDisabled(form.isMailingListFrequencyCountEnabled() && aMailing.isFrequencyCounterDisabled());
 
-		if (aMailing.getMailingType() == Mailing.TYPE_INTERVAL) {
+		if (aMailing.getMailingType() == MailingTypes.INTERVAL.getCode()) {
 			String workStatus = mailingDao.getWorkStatus(companyId, aMailing.getId());
             if (StringUtils.equals(workStatus, ACTIVE_MAILING_STATUS)) {
                 form.setWorldMailingSend(true);
@@ -2004,7 +2100,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         loadMailingGridTemplate(form, request);
 
         if (aMailing.getPlanDate() != null) {
-            SimpleDateFormat dateFormat = AgnUtils.getDatePickerFormat(admin, true);
+            SimpleDateFormat dateFormat = admin.getDateFormat();
             form.setPlanDate(dateFormat.format(aMailing.getPlanDate()));
         } else {
             form.setPlanDate("");
@@ -2058,7 +2154,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
             form.setEmailCharset(type.getCharset());
 		}
 
-		final String[] labels = { "Text", "FAX", "Print", "MMS", "SMS", "WHATSAPP" };
+		final String[] labels = { "Text", "FAX", "Post", "MMS", "SMS", "WHATSAPP" };
         MailingComponent comp;
 
 		for (int c = 0; c < labels.length; c++) {
@@ -2075,6 +2171,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 		loadMailingParameters(form, request);
 
+		loadReferenceContentSettings(form, request);
+
         if (aMailing.getId() > 0) {
             form.setWorkflowId(mailingDao.getWorkflowId(aMailing.getId()));
         }
@@ -2087,7 +2185,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
         
         if (showTagWarnings) {
             try {
-                validateMailingTagsAndComponents(aMailing, request, errors);
+                validateMailingTagsAndComponents(aMailing, request, errors, messages);
             } catch (AgnTagException e) {
                 request.setAttribute("errorReport", e.getReport());
                 errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.template.dyntags"));
@@ -2099,7 +2197,15 @@ public class ComMailingBaseAction extends MailingBaseAction {
 		}
 	}
 
-	private void loadMailingGridTemplate(ComMailingBaseForm form, HttpServletRequest request) {
+    protected void loadReferenceTables(HttpServletRequest req, ComMailingBaseForm mailingBaseForm) {
+	    // Do nothing.
+    }
+
+    protected void loadReferenceContentSettings(ComMailingBaseForm mailingBaseForm, HttpServletRequest request) {
+	    // Do nothing.
+    }
+
+    private void loadMailingGridTemplate(ComMailingBaseForm form, HttpServletRequest request) {
         form.setNotes(StringUtils.EMPTY);
         form.setMailingGrid(false);
         form.setGridTemplateId(0);
@@ -2188,7 +2294,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
             form.setCampaignID(template.getCampaignID());
 		}
 
-		if (overrideInherited || template.getMailingType() == Mailing.TYPE_DATEBASED) {
+		if (overrideInherited || template.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
             form.setTargetGroups(template.getTargetGroups());
 		}
 
@@ -2253,8 +2359,12 @@ public class ComMailingBaseAction extends MailingBaseAction {
         config.setCompanyId(admin.getCompanyID());
         config.setConjunction(form.getTargetMode() != Mailing.TARGET_MODE_OR);
 
+        NumberFormat numberFormatCount = NumberFormat.getNumberInstance(admin.getLocale());
+        DecimalFormat decimalFormatCount = (DecimalFormat) numberFormatCount;
+        decimalFormatCount.applyPattern(",###");
+
         try {
-            data.element("count", mailingBaseService.calculateRecipients(config));
+            data.element("count", decimalFormatCount.format(mailingBaseService.calculateRecipients(config)));
             data.element("success", true);
         } catch (Exception e) {
             logger.error("Error occurred: " + e.getMessage(), e);
@@ -2291,7 +2401,16 @@ public class ComMailingBaseAction extends MailingBaseAction {
         }
     }
 
-    private void validateMailingTagsAndComponents(ComMailing mailing, HttpServletRequest request, ActionMessages errors) throws Exception {
+    private boolean validateMailingListId(ComMailing mailing, HttpServletRequest request, ActionMessages errors) {
+        if (mailinglistService.existAndEnabled(AgnUtils.getAdmin(request), mailing.getMailinglistID())) {
+            return true;
+        } else {
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.noMailinglist"));
+            return false;
+        }
+    }
+
+    private void validateMailingTagsAndComponents(ComMailing mailing, HttpServletRequest request, ActionMessages errors, ActionMessages messages) throws Exception {
         List<String[]> errorReports = new ArrayList<>();
 
         Map<String, List<AgnTagError>> agnTagsValidationErrors = mailing.checkAgnTagSyntax(getApplicationContext(request));
@@ -2312,26 +2431,43 @@ public class ComMailingBaseAction extends MailingBaseAction {
                     errorReports.add(new String[]{ componentName, error.getFullAgnTagText(), error.getLocalizedMessage(request.getLocale()) });
                 }
             });
-        } else if (mailing.getId() > 0) {
-        	// Only use backend/preview agn syntax check if mailing was already stored in database before (= not new mailing)
-            Vector<String> outFailures = new Vector<>();
-            TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailing.getId());
+        } else {
+            Map<String, MailingComponent> components =  mailing.getComponents();
+            if (validateDeprecatedTags(mailing.getCompanyID(), components, messages) && mailing.getId() > 0) {
+                // Only use backend/preview agn syntax check if mailing was already stored in database before (= not new mailing)
+                Vector<String> outFailures = new Vector<>();
+                TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailing.getId());
 
-            try {
-                mailing.getComponents().forEach((name, component) -> {
-                    StringBuffer reportContents = new StringBuffer();
-                    if (component.getEmmBlock() != null && !tagCheck.checkContent(component.getEmmBlock(), reportContents, outFailures)) {
-                        appendErrorsToList(name, errorReports, reportContents);
-                    }
-                });
-            } finally {
-                tagCheck.done();
+                try {
+                    components.forEach((name, component) -> {
+                        StringBuffer reportContents = new StringBuffer();
+                        if (component.getEmmBlock() != null && !tagCheck.checkContent(component.getEmmBlock(), reportContents, outFailures)) {
+                            appendErrorsToList(name, errorReports, reportContents);
+                        }
+                    });
+                } finally {
+                    tagCheck.done();
+                }
             }
         }
 
         if (!errorReports.isEmpty()) {
             throw new AgnTagException("error.template.dyntags", errorReports);
         }
+    }
+
+    private boolean validateDeprecatedTags(final int companyId, final Map<String, MailingComponent> components, final ActionMessages messages) {
+        boolean valid = true;
+        for (Entry<String, MailingComponent> entry : components.entrySet()) {
+            if (entry.getValue().getEmmBlock() != null) {
+                final Set<String> deprecatedTagsNames = agnTagService.parseDeprecatedTagNamesFromString(entry.getValue().getEmmBlock(), companyId);
+                if( CollectionUtils.isNotEmpty(deprecatedTagsNames)) {
+                    deprecatedTagsNames.forEach(el -> messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.agntag.deprecated", el)));
+                    valid = false;
+                }
+            }
+        }
+        return valid;
     }
 
     protected void loadMailingDataForNewMailing(MailingBaseForm form, HttpServletRequest req) {
@@ -2420,15 +2556,15 @@ public class ComMailingBaseAction extends MailingBaseAction {
                 }
 
                 aForm.setParentMailing(origin.getId());
-            }
 
-            aForm.setMailingType(ComMailing.TYPE_FOLLOWUP);
-            MediatypeEmail mediatype = origin.getEmailParam();
-            mediatype.setFollowupFor(Integer.toString(origin.getId()));
-            mediatype.setFollowUpMethod(ComMailing.TYPE_FOLLOWUP_NON_OPENER);
-            Map<Integer, Mediatype> mediatypes = new HashMap<>();
-            mediatypes.put(0, mediatype);
-            aForm.setMediatypes(mediatypes);
+                aForm.setMailingType(MailingTypes.FOLLOW_UP.getCode());
+                MediatypeEmail mediatype = origin.getEmailParam();
+                mediatype.setFollowupFor(Integer.toString(origin.getId()));
+                mediatype.setFollowUpMethod(ComMailing.TYPE_FOLLOWUP_NON_OPENER);
+                Map<Integer, Mediatype> mediatypes = new HashMap<>();
+                mediatypes.put(0, mediatype);
+                aForm.setMediatypes(mediatypes);
+            }
 
             aForm.setMailingID(0);
             aForm.setCreatedAsFollowUp(true);
@@ -2502,23 +2638,29 @@ public class ComMailingBaseAction extends MailingBaseAction {
                 storage.setRowsCount(form.getNumberOfRows());
 
                 if (!form.isIsTemplate()) {
+                    storage.setSearchQueryText(form.getSearchQueryText());
                     storage.setSelectedFields(Arrays.asList(form.getSelectedFields()));
                     storage.setMailingTypeNormal(form.getMailingTypeNormal());
                     storage.setMailingTypeDate(form.getMailingTypeDate());
                     storage.setMailingTypeEvent(form.getMailingTypeEvent());
                     storage.setMailingTypeFollowup(form.isMailingTypeFollowup());
                     storage.setMailingTypeInterval(form.isMailingTypeInterval());
+                } else {
+                    form.setSearchQueryText("");
                 }
             } else {
                 form.setNumberOfRows(storage.getRowsCount());
 
                 if (!form.isIsTemplate()) {
+                    form.setSearchQueryText(storage.getSearchQueryText());
                     form.setSelectedFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
                     form.setMailingTypeNormal(storage.isMailingTypeNormal());
                     form.setMailingTypeDate(storage.isMailingTypeDate());
                     form.setMailingTypeEvent(storage.isMailingTypeEvent());
                     form.setMailingTypeFollowup(storage.isMailingTypeFollowup());
                     form.setMailingTypeInterval(storage.isMailingTypeInterval());
+                } else {
+                    form.setSearchQueryText("");
                 }
             }
         });
@@ -2530,7 +2672,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
     }
 
 	@Required
-	public void setMailingLightService(ComMailingLightVO mailingLightService) {
+	public void setMailingLightService(ComMailingLightService mailingLightService) {
 		this.mailingLightService = mailingLightService;
 	}
 
@@ -2562,11 +2704,6 @@ public class ComMailingBaseAction extends MailingBaseAction {
 	@Required
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
-    }
-
-    @Required
-    public void setDeliveryStatService(ComMailingDeliveryStatService deliveryStatService) {
-        this.deliveryStatService = deliveryStatService;
     }
 
     @Required
@@ -2604,4 +2741,13 @@ public class ComMailingBaseAction extends MailingBaseAction {
 		this.mailingImporter = mailingImporter;
 	}
 
+    @Required
+    public final void setMailingStopService(final MailingStopService service) {
+    	this.mailingStopService = Objects.requireNonNull(service, "Mailing stop service is empty");
+    }
+
+    @Required
+    public void setAgnTagService(final AgnTagService agnTagService) {
+        this.agnTagService = agnTagService;
+    }
 }

@@ -13,12 +13,10 @@ package com.agnitas.emm.core.components.service;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComComponentService extends ComponentService {
-    public void updateMailingContent(ComponentModel model) throws Exception;
-
-    void updateHostImage(int mailingID, @VelocityCheck int companyID, int componentID, byte[] imageBytes);
+    
+    void updateMailingContent(ComponentModel model) throws Exception;
 
     int addMailingComponent(MailingComponent mailingComponent) throws Exception;
 }

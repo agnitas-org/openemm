@@ -14,13 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import org.agnitas.beans.Mailing;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
@@ -30,8 +29,7 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
 
-public class ActionOperationSendMailingImpl implements EmmActionOperation{
-
+public class ActionOperationSendMailingImpl implements EmmActionOperation {
 	/**
 	 * The logger.
 	 */
@@ -40,75 +38,67 @@ public class ActionOperationSendMailingImpl implements EmmActionOperation{
 	/**
 	 * DAO for accessing mailing data.
 	 */
-	private MailingDao mailingDao;
+	private ComMailingDao mailingDao;
 
-	@Autowired
-	private SendActionbasedMailingService sendActionbasedMailingService;
 	/**
-	 * Create list containing all user status, that are allowed to send mailings to.
-	 *
-	 * @return list of user status
+	 * Service for sending event based mailings
 	 */
-	private static List<Integer> createUserStatusList() {
-		final List<Integer> list = new Vector<>();
+	private SendActionbasedMailingService sendActionbasedMailingService;
 
-		list.add(UserStatus.Active.getStatusCode());
-		list.add(UserStatus.WaitForConfirm.getStatusCode());
+	@Required
+	public void setMailingDao(final ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
 
-		return list;
+	@Required
+	public void setSendActionbasedMailingService(final SendActionbasedMailingService sendActionbasedMailingService) {
+		this.sendActionbasedMailingService = sendActionbasedMailingService;
 	}
 
 	@Override
 	public boolean execute(final AbstractActionOperationParameters operation, final Map<String, Object> params, final EmmActionOperationErrors errors) {
+		final ActionOperationSendMailingParameters actionOperationSendMailingParameters = (ActionOperationSendMailingParameters) operation;
+		final int companyID = actionOperationSendMailingParameters.getCompanyId();
+		final int mailingID = actionOperationSendMailingParameters.getMailingID();
 
-		final ActionOperationSendMailingParameters op =(ActionOperationSendMailingParameters) operation;
-		final int companyID = op.getCompanyId();
-		final int mailingID = op.getMailingID();
+		if (params.get("customerID") == null) {
+			return false;
+		} else {
+			final int customerID = (Integer) params.get("customerID");
+			if (customerID == 0) {
+				return false;
+			} else {
+				if (mailingDao.exist(mailingID, companyID)) {
+					try {
+						final MailgunOptions mailgunOptions = new MailgunOptions();
+						final List<Integer> userStatusList = new Vector<>();
+						userStatusList.add(UserStatus.Active.getStatusCode());
+						userStatusList.add(UserStatus.WaitForConfirm.getStatusCode());
+						mailgunOptions.withAllowedUserStatus(userStatusList);
+						try {
+							if (StringUtils.isNotBlank(actionOperationSendMailingParameters.getBcc())) {
+								mailgunOptions.withBccEmails(actionOperationSendMailingParameters.getBcc());
+							}
 
-        int customerID=0;
-        Integer tmpNum=null;
-        Mailing mailing=null;
-        boolean exitValue=false;
+							sendActionbasedMailingService.sendActionbasedMailing(companyID, mailingID, customerID, actionOperationSendMailingParameters.getDelayMinutes(),
+									mailgunOptions);
+						} catch (final Exception e) {
+							logger.error("Cannot fire campaign-/event-mail", e);
+							throw new UnableToSendActionbasedMailingException(mailingID, customerID, e);
+						}
 
-        if(params.get("customerID")==null) {
-            return false;
-        }
-        tmpNum=(Integer)params.get("customerID");
-        customerID= tmpNum;
-
-        mailing=mailingDao.getMailing(mailingID, companyID);
-        if(mailing!=null) {
-        	final List<Integer> userStatusList = createUserStatusList();
-			try {
-				final MailgunOptions mailgunOptions = new MailgunOptions();
-				if (userStatusList != null) {
-					mailgunOptions.withAllowedUserStatus(userStatusList);
-				}
-				try {
-					if (StringUtils.isNotBlank(op.getBcc())) {
-						mailgunOptions.withBccEmails(op.getBcc());
+						if (logger.isInfoEnabled()) {
+							logger.info("executeOperation: Mailing " + mailingID + " to " + customerID + " sent");
+						}
+						return true;
+					} catch (final SendActionbasedMailingException e) {
+						logger.error("executeOperation: Mailing " + mailingID + " to " + customerID + " failed");
+						return false;
 					}
-
-					sendActionbasedMailingService.sendActionbasedMailing(mailing.getCompanyID(), mailing.getId(), customerID, op.getDelayMinutes(), mailgunOptions);
-				} catch(final Exception e) {
-					logger.error("Cannot fire campaign-/event-mail", e);
-
-					throw new UnableToSendActionbasedMailingException(mailing.getId(), customerID, e);
+				} else {
+					return false;
 				}
-
-				if (logger.isInfoEnabled()) {
-					logger.info("executeOperation: Mailing " + mailingID + " to " + customerID + " sent");
-				}
-				exitValue = true;
-			} catch (final SendActionbasedMailingException e) {
-				logger.error("executeOperation: Mailing "+mailingID+" to "+customerID+" failed");
 			}
-        }
-        return exitValue;
+		}
 	}
-
-	public void setMailingDao(final MailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-
 }

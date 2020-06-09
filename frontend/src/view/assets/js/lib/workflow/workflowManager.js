@@ -1,4 +1,4 @@
-(function () {
+(function ($) {
     var Helpers = AGN.Lib.Helpers;
 
     //
@@ -18,7 +18,7 @@
             return constraint;
         }
 
-        if ($.isFunction(constraint)) {
+        if (typeof constraint === "function") {
             return constraint(source, target, nodesMap);
         }
 
@@ -358,15 +358,21 @@
         var editorCanvasTop = 0;
         var editorCanvasWidth = viewPortWidth;
         var editorCanvasHeight = viewPortHeight;
-        var editorCanvasJQ = jQuery("<div id=\"" + editorCanvasDOMId + "\"></div>").appendTo("#" + viewPortDOMId).css({
-            position: "absolute",
-            left: editorCanvasLeft,
-            top: editorCanvasTop,
-            width: editorCanvasWidth,
-            height: editorCanvasHeight
-            // to see what's going on inside
-            //, background: "#eee"
-        });
+
+
+        var editorCanvasJQ = $('<div></div>')
+          .attr('id', editorCanvasDOMId)
+          .css({
+                position: "absolute",
+                left: editorCanvasLeft,
+                top: editorCanvasTop,
+                width: editorCanvasWidth,
+                height: editorCanvasHeight
+                // to see what's going on inside
+                //, background: "#eee"
+            })
+          .appendTo($('#' + viewPortDOMId));
+
         var editorCanvasWidthGlobalIncrease = 0;
         var editorCanvasHeightGlobalIncrease = 0;
 
@@ -378,15 +384,20 @@
         var boundNodesWidth = false;
         var boundNodesHeight = false;
         var noContextMenu = data.noContextMenu;
-        var boundNodesJQ = jQuery("<div id=\"" + boundNodesDOMId + "\"></div>").appendTo("#" + editorCanvasDOMId).css({
-            position: "absolute"
-            // to see what's going on inside
-            // , background: "#aaa"
-        });
+        var boundNodesJQ = $('<div></div>')
+          .attr('id', boundNodesDOMId)
+          .css({
+              position: "absolute"
+              // to see what's going on inside
+              // , background: "#aaaa
+               })
+          .appendTo($('#' + editorCanvasDOMId));
 
         // setup navigator
         var navigatorDOMId = "navigatorBody";
-        var navigatorJQ = jQuery("<div id=\"" + navigatorDOMId + "\"></div>").insertAfter("#" + viewPortDOMId);
+        var navigatorJQ = $('<div></div>')
+            .attr('id', navigatorDOMId)
+            .insertAfter($('#' + viewPortDOMId));
 
         // does not require initiation (yet?)
         var campaignManagerSettings = data.campaignManagerSettings;
@@ -402,7 +413,8 @@
             campaignManagerScale: campaignManagerScale,
             campaignManager: self,
             nodeFactory: nodeFactory,
-            allUsedEntity: allUsedEntity
+            allUsedEntity: allUsedEntity,
+            autoOptData: data.autoOptData
         });
 
         var editorsHelper = new AGN.Lib.WM.EditorsHelper(self, nodeFactory, campaignManagerSettings);
@@ -726,7 +738,7 @@
             for (var i in nodes) {
                 if (usedAnchorsOfNode.hasOwnProperty(nodes[i].elementJQ.attr("id"))) {
                     nodes[i].usedAnchors = nodes[i].usedAnchors.concat(usedAnchorsOfNode[nodes[i].elementJQ.attr("id")]);
-                    jQuery.unique(nodes[i].usedAnchors);
+                    jQuery.uniqueSort(nodes[i].usedAnchors);
                 }
             }
         };
@@ -807,7 +819,7 @@
             commentControls.addCommentEllipsis(node);
 
             jQuery(node.elementJQ)
-                .click(function (e) {
+              .on("click", function (e) {
                     if (currentState == self.STATE_WAITING || self.STATE_SPACE_RESTORED) {
                         var node = jQuery(this);
                         if (node.hasClass("preventClickAfterDrop")) {
@@ -1460,7 +1472,7 @@
                 var node = nodes[i];
                 if (node.data.endType == constants.endTypeAutomatic) {
                     node.elementJQ.find(".icon-extra-info").remove();
-                    node.elementJQ.append("<div class='icon-extra-info'>" + stopTitle + "</div>");
+                    node.elementJQ.append($("<div class='icon-extra-info'>" + stopTitle + "</div>"));
                     var fontSize = campaignManagerScale.getCurrentScale() * 90;
                     var position = campaignManagerNodes.getIconExtraInfoPosition(node, campaignManagerScale);
                     var textTop = position.top;
@@ -1592,7 +1604,7 @@
                     }
 
                     var labelStyle = jQuery("._jsPlumb_overlay");
-                    if (labelStyle.size() != 0) {
+                    if (labelStyle.length !== 0) {
                         labelStyle.css("font-size", campaignManagerScale.getLabelFontSize());
                     }
                 }
@@ -2051,9 +2063,9 @@
         };
 
         this.checkActivation = function () {
-            var status = $("input[name='__STRUTS_CHECKBOX_workflow.statusString']").val();
+            var status = $("input[name='status']").val();
 
-            if (this.isActivated && (status == "STATUS_ACTIVE" || status == "STATUS_TESTING")) {
+            if (this.isActivated && (status === "STATUS_ACTIVE" || status === "STATUS_TESTING")) {
                 self.showError(t('error.workflow.saveActivatedWorkflow'));
                 return true;
             } else {
@@ -2192,30 +2204,30 @@
 
         // --- Setup navigator --- //
 
-        navigatorJQ
-            .css({
+        navigatorJQ.css({
 //            left: viewPortJQ.position().left + editorCanvasWidth - navigatorJQ.width() - 10,
 //            top: viewPortJQ.position().top + editorCanvasHeight - navigatorJQ.height() - 10
-                right: 20,
-                bottom: 20
-            })
-            .append("<div id=\"navigatorArrowTop\"></div>")
-            .append("<div id=\"navigatorArrowRight\"></div>")
-            .append("<div id=\"navigatorArrowBottom\"></div>")
-            .append("<div id=\"navigatorArrowLeft\"></div>");
-
-        jQuery("#navigatorArrowTop").click(function () {
-            editorCanvasJQ.animate(
-                {
-                    top: campaignManagerSettings.navigatorStep
-                },
-                "fast",
-                function () {
-                    rearrangeStage();
-                }
-            )
+            right: 20,
+            bottom: 20
         });
-        jQuery("#navigatorArrowRight").click(function () {
+        var navigatorArrowTop = $('<div id="navigatorArrowTop"></div>');
+        var navigatorArrowRight = $('<div id="navigatorArrowRight"></div>');
+        var navigatorArrowBottom = $('<div id="navigatorArrowBottom"></div>');
+        var navigatorArrowLeft = $('<div id="navigatorArrowLeft"></div>');
+
+        navigatorJQ.append(navigatorArrowTop);
+        navigatorJQ.append(navigatorArrowRight);
+        navigatorJQ.append(navigatorArrowBottom);
+        navigatorJQ.append(navigatorArrowLeft);
+        navigatorArrowTop.on("click", function() {
+            editorCanvasJQ.animate({
+                top: campaignManagerSettings.navigatorStep
+            }, "fast", function() {
+                rearrangeStage();
+            });
+        });
+
+        navigatorArrowRight.on("click", function () {
             var keepScrollLeft = viewPortJQ.scrollLeft();
             editorCanvasJQ.css({width: editorCanvasWidth + editorCanvasWidthGlobalIncrease + campaignManagerSettings.navigatorStep});
             viewPortJQ.scrollLeft(keepScrollLeft);
@@ -2229,7 +2241,7 @@
                 }
             )
         });
-        jQuery("#navigatorArrowBottom").click(function () {
+        navigatorArrowBottom.on("click", function () {
             var keepScrollTop = viewPortJQ.scrollTop();
             editorCanvasJQ.css({height: editorCanvasHeight + editorCanvasHeightGlobalIncrease + campaignManagerSettings.navigatorStep});
             viewPortJQ.scrollTop(keepScrollTop);
@@ -2243,7 +2255,7 @@
                 }
             )
         });
-        jQuery("#navigatorArrowLeft").click(function () {
+        navigatorArrowLeft.on("click", function () {
             editorCanvasJQ.animate(
                 {
                     left: campaignManagerSettings.navigatorStep
@@ -2272,10 +2284,10 @@
         };
 
         jQuery(restoreSpaceFieldsSelector)
-            .focus(function () {
+            .on("focus", function () {
                 currentState = self.STATE_SPACE_RESTORED;
             })
-            .blur(function () {
+            .on("blur", function () {
                 currentState = self.STATE_WAITING;
             });
 
@@ -2469,7 +2481,7 @@
                     });
 
                     rearrangeStage();
-                    $(nodes[0].elementJQ).click();
+                    $(nodes[0].elementJQ).trigger("click");
                 }
 
                 self.callWorkflowManagerStateChangedCallback();
@@ -2549,7 +2561,7 @@
                 e.stopPropagation();
             }
         });
-        jQuery(document).mouseup(function (e) {
+        $(document).mouseup(function (e) {
             if (currentState == self.STATE_DRAGGING_STAGE) {
                 currentState = self.STATE_DRAGGING_STAGE_WAIT_MOUSE;
 
@@ -2565,7 +2577,7 @@
         // --- EndOf Drag stage when "dragStageKeyCode" key is pressed initialization --- //
 
         // clear selection if user clicks anywhere with LMB
-        jQuery(document).click(function (e) {
+        jQuery(document).on("click", function (e) {
             if (currentState == self.STATE_WAITING || currentState == self.STATE_SPACE_RESTORED) {
                 if ((!jQuery.browser.msie && e.which == 1) || jQuery.browser.msie) {
                     if (savedSelectableStopEvent == undefined || !isTheSamePosition(savedSelectableStopEvent, e.originalEvent)) {
@@ -2644,4 +2656,4 @@
     };
 
     AGN.Lib.WM.CampaignManager = CampaignManager;
-})();
+})(jQuery);

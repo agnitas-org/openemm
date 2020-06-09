@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.word.impl;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
 

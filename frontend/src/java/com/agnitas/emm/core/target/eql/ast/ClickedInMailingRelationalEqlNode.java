@@ -12,6 +12,8 @@ package com.agnitas.emm.core.target.eql.ast;
 
 import com.agnitas.emm.core.target.eql.ast.devicequery.AbstractDeviceQueryNode;
 import com.agnitas.emm.core.target.eql.ast.transform.ShiftNotDownTransform.SpecialNotOperatorHandling;
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
+import com.agnitas.emm.core.target.eql.ast.traversal.TraversalUtil;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -19,7 +21,7 @@ import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
  * Relational operator that checks, if a recipient clicked in a mailing or clicked a specific link in a mailing.
  */
 @SpecialNotOperatorHandling(mustHaveReceivedMailing = true)
-public final class ClickedInMailingRelationalEqlNode extends AbstractRelationalEqlNode {
+public final class ClickedInMailingRelationalEqlNode extends AbstractRelationalEqlNode implements DeviceQuerySupportingNode {
 
 	/** Start of operator in EQL . */
 	private final CodeLocation startLocation;
@@ -102,10 +104,12 @@ public final class ClickedInMailingRelationalEqlNode extends AbstractRelationalE
 		return this.linkId;
 	}
 	
+	@Override
 	public final boolean hasDeviceQuery() {
 		return this.deviceQueryNode != null;
 	}
 	
+	@Override
 	public final AbstractDeviceQueryNode getDeviceQueryNode() {
 		return this.deviceQueryNode;
 	}
@@ -149,5 +153,12 @@ public final class ClickedInMailingRelationalEqlNode extends AbstractRelationalE
 	@Override
 	public final CodeLocation getStartLocation() {
 		return this.startLocation;
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		TraversalUtil.traverse(deviceQueryNode, visitor);
+		visitor.leavingNode(this);
 	}
 }

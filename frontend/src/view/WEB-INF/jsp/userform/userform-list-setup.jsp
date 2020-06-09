@@ -14,18 +14,18 @@
 <emm:CheckLogon/>
 <emm:Permission token="forms.show"/>
 
-<c:set var="agnNavigationKey"		value="FormsOverview" 		scope="request" />
-<c:set var="agnTitleKey" 			value="workflow.panel.forms" 				scope="request" />
-<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 				scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 		scope="request" />
-<c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 				scope="request" />
-<c:set var="agnHighlightKey" 		value="default.Overview" 	scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
-<c:set var="agnBreadcrumbsRootKey" 	value="SiteActions" 		scope="request" />
-<c:set var="agnHelpKey" 			value="formList" 			scope="request" />
+<c:set var="agnNavigationKey"		value="FormsOverview" 			scope="request" />
+<c:set var="agnTitleKey" 			value="workflow.panel.forms" 	scope="request" />
+<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 	scope="request" />
+<c:set var="sidemenu_active" 		value="Forms"			 		scope="request" />
+<c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 	scope="request" />
+<c:set var="agnHighlightKey" 		value="default.Overview" 		scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
+<c:set var="agnBreadcrumbsRootKey" 	value="Forms" 					scope="request" />
+<c:set var="agnHelpKey" 			value="formList" 				scope="request" />
 
 <c:set var="agnSubtitleValue" scope="request">
-    <i class="icon icon-list-alt"></i> <bean:message key="workflow.panel.forms"/>
+    <i class="icon-fa5 icon-fa5-list-alt far"></i> <bean:message key="workflow.panel.forms"/>
 </c:set>
 
 <emm:ShowByPermission token="forms.import">

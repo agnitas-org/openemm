@@ -1,92 +1,69 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.*, org.agnitas.web.*" %>
+<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
+<%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
+<%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 
-<c:set var="ACTION_PREVIEW_HEADER" value="<%= MailingSendAction.ACTION_PREVIEW_HEADER %>" scope="page"/>
-<c:set var="ACTION_PREVIEW" value="<%= MailingSendAction.ACTION_PREVIEW %>" scope="page"/>
+<c:set var="ACTION_PREVIEW_HEADER" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_HEADER%>" scope="page"/>
+<c:set var="ACTION_PREVIEW" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW%>" scope="page"/>
+<c:set var="ACTION_PREVIEW_SELECT" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_SELECT%>" scope="page"/>
+<c:set var="ACTION_PDF_PREVIEW" value="<%=ComMailingSendActionBasic.ACTION_PDF_PREVIEW%>" scope="page"/>
+
+<c:set var="EMAIL_TYPE_CODE" value="<%= MediaTypes.EMAIL.getMediaCode() %>" scope="page"/>
 
 <%-- If preview is requested as a separate tile (to be embedded) then it must look the same for both regular and grid mailings --%>
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid and not (param.previewSelectPure eq true)}" scope="request"/>
 <c:set var="storedFieldsScope" value="${mailingSendForm.mailingID}"/>
 
-<%
-    int prevX = 800 + 2;
-    int prevY = 600;
-    String mediaQuery = "true";
-    ComMailingSendForm aForm = null;
-
-    aForm = (ComMailingSendForm) request.getAttribute("mailingSendForm");
-
-    switch (aForm.getPreviewSize()) {
-        case 1:
-            prevX = 1022 + 2;
-            prevY = 600;
-            mediaQuery = "false";
-            break;
-        case 2:
-            prevX = 320 + 2;
-            prevY = 356;
-            mediaQuery = "true";
-            break;
-        case 3:
-            prevX = 356 + 2;
-            prevY = 320;
-            mediaQuery = "true";
-            break;
-        case 4:
-            prevX = 768 + 2;
-            prevY = 946;
-            mediaQuery = "true";
-            break;
-        case 5:
-            prevX = 1024 + 2;
-            prevY = 690;
-            mediaQuery = "false";
-            break;
-        default:
-            aForm.setPreviewSize(1);
-            prevX = 800 + 2;
-            prevY = 600;
-            mediaQuery = "false";
-            break;
-    }
-%>
-
-
-<agn:agnForm action="/mailingsend" id="preview" data-form="" data-controller="mailing-preview">
+<agn:agnForm action="/mailingsend.do" id="preview"
+             data-controller="mailing-preview"
+             data-initializer="mailing-preview"
+             data-form="resource"
+             data-resource-selector="#container-preview">
     <html:hidden property="mailingID"/>
     <html:hidden property="action"/>
     <html:hidden property="isMailingGrid" value="${isMailingGrid}"/>
     <html:hidden property="previewSelectPure" value="${param.previewSelectPure}"/>
+    <html:hidden property="reloadPreview"/>
 
+<div id="container-preview" data-load-target="#preview-container">
+    <!--XYZ: ${mailingSendForm.previewFormat}-->
     <c:set var="tileHeaderActions" scope="page">
         <li>
-            <c:set var="pdfTooltip">
-                <bean:message key="mailing.preview.pdf"/>
-            </c:set>
-            <agn:agnLink styleClass="link" page='<%= "/mailingsend.do?action=" + ComMailingSendAction.ACTION_PDF_PREVIEW +
-                            "&mailingID=" + aForm.getMailingID() + "&previewFormat=" + aForm.getPreviewFormat()  +
-                            "&previewSize=" + aForm.getPreviewSize()+ "&previewCustomerID=" + aForm.getPreviewCustomerID() +
-                            "&noImages=" + aForm.isNoImages() %>' data-tooltip="${pdfTooltip}" data-prevent-load="">
+            <c:set var="pdfTooltip"><bean:message key="mailing.preview.pdf"/></c:set>
+            <c:url var="previewPDFLink" value="/mailingsend.do">
+                <c:param name="action" value="${ACTION_PDF_PREVIEW}"/>
+                <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                <c:param name="previewFormat" value="${mailingSendForm.previewFormat}"/>
+                <c:param name="previewSize" value="${mailingSendForm.previewSize}"/>
+                <c:param name="previewCustomerID" value="${mailingSendForm.previewCustomerID}"/>
+                <c:param name="noImages" value="${mailingSendForm.noImages}"/>
+            </c:url>
+            <agn:agnLink styleClass="link" href="${previewPDFLink}" data-tooltip="${pdfTooltip}" data-prevent-load="">
                 <i class="icon icon-file-pdf-o"></i>
             </agn:agnLink>
         </li>
         <li>
-            <c:set var="previewTooltip">
-                <bean:message key="mailing.open_preview"/>
-            </c:set>
-            <agn:agnLink styleClass="link" target="_blank" page='<%= "/mailingsend.do?action=" + MailingSendAction.ACTION_PREVIEW +
-                             "&mailingID=" + aForm.getMailingID() + "&previewFormat=" + aForm.getPreviewFormat()
-                             + "&previewSize=" + aForm.getPreviewSize()+ "&previewCustomerID=" + aForm.getPreviewCustomerID() +
-                             "&noImages=" + aForm.isNoImages() %>' data-tooltip="${previewTooltip}">
+            <c:set var="previewTooltip"><bean:message key="mailing.open_preview"/></c:set>
+            <c:url var="previewLink" value="/mailingsend.do">
+                <c:param name="action" value="${ACTION_PREVIEW}"/>
+                <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                <c:param name="previewFormat" value="${mailingSendForm.previewFormat}"/>
+                <c:param name="previewSize" value="${mailingSendForm.previewSize}"/>
+                <c:param name="previewCustomerID" value="${mailingSendForm.previewCustomerID}"/>
+                <c:param name="noImages" value="${mailingSendForm.noImages}"/>
+            </c:url>
+            <agn:agnLink styleClass="link" target="_blank" href="${previewLink}" data-tooltip="${previewTooltip}">
                 <i class="icon icon-share-square-o"></i>
             </agn:agnLink>
         </li>
@@ -129,48 +106,39 @@
                     </label>
                 </li>
 
-                <c:set var="showMediaTypeRadioButtons" value="false"/>
-                <c:forEach var="mediaTypeCode" items="${mailingSendForm.availablePreviewFormats}">
-                    <c:if test="${mediaTypeCode >= 0 and mediaTypeCode <= 4}">
-                        <c:set var="showMediaTypeRadioButtons" value="true"/>
-                    </c:if>
-                </c:forEach>
+                <c:set var="showMediaTypeRadioButtons" value="${not empty mailingSendForm.availablePreviewFormats}"/>
 
-                <c:if test="${showMediaTypeRadioButtons}">
-                    <li class="divider"></li>
-                    <li class="dropdown-header"><bean:message key="action.Format"/></li>
-                    <li>
-                        <c:forEach var="mediaTypeCode" items="${mailingSendForm.availablePreviewFormats}">
-                           <c:if test="${mediaTypeCode >= 0 and mediaTypeCode <= 4}">
-                               <c:choose>
-                                   <c:when test="${mediaTypeCode == 0}">
-                                        <label class="label">
-                                            <agn:agnRadio property="previewFormat" value="0" data-stored-field="${storedFieldsScope}"/>
-                                            <span class="label-text"><bean:message key="Text"/></span>
-                                        </label>
-                                        <logic:greaterThan name="mailingSendForm" property="emailFormat" value="0">
-                                            <label class="label">
-                                                <agn:agnRadio property="previewFormat" value="1" data-stored-field="${storedFieldsScope}"/>
-                                                <span class="label-text"><bean:message key="HTML"/></span>
-                                            </label>
-                                        </logic:greaterThan>
-                                   </c:when>
-                                   <c:otherwise>
-                                       <label class="label">
-                                           <agn:agnRadio property="previewFormat" value="${mediaTypeCode + 1}" data-stored-field="${storedFieldsScope}"/>
-                                           <span class="label-text"><bean:message key='mailing.MediaType.${mediaTypeCode}'/></span>
-                                        </label>
-                                   </c:otherwise>
-                               </c:choose>
-                           </c:if>
-                        </c:forEach>
-                    </li>
-                </c:if>
+                <li class="divider"></li>
+                <li class="dropdown-header"><bean:message key="action.Format"/></li>
+                <li>
+                    <c:forEach var="mediaTypeCode" items="${mailingSendForm.availablePreviewFormats}">
+                       <c:choose>
+                           <c:when test="${mediaTypeCode eq EMAIL_TYPE_CODE}">
+                                <label class="label">
+                                    <agn:agnRadio property="previewFormat" value="${MailingPreviewHelper.INPUT_TYPE_TEXT}" data-stored-field="${storedFieldsScope}"/>
+                                    <span class="label-text"><bean:message key="Text"/></span>
+                                </label>
+                                <logic:greaterThan name="mailingSendForm" property="emailFormat" value="0">
+                                    <label class="label">
+                                        <agn:agnRadio property="previewFormat" value="${MailingPreviewHelper.INPUT_TYPE_HTML}" data-stored-field="${storedFieldsScope}"/>
+                                        <span class="label-text"><bean:message key="HTML"/></span>
+                                    </label>
+                                </logic:greaterThan>
+                           </c:when>
+                           <c:otherwise>
+                               <label class="label">
+                                    <agn:agnRadio property="previewFormat" value="${mediaTypeCode + 1}" data-stored-field="${storedFieldsScope}"/>
+                                   <span class="label-text"><bean:message key='mailing.MediaType.${mediaTypeCode}'/></span>
+                                </label>
+                           </c:otherwise>
+                       </c:choose>
+                    </c:forEach>
+                </li>
 
                 <li class="divider"></li>
                 <li>
                     <p>
-                        <button type="button" class="btn btn-block btn-primary btn-regular" data-form-submit><i class="icon icon-refresh"></i> <bean:message key="button.Refresh"/></button>
+                        <button type="button" class="btn btn-block btn-primary btn-regular" data-action="refresh-preview"><i class="icon icon-refresh"></i> <bean:message key="button.Refresh"/></button>
                     </p>
                 </li>
             </ul>
@@ -207,35 +175,37 @@
                 </div>
                 <div class="tile-content">
             </c:if>
-                <div id="preview-contents">
-                    <c:if test="${mailingSendForm.previewFormat eq 0 or mailingSendForm.previewFormat eq 1 or mailingSendForm.previewFormat eq 2 or mailingSendForm.previewFormat eq 6}">
-                        <c:import url="/mailingsend.do?action=${ACTION_PREVIEW_HEADER}&previewCustomerID=${mailingSendForm.previewCustomerID}&mailingID=${mailingSendForm.mailingID}"/>
-                    </c:if>
-                    <div class="${isMailingGrid ? 'tile-content-padded' : 'mailing-preview-wrapper'}">
-                        <div class="progress loop" id="progress_bar" style="width: 100%"></div>
-                        <div>
-                            <div class="mailing-preview-scroller center-block hidden" id="preview-container">
-                                <iframe class="mailing-preview-frame js-simple-iframe" name="previewFrame"
-                                        src="<html:rewrite page='/mailingsend.do?action=${ACTION_PREVIEW}&mailingID=${mailingSendForm.mailingID}&previewFormat=${mailingSendForm.previewFormat}&previewSize=${mailingSendForm.previewSize}&previewCustomerID=${mailingSendForm.previewCustomerID}&noImages=${mailingSendForm.noImages}'/>"
-                                        border="0"
-                                        data-max-width="<%= prevX %>"
-                                        data-media-query="<%= mediaQuery %>"
-                                        style="width: <%= prevX %>px;"
-                                        onLoad="
-                                            var $progress = $('#progress_bar');
-                                            var $preview = $('#preview-container');
-                                            $progress.show();
-                                            $preview.addClass('hidden');
-                                            $preview.find('iframe') .ready(function() {
-                                              $progress.hide();
-                                              $preview.removeClass('hidden');
-                                            })">
-                                    Your Browser does not support IFRAMEs, please update!
-                                </iframe>
-                            </div>
+                    <div id="preview-contents">
+                        <c:if test="${mailingSendForm.previewFormatContainsHeader}">
+                            <c:import url="/mailingsend.do?action=${ACTION_PREVIEW_HEADER}&previewCustomerID=${mailingSendForm.previewCustomerID}&mailingID=${mailingSendForm.mailingID}"/>
+                        </c:if>
+                        <div class="${isMailingGrid ? 'tile-content-padded' : 'mailing-preview-wrapper'}">
+                            <c:if test="${not mailingSendForm.reloadPreview}">
+                                <div class="progress loop" id="progress_bar" style="width: 100%"></div>
+                            </c:if>
+                            <c:if test="${mailingSendForm.reloadPreview}">
+                                <div>
+                                    <div class="mailing-preview-scroller center-block" id="preview-container">
+                                        <c:url var="previewIFrame" value="/mailingsend.do">
+                                            <c:param name="action" value="${ACTION_PREVIEW}"/>
+                                            <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                                            <c:param name="previewFormat" value="${mailingSendForm.previewFormat}"/>
+                                            <c:param name="previewSize" value="${mailingSendForm.previewSize}"/>
+                                            <c:param name="previewCustomerID" value="${mailingSendForm.previewCustomerID}"/>
+                                            <c:param name="noImages" value="${mailingSendForm.noImages}"/>
+                                        </c:url>
+                                        <iframe class="mailing-preview-frame js-simple-iframe" name="previewFrame"
+                                                src="${previewIFrame}" border="0"
+                                                data-max-width="${mailingSendForm.previewWidth}"
+                                                data-media-query="${mailingSendForm.mediaQuery}"
+                                                style="width: ${mailingSendForm.previewWidth}px;">
+                                            Your Browser does not support IFRAMEs, please update!
+                                        </iframe>
+                                    </div>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
-                </div>
             <c:if test="${not isMailingGrid}">
                 </div>
             </div>
@@ -247,3 +217,4 @@
 <c:if test="${not isMailingGrid}">
     <div class="clearfix"></div>
 </c:if>
+</div>

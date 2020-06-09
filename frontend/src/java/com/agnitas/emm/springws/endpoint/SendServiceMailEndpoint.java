@@ -25,12 +25,9 @@ import com.agnitas.emm.springws.jaxb.SendServiceMailRequest;
 /**
  * Endpoint for webservice &quot;SendServiceMail&quot;.
  */
-@SuppressWarnings("deprecation")
 public class SendServiceMailEndpoint extends AbstractMarshallingPayloadEndpoint {
-
 	/** The logger. */
-	@SuppressWarnings("hiding")
-	private static final transient Logger logger = Logger.getLogger(SendServiceMailEndpoint.class);
+	private static final transient Logger classLogger = Logger.getLogger(SendServiceMailEndpoint.class);
 	
 	/** Service for sending service mails. */
 	private SendServiceMailService sendServiceMailingService;
@@ -56,14 +53,14 @@ public class SendServiceMailEndpoint extends AbstractMarshallingPayloadEndpoint 
 				throw new WebserviceNotAllowedException("SendServiceMailing");
 			}
 			
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format("Sending service mail triggered by action (action ID: %d, customer ID %d, company ID %d)", actionID, customerID, companyID));
+			if(classLogger.isInfoEnabled()) {
+				classLogger.info(String.format("Sending service mail triggered by action (action ID: %d, customer ID %d, company ID %d)", actionID, customerID, companyID));
 			}
 			
 			sendServiceMailingService.sendServiceMailByEmmAction(actionID, customerID, companyID);
 			
-			if(logger.isInfoEnabled()) {
-				logger.info("Sending service mail triggered successfully");
+			if(classLogger.isInfoEnabled()) {
+				classLogger.info("Sending service mail triggered successfully");
 			}
 	
 			return objectFactory.createSendServiceMailResponse();

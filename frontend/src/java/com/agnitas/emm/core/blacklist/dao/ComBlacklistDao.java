@@ -24,9 +24,21 @@ public interface ComBlacklistDao {
      *
      * @param companyID the company to add it for.
      * @param email the address to add to the blacklist.
+     * @param reason the description of why address is added to the blacklist.
      * @return true on success.
      */
-	boolean insert(@VelocityCheck int companyID, String email);
+	boolean insert(@VelocityCheck int companyID, String email, String reason);
+
+
+    /**
+     * Update info for an email in the blacklist.
+     *
+     * @param companyID the company to update it for.
+     * @param email the address in the blacklist.
+     * @param reason the description of why address is added to the blacklist.
+     * @return true on success.
+     */
+    boolean update(@VelocityCheck int companyID, String email, String reason);
 
     /**
      * Remove the given email from the blacklist.

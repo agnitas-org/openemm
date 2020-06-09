@@ -27,7 +27,7 @@ import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
@@ -97,6 +97,11 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	public boolean isNullValueAllowedForData(DbColumnType columnType, NullValuesAction nullValuesAction) {
 		return columnType.isNullable();
 	}
+	
+	@Override
+	public void handlePreProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+		// Do nothing
+	}
 
 	@Override
 	public void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
@@ -108,7 +113,7 @@ public class ImportModeAddHandler implements ImportModeHandler {
 			numberOfCustomersLimit = ConfigService.getInstance().getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
 		}
 		if (numberOfCustomersLimit >= 0) {
-    		int currentNumberOfCustomers = DbUtilities.getTableEntriesCount(importRecipientsDao.getDataSource(), "customer_" + importProfile.getCompanyId() + "_tbl");
+			int currentNumberOfCustomers = importRecipientsDao.getAllRecipientsCount(importProfile.getCompanyId());
     		int numberOfInsertableItems = importRecipientsDao.getNumberOfEntriesForInsert(temporaryImportTableName, duplicateIndexColumn);
     		int numberOfCustomersAfterImport = currentNumberOfCustomers + numberOfInsertableItems;
     		if (numberOfCustomersAfterImport > numberOfCustomersLimit) {

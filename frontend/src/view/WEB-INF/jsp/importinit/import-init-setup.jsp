@@ -14,7 +14,7 @@
 <c:set var="agnHighlightKey" 		value="import.Wizard" 				scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="ImportExport" 				scope="request" />
-<c:set var="agnHelpKey" 			value="import" 						scope="request" />
+<c:set var="agnHelpKey" 			value="importGeneral" 				scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

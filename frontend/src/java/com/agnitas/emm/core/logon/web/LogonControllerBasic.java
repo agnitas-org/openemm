@@ -10,39 +10,14 @@
 
 package com.agnitas.emm.core.logon.web;
 
-import java.text.DateFormat;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.emm.core.logintracking.service.LoginTrackServiceException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.service.WebStorageBundle;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.UserActivityLogActions;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.struts.Globals;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.ui.Model;
-import org.springframework.validation.Errors;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
@@ -52,17 +27,39 @@ import com.agnitas.emm.core.logon.forms.LogonForm;
 import com.agnitas.emm.core.logon.forms.LogonHostAuthenticationForm;
 import com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm;
 import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
+import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
 import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
 import com.agnitas.emm.core.logon.service.Logon;
 import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.Anonymous;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.service.WebStorageBundle;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.UserActivityLogActions;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.struts.Globals;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class LogonControllerBasic {
     private static final Logger logger = Logger.getLogger(LogonControllerBasic.class);
@@ -76,6 +73,8 @@ public class LogonControllerBasic {
     protected WebStorage webStorage;
     protected ConfigService configService;
     protected UserActivityLogService userActivityLogService;
+
+    private final LogonFormValidator logonFormValidator = new LogonFormValidator();
 
     public LogonControllerBasic(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService) {
         this.logonService = logonService;
@@ -104,8 +103,8 @@ public class LogonControllerBasic {
 
     @Anonymous
     @PostMapping("/logon.action")
-    public String logon(Logon logon, @Valid @ModelAttribute("form") LogonForm form, Errors errors, Model model, HttpServletRequest request, Popups popups) {
-        if (errors.hasErrors()) {
+    public String logon(Logon logon, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+        if(!logonFormValidator.validate(form, popups)) {
             return getLogonPage(model, request.getServerName());
         }
 
@@ -126,9 +125,7 @@ public class LogonControllerBasic {
         } else {
             form.setPassword(null);
 
-            for (Message message : result.getMessages()) {
-                popups.alert(message);
-            }
+            popups.addPopups(result);
             return getLogonPage(model, request.getServerName());
         }
     }
@@ -142,12 +139,16 @@ public class LogonControllerBasic {
             logon.initialize(hostAuthenticationService::createHostId);
             return getLogonPage(model, request.getServerName());
         } else {
-            for (Message message : result.getMessages()) {
-                popups.alert(message);
-            }
+            popups.addPopups(result);
             model.addAttribute("supportEmergencyUrl", configService.getValue(ConfigValue.SupportEmergencyUrl));
             return "logon_db_failure";
         }
+    }
+    
+    @Anonymous
+    @GetMapping("/logonoffline.action")
+    public String logonUrlOffline(Logon logon, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+        return "logon_offline";
     }
 
     @Anonymous
@@ -187,6 +188,8 @@ public class LogonControllerBasic {
                         // Admin/supervisor must have an e-mail address where a security code is going to be sent.
                         if (StringUtils.isBlank(email)) {
                             popups.alert("logon.error.hostauth.no_address");
+                            
+                            return "redirect:/logon.action";
                         } else {
                             if (hostId == null) {
                                 // If hostId is missing from cookies the cookies are probably disabled.
@@ -199,9 +202,11 @@ public class LogonControllerBasic {
                     } catch (CannotSendSecurityCodeException e) {
                         logger.error("Cannot send security code to " + e.getReceiver());
                         popups.alert("logon.error.hostauth.send_failed", email);
+                        return "redirect:/logon.action";
                     } catch (Exception e) {
                         logger.error("Error generating or sending security code", e);
                         popups.alert("logon.error.hostauth.send_failed", email);
+                        return "redirect:/logon.action";
                     }
 
                     return "redirect:/logon/authenticate-host.action";
@@ -268,9 +273,7 @@ public class LogonControllerBasic {
                 // Show success page which indicates that password has been changed.
                 model.addFlashAttribute(PASSWORD_CHANGED_KEY, true);
             } else {
-                for (Message message : result.getMessages()) {
-                    popups.alert(message);
-                }
+                popups.addPopups(result);
                 // Show password change page and the error message(s).
                 model.addFlashAttribute("isAnotherAttempt", true);
             }
@@ -298,7 +301,7 @@ public class LogonControllerBasic {
                 Date expirationDate = logonService.getPasswordExpirationDate(admin);
 
                 if (expirationDate != null) {
-                    model.addAttribute("expirationDate", AgnUtils.getDateFormat(DateFormat.MEDIUM, admin).format(expirationDate));
+                    model.addAttribute("expirationDate", admin.getDateFormat().format(expirationDate));
                 }
             }
 
@@ -324,7 +327,7 @@ public class LogonControllerBasic {
             logon.require(LogonState.COMPLETE);
 
             if (webStorageJson == null) {
-                return getLogonCompletePage(model);
+                return getLogonCompletePage(logon.getAdmin(), model);
             }
 
             // Finalize logon procedure, drop temporary data, setup session attributes.
@@ -340,7 +343,7 @@ public class LogonControllerBasic {
     public String startView(Logon logon, ComAdmin admin, ComAdminPreferences preferences, Model model) {
         if (admin == null) {
             logon.require(LogonState.COMPLETE);
-            return getLogonCompletePage(model);
+            return getLogonCompletePage(logon.getAdmin(), model);
         } else {
             // Admin is already in, redirect to EMM start page.
             return getStartPageRedirection(admin, preferences);
@@ -374,9 +377,7 @@ public class LogonControllerBasic {
                 return "forward:/start.action";
             }
 
-            for (Message message : result.getMessages()) {
-                popups.alert(message);
-            }
+            popups.addPopups(result);
         } else {
             SimpleServiceResult result = logonService.requestPasswordReset(form.getUsername(), form.getEmail(), clientIp, PASSWORD_RESET_LINK_PATTERN);
 
@@ -385,9 +386,7 @@ public class LogonControllerBasic {
                 return "logon_password_reset_requested";
             }
 
-            for (Message message : result.getMessages()) {
-                popups.alert(message);
-            }
+            popups.addPopups(result);
         }
 
         model.addFlashAttribute("form", form);
@@ -502,9 +501,9 @@ public class LogonControllerBasic {
         }
     }
 
-    private String complete(ComAdmin admin, String webStorageJson, Popups popups) {
-        ComAdminPreferences preferences = logonService.getPreferences(admin);
-        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+    private String complete(final ComAdmin admin, final String webStorageJson, final Popups popups) {
+        final ComAdminPreferences preferences = logonService.getPreferences(admin);
+        final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
 
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, admin, RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, preferences, RequestAttributes.SCOPE_SESSION);
@@ -512,6 +511,7 @@ public class LogonControllerBasic {
         attributes.setAttribute("emmLayoutBase", logonService.getEmmLayoutBase(admin), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("helplanguage", logonService.getHelpLanguage(admin), RequestAttributes.SCOPE_SESSION);
 
+        attributes.setAttribute("userName", StringUtils.defaultString(admin.getUsername()), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("firstName", StringUtils.defaultString(admin.getFirstName()), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("fullName", admin.getFullname(), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("companyShortName", admin.getCompany().getShortname(), RequestAttributes.SCOPE_SESSION);
@@ -521,20 +521,16 @@ public class LogonControllerBasic {
         // Setup web-storage using client's data represented as JSON.
         webStorage.setup(webStorageJson);
 
-        try {
-            // Skip last successful login, because that's the current login.
-            int times = loginTrackService.getNumFailedLoginsSinceLastSuccessful(admin.getUsername(), true);
-            if (times > 0) {
-                if (times > 1) {
-                    popups.alert("warning.failed_logins.more", times);
-                } else {
-                    popups.alert("warning.failed_logins.1", times);
-                }
+        // Skip last successful login, because that's the current login.
+        final int times = loginTrackService.countFailedLoginsSinceLastSuccess(admin.getUsername(), true);
+        if (times > 0) {
+            if (times > 1) {
+                popups.alert("warning.failed_logins.more", times);
+            } else {
+                popups.alert("warning.failed_logins.1", times);
             }
-        } catch (LoginTrackServiceException e) {
-            logger.warn("Cannot determine number of failed login attempts", e);
         }
-
+        
         return getStartPageRedirection(admin, preferences);
     }
 
@@ -546,14 +542,28 @@ public class LogonControllerBasic {
     }
 
     private String getLogonIframeUrl() {
-        if (AgnUtils.isGerman(LocaleContextHolder.getLocale())) {
-            return configService.getValue(ConfigValue.LogonIframeUrlGerman);
-        } else {
-            return configService.getValue(ConfigValue.LogonIframeUrlEnglish);
-        }
+		try {
+		    URL logonIframeUrlGerman = new URL(configService.getValue(ConfigValue.LogonIframeUrlGerman));
+		    URL logonIframeUrlEnglish = new URL(configService.getValue(ConfigValue.LogonIframeUrlEnglish));
+		    
+		    URLConnection logonIframeUrlGermanConnection = logonIframeUrlGerman.openConnection();
+		    URLConnection logonIframeUrlEnglishConnection = logonIframeUrlEnglish.openConnection();
+		    
+		    logonIframeUrlGermanConnection.connect();
+		    logonIframeUrlEnglishConnection.connect();
+		    
+		    if (AgnUtils.isGerman(LocaleContextHolder.getLocale())) {
+				return configService.getValue(ConfigValue.LogonIframeUrlGerman);
+		    } else {
+		    	return configService.getValue(ConfigValue.LogonIframeUrlEnglish);
+		    }
+		 } catch (IOException e) {
+			 return "/logonoffline.action";
+		 }
     }
 
-    private String getLogonCompletePage(Model model) {
+    private String getLogonCompletePage(ComAdmin admin, Model model) {
+        model.addAttribute("isFrameShown", configService.getBooleanValue(ConfigValue.LoginIframe_Show, admin.getCompanyID()));
         model.addAttribute("webStorageBundleNames", getWebStorageBundleNames());
         return "logon_complete";
     }

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.ast;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -58,4 +59,11 @@ public class StringConstantWithEscapeCharsAtomEqlNode extends AbstractAtomEqlNod
 	public void collectReferencedItems(ReferenceCollector collector) {
 		// String constants are never profile fields, ... -> nothing to collect
 	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		visitor.leavingNode(this);
+	}
+
 }

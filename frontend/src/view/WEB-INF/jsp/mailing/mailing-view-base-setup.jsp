@@ -92,7 +92,7 @@
 
 		<c:set var="agnTitleKey" 	value="Mailing" 						scope="request" />
         <c:set var="agnSubtitleKey"	value="Mailing" 						scope="request" />
-        <c:set var="agnHelpKey" 	value="create_a_mailing_E-Mail_Creator"	scope="request" />
+        <c:set var="agnHelpKey" 	value="mailingBase"	                    scope="request" />
 		
         <c:choose>
             <c:when test="${mailingExists}">
@@ -105,7 +105,10 @@
                     </c:otherwise>
                 </c:choose>
 
-                <c:set var="agnNavHrefAppend" 		value="&mailingID=${mailingBaseForm.mailingID}&init=true"	scope="request" />
+                <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+                    <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+                </emm:instantiate>
 				<c:set var="sidemenu_sub_active"	value="none" 												scope="request" />
                 <c:set var="agnHighlightKey" 		value="default.settings" 									scope="request" />
                 
@@ -137,6 +140,7 @@
     <c:set var="isTabsMenuShown"	value="false" 		scope="request" />
     <c:set var="agnTitleKey" 		value="Mailing" 	scope="request" />
     <c:set var="agnSubtitleKey" 	value="Mailings"	scope="request" />
+    <c:set var="agnHelpKey"         value="mailingBase" scope="request" />
     
     <c:choose>
         <c:when test="${mailingExists}">
@@ -147,9 +151,9 @@
                 <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
             </emm:instantiate>
 
-            <c:set var="sidemenu_sub_active"	value="none" 																							scope="request" />
-            <c:set var="agnHighlightKey" 		value="default.settings" 																				scope="request" />
-            <c:set var="agnHelpKey" 			value="newMailingNormal" 																scope="request" />
+            <c:set var="sidemenu_sub_active"	value="none" 		                scope="request" />
+            <c:set var="agnHighlightKey" 		value="default.settings" 			scope="request" />
+            <c:set var="agnHelpKey" 			value="mailingBase" 				scope="request" />
 
             <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
                 <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -162,7 +166,7 @@
             <c:set var="agnNavigationKey" 		value="GridMailingNew" 		scope="request" />
             <c:set var="sidemenu_sub_active"	value="mailing.New_Mailing" scope="request" />
             <c:set var="agnHighlightKey" 		value="mailing.New_Mailing"	scope="request" />
-            <c:set var="agnHelpKey" 			value="newMailingNormal"    scope="request" />
+            <c:set var="agnHelpKey" 			value="mailingBase"    scope="request" />
             
             <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
                 <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -186,8 +190,10 @@
     </jsp:include>
 
     <c:if test="${not mailingBaseForm.isMailingGrid}">
+        <c:set var="agnHelpKey"         value="mailingGeneralOptions" scope="request" />
         <c:choose>
             <c:when test="${mailingExists}">
+                <c:set var="agnHelpKey"         value="mailingGeneralOptions" scope="request" />
                 <%-- View dropdown --%>
 
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">
@@ -252,6 +258,7 @@
                 </emm:ShowByPermission>
             </c:when>
             <c:otherwise>
+                <c:set var="agnHelpKey"         value="mailingGeneralOptions" scope="request" />
                 <%-- Generate (save new) button --%>
 
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">

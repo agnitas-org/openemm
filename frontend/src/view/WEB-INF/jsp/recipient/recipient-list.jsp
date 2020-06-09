@@ -28,6 +28,10 @@
 <c:set var="ACTION_VIEW" value="<%= ComRecipientAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= ComRecipientAction.ACTION_CONFIRM_DELETE %>"/>
 
+<emm:instantiate var="DEFAULT_FIELDS" type="java.util.LinkedHashMap">
+    <c:set target="${DEFAULT_FIELDS}" property="1" value="email" />
+</emm:instantiate>
+
 <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>"/>
 
 <agn:agnForm action="/recipient.do" data-form="search" class="form-vertical" id="recipientForm"
@@ -56,25 +60,35 @@
 
         <div class="tile" data-initializer="recipient-list">
             <div class="tile-header">
-                <h2 class="headline"><bean:message key="default.search"/></h2>
+                <h2 class="headline">
+                    <bean:message key="default.search"/>
+                </h2>
                 <ul class="tile-header-actions">
-                    <li class="tab" id="basicSearch">
-                        <a href="#" data-toggle-tab="#tab-basicSearch" data-toggle-tab-method="toggle">
-                            <i class="icon icon-search"></i>
-                            <bean:message key="recipient.search.base"/>
-                            <i class="icon tab-toggle icon-angle-down"></i>
-                        </a>
-                    </li>
+                    <c:if test="${not param.showDuplicateTab}">
+                        <%--Basic search tab --%>
+                        <li class="tab" id="basicSearch">
+                            <a href="#" data-toggle-tab="#tab-basicSearch" data-toggle-tab-method="toggle">
+                                <i class="icon icon-search"></i>
+                                <bean:message key="recipient.search.base"/>
+                                <i class="icon tab-toggle icon-angle-down"></i>
+                            </a>
+                        </li>
 
-                    <li class="tab" id="advancedSearch">
-                        <a href="#" data-toggle-tab="#tab-advancedSearch" data-toggle-tab-method="toggle"
-                           data-action="choose-advanced-search">
-                            <i class="icon icon-search"></i>
-                            <bean:message key="recipient.AdvancedSearch"/>
-                            <i class="icon tab-toggle icon-angle-down"></i>
-                        </a>
-                    </li>
+                        <%--Advanced search tab --%>
+                        <li class="tab" id="advancedSearch">
+                            <a href="#" data-toggle-tab="#tab-advancedSearch" data-toggle-tab-method="toggle"
+                               data-action="choose-advanced-search">
+                                <i class="icon icon-search"></i>
+                                <bean:message key="recipient.AdvancedSearch"/>
+                                <i class="icon tab-toggle icon-angle-down"></i>
+                            </a>
+                        </li>
+                    </c:if>
 
+                    <c:set var="showDuplicateTab" value="false"/>
+                    <%@include file="/WEB-INF/jsp/recipient/duplicate-tab-link.jspf"%>
+
+                    <%--Show dropdown--%>
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="icon icon-eye"></i>
@@ -106,14 +120,13 @@
                                 <p>
                                     <button class="btn btn-block btn-secondary btn-regular" data-form-change
                                             data-form-submit type="button">
-                                        <i class="icon icon-refresh"></i><span class="text"><bean:message
-                                            key="button.Show"/></span>
+                                        <i class="icon icon-refresh"></i><span class="text"><bean:message key="button.Show"/></span>
                                     </button>
                                 </p>
                             </li>
                         </ul>
-
                     </li>
+
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="icon icon-columns"></i>
@@ -126,8 +139,10 @@
                                 <p>
                                     <select class="form-control js-select" tabindex="-1" multiple="multiple" name="selectedFields">
                                         <c:forEach var="field" items="${fieldsMap}" varStatus="rowCounter">
-                                            <c:if test="${field.key=='email' or field.key=='EMAIL'}">
-                                                <option title="${field.key}" value="${field.key}" disabled>
+                                            <c:set var="isDefaultField" value="${DEFAULT_FIELDS.values().contains(fn:toLowerCase(field.key))}"/>
+
+                                            <c:if test="${isDefaultField}">
+                                                 <option title="${field.key}" value="${field.key}" disabled>
                                                     <c:out value="${field.value}"/>
                                                 </option>
                                             </c:if>
@@ -138,12 +153,12 @@
                                                     <c:set var="fieldSelected" value="${true}"/>
                                                 </c:if>
                                             </c:forEach>
-                                            <c:if test="${!fieldSelected and field.key!='email' and field.key!='EMAIL'}">
+                                            <c:if test="${not fieldSelected and not isDefaultField}">
                                                 <option title="${field.key}" value="${field.key}">
                                                     <c:out value="${field.value}"/>
                                                 </option>
                                             </c:if>
-                                            <c:if test="${fieldSelected and field.key!='email' and field.key!='EMAIL'}">
+                                            <c:if test="${fieldSelected and not isDefaultField}">
                                                 <option title="${field.key}" value="${field.key}" selected>
                                                     <c:out value="${field.value}"/>
                                                 </option>
@@ -156,8 +171,8 @@
                                 <p>
                                     <button class="btn btn-block btn-secondary btn-regular" type="button"
                                             data-form-change data-form-submit>
-                                        <i class="icon icon-refresh"></i><span class="text"><bean:message
-                                            key="button.Refresh"/></span>
+                                        <i class="icon icon-refresh"></i>
+                                        <span class="text"><bean:message key="button.Refresh"/></span>
                                     </button>
                                 </p>
                             </li>
@@ -165,376 +180,10 @@
                     </li>
                 </ul>
             </div>
+
             <div class="tile-content">
-                <div id="tab-basicSearch" class="hidden">
-                    <div class="tile-content-forms" style="padding-bottom: 0">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_mailinglist">
-                                            <bean:message key="Mailinglist"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_mailinglist" styleClass="form-control js-select"
-                                                       data-action="change-fields-to-search" property="listID"
-                                                       data-form-change="0" titleKey="default.All">
-                                            <html:option value="0" key="default.All"/>
-                                            <c:if test="${hasAnyDisabledMailingLists == false}">
-                                                <agn:agnOption value="-1"><bean:message key="No_Mailinglist"/></agn:agnOption>
-                                            </c:if>
-                                            <c:forEach var="mailinglist" items="${mailinglists}">
-                                                <html:option
-                                                        value="${mailinglist.id}">${mailinglist.shortname}</html:option>
-                                            </c:forEach>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_targetgroup">
-                                            <bean:message key="Target"/>
-                                        </label>
-									</div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_targetgroup" styleClass="form-control js-select"
-                                                       data-action="change-target-group" property="targetID"
-                                                       data-form-change="0" titleKey="default.All">
-                                            <html:option value="0" key="default.All"/>
-                                            <c:forEach var="target" items="${targets}">
-                                                <html:option value="${target.id}">
-                                                    ${target.targetName}
-                                                </html:option>
-                                            </c:forEach>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_recipient_type">
-                                            <bean:message key="recipient.RecipientType"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_recipient_type"
-                                                       styleClass="form-control js-select"
-                                                       data-action="change-recipient-type" property="user_type"
-                                                       data-form-change="0" titleKey="default.All"
-                                                       disabled="${recipientForm.listID == -1}">
-                                            <html:option value="" key="default.All"/>
-                                            <html:option value="A" key="recipient.Administrator"/>
-                                            <html:option value="T" key="TestSubscriber"/>
-                                            <%@include file="recipient-novip-test.jspf" %>
-                                            <html:option value="W" key="NormalSubscriber"/>
-                                            <%@include file="recipient-novip-normal.jspf" %>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_recipient_state">
-                                            <bean:message key="recipient.RecipientStatus"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_recipient_state" styleClass="form-control"
-                                                       property="user_status" data-action="change-user-status"
-                                                       data-form-change="0" titleKey="default.All"
-                                                       disabled="${recipientForm.listID == -1}">
-                                            <html:option value="0" key="default.All"/>
-                                            <html:option value="1" key="recipient.MailingState1"/>
-                                            <html:option value="2" key="recipient.MailingState2"/>
-                                            <html:option value="3" key="recipient.OptOutAdmin"/>
-                                            <html:option value="4" key="recipient.OptOutUser"/>
-                                            <html:option value="5" key="recipient.MailingState5"/>
-                                            <emm:ShowByPermission token="blacklist">
-                                                <html:option value="6" key="recipient.MailingState6"/>
-                                            </emm:ShowByPermission>
-                                            <html:option value="7" key="recipient.MailingState7"/>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label for="search_first_name" class="control-label">
-                                            <bean:message key="Firstname"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <html:text styleId="search_first_name" styleClass="form-control"
-                                                   property="searchFirstName"/>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label for="search_name" class="control-label">
-                                            <bean:message key="Lastname"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <html:text styleId="search_name" styleClass="form-control"
-                                                   property="searchLastName"/>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label for="search_email" class="control-label">
-                                            <bean:message key="mailing.MediaType.0"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <html:text styleId="search_email" styleClass="form-control"
-                                                   property="searchEmail"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <div class="col-sm-12">
-                                        <button type="button" tabindex="-1" class="btn btn-regular"
-                                                data-help="help_${helplanguage}/recipient/SearchMsg.xml">
-                                            <i class="icon icon-question-circle"></i>
-                                            <bean:message key="help"/>
-                                        </button>
-
-                                        <div class="btn-group pull-right">
-                                            <button type="button" class="btn btn-regular"
-                                                    data-form-set="resetSearch:true" data-action="reset-search">
-                                                <bean:message key="button.search.reset"/>
-                                            </button>
-
-                                            <c:if test="${recipientList.getFullListSize() <= 0}">
-                                                <c:set var="isCreateRecipientButtonShown" value="false"/>
-
-                                                <c:url var="createNewRecipientUrl" value="/recipient.do">
-                                                    <c:param name="action" value="${ACTION_VIEW}"/>
-                                                    <c:param name="trgt_clear" value="1"/>
-
-                                                    <c:if test="${not empty fn:trim(recipientForm.searchFirstName)}">
-                                                        <c:param name="firstname" value="${recipientForm.searchFirstName}"/>
-                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
-                                                    </c:if>
-                                                    <c:if test="${not empty fn:trim(recipientForm.searchLastName)}">
-                                                        <c:param name="lastname" value="${recipientForm.searchLastName}"/>
-                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
-                                                    </c:if>
-                                                    <c:if test="${not empty fn:trim(recipientForm.searchEmail)}">
-                                                        <c:param name="email" value="${recipientForm.searchEmail}"/>
-                                                        <c:set var="isCreateRecipientButtonShown" value="true"/>
-                                                    </c:if>
-                                                </c:url>
-
-                                                <c:if test="${isCreateRecipientButtonShown}">
-                                                    <a href="${createNewRecipientUrl}" class="btn btn-primary btn-regular">
-                                                        <i class="icon icon-plus"></i>
-                                                        <span class="text"><bean:message key="button.create.recipient"/></span>
-                                                    </a>
-                                                </c:if>
-                                            </c:if>
-
-                                            <button class="btn btn-primary btn-regular pull-right" type="button"
-                                                    data-form-submit data-form-persist="page: '1'">
-                                                <i class="icon icon-search"></i>
-                                                <span class="text"><bean:message key="Search"/></span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                </div>
-                <div id="tab-advancedSearch" class="hidden">
-                    <div class="tile-content-forms" style="padding-bottom: 0">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_mailinglist_advanced">
-                                            <bean:message key="Mailinglist"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_mailinglist_advanced"
-                                                       styleClass="form-control js-select"
-                                                       data-action="change-fields-to-search-advanced" property="listID"
-                                                       data-form-change="0" titleKey="default.All">
-                                            <html:option value="0" key="default.All"/>
-                                            <c:if test="${hasAnyDisabledMailingLists == false}">
-                                                <agn:agnOption value="-1"><bean:message key="default.none"/></agn:agnOption>
-                                            </c:if>
-                                            <c:forEach var="mailinglist" items="${mailinglists}">
-                                                <html:option
-                                                        value="${mailinglist.id}">${mailinglist.shortname}</html:option>
-                                            </c:forEach>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_targetgroup_advanced">
-                                            <bean:message key="Target"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_targetgroup_advanced"
-                                                       styleClass="form-control js-select" property="targetID"
-                                                       data-action="change-target-group-advanced" data-form-change="0"
-                                                       titleKey="default.All">
-                                            <html:option value="0" key="default.All"/>
-                                            <c:forEach var="target" items="${targets}">
-                                                <html:option value="${target.id}">
-                                                    ${target.targetName}
-                                                </html:option>
-                                            </c:forEach>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_recipient_type_advanced">
-                                            <bean:message key="recipient.RecipientType"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_recipient_type_advanced"
-                                                       styleClass="form-control js-select" property="user_type"
-                                                       data-action="change-recipient-type-advanced" data-form-change="0"
-                                                       titleKey="default.All"
-                                                       disabled="${recipientForm.listID == -1}">
-                                            <html:option value="" key="default.All"/>
-                                            <html:option value="A" key="recipient.Administrator"/>
-                                            <html:option value="T" key="TestSubscriber"/>
-                                            <%@include file="recipient-novip-test.jspf" %>
-                                            <html:option value="W" key="NormalSubscriber"/>
-                                            <%@include file="recipient-novip-normal.jspf" %>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label" for="search_recipient_state_advanced">
-                                            <bean:message key="recipient.RecipientStatus"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <agn:agnSelect styleId="search_recipient_state_advanced"
-                                                       styleClass="form-control" property="user_status"
-                                                       data-action="change-user-status-advanced" data-form-change="0"
-                                                       titleKey="default.All"
-                                                       disabled="${recipientForm.listID == -1}">
-                                            <html:option value="0" key="default.All"/>
-                                            <html:option value="1" key="recipient.MailingState1"/>
-                                            <html:option value="2" key="recipient.MailingState2"/>
-                                            <html:option value="3" key="recipient.OptOutAdmin"/>
-                                            <html:option value="4" key="recipient.OptOutUser"/>
-                                            <html:option value="5" key="recipient.MailingState5"/>
-                                            <emm:ShowByPermission token="blacklist">
-                                                <html:option value="6" key="recipient.MailingState6"/>
-                                            </emm:ShowByPermission>
-                                            <html:option value="7" key="recipient.MailingState7"/>
-                                        </agn:agnSelect>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label">
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <c:set var="FORM_NAME" value="recipientForm" scope="page"/>
-                                        <c:set var="HIDE_SPECIAL_TARGET_FEATURES" value="true" scope="page"/>
-                                        <%@include file="/WEB-INF/jsp/rules/rule_add.jsp" %>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <c:if test="${fn:length(recipientForm.allColumnsAndTypes) > 0}">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <div class="col-md-12">
-                                        <label class="control-label">
-                                        </label>
-                                    </div>
-                                    <div class="col-md-12">
-                                        </c:if>
-                                        <%@include file="/WEB-INF/jsp/rules/rules_list.jsp" %>
-                                        <c:if test="${fn:length(recipientForm.allColumnsAndTypes) > 0}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        </c:if>
-
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <div class="col-sm-12">
-                                        <button type="button" tabindex="-1" class="btn btn-regular"
-                                                data-help="help_${helplanguage}/recipient/AdvancedSearchMsg.xml">
-                                            <i class="icon icon-question-circle"></i>
-                                            <bean:message key="help"/>
-                                        </button>
-
-                                        <div class="btn-group pull-right">
-                                            <button type="button" class="btn btn-regular"
-                                                    data-form-set="resetSearch:true" data-action="reset-search">
-                                                <bean:message key="button.search.reset"/></button>
-                                            <!-- hide if no queries are present BEGIN -->
-                                            <c:if test="${fn:length(recipientForm.allColumnsAndTypes) > 0}">
-                                                <button type="button" tabindex="-1" data-modal="target-group-save"
-                                                        class="btn btn-regular">
-                                                    <bean:message key="recipient.saveSearch"/>
-                                                </button>
-                                            </c:if>
-                                            <!-- hide if no queries are present END -->
-
-                                            <button id="refresh-button"
-                                                    class="btn btn-primary btn-regular" type="button"
-                                                    data-form-set="advancedSearch:true"
-                                                    data-form-submit>
-                                                <i class="icon icon-refresh"></i>
-                                                <span class="text"><bean:message key="button.Refresh"/></span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                </div>
-
+                <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-basic-search-tab.jsp"/>
+                <jsp:include page="/WEB-INF/jsp/recipient/recipient-list-advanced-search-tab.jsp"/>
 
                 <div class="${recipientForm.deactivatePagination ? 'table-wrapper hide-pagination' : 'table-wrapper'}">
                     <c:if test="${recipientForm.overview}">
@@ -553,73 +202,7 @@
                             <c:if test="${not empty recipient}">
                                 <c:set var="customer_id"><bean:write name="recipient" property="customer_id"/></c:set>
 
-                                <c:forEach var="selectedField" items="${recipientForm.selectedFields}"
-                                           varStatus="rowCounter">
-                                    <c:forEach var="field" items="${fieldsMap}" varStatus="rowCounter">
-
-                                        <c:if test="${field.key == selectedField}">
-                                            <c:choose>
-                                                <c:when test="${field.key == 'gender' or field.key == 'GENDER'}">
-                                                    <c:set var="gender"><bean:write name="recipient" property="gender"/></c:set>
-                                                    <display:column class="recipient_title" headerClass="js-table-sort"
-                                                                    titleKey="recipient.Salutation" sortable="true"
-                                                                    sortProperty="gender" paramId="recipientID"
-                                                                    paramProperty="customer_id"
-                                                                    url="/recipient.do?action=${ACTION_VIEW}">
-                                                        <bean:message key="recipient.gender.${gender}.short"/>
-                                                    </display:column>
-                                                </c:when>
-                                                <c:when test="${field.key == 'firstname' or field.key == 'FIRSTNAME'}">
-                                                    <display:column class="recipient_firstname"
-                                                                    headerClass="js-table-sort" titleKey="Firstname"
-                                                                    sortable="true" sortProperty="firstname"
-                                                                    paramId="recipientID" paramProperty="customer_id"
-                                                                    url="/recipient.do?action=${ACTION_VIEW}">
-                                                        <c:set var="firstname"><bean:write name="recipient"
-                                                                                           property="firstname"/></c:set>
-                                                        ${firstname}
-                                                    </display:column>
-                                                </c:when>
-                                                <c:when test="${field.key == 'lastname' or field.key == 'LASTNAME'}">
-                                                    <display:column class="recipient_lastname"
-                                                                    headerClass="js-table-sort" titleKey="Lastname"
-                                                                    sortable="true" sortProperty="lastname"
-                                                                    paramId="recipientID" paramProperty="customer_id"
-                                                                    url="/recipient.do?action=${ACTION_VIEW}">
-                                                        <c:set var="lastname"><bean:write name="recipient"
-                                                                                          property="lastname"/></c:set>
-                                                        ${lastname}
-                                                    </display:column>
-                                                </c:when>
-
-                                                <c:when test="${field.key == 'creation_date' or field.key == 'CREATION_DATE'}">
-                                                    <c:set var="creation_date"><bean:write name="recipient"
-                                                                                           property="creation_date"/></c:set>
-
-                                                    <display:column headerClass="js-table-sort" sortable="true"
-                                                                    titleKey="default.creationDate"
-                                                                    sortProperty="creation_date" paramId="recipientID"
-                                                                    paramProperty="customer_id"
-                                                                    url="/recipient.do?action=${ACTION_VIEW}">
-                                                        <fmt:parseDate value="${creation_date}" type="date"
-                                                                       pattern="yyyy-MM-dd HH:mm:ss.S"
-                                                                       var="formatedDate"/>
-                                                        <fmt:formatDate value="${formatedDate}" type="date"
-                                                                        pattern="${adminDateFormat}"
-                                                                        timeZone="${adminTimeZone}"/>
-                                                    </display:column>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <display:column class="recipient_title" headerClass="js-table-sort"
-                                                                    title="${field.value}" property="${field.key}"
-                                                                    sortable="true" sortProperty="${field.key}"
-                                                                    paramId="recipientID" paramProperty="customer_id"
-                                                                    url="/recipient.do?action=${ACTION_VIEW}"/>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </c:if>
-                                    </c:forEach>
-                                </c:forEach>
+                                <%@include file="/WEB-INF/jsp/recipient/additional-fields.jspf"%>
 
                                 <display:column headerClass="js-table-sort" property="email"
                                                 titleKey="mailing.MediaType.0" sortable="true" paramId="recipientID"
@@ -652,55 +235,6 @@
 
     </div>
 
-    <script id="target-group-save" type="text/x-mustache-template">
-        <div class="modal">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close-icon close" data-dismiss="modal">
-                            <i aria-hidden="true" class="icon icon-times-circle"></i>
-                        </button>
-                        <h4 class="modal-title"><bean:message key="recipient.saveSearch"/></h4>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <div class="col-sm-4">
-                                <label for="targetShortnameOverlay" class="control-label"><bean:message
-                                        key="Name"/></label>
-                            </div>
-                            <div class="col-sm-8">
-                                <input type="text" id="targetShortnameOverlay" class="form-control" maxlength="99"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-sm-4">
-                                <label for="targetDescriptionOverlay" class="control-label"><bean:message
-                                        key="Description"/></label>
-                            </div>
-                            <div class="col-sm-8">
-                                <textarea id="targetDescriptionOverlay" class="form-control" rows="5"
-                                          cols="32"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
-                                <i class="icon icon-times"></i>
-                                <span class="text"><bean:message key="button.Cancel"/></span>
-                            </button>
-                            <button type="button" class="btn btn-primary btn-large"
-                                    data-sync-from="#targetShortnameOverlay, #targetDescriptionOverlay"
-                                    data-sync-to="#targetShortname, #targetDescription"
-                                    data-form-set="needSaveTargetGroup: 'true'" data-form-target="#recipientForm"
-                                    data-form-submit="" data-dismiss="modal">
-                                <i class="icon icon-check"></i>
-                                <bean:message key="button.Save"/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </script>
+    <%@include file="/WEB-INF/jsp/recipient/recipient-list-target-group-save-template.jspf" %>
+
 </agn:agnForm>

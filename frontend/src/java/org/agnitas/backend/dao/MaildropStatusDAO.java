@@ -50,9 +50,9 @@ public class MaildropStatusDAO {
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
 					    "SELECT status_id, company_id, mailing_id, status_field, senddate, " +
-					    "       step, blocksize, genstatus, max_recipients, " + 
+					    "       step, blocksize, genstatus, max_recipients, " +
 					    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients " +
-					    "FROM maildrop_status_tbl " + 
+					    "FROM maildrop_status_tbl " +
 					    "WHERE status_id = :statusID",
 					    "statusID", forStatusID);
 			if (row != null) {
@@ -193,20 +193,22 @@ public class MaildropStatusDAO {
 					boolean	hit = false;
 					
 					switch (status) {
-					case 'W':
-						hit = true;
-						break;
-					case 'R':
-					case 'D':
-						hit = currentStatus != 'W';
-						break;
-					case 'E':
-						hit = currentStatus != 'W' && currentStatus != 'R' && currentStatus != 'D';
-						break;
-					case 'A':
-					case 'T':
-						hit = currentStatus == 'T' || currentStatus == 'A' || currentStatus == '\0';
-						break;
+						case 'W':
+							hit = true;
+							break;
+						case 'R':
+						case 'D':
+							hit = currentStatus != 'W';
+							break;
+						case 'E':
+							hit = currentStatus != 'W' && currentStatus != 'R' && currentStatus != 'D';
+							break;
+						case 'A':
+						case 'T':
+							hit = currentStatus == 'T' || currentStatus == 'A' || currentStatus == '\0';
+							break;
+						default:
+							break;
 					}
 					if (hit) {
 						currentStatus = status;
@@ -231,7 +233,7 @@ public class MaildropStatusDAO {
 		try (DBase.With with = dbase.with ()) {
 			rq = dbase.query (with.jdbc (),
 					  "SELECT status_id " +
-					  "FROM maildrop_status_tbl " + 
+					  "FROM maildrop_status_tbl " +
 					  "WHERE mailing_id = :mailingID AND status_field = :statusField " +
 					  "ORDER BY status_id " + direction,
 					  "mailingID", mailingID,
@@ -259,9 +261,52 @@ public class MaildropStatusDAO {
 	 * update genstatus for statusID
 	 */
 	public boolean updateGenStatus (DBase dbase, int fromStatus, int toStatus) throws SQLException {
+		int	count;
+		
+		DBase.Retry <Integer>	r = dbase.new Retry <Integer> ("genstatus", dbase, dbase.jdbc ()) {
+			@Override
+			public void execute () throws SQLException {
+				String	query =
+					"UPDATE maildrop_status_tbl " +
+					"SET genchange = CURRENT_TIMESTAMP, genstatus = ? " +
+					"WHERE status_id = ?" + (fromStatus > 0 ? " AND genstatus = ?" : "");
+				try (Connection conn = dbase.getConnection (query, toStatus, statusID, fromStatus)) {
+					boolean	autoCommit = conn.getAutoCommit ();
+					
+					try {
+						if (! autoCommit) {
+							conn.setAutoCommit (true);
+						}
+						try (PreparedStatement prep = conn.prepareStatement (query)) {
+							prep.setLong (1, toStatus);
+							prep.setLong (2, statusID);
+							if (fromStatus > 0) {
+								prep.setLong (3, fromStatus);
+							}
+							priv = prep.executeUpdate ();
+						}
+					} finally {
+						conn.setAutoCommit (autoCommit);
+					}
+				}
+			}
+		};
+		if (dbase.retry (r)) {
+			count = r.priv;
+			if (count == 1) {
+				dbase.logging (Log.INFO, "genstatus", "Updated genstatus " + (fromStatus > 0 ? "from " + fromStatus : "") + "to " + toStatus + " for statusID " + statusID);
+			} else {
+				dbase.logging (Log.INFO, "genstatus", "Failed to update genstatus " + (fromStatus > 0 ? "from " + fromStatus : "") + "to " + toStatus + " for statusID " + statusID + ", affected " + count + " rows");
+			}
+			return count == 1;
+		}
+		throw r.error;
+	}
+
+	public boolean updateGenStatus_old (DBase dbase, int fromStatus, int toStatus) throws SQLException {
 		boolean	rc = false;
 		String	query =
-			"UPDATE maildrop_status_tbl " + 
+			"UPDATE maildrop_status_tbl " +
 			"SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
 			"WHERE status_id = :statusID" + (fromStatus > 0 ? " AND genstatus = :fromStatus" : "");
 		String	vquery =
@@ -270,7 +315,7 @@ public class MaildropStatusDAO {
 		for (int retry = 0; (! rc) && (retry < 3); ++retry) {
 			if ((! rc) && (retry > 0)) {
 				try {
-					Thread.sleep (1);
+					Thread.sleep (1000);
 				} catch (InterruptedException e) {
 					// do nothing
 				}
@@ -294,24 +339,23 @@ public class MaildropStatusDAO {
 					dbase.logging (Log.ERROR, "genstatus", "Update genstatus from " + fromStatus + " to " + toStatus + " for " + statusID + " affected " + count + " rows");
 					break;
 				}
-			}
-			try (Connection conn = dbase.getConnection (vquery, statusID)) {
-				PreparedStatement	prep = conn.prepareStatement (vquery);
-				
-				prep.setLong (1, statusID);
-				try (ResultSet rset = prep.executeQuery ()) {
-					for (int pos = 1; rset.next (); ++pos) {
-						if (pos == 1) {
-							long	currentStatus = rset.getLong (1);
+				try (Connection conn = dbase.getConnection (vquery, statusID);
+				     PreparedStatement	prep = conn.prepareStatement (vquery)) {
+					prep.setLong (1, statusID);
+					try (ResultSet rset = prep.executeQuery ()) {
+						for (int pos = 1; rset.next (); ++pos) {
+							if (pos == 1) {
+								long	currentStatus = rset.getLong (1);
 							
-							if (currentStatus == toStatus) {
-								rc = true;
+								if (currentStatus == toStatus) {
+									rc = true;
+								} else {
+									dbase.logging (Log.ERROR, "genstatus", "Even after ``successful'' update of genstatus to " + toStatus + " the current genstatus is " + currentStatus);
+								}
 							} else {
-								dbase.logging (Log.ERROR, "genstatus", "Even after ``successful'' update of genstatus to " + toStatus + " the current genstatus is " + currentStatus);
+								dbase.logging (Log.ERROR, "genstatus", "Got " + rset.getLong (1) + " for unexpected " + pos + " row to validate current status");
+								rc = false;
 							}
-						} else {
-							dbase.logging (Log.ERROR, "genstatus", "Got " + rset.getLong (1) + " for unexpected " + pos + " row to validate current status");
-							rc = false;
 						}
 					}
 				}
@@ -327,7 +371,7 @@ public class MaildropStatusDAO {
 	public boolean remove (DBase dbase) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
 			return dbase.update (with.jdbc (),
-					     "DELETE FROM maildrop_status_tbl " + 
+					     "DELETE FROM maildrop_status_tbl " +
 					     "WHERE status_id = :statusID",
 					     "statusID", statusID) == 1;
 		}

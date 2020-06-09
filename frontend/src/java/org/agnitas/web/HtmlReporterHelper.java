@@ -10,8 +10,8 @@
 
 package org.agnitas.web;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class HtmlReporterHelper {
 	public static String WHITE_COLORCODE = "FFFFFF";
@@ -28,7 +28,7 @@ public class HtmlReporterHelper {
 			.append("	<meta name=\"viewport\" content=\"width=device-width\">\n")
 			.append("	<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n")
 			.append("	<meta name=\"x-apple-disable-message-reformatting\">\n")
-			.append("	<title>").append(StringEscapeUtils.escapeHtml(title)).append("</title>\n")
+			.append("	<title>").append(StringEscapeUtils.escapeHtml4(title)).append("</title>\n")
 			.append("	<!-- Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font. -->\n")
 			.append("	<!--[if mso]>\n")
 			.append("		<style>\n")
@@ -185,7 +185,7 @@ public class HtmlReporterHelper {
 			.append("						<table role=\"presentation\" align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">\n")
 			.append("							<tr>\n")
 			.append("								<td dir=\"ltr\" valign=\"top\" style=\"font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555; padding: 10px; text-align: left;\" class=\"center-on-narrow\">\n")
-			.append("									<h1 style=\"margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 21px; color: #555555; font-weight: bold;\">").append(StringEscapeUtils.escapeHtml(title)).append("</h1>\n")
+			.append("									<h1 style=\"margin: 0 0 10px 0; font-family: sans-serif; font-size: 18px; line-height: 21px; color: #555555; font-weight: bold;\">").append(StringEscapeUtils.escapeHtml4(title)).append("</h1>\n")
 			.append("								</td>\n")
 			.append("							</tr>\n")
 			.append("						</table>\n")
@@ -208,7 +208,7 @@ public class HtmlReporterHelper {
 			.append("		<td>\n")
 			.append("			<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\">\n")
 			.append("				<tr>\n")
-			.append("					<td style=\"padding: 20px; font-family: Arial, sans-serif; font-size: 9px; color: #999999;\">").append(StringEscapeUtils.escapeHtml(hostname)).append(" ").append(StringEscapeUtils.escapeHtml(emmVersionString)).append("</td>\n")
+			.append("					<td style=\"padding: 20px; font-family: Arial, sans-serif; font-size: 9px; color: #999999;\">").append(StringEscapeUtils.escapeHtml4(hostname)).append(" ").append(StringEscapeUtils.escapeHtml4(emmVersionString)).append("</td>\n")
 			.append("				</tr>\n")
 			.append("			</table>\n")
 			.append("		</td>\n")
@@ -225,7 +225,7 @@ public class HtmlReporterHelper {
 		return new StringBuilder()
 			.append("	<tr>\n")
 			.append("		<td bgcolor=\"#ffffff\" style=\"padding: 20px; text-align:left;\">\n")
-			.append("			<h2 style=\"margin: 0; font-family: sans-serif; font-size: 16px; line-height: 18px; color: #333333;\">").append(StringEscapeUtils.escapeHtml(headerText)).append(":</h2>\n")
+			.append("			<h2 style=\"margin: 0; font-family: sans-serif; font-size: 16px; line-height: 18px; color: #333333;\">").append(StringEscapeUtils.escapeHtml4(headerText)).append(":</h2>\n")
 			.append("		</td>\n")
 			.append("	</tr>\n")
 			.toString();
@@ -235,13 +235,13 @@ public class HtmlReporterHelper {
 		if (continueWithBorder) {
 			return new StringBuilder()
 				.append("	</table>\n")
-				.append("	<p style=\"font-family: Arial, sans-serif; font-size:12px;\">").append(StringEscapeUtils.escapeHtml(headerText)).append(":</p>\n")
+				.append("	<p style=\"font-family: Arial, sans-serif; font-size:12px;\">").append(StringEscapeUtils.escapeHtml4(headerText)).append(":</p>\n")
 				.append("	<table width=\"100%\" border=\"1\" bordercolor=\"#64C3FF\" cellspacing=\"0\" cellpadding=\"3\" style=\"border-collapse: collapse; font-family: Arial, sans-serif; font-size:12px;\">\n")
 				.toString();
 		} else {
 			return new StringBuilder()
 				.append("	</table>\n")
-				.append("	<p style=\"font-family: Arial, sans-serif; font-size:12px;\">").append(StringEscapeUtils.escapeHtml(headerText)).append(":</p>\n")
+				.append("	<p style=\"font-family: Arial, sans-serif; font-size:12px;\">").append(StringEscapeUtils.escapeHtml4(headerText)).append(":</p>\n")
 				.append("	<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"3\" style=\"font-family: Arial, sans-serif; font-size:12px;\">\n")
 				.toString();
 		}
@@ -266,7 +266,7 @@ public class HtmlReporterHelper {
 	public static String getOutputTableErrorContentLine(String errorText) {
 		return new StringBuilder()
 			.append("	<tr>\n")
-			.append("		<td bgcolor=\"#").append(RED_COLORCODE).append("\" style=\"color:#").append(WHITE_COLORCODE).append(";\">").append(StringEscapeUtils.escapeHtml(errorText)).append("</td>\n")
+			.append("		<td bgcolor=\"#").append(RED_COLORCODE).append("\" style=\"color:#").append(WHITE_COLORCODE).append(";\">").append(StringEscapeUtils.escapeHtml4(errorText)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}
@@ -277,7 +277,7 @@ public class HtmlReporterHelper {
 			.append("		<td aria-hidden=\"true\" height=\"20\" style=\"font-size: 0; line-height: 0;\">&nbsp;</td>\n")
 			.append("	</tr>\n")
 			.append("	<tr>\n")
-			.append("		<td align=\"right\" bgcolor=\"#").append(YELLOW_COLORCODE).append("\">").append(StringEscapeUtils.escapeHtml(warningText)).append("</td>\n")
+			.append("		<td align=\"right\" bgcolor=\"#").append(YELLOW_COLORCODE).append("\">").append(StringEscapeUtils.escapeHtml4(warningText)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}
@@ -290,8 +290,8 @@ public class HtmlReporterHelper {
 		}
 		return new StringBuilder()
 			.append("	<tr>\n")
-			.append("		<td>").append(StringEscapeUtils.escapeHtml(contentItemName)).append("</td>\n")
-			.append("		<td width=\"25%\" align=\"right\" bgcolor=\"#").append(backgroundColorCode).append("\"").append(textColorCode != null ? (" style=\"color:#" + textColorCode + ";\"") : "").append(">").append(StringEscapeUtils.escapeHtml(contentItemValue)).append("</td>\n")
+			.append("		<td>").append(StringEscapeUtils.escapeHtml4(contentItemName)).append("</td>\n")
+			.append("		<td width=\"25%\" align=\"right\" bgcolor=\"#").append(backgroundColorCode).append("\"").append(textColorCode != null ? (" style=\"color:#" + textColorCode + ";\"") : "").append(">").append(StringEscapeUtils.escapeHtml4(contentItemValue)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}
@@ -299,8 +299,8 @@ public class HtmlReporterHelper {
 	public static String getOutputTableSummaryContentLine(String contentItemName, String contentItemValue) {
 		return new StringBuilder()
 			.append("	<tr>\n")
-			.append("		<td>").append(StringEscapeUtils.escapeHtml(contentItemName)).append("</td>\n")
-			.append("		<td width=\"25%\" align=\"right\">").append(StringEscapeUtils.escapeHtml(contentItemValue)).append("</td>\n")
+			.append("		<td>").append(StringEscapeUtils.escapeHtml4(contentItemName)).append("</td>\n")
+			.append("		<td width=\"25%\" align=\"right\">").append(StringEscapeUtils.escapeHtml4(contentItemValue)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}
@@ -308,8 +308,8 @@ public class HtmlReporterHelper {
 	public static String getOutputTableResultContentLine(String contentItemName, String contentItemValue) {
 		return new StringBuilder()
 			.append("	<tr>\n")
-			.append("		<td>").append(StringEscapeUtils.escapeHtml(contentItemName)).append("</td>\n")
-			.append("		<td width=\"40%\" align=\"right\">").append(StringEscapeUtils.escapeHtml(contentItemValue)).append("</td>\n")
+			.append("		<td>").append(StringEscapeUtils.escapeHtml4(contentItemName)).append("</td>\n")
+			.append("		<td width=\"40%\" align=\"right\">").append(StringEscapeUtils.escapeHtml4(contentItemValue)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}
@@ -317,8 +317,8 @@ public class HtmlReporterHelper {
 	public static String getOutputTableInfoContentLine(String contentItemName, String contentItemValue) {
 		return new StringBuilder()
 			.append("	<tr>\n")
-			.append("		<td width=\"140\" class=\"stack-column\"><b>").append(StringUtils.isNotEmpty(contentItemName) ? StringEscapeUtils.escapeHtml(contentItemName) + ":" : "").append("</b></td>\n")
-			.append("		<td class=\"stack-column\">").append(StringEscapeUtils.escapeHtml(contentItemValue)).append("</td>\n")
+			.append("		<td width=\"140\" class=\"stack-column\"><b>").append(StringUtils.isNotEmpty(contentItemName) ? StringEscapeUtils.escapeHtml4(contentItemName) + ":" : "").append("</b></td>\n")
+			.append("		<td class=\"stack-column\">").append(StringEscapeUtils.escapeHtml4(contentItemValue)).append("</td>\n")
 			.append("	</tr>\n")
 			.toString();
 	}

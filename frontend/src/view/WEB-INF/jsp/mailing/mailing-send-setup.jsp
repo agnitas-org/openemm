@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.Mailing" %>
+<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -16,8 +17,8 @@
 <c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 <c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
 
-<c:set var="TYPE_NORMAL" value="<%= Mailing.TYPE_NORMAL %>" scope="request"/>
-<c:set var="TYPE_FOLLOWUP" value="<%= Mailing.TYPE_FOLLOWUP %>" scope="request"/>
+<c:set var="TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>" scope="request"/>
+<c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>" scope="request"/>
 
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}"/>
 <c:set var="mailingId" value="${mailingSendForm.mailingID}" scope="request"/>
@@ -80,7 +81,7 @@
             <c:set var="agnSubtitleKey" 		value="Mailing" 														scope="request" />
             <c:set var="sidemenu_sub_active"	value="none" 															scope="request" />
             <c:set var="agnHighlightKey" 		value="Send_Mailing" 													scope="request" />
-            <c:set var="agnHelpKey" 			value="Sending_out_test_mails2" 										scope="request" />
+            <c:set var="agnHelpKey" 			value="mailingsCheck" 										            scope="request" />
         </c:when>
         <c:otherwise>
             <c:choose>
@@ -91,12 +92,15 @@
                     <c:set var="agnNavigationKey" 		value="mailingView"                         scope="request" />
                 </c:otherwise>
             </c:choose>
-            <c:set var="agnNavHrefAppend" 		value="&mailingID=${mailingId}&init=true"	scope="request" />
+            <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
+                <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+            </emm:instantiate>
             <c:set var="agnTitleKey" 			value="Mailing" 							scope="request" />
             <c:set var="agnSubtitleKey" 		value="Mailing" 							scope="request" />
             <c:set var="agnHighlightKey" 		value="Send_Mailing" 						scope="request" />
             <c:set var="sidemenu_sub_active"	value="none" 								scope="request" />
-            <c:set var="agnHelpKey" 			value="Sending_out_test_mails2" 			scope="request" />
+            <c:set var="agnHelpKey" 			value="mailingsCheck" 			            scope="request" />
         </c:otherwise>
     </c:choose>
 </logic:equal>

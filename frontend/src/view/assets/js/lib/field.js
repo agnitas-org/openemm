@@ -120,7 +120,7 @@ This field prevents form submission when an input is not valid.
     this.validatorName = $target.data('field-validator');
 
     var options = $target.data('validator-options');
-    this.options = options ? AGN.Lib.Helpers.objFromString(options) : null;
+    this.options = options ? AGN.Lib.Helpers.objFromString(options) || {} : {};
   };
 
   CustomField.prototype = Object.create(Field.prototype);
@@ -431,7 +431,7 @@ Only targets inside the container designated by the `toggle-vis` directive will 
 
       if ($el.is('option')) {
         $el.prop('disabled', true);
-        AGN.Initializers.Select($el.parents('select'))
+        AGN.Lib.CoreInitializer.run('select', $el.parents('select'));
       }
     });
 
@@ -453,7 +453,7 @@ Only targets inside the container designated by the `toggle-vis` directive will 
 
       if ($el.is('option')) {
         $el.prop('disabled', false);
-        AGN.Initializers.Select($el.parents('select'))
+        AGN.Lib.CoreInitializer.run('select', $el.parents('select'));
       }
     });
   }

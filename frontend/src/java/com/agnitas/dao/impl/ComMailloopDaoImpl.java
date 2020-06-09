@@ -25,7 +25,7 @@ import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -78,7 +78,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			// Store new Mailloop in DB
 			if (isOracleDB()) {
 				int newId = selectInt(logger, "SELECT mailloop_tbl_seq.NEXTVAL FROM DUAL");
-				String insertSql = "INSERT INTO mailloop_tbl (rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, ar_sender, ar_subject, ar_text, ar_html, timestamp, subscribe_enable, mailinglist_id, form_id, creation_date, autoresponder_mailing_id, security_token) VALUES (" + AgnUtils.repeatString("?", 19, ", ") + ")";
+				String insertSql = "INSERT INTO mailloop_tbl (rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, subscribe_enable, mailinglist_id, form_id, creation_date, autoresponder_mailing_id, security_token) VALUES (" + AgnUtils.repeatString("?", 15, ", ") + ")";
 				int touchedLines = update(logger, insertSql,
 						newId,
 						mailloop.getCompanyID(),
@@ -88,10 +88,6 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 						mailloop.getFilterEmail(),
 						mailloop.isDoForward() ? 1 : 0,
 						mailloop.isDoAutoresponder() ? 1 : 0,
-						mailloop.getArSender(),
-						mailloop.getArSubject(),
-						mailloop.getArText(),
-						mailloop.getArHtml(),
 						mailloop.getChangedate(),
 						mailloop.isDoSubscribe() ? 1 : 0,
 						mailloop.getMailinglistID(),
@@ -106,7 +102,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 					throw new RuntimeException("Illegal insert result");
 				}
 			} else {
-				String insertSql = "INSERT INTO mailloop_tbl (company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, ar_sender, ar_subject, ar_text, ar_html, timestamp, subscribe_enable, mailinglist_id, form_id, creation_date, autoresponder_mailing_id, security_token) VALUES (" + AgnUtils.repeatString("?", 18, ", ") + ")";
+				String insertSql = "INSERT INTO mailloop_tbl (company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, subscribe_enable, mailinglist_id, form_id, creation_date, autoresponder_mailing_id, security_token) VALUES (" + AgnUtils.repeatString("?", 14, ", ") + ")";
 				int newId = insertIntoAutoincrementMysqlTable(logger, "rid", insertSql,
 						mailloop.getCompanyID(),
 						mailloop.getDescription(),
@@ -115,10 +111,6 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 						mailloop.getFilterEmail(),
 						mailloop.isDoForward() ? 1 : 0,
 						mailloop.isDoAutoresponder() ? 1 : 0,
-						mailloop.getArSender(),
-						mailloop.getArSubject(),
-						mailloop.getArText(),
-						mailloop.getArHtml(),
 						mailloop.getChangedate(),
 						mailloop.isDoSubscribe() ? 1 : 0,
 						mailloop.getMailinglistID(),
@@ -130,7 +122,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			}
 		} else {
 			// Update Mailloop in DB
-			String updateSql = "UPDATE mailloop_tbl SET description = ?, shortname = ?, forward = ?, filter_address = ?, forward_enable = ?, ar_enable = ?, ar_sender = ?, ar_subject = ?, ar_text = ?, ar_html = ?, timestamp = ?, subscribe_enable = ?, mailinglist_id = ?, form_id = ?, autoresponder_mailing_id = ?, security_token = ? WHERE rid = ? and company_id = ?";
+			String updateSql = "UPDATE mailloop_tbl SET description = ?, shortname = ?, forward = ?, filter_address = ?, forward_enable = ?, ar_enable = ?, timestamp = ?, subscribe_enable = ?, mailinglist_id = ?, form_id = ?, autoresponder_mailing_id = ?, security_token = ? WHERE rid = ? and company_id = ?";
 			int touchedLines = update(logger, updateSql,
 					mailloop.getDescription(),
 					mailloop.getShortname(),
@@ -138,10 +130,6 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 					mailloop.getFilterEmail(),
 					mailloop.isDoForward() ? 1 : 0,
 					mailloop.isDoAutoresponder() ? 1 : 0,
-					mailloop.getArSender(),
-					mailloop.getArSubject(),
-					mailloop.getArText(),
-					mailloop.getArHtml(),
 					mailloop.getChangedate(),
 					mailloop.isDoSubscribe() ? 1 : 0,
 					mailloop.getMailinglistID(),
@@ -200,10 +188,6 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			readMailloop.setFilterEmail(resultSet.getString("filter_address"));
 			readMailloop.setDoForward(resultSet.getInt("forward_enable") > 0);
 			readMailloop.setDoAutoresponder(resultSet.getInt("ar_enable") > 0);
-			readMailloop.setArSender(resultSet.getString("ar_sender"));
-			readMailloop.setArSubject(resultSet.getString("ar_subject"));
-			readMailloop.setArText(resultSet.getString("ar_text"));
-			readMailloop.setArHtml(resultSet.getString("ar_html"));
 			readMailloop.setChangedate(resultSet.getDate("timestamp"));
 			readMailloop.setDoSubscribe(resultSet.getInt("subscribe_enable") > 0);
 			readMailloop.setMailinglistID(resultSet.getInt("mailinglist_id"));
@@ -213,5 +197,19 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 			
 			return readMailloop;
 		}
+	}
+	   
+    @Override
+    public boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId) {
+		return selectInt(logger,
+				"SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ? AND autoresponder_mailing_id = ?",
+				companyId, mailingId)
+				> 0;
+    }
+    
+    @Override
+    public List<MailloopEntry> getDependentBounceFilters(@VelocityCheck int companyId, int mailingId) {
+		String query = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ? AND autoresponder_mailing_id = ?";
+		return select(logger, query, new MailloopEntry_RowMapper(), companyId, mailingId);
 	}
 }

@@ -17,7 +17,7 @@ import org.agnitas.emm.extension.exceptions.UnknownPluginException;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.java.plugin.PluginLifecycleException;
 import org.springframework.core.convert.ConversionService;

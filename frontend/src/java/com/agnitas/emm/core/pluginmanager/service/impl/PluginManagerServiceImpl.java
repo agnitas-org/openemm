@@ -25,7 +25,7 @@ import org.agnitas.emm.extension.exceptions.DatabaseScriptException;
 import org.agnitas.emm.extension.exceptions.MissingPluginManifestException;
 import org.agnitas.emm.extension.exceptions.RemovingSystemPluginNotAllowedException;
 import org.agnitas.emm.extension.exceptions.UnknownPluginException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.java.plugin.JpfException;
 import org.java.plugin.PluginLifecycleException;

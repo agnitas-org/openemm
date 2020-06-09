@@ -10,11 +10,12 @@
 
 package com.agnitas.emm.core.bounce.service;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import java.util.List;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface BounceFilterService {
     int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter) throws Exception;
@@ -25,4 +26,7 @@ public interface BounceFilterService {
 
     boolean deleteBounceFilter(int filterId, @VelocityCheck int companyId);
 
+    boolean isMailingUsedInBounceFilter(@VelocityCheck int companyId, int mailingId);
+    
+    List<BounceFilterDto> getDependentBounceFiltersByMailing(@VelocityCheck int companyId, int mailingId);
 }

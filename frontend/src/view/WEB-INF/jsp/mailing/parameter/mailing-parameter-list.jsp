@@ -147,7 +147,7 @@
                     </display:column>
 
                     <display:column headerClass="parameter_change_date_head header" class="senddate" titleKey="default.changeDate" sortable="true"
-                        format="{0,date,yyyy-MM-dd}" property="changeDate" sortProperty="changeDate">
+                        format="{0, date, ${adminDateFormat}}" property="changeDate" sortProperty="changeDate">
                         ${parameter.changeDate}
                     </display:column>
 

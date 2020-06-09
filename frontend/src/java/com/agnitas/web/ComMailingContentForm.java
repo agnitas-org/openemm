@@ -16,9 +16,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComContentSource;
+import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.beans.DynamicTagContent;
@@ -26,16 +29,10 @@ import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagNameComparator;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
-
-import com.agnitas.beans.ComContentSource;
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.TargetLight;
 
 public class ComMailingContentForm extends StrutsFormBase {
     private static final long serialVersionUID = -2580120975819583381L;
@@ -87,14 +84,14 @@ public class ComMailingContentForm extends StrutsFormBase {
     private int gridTemplateId;
     private boolean showDateSettings = false;
     private boolean isMailingUndoAvailable;
-    private boolean disableLinkExtension;
 
     /**
      * Is mailing not active {@link MaildropService#isActiveMailing(int, int)}
      * or user has permission {@link Permission#MAILING_CONTENT_CHANGE_ALWAYS}
      */
     private boolean mailingEditable = false;
-    
+    private boolean mailingExclusiveLockingAcquired = false;
+
     private List<String> dynTagNames = new ArrayList<>();
     
     /**
@@ -304,35 +301,12 @@ public class ComMailingContentForm extends StrutsFormBase {
         Map<Integer, DynamicTagContent> contentMap = getContent();
 
         List<String> contents = new ArrayList<>(contentMap.size() + 1);
-        if (action == ComMailingContentAction.ACTION_DELETE_TEXTBLOCK) {
-            for (DynamicTagContent block : contentMap.values()) {
-                if (block.getId() != contentID) {
-                    contents.add(block.getDynContent());
-                }
-            }
-        } else {
-            for (DynamicTagContent block : contentMap.values()) {
-                contents.add(block.getDynContent());
-            }
+
+        for (DynamicTagContent block : contentMap.values()) {
+            contents.add(block.getDynContent());
         }
 
-        boolean includeNewContent = false;
-        switch (action) {
-            case ComMailingContentAction.ACTION_SAVE_TEXTBLOCK:
-            case ComMailingContentAction.ACTION_SAVE_TEXTBLOCK_AND_BACK:
-                if (StringUtils.isNotBlank(newContent)) {
-                    includeNewContent = true;
-                }
-                break;
-
-            case ComMailingContentAction.ACTION_ADD_TEXTBLOCK:
-            case ComMailingContentAction.ACTION_ADD_TEXTBLOCK_AND_BACK:
-                includeNewContent = true;
-        }
-
-        if (includeNewContent) {
-            contents.add(newContent);
-        }
+        contents.add(newContent);
 
         return contents;
     }
@@ -603,9 +577,9 @@ public class ComMailingContentForm extends StrutsFormBase {
     }
 
     private DynamicTagContent createTagContent(int index) {
-        DynamicTagContent content = new DynamicTagContentImpl();
-        content.setDynOrder(index);
-        return content;
+        DynamicTagContent dynamicTagContent = new DynamicTagContentImpl();
+        dynamicTagContent.setDynOrder(index);
+        return dynamicTagContent;
     }
 
     public List<TargetLight> getAvailableTargetGroups() {
@@ -666,8 +640,6 @@ public class ComMailingContentForm extends StrutsFormBase {
         noImages = false;
 
         gridTemplateId = 0;
-
-        disableLinkExtension = false;
     }
 
     public int getWorkflowId() {
@@ -710,14 +682,14 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.mailingEditable = mailingEditable;
     }
 
-    public final void setDisableLinkExtension(final boolean disable) {
-        this.disableLinkExtension = disable;
+    public boolean isMailingExclusiveLockingAcquired() {
+        return mailingExclusiveLockingAcquired;
     }
 
-    public final boolean isDisableLinkExtension() {
-        return this.disableLinkExtension;
+    public void setMailingExclusiveLockingAcquired(boolean mailingExclusiveLockingAcquired) {
+        this.mailingExclusiveLockingAcquired = mailingExclusiveLockingAcquired;
     }
-    
+
     public void setDynTagNames(List<String> dynTagNames) {
         this.dynTagNames = dynTagNames;
     }

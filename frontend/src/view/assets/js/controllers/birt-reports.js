@@ -21,7 +21,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
             var $tab = $(tab);
             var tabId = $tab.data("toggle-tab");
             if(tabId.endsWith(MAILING_ID)) {
-                $tab.click();
+                $tab.trigger("click");
                 return;
             }
 

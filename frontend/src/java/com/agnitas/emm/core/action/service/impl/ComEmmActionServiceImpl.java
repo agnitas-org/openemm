@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.emm.core.action.service.ComEmmActionService;
@@ -88,4 +89,12 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
         return false;
     }
 
+    @Override
+    public List<EmmAction> getEmmNotLinkActions(int companyId, boolean includeInactive) {
+        if (companyId > 0) {
+            return emmActionDao.getEmmNotLinkActions(companyId, includeInactive);
+        }
+        return new ArrayList<>();
+    }
+    
 }

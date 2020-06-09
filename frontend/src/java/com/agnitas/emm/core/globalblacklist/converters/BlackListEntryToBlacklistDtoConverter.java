@@ -24,6 +24,7 @@ public class BlackListEntryToBlacklistDtoConverter implements Converter<BlackLis
         BlacklistDto blacklistDto = new BlacklistDto();
 
         blacklistDto.setEmail(source.getEmail());
+        blacklistDto.setReason(source.getReason());
         blacklistDto.setDate(source.getDate());
 
         return blacklistDto;

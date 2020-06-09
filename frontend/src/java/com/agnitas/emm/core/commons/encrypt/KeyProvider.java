@@ -19,7 +19,8 @@ public interface KeyProvider {
 	 * Returns the encryption key.
 	 * 
 	 * @return encryption key
+	 * @throws Exception 
 	 */
-	public byte[] getEncryptionKey();
+	public byte[] getEncryptionKey() throws Exception;
 	
 }

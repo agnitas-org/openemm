@@ -14,11 +14,14 @@ import java.util.List;
 
 import com.agnitas.emm.core.departments.beans.Department;
 import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentIdException;
+import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentNameException;
 
 public interface DepartmentDao {
-
 	List<Department> listAllDepartments();
 
 	Department getDepartmentByID(final int departmentID) throws UnknownDepartmentIdException;
-	
+
+	Department getDepartmentByShortname(String shortname) throws UnknownDepartmentNameException;
+
+	Department createDepartment(String shortname, String description, boolean supervisorBindingToCompany0Allowed, boolean loginWithoutUserPermissionAllowed) throws Exception;
 }

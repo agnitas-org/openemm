@@ -37,10 +37,12 @@
 		<property name="birtStatisticsService" ref="BirtStatisticsService"/>
 	</bean>
 
-	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendAction">
+	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendActionBasic">
 		<property name="targetDao" ref="TargetDao" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="recipientDao" ref="RecipientDao" />
+		<property name="actionService" ref="EmmActionService"/>
+		<property name="webStorage" ref="WebStorage" />
 		<property name="mailingComponentDao" ref="MailingComponentDao" />
 		<property name="linkcheckService" ref="linkcheckService" />
 		<property name="mailinglistDao" ref="MailinglistDao" />
@@ -48,7 +50,6 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="previewFactory" ref="PreviewFactory" />
 		<property name="mailingFactory" ref="MailingFactory" />
-		<property name="followUpStatsService" ref="followUpStatsService" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />
 		<property name="mailingBaseService" ref="MailingBaseService" />
 		<property name="futureHolder" ref="futureHolder" />
@@ -70,12 +71,16 @@
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="blacklistService" ref="BlacklistService" />
 		<property name="gridService" ref="GridServiceWrapper"/>
+		<property name="birtReportFactory" ref="BirtReportFactory"/>
+		<property name="bounceFilterService" ref="BounceFilterService"/>
+		<property name="mailingStopService" ref="MailingStopService" />
+		<property name="mediatypeFactory" ref="MediatypeFactory"/>
 	</bean>
 
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="importProfileService" ref="ImportProfileService"/>
-		<property name="adminDao" ref="AdminDao" />
+		<property name="adminService" ref="AdminService"/>
 		<property name="configService" ref="ConfigService" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
@@ -120,6 +125,8 @@
 		<property name="eqlFacade" ref="EqlFacade" />
 		<property name="webStorage" ref="WebStorage" />
         <property name="blacklistService" ref="BlacklistService"/>
+		<property name="recipientService" ref="recipientService"/>
+		<property name="deliveryService" ref="deliveryService"/>
     </bean>
     
 	<bean name="/importprofile_columns" class="com.agnitas.web.ImportProfileColumnsAction">
@@ -148,4 +155,19 @@
 		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
     </bean>
     
+	<bean name="/action" class="com.agnitas.web.ComEmmActionAction">
+		<property name="campaignDao" ref="CampaignDao" />
+		<property name="mailingDao" ref="MailingDao" />
+		<property name="emmActionDao" ref="EmmActionDao" />
+		<property name="emmActionService" ref="EmmActionService" />
+		<property name="emmActionFactory" ref="EmmActionFactory" />
+		<property name="actionOperationFactory" ref="ActionOperationFactory" />
+		<property name="velocityDirectiveScriptValidator" ref="VelocityDirectiveScriptValidator" />
+		<property name="userActivityLogService" ref="UserActivityLogService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="userFormDao" ref="UserFormDao"/>
+		<property name="recipientDao" ref="RecipientDao" />
+        <property name="webStorage" ref="WebStorage" />
+		<property name="blacklistService" ref="BlacklistService"/>
+	</bean>
 </beans>

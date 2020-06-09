@@ -1,25 +1,36 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ page import="com.agnitas.emm.core.birtstatistics.DateMode" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 
-<html:form action="/recipient_stats" method="post">
-    <html:hidden property="dateSelectMode"/>
-    <html:hidden property="reportFormat" value="html"/>
-    <html:hidden property="showReportOnly"/>
+<c:set var="LAST_WEEK" value="<%= DateMode.LAST_WEEK.toString() %>"/>
+<c:set var="SELECT_MONTH" value="<%= DateMode.SELECT_MONTH.toString() %>"/>
+<c:set var="SELECT_PERIOD" value="<%= DateMode.SELECT_PERIOD.toString() %>"/>
+
+<%--@elvariable id="yearlist" type="java.util.List"--%>
+<%--@elvariable id="monthlist" type="java.util.List"--%>
+<%--@elvariable id="targetlist" type="java.util.List"--%>
+<%--@elvariable id="mailinglists" type="java.util.List"--%>
+<%--@elvariable id="mediatypes" type="java.util.List"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticForm"--%>
+<%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
+<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
+
+<mvc:form servletRelativeAction="/statistics/recipient/view.action" method="post" modelAttribute="form">
+    <mvc:hidden path="dateSelectMode"/>
     <div class="tile">
         <div class="tile-header">
             <a href="#" class="headline" data-toggle-tile="#tile-statisticsRecipient">
                 <i class="tile-toggle icon icon-angle-down"></i>
-                <bean:message key="report.mailing.filter"/>
+                <mvc:message code="report.mailing.filter"/>
             </a>
             <ul class="tile-header-actions">
                 <li>
                     <button class="btn btn-primary btn-regular" type="button" data-form-submit>
                         <i class="icon icon-refresh"></i>
-                        <bean:message key="button.Refresh"/>
+                        <mvc:message code="button.Refresh"/>
                     </button>
                 </li>
             </ul>
@@ -27,47 +38,37 @@
         <div id="tile-statisticsRecipient" class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label"><bean:message key="Mailinglist"/></label>
+                    <label class="control-label"><mvc:message code="Mailinglist"/></label>
                 </div>
                 <div class="col-sm-8">
-                    <html:select property="mailingListID" size="1" styleClass="form-control js-select">
-                        <html:option value="0"><bean:message key="statistic.All_Mailinglists"/></html:option>
-                        <c:forEach var="mailingList" items="${mailinglists}">
-                            <html:option value="${mailingList.id}">
-                                <c:out value="${mailingList.shortname}"/>
-                            </html:option>
-                        </c:forEach>
-                    </html:select>
+                    <mvc:select path="mailingListId" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="statistic.All_Mailinglists"/></mvc:option>
+                        <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname"/>
+                    </mvc:select>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label"><bean:message key="Target"/></label>
+                    <label class="control-label"><mvc:message code="Target"/></label>
                 </div>
                 <div class="col-sm-8">
-                    <html:select property="targetID" size="1" styleClass="form-control js-select">
-                        <html:option value="0"><bean:message key="statistic.all_subscribers"/></html:option>
-                        <c:forEach var="target" items="${targetlist}">
-                            <html:option value="${target.id}">
-                                <c:out value="${target.targetName}"/>
-                            </html:option>
-                        </c:forEach>
-                    </html:select>
+                    <mvc:select path="targetId" cssClass="form-control js-select">
+                        <mvc:option value="0"><mvc:message code="statistic.all_subscribers"/></mvc:option>
+                        <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
+                    </mvc:select>
                 </div>
             </div>
-            <c:if test="${birtStatForm.reportName eq 'recipient_progress.rptdesign'}">
-                <c:set var="showLastperiodTabs" value="${birtStatForm.dateSelectMode == 'LAST_MONTH' || birtStatForm.dateSelectMode == 'LAST_FORTNIGHT' || birtStatForm.dateSelectMode == 'LAST_WEEK'}"/>
-                <c:set var="showSELECT_MONTH_PERIOD_DATE" value="${birtStatForm.dateSelectMode == 'SELECT_DAY' || birtStatForm.dateSelectMode == 'SELECT_PERIOD' || birtStatForm.dateSelectMode == 'SELECT_MONTH'}"/>
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label"><bean:message key="mediatype"/></label>
+                        <label class="control-label"><mvc:message code="mediatype"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <html:select property="mediaType" size="1" styleClass="form-control select2-offscreen">
-                            <c:forEach var="mt" items="${mediatype}">
-                                <html:option value="${mt[0]}"><bean:message key="${mt[1]}"/></html:option>
+                        <mvc:select path="mediaType" cssClass="form-control select2-offscreen">
+                            <c:forEach var="mt" items="${mediatypes}">
+                                <mvc:option value="${mt.mediaCode}"><mvc:message code="mailing.MediaType.${mt.mediaCode}"/></mvc:option>
                             </c:forEach>
-                        </html:select>
+                        </mvc:select>
                     </div>
                 </div>
             </c:if>
@@ -76,31 +77,31 @@
     <div class="tile">
         <div class="tile-header">
             <label for="selectReportName" class="headline">
-                <bean:message key="report.mailing.statistics.select"/>
+                <mvc:message code="report.mailing.statistics.select"/>
             </label>
             <div class="col-md-3 pull-left" style="margin: 0 20px 0 0;">
-                <agn:agnSelect property="reportName" data-form-submit="" styleClass="form-control" styleId="selectReportName">
-                    <html:option value="recipient_progress.rptdesign"><bean:message key="statistics.progress"/></html:option>
-                    <html:option value="recipient_status.rptdesign"><bean:message key="Status"/></html:option>
-                    <html:option value="recipient_mailtype.rptdesign"><bean:message key="Mailtype"/></html:option>
-                </agn:agnSelect>
+                <mvc:select path="reportName" data-form-submit="" cssClass="form-control" id="selectReportName">
+                    <mvc:option value="recipient_progress.rptdesign"><mvc:message code="statistics.progress"/></mvc:option>
+                    <mvc:option value="recipient_status.rptdesign"><mvc:message code="Status"/></mvc:option>
+                    <mvc:option value="recipient_mailtype.rptdesign"><mvc:message code="Mailtype"/></mvc:option>
+                </mvc:select>
             </div>
 
-            <c:if test="${birtStatForm.reportName eq 'recipient_progress.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
                 <ul class="tile-header-nav">
-                    <li class="${birtStatForm.dateSelectMode == 'LAST_WEEK' ? 'active' : ''}">
+                    <li class="${form.dateSelectMode == LAST_WEEK ? 'active' : ''}">
                         <a href="#" data-form-set="dateSelectMode:LAST_WEEK" data-form-submit>
-                            <bean:message key="Week"/>
+                            <mvc:message code="Week"/>
                         </a>
                     </li>
-                    <li class="${birtStatForm.dateSelectMode == 'SELECT_MONTH' ? 'active' : ''}">
+                    <li class="${form.dateSelectMode == SELECT_MONTH ? 'active' : ''}">
                         <a href="#" data-form-set="dateSelectMode:SELECT_MONTH" data-form-submit>
-                            <bean:message key="Month"/>
+                            <mvc:message code="Month"/>
                         </a>
                     </li>
-                    <li class="${birtStatForm.dateSelectMode == 'SELECT_PERIOD' ? 'active' : ''}">
+                    <li class="${form.dateSelectMode == SELECT_PERIOD ? 'active' : ''}">
                         <a href="#" data-form-set="dateSelectMode:SELECT_PERIOD" data-form-submit>
-                            <bean:message key="statistics.dateRange"/>
+                            <mvc:message code="statistics.dateRange"/>
                         </a>
                     </li>
                 </ul>
@@ -109,19 +110,14 @@
                 <li class="dropdown">
                     <a class="dropdown-toggle" href="#" data-toggle="dropdown">
                         <i class="icon icon-cloud-download"></i>
-                        <span class="text"><bean:message key="Export"/></span>
+                        <span class="text"><mvc:message code="Export"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="statistics.exportFormats"/></li>
+                        <li class="dropdown-header"><mvc:message code="statistics.exportFormats"/></li>
                         <li>
-                            <%--<a href="#" data-form-set="reportFormat:pdf, showReportOnly:1" data-form-submit-static>--%>
-                                <%--<i class="icon icon-file-pdf-o"></i>--%>
-                                <%--<bean:message key='export.message.pdf'/>--%>
-                            <%--</a>--%>
-                            <a href="#" data-form-set="reportFormat:csv" data-form-submit-static>
-                                <i class="icon icon-file-excel-o"></i>
-                                <bean:message key='export.message.csv'/>
+                            <a href="${birtStatisticUrlWithoutFormat}&__format=csv" tabindex="-1" data-prevent-load="">
+                                <i class="icon icon-file-excel-o"></i> <mvc:message code='export.message.csv'/>
                             </a>
                         </li>
                     </ul>
@@ -132,21 +128,27 @@
 
         <div class="tile-content">
 
-            <c:if test="${birtStatForm.reportName eq 'recipient_progress.rptdesign'}">
+            <c:if test="${form.reportName eq 'recipient_progress.rptdesign'}">
 
-                <c:if test="${birtStatForm.dateSelectMode == 'SELECT_PERIOD'}">
+                <c:if test="${form.dateSelectMode == SELECT_PERIOD}">
                     <div class="tile-controls">
                         <div class="controls controls-left">
 
                             <div class="date-range-controls">
-                                <label class="control" for="startDay">
-                                    <bean:message key="From"/>
+                                <label class="control" for="startDate">
+                                    <mvc:message code="From"/>
                                 </label>
 
                                 <div class="control">
                                     <div class="input-group">
                                         <div class="input-group-controls">
-                                            <input id="startDay" type="text" value="${birtStatForm.startDay}" class="form-control datepicker-input js-datepicker" maxlength="10" name="startDay" data-datepicker-options="format: '${fn:toLowerCase(localeDatePattern)}'"/>
+
+                                            <mvc:text path="startDate.date" id="startDate"
+                                              data-value="${form.startDate.date}"
+                                              data-field-validator="max-length-validator" data-validator-options="max: 10"
+                                              data-datepicker-options="format: '${fn:toLowerCase(localeDatePattern)}',
+                                                                        formatSubmit: '${fn:toLowerCase(localeDatePattern)}'"
+                                              cssClass="form-control datepicker-input js-datepicker js-datepicker-period-start"/>
                                         </div>
                                         <div class="input-group-btn">
                                             <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
@@ -157,14 +159,19 @@
                                 </div>
 
 
-                                <label class="control" for="endDay">
-                                    <bean:message key="default.to"/>
+                                <label class="control" for="endDate">
+                                    <mvc:message code="default.to"/>
                                 </label>
 
                                 <div class="control">
                                     <div class="input-group">
                                         <div class="input-group-controls">
-                                            <input id="endDay" type="text" value="${birtStatForm.endDay}" class="form-control datepicker-input js-datepicker" maxlength="10" name="endDay" data-datepicker-options="format: '${fn:toLowerCase(localeDatePattern)}'"/>
+                                            <mvc:text path="endDate.date" id="endDate"
+                                              data-value="${form.endDate.date}"
+                                              data-field-validator="max-length-validator" data-validator-options="max: 10"
+                                              data-datepicker-options="format: '${fn:toLowerCase(localeDatePattern)}',
+                                                                        formatSubmit: '${fn:toLowerCase(localeDatePattern)}'"
+                                              cssClass="form-control datepicker-input js-datepicker js-datepicker-period-end"/>
                                         </div>
                                         <div class="input-group-btn">
                                             <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
@@ -180,30 +187,28 @@
                         <div class="controls controls-right">
                             <button class="btn btn-primary btn-regular pull-right" type="button" data-form-submit>
                                 <i class="icon icon-refresh"></i>
-                                <bean:message key="button.Refresh"/>
+                                <mvc:message code="button.Refresh"/>
                             </button>
                         </div>
 
                     </div>
                 </c:if>
 
-                <c:if test="${birtStatForm.dateSelectMode == 'SELECT_MONTH'}">
+                <c:if test="${form.dateSelectMode == SELECT_MONTH}">
                     <div class="tile-controls">
 
                         <div class="controls controls-left">
                             <div class="control">
-                                <html:select property="month" size="1" styleClass="form-control select2-offscreen">
-                                    <c:forEach var="mon" items="${monthlist}">
-                                        <html:option value="${mon[0]}"><bean:message key="${mon[1]}"/></html:option>
+                                <mvc:select path="month" cssClass="form-control select2-offscreen">
+                                    <c:forEach items="${monthlist}" var="month">
+                                        <mvc:option value="${month[0]}"><mvc:message code="${month[1]}"/></mvc:option>
                                     </c:forEach>
-                                </html:select>
+                                </mvc:select>
                             </div>
                             <div class="control">
-                                <html:select property="year" size="1" styleClass="form-control select2-offscreen">
-                                    <c:forEach var="yea" items="${yearlist}">
-                                        <html:option value="${yea}"><c:out value="${yea}"/></html:option>
-                                    </c:forEach>
-                                </html:select>
+                                <mvc:select path="year" cssClass="form-control select2-offscreen">
+                                    <mvc:options items="${yearlist}" />
+                                </mvc:select>
                             </div>
                         </div>
 
@@ -211,7 +216,7 @@
                             <div class="control">
                                 <button class="btn btn-primary btn-regular" type="button" data-form-submit>
                                     <i class="icon icon-refresh"></i>
-                                    <bean:message key="button.Refresh"/>
+                                    <mvc:message code="button.Refresh"/>
                                 </button>
                             </div>
                         </div>
@@ -221,11 +226,9 @@
 
             </c:if>
 
-            <c:if test="${empty noDateAvailable}">
-                <iframe src="${birtStatForm.reportUrl}" border="0" scrolling="auto" style="width: 100%; height: 500px" frameborder="0">
-                    Your Browser does not support IFRAMEs, please update!
-                </iframe>
-            </c:if>
+            <iframe src="${birtStatisticUrlWithoutFormat}&__format=html" border="0" scrolling="auto" style="width: 100%; height: 500px" frameborder="0">
+                Your Browser does not support IFRAMEs, please update!
+            </iframe>
         </div>
     </div>
-</html:form>
+</mvc:form>

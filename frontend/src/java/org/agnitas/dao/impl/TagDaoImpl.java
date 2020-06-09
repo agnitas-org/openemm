@@ -13,18 +13,25 @@ package org.agnitas.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.TagDefinition;
 import org.agnitas.dao.TagDao;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnTagUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 	/** The logger. */
@@ -34,13 +41,27 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
     public TagDefinition getTag(@VelocityCheck int companyID, String name) {
 		return selectObjectDefaultNull(logger, "SELECT tagname, type, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND tagname = ? ORDER BY tagname", new TagRowMapper(), companyID, name);
 	}
-	
-	@Override
-    public List<String> getTagNames(@VelocityCheck int companyID) {
-		return select(logger, "SELECT tagname FROM tag_tbl WHERE company_id IN (0, ?) ORDER BY tagname", new StringRowMapper(), companyID);
-	}
-	
-	@Override
+
+    @Override
+    public Set<String> extractDeprecatedTags(@VelocityCheck int companyID, Set<String> tagNames) {
+
+        if (CollectionUtils.isEmpty(tagNames)) {
+            return Collections.emptySet();
+        } else if (tagNames.size() > 800) {
+            logger.warn("Please note that more than 800 tags are checked, but maximum for SQL is 1000.");
+        }
+
+        final String query = "SELECT tagname FROM tag_tbl WHERE company_id IN (0, :companyId) AND tagname IN (:tagnames) AND deprecated = 1";
+
+        final MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("companyId", companyID);
+        parameters.addValue("tagnames", tagNames);
+
+        final List<String> deprecatedTags = new NamedParameterJdbcTemplate(getDataSource()).queryForList(query, parameters, String.class);
+        return new HashSet<>(deprecatedTags);
+    }
+
+    @Override
     public List<TagDefinition> getTagDefinitions(@VelocityCheck int companyID) {
 		return select(logger, "SELECT tagname, type, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) ORDER BY tagname", new TagRowMapper(), companyID);
 	}
@@ -65,40 +86,34 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 		return returnMap;
 	}
 
-	/**
-	 * Watchout: This method is used in ckeditor JSPs
-	 */
 	@Override
-	public List<Map<String, String>> getTags(@VelocityCheck int companyID) {
+	public Map<String, String> getSelectValues(@VelocityCheck int companyID) {
 		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND deprecated = 0 AND tagname NOT IN ('agnITAS', 'agnAUTOURL', 'agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
 
+		// Preserve sorting order.
+		Map<String, String> result = new LinkedHashMap<>();
+
 		try {
-			List<Map<String, Object>> list = select(logger, sql, companyID);
-			List<Map<String, String>> result = new ArrayList<>();
-			for (Map<String, Object> map : list) {
-				Map<String, String> mapstr = new HashMap<>();
+			for (Map<String, Object> map : select(logger, sql, companyID)) {
 
-				String tagname = (String) map.get("tagname");
-				String selectvalue = (String) map.get("selectvalue");
-				StringBuilder selectValueBuilder = new StringBuilder(selectvalue == null ? "" : selectvalue);
+				String tagName = (String) map.get("tagname");
+				String selectValue = (String) map.get("selectvalue");
+				StringBuilder selectValueBuilder = new StringBuilder(StringUtils.defaultString(selectValue));
 
-				for (String param : AgnTagUtils.getMandatoryParametersForTag(tagname)) {
-					selectValueBuilder.append("{")
-							.append(param)
-							.append("}");
+				for (String param : AgnTagUtils.getParametersForTag(tagName)) {
+					selectValueBuilder.append('{').append(param).append('}');
 				}
 
-				mapstr.put(tagname, selectValueBuilder.toString());
-				result.add(mapstr);
+				result.put(tagName, selectValueBuilder.toString());
 			}
-			return result;
 		} catch (Exception e) {
 			logger.error("getTags: " + e.getMessage(), e);
-			return null;
 		}
+
+		return result;
 	}
 
-	protected class TagRowMapper implements RowMapper<TagDefinition> {
+	protected static class TagRowMapper implements RowMapper<TagDefinition> {
 		@Override
 		public TagDefinition mapRow(ResultSet resultSet, int row) throws SQLException {
 			TagDefinition readObject = new TagDefinition();

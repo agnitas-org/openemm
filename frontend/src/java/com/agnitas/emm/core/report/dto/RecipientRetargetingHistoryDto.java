@@ -39,7 +39,7 @@ public interface RecipientRetargetingHistoryDto {
 
     void setValue(String value);
 
-    @TextColumn(translationKey = "warning.failed_login.ip", defaultValue = "IP ADDRESS", key = "ip")
+    @TextColumn(translationKey = "statistic.IPAddress", defaultValue = "IP ADDRESS", key = "ip")
     String getIp();
 
     void setIp(String ipAddress);

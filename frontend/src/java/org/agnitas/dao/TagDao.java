@@ -12,32 +12,25 @@ package org.agnitas.dao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.TagDefinition;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
- * Dao for tag_tabl which contains the agnTAG definitions
+ * Dao for tag_tbl which contains the agnTAG definitions
  */
 public interface TagDao {
 	TagDefinition getTag(@VelocityCheck int companyID, String name);
-	
-	List<String> getTagNames(@VelocityCheck int companyID);
+
+	Set<String> extractDeprecatedTags(@VelocityCheck int companyID, Set<String> tagNames);
 	
 	List<TagDefinition> getTagDefinitions(@VelocityCheck int companyID);
 
 	Map<String, TagDefinition> getTagDefinitionsMap(@VelocityCheck int companyID);
 
-	/**
-	 * Loads list of dynamic tags of certain company, also includes default dynamic tags
-	 *
-	 * Watchout: This method is used in ckeditor JSPs
-	 *
-	 * @param companyID Id of the company
-	 * @return
-	 */
-	List<Map<String, String>> getTags(@VelocityCheck int companyID);
-	
+	Map<String, String> getSelectValues(@VelocityCheck int companyID);
+
 	boolean deleteTagsByCompany(@VelocityCheck int companyId);
 
 	int insertTag(String tagName, String tagSelectValue, String tagType, int companyId, String tagDescription);

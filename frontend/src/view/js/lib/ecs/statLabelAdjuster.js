@@ -63,75 +63,89 @@
     }
 
     function showPopups() {
-        // get ecs-frame document
-        var frameDocument = document;
+      // get ecs-frame document
+      var frameDocument = document;
 
-        var nullColorElement = document.getElementById('info-null-color');
-        if (nullColorElement == null) {
-            return;
-        }
-        var nullColor = nullColorElement.value;
+      var nullColorElement = document.getElementById('info-null-color');
+      if (nullColorElement == null) {
+        return;
+      }
+      var nullColor = nullColorElement.value;
 
-        // iterate through all links of document
-        var links = document.getElementsByTagName('a');
+      // iterate through all links of document
+      var links = document.getElementsByTagName('a');
 
-        if (links != null && links.length > 0) {
-            for (var i = 0; i < links.length; i++) {
-                var a = links[i];
+      if (links != null && links.length > 0) {
+        for(var i = 0; i < links.length; i++) {
+          var a = links[i];
 
-                var linkUrl = a.getAttribute('href');
-                if (!linkUrl)
-                    continue;
-
-                if ((linkUrl.lastIndexOf('http') == -1) || (linkUrl.lastIndexOf('uid=') == -1))
-                    continue;
-
-				var uid = linkUrl.substr(linkUrl.lastIndexOf('uid=') + 4);
-				if(uid.indexOf('&') != -1) {
-				    uid = uid.substr(0, uid.indexof('&'));
-				}
-				
-				var codedUrlId = uid;
-				    
-		        // get stats info for the URL from hidden field
-		        var infoElId = "info-" + codedUrlId;
-		        var linkInfo = document.getElementById(infoElId);
-		
-		        // if there is stats for the URL - create stats-label and put it near link
-		        // in other case create default stat-label with zero-value
-		        var clickValue = "0 (0%)";
-		        var bgColor = nullColor;
-		        if (linkInfo != null) {
-		            clickValue = linkInfo.value;
-		            bgColor = linkInfo.name;
-		        }
-		
-		        // Get optimized clickable areas
-		        var rectangles = getRectangles(a);
-		        if (rectangles.length) {
-		            rectangles = uniteIntersectingRectangles(rectangles);
-		
-		            var biggestRectangle = rectangles[0];
-		
-		            for (var k = 0; k < rectangles.length; k++) {
-		                var balloon = createBalloon(bgColor);
-		                adjustBalloon(balloon, rectangles[k]);
-		
-		                if (getRectangleArea(biggestRectangle) < getRectangleArea(rectangles[k])) {
-		                    biggestRectangle = rectangles[k];
-		                }
-		            }
-		
-		            var tag = createTag(bgColor, clickValue);
-		            adjustTag(tag, biggestRectangle);
-		        }
+          var linkUrl = a.getAttribute('href');
+          if (!linkUrl) {
+            continue;
+          } else if (linkUrl.lastIndexOf('http') == -1) {
+            continue;
+          } else if (linkUrl.lastIndexOf('uid=') > -1) {
+            var uid = linkUrl.substr(linkUrl.lastIndexOf('uid=') + 4);
+            if (uid.indexOf('&') != -1) {
+              uid = uid.substr(0, uid.indexOf('&'));
             }
+            var codedUrlId = uid;
+          } else if (linkUrl.lastIndexOf('/r/') > -1) {
+            var uid = linkUrl.substr(linkUrl.lastIndexOf('/r/') + 3);
+            if (uid.indexOf('/') != -1) {
+              uid = uid.substr(0, uid.indexOf('/'));
+            }
+            var codedUrlId = uid;
+          } else {
+            continue;
+          }
+
+          // get stats info for the URL from hidden field
+          var infoElId = "info-" + codedUrlId;
+          var linkInfo = document.getElementById(infoElId);
+
+          // if there is stats for the URL - create stats-label and put it near link
+          // in other case create default stat-label with zero-value
+          var clickValue = "0 (0%)";
+          var bgColor = nullColor;
+          if (linkInfo != null) {
+            clickValue = linkInfo.value;
+            bgColor = linkInfo.name;
+          }
+
+          // Get optimized clickable areas
+          var rectangles = getRectangles(a);
+          if (rectangles.length) {
+            rectangles = uniteIntersectingRectangles(rectangles);
+
+            var biggestRectangle = rectangles[0];
+
+            for(var k = 0; k < rectangles.length; k++) {
+              var balloon = createBalloon(bgColor);
+              adjustBalloon(balloon, rectangles[k]);
+
+              if (getRectangleArea(biggestRectangle) < getRectangleArea(rectangles[k])) {
+                biggestRectangle = rectangles[k];
+              }
+            }
+
+            var tag = createTag(bgColor, clickValue);
+            adjustTag(tag, biggestRectangle);
+          }
         }
+      }
+    }
+
+    function updatePopopsPositions() {
+      $('.clicks-statistic-balloon').remove();
+      $('.clicks-statistic-tag').remove();
+      showPopups();
     }
 
     function createBalloon(color) {
         var myDiv = document.createElement('div');
         myDiv.style.backgroundColor = color;
+        myDiv.className = 'clicks-statistic-balloon';
         document.body.appendChild(myDiv);
         return myDiv;
     }
@@ -146,6 +160,7 @@
         myDiv.style.fontSize = '11px';
         myDiv.style.zIndex = "10";
         myDiv.style.whiteSpace = 'nowrap';
+        myDiv.className = 'clicks-statistic-tag';
         document.body.appendChild(myDiv);
         return myDiv;
     }
@@ -174,11 +189,15 @@
         });
     }
 
+    function setImagesLoadedEvent() {
+      $(window.document.body).imagesLoaded().progress(_.throttle(updatePopopsPositions, 100)).always(updatePopopsPositions);
+    }
+
     if (window.addEventListener) {
-        window.addEventListener('load', showPopups, false);
+        window.addEventListener('load', setImagesLoadedEvent, false);
     } else if (window.attachEvent) {
-        window.attachEvent('onload', showPopups);
+        window.attachEvent('onload', setImagesLoadedEvent);
     } else {
-        window.onload = showPopups;
+        window.onload = setImagesLoadedEvent;
     }
 })();

@@ -1,9 +1,12 @@
 ;(function(){
   var Helpers = AGN.Lib.Helpers;
 
-  AGN.Initializers.DisplayDimensions = function($scope) {
+  AGN.Lib.CoreInitializer.new('display-dimensions', function($scope) {
+    if (!$scope) {
+      $scope = $(document);
+    }
 
-    _.each($('[data-display-dimensions]'), function(el) {
+    _.each($scope.find('[data-display-dimensions]'), function(el) {
       var $el     = $(el),
           scope   = Helpers.objFromString($el.data('display-dimensions'))['scope'],
           $row    = $el.parents(scope),
@@ -17,6 +20,6 @@
       })
 
     });
-  }
+  });
 
 })();

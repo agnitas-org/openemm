@@ -1,5 +1,7 @@
 (function(){
 
+  var Popover = AGN.Lib.Popover;
+
   var Table,
       template;
 
@@ -17,13 +19,18 @@
     this.$paginationTop = this.$el.find('.pagination-top');
     this.$paginationBottom = this.$el.find('.pagination-bottom');
 
-    _.each(columns, function(column) {
+    columns.forEach(function(column) {
       if (column.cellRenderer) {
         column.cellRenderer = AGN.Opt.TableCellRenderers[column.cellRenderer];
+      }
+
+      if (column.headerComponent) {
+        column.headerComponent = AGN.Opt.TableHeaderComponents[column.headerComponent];
       }
     });
 
     this.gridOptions = _.merge({
+      autoSizePadding: 4,
       columnDefs: columns,
       enableSorting: true,
       enableFilter: true,
@@ -32,16 +39,33 @@
       paginationPageSize: 100,
       rowSelection: 'multiple',
       onCellClicked: function(cell) {
-        if (cell.colDef.cellAction == 'select') {
-          cell.node.setSelected(!cell.node.isSelected());
-          return;
-        }
+        switch (cell.colDef.cellAction) {
+          case 'select':
+            cell.node.setSelected(!cell.node.isSelected());
+            break;
 
-        if (cell.colDef.cellAction == 'goTo') {
-          if (cell.data.show) {
-            window.location.href = cell.data.show;
+          case 'goTo':
+            if (cell.data.show) {
+              window.location.href = cell.data.show;
+            }
+            break;
+        }
+      },
+      onCellMouseOver: function(cell) {
+        if (cell.colDef.textInPopoverIfTruncated === true) {
+          var target = cell.event.target,
+            isTruncated = target.clientWidth < target.scrollWidth;
+          if (isTruncated) {
+            getPopoverForCell(cell).show();
           }
-          return;
+        }
+      },
+      onCellMouseOut: function(cell) {
+        if (cell.colDef.textInPopoverIfTruncated === true) {
+          var popover = Popover.get($(cell.event.target));
+          if(popover) {
+            popover.hide();
+          }
         }
       },
       suppressRowClickSelection: true,
@@ -67,20 +91,46 @@
           '</div>'
         },
         filterParams: {
-          clearButton: true,
+          clearButton: true
         }
       },
       columnTypes: {
         numberColumn: {
           width: 83,
           filter: 'agNumberColumnFilter',
-          comparator: AGN.Lib.TableNumberComparator,
+          comparator: AGN.Lib.TableNumberComparator
         },
         dateColumn: {
-          filter: AGN.Lib.TableDateFilter,
+          filter: AGN.Lib.TableDateFilter
         },
         setColumn: {
           filter: AGN.Lib.TableSetFilter
+        },
+        bulkSelectColumn: {
+          headerName: '',
+          editable: false,
+          checkboxSelection: true,
+          headerCheckboxSelection: true,
+          headerComponent: AGN.Opt.TableHeaderComponents['NoLabelHeader'],
+          suppressResize: true,
+          suppressMenu: true,
+          suppressSorting: true,
+          cellAction: 'select',
+          suppressSizeToFit: true,
+          cellStyle: {
+            textAlign: 'center'
+          }
+        },
+        deleteColumn: {
+          headerName: '',
+          editable: false,
+          suppressResize: true,
+          suppressMenu: true,
+          suppressSorting: true,
+          cellAction: null,
+          cellRenderer: AGN.Opt.TableCellRenderers['DeleteCellRenderer'],
+          suppressSizeToFit: true,
+          'button-tooltip': t('defaults.delete')
         }
       },
       icons: {
@@ -102,8 +152,9 @@
 
     this.grid = new agGrid.Grid(this.$el.find('.ag-theme-bootstrap').get(0), this.gridOptions);
     this.api = this.gridOptions.api;
+    this.columnApi = this.gridOptions.columnApi;
     this.api.setRowData(data);
-    this.api.sizeColumnsToFit();
+    this.redraw();
   };
 
   Table.prototype.renderPagination = function() {
@@ -147,6 +198,14 @@
   };
 
   Table.prototype.redraw = function() {
+    var columnsToAutoResize = this.columnApi.getAllDisplayedColumns()
+      .filter(function(column) { return column.getColDef().suppressSizeToFit === true; })
+      .map(function(column) { return column.getColId(); });
+
+    if (columnsToAutoResize.length) {
+      this.columnApi.autoSizeColumns(columnsToAutoResize);
+    }
+
     this.api.sizeColumnsToFit();
   };
 
@@ -174,4 +233,17 @@
 
 
   AGN.Lib.Table = Table;
+
+  function getPopoverForCell(cell) {
+    var $cellTarget = $(cell.event.target),
+      popover = Popover.get($cellTarget);
+    if (!popover) {
+      return Popover.new($cellTarget, {
+        trigger: 'manual',
+        container: 'body',
+        content: cell.value
+      });
+    }
+    return popover;
+  }
 })();

@@ -19,18 +19,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 import org.apache.commons.collections4.SetUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.xml.validation.XMLReaderFactoryUtils;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 public class ImageUtils {
 	private static final Logger logger = Logger.getLogger(ImageUtils.class);
@@ -86,11 +89,17 @@ public class ImageUtils {
 	 * @return true if validation pass, false in other case
 	 */
 	public static boolean isValidImage(byte[] data) {
+		boolean valid;
 		try (InputStream stream = new ByteArrayInputStream(data)) {
-			return isValidImage(stream);
+			valid = isValidImage(stream);
 		} catch (IOException e) {
-			return false;
+			valid = false;
 		}
+
+		if(!valid) {
+			valid = validateSvgContent(data);
+		}
+		return valid;
 	}
 
 	public static byte[] process(byte[] src, ImageProcessor processor) {
@@ -178,5 +187,17 @@ public class ImageUtils {
 		}
 
 		return null;
+	}
+
+	private static boolean validateSvgContent(final byte[] data) {
+		if(data == null) {
+			return false;
+		}
+		try {
+			XMLReaderFactoryUtils.createXMLReader().parse(new InputSource(new StringReader(new String(data))));
+			return true;
+		} catch (SAXException | IOException e) {
+			return false;
+		}
 	}
 }

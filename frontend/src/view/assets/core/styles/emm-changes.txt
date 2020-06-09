@@ -1,0 +1,7 @@
+
+file: /src/view/assets/core/styles/common/jquery-ui.css
+changes:
+1) .ui-button-icon-only .ui-icon -> changed properties "top" and "left" from 50% to 0;
+2) .ui-widget -> removed properties "font-family" and "font-size"
+3) .ui-widget button -> removed properties "font-family" and "font-size"
+4) .ui-widget-content a -> removed property "color"

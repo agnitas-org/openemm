@@ -62,7 +62,7 @@
                 url: url,
                 success: function (data) {
                     c3.generate(MessageStatisticsService.data.statChartData.build(data));
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }

@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 
 import com.agnitas.emm.core.report.generator.TextColumn;
@@ -253,7 +253,7 @@ public class ReflectionTableParser implements GenericTableParser<Table> {
         	// do nothing
         }
 
-        return Objects.nonNull(columnValue) ? columnValue.toString() : StringUtils.EMPTY;
+        return columnValue != null ? columnValue.toString() : StringUtils.EMPTY;
     }
 
     private Map<String, String> getRowColumnsFromObjectFields(Object object) {
@@ -288,7 +288,7 @@ public class ReflectionTableParser implements GenericTableParser<Table> {
         	// do nothing
         }
 
-        return Objects.nonNull(columnValue) ? columnValue.toString() : StringUtils.EMPTY;
+        return columnValue != null ? columnValue.toString() : StringUtils.EMPTY;
     }
 
     private void updateOrder(TableDefinition tableDefinition, Map<String, ColumnDefinition> definitions) {

@@ -9,6 +9,7 @@
     </div>
 </script>
 
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <script id="content-editor-template" type="text/x-mustache-template">
     <div id="content_modal"
@@ -30,6 +31,8 @@
                                 <div class="col-sm-4">
                                     <label class="control-label" for="interest_groups">
                                         <bean:message key="interestgroup"/>
+										<button class="icon icon-help" data-help="help_${helplanguage}/mailing/content/Interest.xml" tabindex="-1" type="button">
+										</button>
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
@@ -40,21 +43,22 @@
                                     </select>
                                 </div>
                             </div>
-
-                            <button type="button" class="close-icon close js-confirm-negative"
-                                    data-dismiss="modal">
-                                <i aria-hidden="true" class="icon icon-times-circle"></i>
-                                <span class="sr-only"><bean:message key="button.Cancel"/></span>
+                            <button type="button" class="full-size-btn"
+                                    data-action="createEnlargedContentEditorModal"
+                                    data-tooltip="<bean:message key='editor.enlargeEditor'/>">
+                                <i class="icon icon-arrows-alt"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-fixed-body">
                     <div class="row full-height no-margin">
-                        <div class="col-sm-3 fixed-content-40-45 mailing-content no-padding">
+                        <div class="col-sm-4 fixed-content-40-45 mailing-content no-padding">
                             <div class="fixed-header mailing-content-header">
                                 <label for="content_area" style="font-size: 14px">
-                                    <bean:message key="mailing.content.targetgroup.prioritisation"/>
+                                    <bean:message key="mailing.content.order"/>
+                                    <button class="icon icon-help" data-help="help_${helplanguage}/mailing/content/Order.xml" tabindex="-1" type="button">
+									</button>
                                 </label>
                             </div>
                             <div id="content_area" class="fixed-body mailing-content-body">
@@ -62,13 +66,28 @@
                                     <div class="l-stub well">
                                         <bean:message key="default.NoEntries"/>
                                     </div>
+                                    <div class="plus-button-holder">
+                                        <i class="icon icon-plus-circle icon-2x plus-button"
+                                           data-action="addDynContent"></i>
+                                    </div>
                                 </div>
                             </div>
                             <div class="fixed-footer mailing-content-footer">
-                                <i class="icon icon-plus-circle icon-2x plus-button" data-action="addDynContent"></i>
+                                <div class="col-sm-4">
+                                    <label class="control-label" for="target_groups">
+                                        <bean:message key="Target"/>
+                                    </label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <select id="target_groups" class="form-control js-select dropdown-menu">
+                                        {{targetGroups.forEach(function(targetGroup){ }}
+                                        <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
+                                        {{ }); }}
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-sm-9 full-height no-padding" id="editable_area">
+                        <div class="col-sm-8 full-height no-padding" id="editable_area">
                             <div class="fixed-content-40-0 full-height">
                                 <div class="fixed-header">
                                     <div class="row no-margin full-height">
@@ -88,29 +107,6 @@
                                             </ul>
                                             {{ } }}
                                         </div>
-                                        <div class="col-sm-8 horizontal-flex-box full-height no-padding">
-                                            <div class="biggest-flex-item">
-                                                <div class="col-sm-4">
-                                                    <label class="control-label" for="target_groups">
-                                                        <bean:message key="Target"/>
-                                                    </label>
-                                                </div>
-                                                <div class="col-sm-8">
-                                                    <select id="target_groups" class="form-control js-select dropdown-menu">
-                                                        {{targetGroups.forEach(function(targetGroup){ }}
-                                                        <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
-                                                        {{ }); }}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <button type="button" class="close-icon close"
-                                                    data-action="createEnlargedContentEditorModal"
-                                                    data-tooltip="<bean:message key='editor.enlargeEditor'/>"
-                                                    style="padding: 0 10px 0 5px;">
-                                                <i class="icon icon-arrows-alt"></i>
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="fixed-body">
@@ -128,7 +124,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-fixed-footer standard-footer" >
+                <div class="modal-fixed-footer standard-footer">
                     <div class="btn-group">
                         <button type="button"
                                 class="btn btn-default btn-large js-confirm-negative"

@@ -19,6 +19,7 @@ import com.agnitas.beans.PollingUid;
 
 public class Pollable<T> {
     public static final long DEFAULT_TIMEOUT = 1000L;
+    public static final long LONG_TIMEOUT = 10000L;
     public static final long SHORT_TIMEOUT = 500L;
 
     public static PollingUid uid(String sessionId, String name, Object... arguments) {

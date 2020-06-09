@@ -7,8 +7,11 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
+<%--@elvariable id="isTotalStatisticAvailable" type="java.lang.Boolean"--%>
+<%--@elvariable id="autoOptData" type="com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight"--%>
 
 <c:set var="STATUS_OPEN" 		value="<%= WorkflowStatus.STATUS_OPEN %>" 		scope="page" />
 <c:set var="STATUS_ACTIVE" 		value="<%= WorkflowStatus.STATUS_ACTIVE %>" 	scope="page" />
@@ -70,34 +73,35 @@
     </c:otherwise>
 </c:choose>
 
-<jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">
+<emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap"  scope="request">
     <c:if test="${workflowForm.workflowId != 0 && workflowForm.shortname != ''}">
         <%--Actions dropdown menu --%>
-        <jsp:useBean id="element2" class="java.util.LinkedHashMap" scope="request">
-            <c:set target="${itemActionsSettings}" property="2" value="${element2}"/>
+        <emm:instantiate var="itemAction" type="java.util.LinkedHashMap"  scope="request">
+            <c:set target="${itemActionsSettings}" property="2" value="${itemAction}"/>
 
-            <c:set target="${element2}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
-            <c:set target="${element2}" property="extraAttributes" value="data-toggle='dropdown'"/>
-            <c:set target="${element2}" property="iconBefore" value="icon-wrench"/>
-            <c:set target="${element2}" property="name"><bean:message key="action.Action"/></c:set>
-            <c:set target="${element2}" property="iconAfter" value="icon-caret-down"/>
+            <c:set target="${itemAction}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
+            <c:set target="${itemAction}" property="extraAttributes" value="data-toggle='dropdown'"/>
+            <c:set target="${itemAction}" property="iconBefore" value="icon-wrench"/>
+            <c:set target="${itemAction}" property="name"><mvc:message code="action.Action"/></c:set>
+            <c:set target="${itemAction}" property="iconAfter" value="icon-caret-down"/>
 
             <%--Dropdown items --%>
-            <jsp:useBean id="optionList" class="java.util.LinkedHashMap" scope="request">
-                <c:set target="${element2}" property="dropDownItems" value="${optionList}"/>
+            <emm:instantiate var="options" type="java.util.LinkedHashMap"  scope="request">
+                <c:set target="${itemAction}" property="dropDownItems" value="${options}"/>
 
                 <emm:ShowByPermission token="workflow.edit">
                     <%--Copy button --%>
-                    <jsp:useBean id="option2" class="java.util.LinkedHashMap" scope="request">
-                        <c:set target="${optionList}" property="2" value="${option2}"/>
+                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                        <c:set target="${options}" property="3" value="${option}"/>
 
-                        <c:set target="${option2}" property="url" value="javascript:void(0)"/>
-                        <c:set target="${option2}" property="extraAttributes" value="data-action='workflowCopyBtn'"/>
-                        <c:set target="${option2}" property="icon" value="icon-copy"/>
-                        <c:set target="${option2}" property="name">
-                            <bean:message key="button.Copy"/>
+                        <c:set target="${option}" property="url" value=""/>
+                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowCopyBtn'"/>
+                        <c:set target="${option}" property="icon" value="icon-copy"/>
+                        <c:set target="${option}" property="name">
+                            <mvc:message code="button.Copy"/>
                         </c:set>
-                    </jsp:useBean>
+                    </emm:instantiate>
+
                 </emm:ShowByPermission>
 
                 <%--Start test button --%>
@@ -105,67 +109,83 @@
                     <c:choose>
                         <c:when test="${workflowToggleTestingButtonState}">
                             <c:set var="buttonText">
-                                <bean:message key="button.workflow.testrun.start"/>
+                                <mvc:message code="button.workflow.testrun.start"/>
                             </c:set>
                         </c:when>
                         <c:otherwise>
                             <c:set var="buttonText">
-                                <bean:message key="button.workflow.testrun.stop"/>
+                                <mvc:message code="button.workflow.testrun.stop"/>
                             </c:set>
                         </c:otherwise>
                     </c:choose>
                     <c:set var="helperText">
-                        <bean:message key="button.workflow.testrun.help"/>
+                        <mvc:message code="button.workflow.testrun.help"/>
                     </c:set>
 
-                    <jsp:useBean id="option0" class="java.util.LinkedHashMap" scope="request">
-                        <c:set target="${optionList}" property="0" value="${option0}"/>
-                        <c:set target="${option0}" property="url" value="javascript:void(0)"/>
-                        <c:set target="${option0}" property="extraAttributes" value="data-action='workflowTestBtn'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
-                        <c:set target="${option0}" property="icon" value="icon-fa5-project-diagram icon-fa5"/>
-                        <c:set target="${option0}" property="name">${buttonText}</c:set>
-                    </jsp:useBean>
+                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                        <c:set target="${options}" property="0" value="${option}"/>
+                        <c:set target="${option}" property="url" value=""/>
+                        <c:set target="${option}" property="extraAttributes" value="data-action='workflowTestBtn'  data-tooltip-help='${buttonText}' data-tooltip-help-text='${helperText}' "/>
+                        <c:set target="${option}" property="icon" value="icon-fa5-project-diagram icon-fa5"/>
+                        <c:set target="${option}" property="name">${buttonText}</c:set>
+                    </emm:instantiate>
                 </c:if>
 
                 <%-- Fade in Statistics button --%>
-                <jsp:useBean id="option1" class="java.util.LinkedHashMap" scope="request">
-                    <c:set target="${optionList}" property="1" value="${option1}"/>
-                    <c:set target="${option1}" property="url" value="javascript:void(0)"/>
-                    <c:set target="${option1}" property="extraAttributes" value="data-action='workflowStatsBtn'"/>
-                    <c:set target="${option1}" property="icon" value="icon-bar-chart-o"/>
-                    <c:set target="${option1}" property="name">
-                        <bean:message key="workflow.fadeInStatistics"/>
+                <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                    <c:set target="${options}" property="1" value="${option}"/>
+                    <c:set target="${option}" property="url" value=""/>
+                    <c:set target="${option}" property="extraAttributes" value="data-action='workflowStatsBtn'"/>
+                    <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
+                    <c:set target="${option}" property="name">
+                        <mvc:message code="workflow.fadeInStatistics"/>
                     </c:set>
-                </jsp:useBean>
+                </emm:instantiate>
+
+                <%-- Auto Opt Total Statistics button --%>
+                <emm:ShowByPermission token="temp.beta">
+                    <c:if test="${isTotalStatisticAvailable}">
+                        <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                            <c:set target="${options}" property="2" value="${option}"/>
+                            <c:set target="${option}" property="url">
+                                <c:url value="/workflow/${workflowForm.workflowId}/getTotalStatistics.action"/>
+                            </c:set>
+                            <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
+                            <c:set target="${option}" property="name">
+                                <mvc:message code="statistic.total"/>
+                            </c:set>
+                        </emm:instantiate>
+                    </c:if>
+                </emm:ShowByPermission>
 
                 <emm:ShowByPermission token="workflow.delete">
                     <%--Delete button --%>
-                    <jsp:useBean id="option3" class="java.util.LinkedHashMap" scope="request">
-                        <c:set target="${optionList}" property="3" value="${option3}"/>
-                        <c:set target="${option3}" property="url">
-                            <html:rewrite page="/workflow/${workflowForm.workflowId}/delete.action"/>
+                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
+                        <c:set target="${options}" property="4" value="${option}"/>
+                        <c:set target="${option}" property="url">
+                            <c:url value="/workflow/${workflowForm.workflowId}/delete.action"/>
                         </c:set>
-                        <c:set target="${option3}" property="extraAttributes" value="data-confirm"/>
-                        <c:set target="${option3}" property="icon" value="icon-trash-o"/>
-                        <c:set target="${option3}" property="name">
-                            <bean:message key="button.Delete"/>
+                        <c:set target="${option}" property="extraAttributes" value="data-confirm"/>
+                        <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-trash-alt far"/>
+                        <c:set target="${option}" property="name">
+                            <mvc:message code="button.Delete"/>
                         </c:set>
-                    </jsp:useBean>
+                    </emm:instantiate>
                 </emm:ShowByPermission>
-            </jsp:useBean>
-        </jsp:useBean>
+            </emm:instantiate>
+        </emm:instantiate>
     </c:if>
 
     <emm:ShowByPermission token="workflow.edit">
-        <jsp:useBean id="element3" class="java.util.LinkedHashMap" scope="request">
-            <c:set target="${itemActionsSettings}" property="3" value="${element3}"/>
+        <emm:instantiate var="itemAction" type="java.util.LinkedHashMap"  scope="request">
+            <c:set target="${itemActionsSettings}" property="3" value="${itemAction}"/>
 
-            <c:set target="${element3}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element3}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflowSaveBtn'"/>
-            <c:set target="${element3}" property="iconBefore" value="icon-save"/>
-            <c:set target="${element3}" property="name">
-                <bean:message key="button.Save"/>
+            <c:set target="${itemAction}" property="btnCls" value="btn btn-regular btn-inverse"/>
+            <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflowSaveBtn'"/>
+            <c:set target="${itemAction}" property="iconBefore" value="icon-save"/>
+            <c:set target="${itemAction}" property="name">
+                <mvc:message code="button.Save"/>
             </c:set>
-        </jsp:useBean>
+        </emm:instantiate>
     </emm:ShowByPermission>
-</jsp:useBean>
+</emm:instantiate>

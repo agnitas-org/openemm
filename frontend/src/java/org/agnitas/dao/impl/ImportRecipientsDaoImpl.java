@@ -45,7 +45,7 @@ import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.NullValuesAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -178,7 +178,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 		execute(logger, "CREATE INDEX tmp_" + datasourceID + "_email_idx ON " + tempTableName + " (email)");
 		
 		if (keyColumns != null && !keyColumns.isEmpty() && (keyColumns.size() != 1 || (!keyColumns.get(0).equalsIgnoreCase("customer_id") && !keyColumns.get(0).equalsIgnoreCase("email")))) {
-			// Only create keyColumns index on temp table, if customer_id is not the only keycolumn (otherwise we would have twice the same index) 
+			// Only create keyColumns index on temp table, if customer_id is not the only keycolumn (otherwise we would have twice the same index)
 			execute(logger, "CREATE INDEX tmp_" + datasourceID + "_idx ON " + tempTableName + " (" + StringUtils.join(keyColumns, ", ") + ")");
 		}
 		
@@ -284,7 +284,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 			for (String keyColumn : keyColumns) {
 				keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
 			}
-			String updateStatement = "UPDATE " + destinationTableName + " dst SET dst." + duplicateSignColumn + " = " + getIfNull() + "((SELECT MIN(src." + duplicateSignColumn + ") FROM " + sourceTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + "), 0)";
+			String updateStatement = "UPDATE " + destinationTableName + " dst SET dst." + duplicateSignColumn + " = COALESCE((SELECT MIN(src." + duplicateSignColumn + ") FROM " + sourceTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + "), 0)";
 			update(logger, updateStatement);
 			return select(logger, "SELECT COUNT(*) FROM " + destinationTableName + " WHERE " + duplicateSignColumn + " > 0", Integer.class);
 		} else {
@@ -349,7 +349,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 
 	/**
 	 * Only update the first customer with the suitable customer_id
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	@Override
 	public int updateFirstExistingCustomers(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception {
@@ -499,7 +499,10 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	}
 
 	@Override
-	public int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, String remark) {
+	public int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, String remark) throws Exception {
+		// Check for valid UserStatus code
+		UserStatus.getUserStatusByID(updateStatus);
+		
 		List<String> keycolumnParts = new ArrayList<>();
 		for (String keyColumn : keyColumns) {
 			keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
@@ -735,7 +738,7 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	@Override
 	public List<Integer> getImportedCustomerIdsWithoutBindingToMailinglist(String temporaryImportTableName, int companyId, int datasourceId, int mailinglistId) {
 		// First union part = newly created customers, second union part = already existing customers without binding on the specified mailinglist
-		String selectCustomerIdsStatement = 
+		String selectCustomerIdsStatement =
 			"SELECT customer_id FROM customer_" + companyId + "_tbl cust WHERE datasource_id = ?"
         		+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE cust.customer_id = bind.customer_id AND bind.mailinglist_id = ?)"
         	+ " UNION ALL"
@@ -797,5 +800,14 @@ public class ImportRecipientsDaoImpl extends BaseDaoImpl implements ImportRecipi
 	@Override
 	public boolean checkUnboundCustomersExist(int companyID) {
 		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0)") > 0;
+	}
+
+	@Override
+	public int getAllRecipientsCount(int companyID) {
+		if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
+			return selectInt(logger, String.format("SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"));
+		} else {
+			return 0;
+		}
 	}
 }

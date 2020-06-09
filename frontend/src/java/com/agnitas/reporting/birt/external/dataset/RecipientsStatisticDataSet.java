@@ -19,21 +19,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+
 public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 	private static final transient Logger logger = Logger.getLogger(RecipientsStatisticDataSet.class);
-
-	private static final SimpleDateFormat PARAMETER_FORMAT = new SimpleDateFormat(DATE_PARAMETER_FORMAT);
 
 	public final static String OPENERS = "report.opens";
 	public final static int OPENERS_INDEX = 3;
@@ -182,12 +182,12 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 		
 		Date startDate = null;
 		if (StringUtils.isNotBlank(startDateString)) {
-			startDate = PARAMETER_FORMAT.parse(startDateString);
+			startDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(startDateString);
 		}
 		
 		Date endDate = null;
 		if (StringUtils.isNotBlank(endDateString)) {
-			endDate = PARAMETER_FORMAT.parse(endDateString);
+			endDate = new SimpleDateFormat(DATE_PARAMETER_FORMAT).parse(endDateString);
 		}
 		
 		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
@@ -710,19 +710,23 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 	private void insertRecipientStatUserStatus(@VelocityCheck int companyId, int tempTableId, int mailinglistId, LightTarget target, String startDate, String stopDate, boolean isAsOf) throws Exception {
 		target = getDefaultTarget(target);
 		
-		StringBuilder recipientStatUserStatusTempate = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) AS status_count, bind.user_status AS user_status")
-				.append(" FROM ").append(getCustomerBindingTableName(companyId)).append(" bind")
-				.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON (bind.customer_id = cust.customer_id)")
-				.append(" WHERE bind.mailinglist_id = ").append(mailinglistId);
+		StringBuilder recipientStatUserStatusTemplate = new StringBuilder("SELECT COUNT(*) AS status_count, bind.user_status AS user_status")
+				.append(" FROM ").append(getCustomerBindingTableName(companyId)).append(" bind");
 		
 		if (StringUtils.isNotBlank(target.getTargetSQL())) {
-			recipientStatUserStatusTempate.append(" AND (").append(target.getTargetSQL()).append(")");
+			recipientStatUserStatusTemplate.append(" JOIN ").append(getCustomerTableName(companyId)).append(" cust ON (bind.customer_id = cust.customer_id)");
+		}
+		
+		recipientStatUserStatusTemplate.append(" WHERE bind.mailinglist_id = ").append(mailinglistId);
+		
+		if (StringUtils.isNotBlank(target.getTargetSQL())) {
+			recipientStatUserStatusTemplate.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 		
 		// add date constraint
-		recipientStatUserStatusTempate.append(getDateConstraint(startDate, stopDate, (isAsOf ? DATE_CONSTRAINT_LESS_THAN_STOP : DATE_CONSTRAINT_BETWEEN)));
+		recipientStatUserStatusTemplate.append(getDateConstraint(startDate, stopDate, (isAsOf ? DATE_CONSTRAINT_LESS_THAN_STOP : DATE_CONSTRAINT_BETWEEN)));
 		
-		recipientStatUserStatusTempate.append(" GROUP BY bind.user_status");
+		recipientStatUserStatusTemplate.append(" GROUP BY bind.user_status");
 
 		int activeCountForPeriod = 0;
 		int waitingForConfirmCount = 0;
@@ -731,7 +735,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 		int bouncedCount = 0;
 		int recipientCount = 0;
 
-		List<Map<String, Object>> result = select(logger, recipientStatUserStatusTempate.toString());
+		List<Map<String, Object>> result = select(logger, recipientStatUserStatusTemplate.toString());
 		for (Map<String, Object> row : result) {
 			int amount = ((Number) row.get("status_count")).intValue();
 			UserStatus status = getUserStatus(((Number) row.get("user_status")).intValue());
@@ -739,15 +743,15 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 			if (status != null) {
 				switch (status) {
 					case Active:
-						activeCountForPeriod = amount;
+						activeCountForPeriod += amount;
 						break;
 					
 					case Bounce:
-						bouncedCount = amount;
+						bouncedCount += amount;
 						break;
 					
 					case Blacklisted:
-						blacklistedCount = amount;
+						blacklistedCount += amount;
 						break;
 					
 					case AdminOut:
@@ -756,17 +760,53 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 						break;
 					
 					case WaitForConfirm:
-						waitingForConfirmCount = amount;
+						waitingForConfirmCount += amount;
 						break;
 					
 					default:
 						// do nothing
-					
 				}
 			}
 			
 			recipientCount += amount;
 		}
+		
+		if (!isAsOf && getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
+			List<Map<String, Object>> hstResult = select(logger, recipientStatUserStatusTemplate.toString().replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId)));
+			for (Map<String, Object> row : hstResult) {
+				int amount = ((Number) row.get("status_count")).intValue();
+				UserStatus status = getUserStatus(((Number) row.get("user_status")).intValue());
+				
+				if (status != null) {
+					switch (status) {
+						case Active:
+							activeCountForPeriod += amount;
+							break;
+						
+						case Bounce:
+							bouncedCount += amount;
+							break;
+						
+						case Blacklisted:
+							blacklistedCount += amount;
+							break;
+						
+						case AdminOut:
+						case UserOut:
+							optoutCount += amount;
+							break;
+						
+						case WaitForConfirm:
+							waitingForConfirmCount += amount;
+							break;
+						
+						default:
+							// do nothing
+					}
+				}
+			}
+		}
+
 		StringBuilder update = new StringBuilder("UPDATE ").append(getTempReportTableName(tempTableId));
 		if (isAsOf) {
 			update.append(" SET count_active_as_of = ?, count_waiting_for_confirm_as_of = ?, count_blacklisted_as_of = ?, count_optout_as_of = ?, count_bounced_as_of = ?, count_recipient_as_of = ?");
@@ -775,12 +815,11 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 		}
 		update.append(" WHERE mailinglist_id = ? AND targetgroup_id = ?");
 
-		updateEmbedded(logger, update.toString(), activeCountForPeriod, waitingForConfirmCount, blacklistedCount, optoutCount,
-			bouncedCount, recipientCount, mailinglistId, target.getId());
+		updateEmbedded(logger, update.toString(), activeCountForPeriod, waitingForConfirmCount, blacklistedCount, optoutCount, bouncedCount, recipientCount, mailinglistId, target.getId());
 	}
 
 	private String getDateConstraint(String startDate, String stopDate, int constraintType) throws Exception {
-		SimpleDateFormat format = RECIPIENT_DATE_FORMAT;
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 		try {
 			// validate date format
 			switch (constraintType) {

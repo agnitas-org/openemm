@@ -27,7 +27,7 @@
 
 
   DateTimeUtils.getDateTimeStr = function(date, hour, minute, datePattern) {
-    if (!date || !date.getMonth()) {
+    if (!date || !date.getMonth) {
       return "";
     }
 

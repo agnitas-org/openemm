@@ -126,7 +126,7 @@
     });
   }
 
-  AGN.Initializers.TableRowActions = function($scope) {
+  AGN.Lib.CoreInitializer.new('table-row-actions', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -138,7 +138,6 @@
         initializeRowPopovers($row);
       });
     });
-
-  }
+  });
 
 })();

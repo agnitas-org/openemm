@@ -30,7 +30,7 @@ reportContext.getDesignHandle().addCss("styles.css");]]></method>
         </structure>
     </list-property>
     <parameters>
-        <scalar-parameter name="maxdomains" id="203">
+        <scalar-parameter name="maxDomains" id="203">
             <property name="valueType">static</property>
             <property name="isRequired">false</property>
             <property name="dataType">integer</property>
@@ -156,7 +156,7 @@ mailinglistID = null;
 if (params["mailinglistID"].value != null &amp;&amp; params["mailinglistID"].value != 0){
 	mailinglistID = params["mailinglistID"];
 }
-valueList = domainDataSet.getDomainStat(params["companyID"], targetID, mailinglistID, params["maxdomains"], params["language"], params["topLevelDomain"]);
+valueList = domainDataSet.getDomainStat(params["companyID"], targetID, mailinglistID, params["maxDomains"], params["language"], params["topLevelDomain"]);
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if( currentrow < valueList.size() ) {
@@ -336,7 +336,7 @@ mailinglistID = null;
 if (params["mailinglistID"].value != null &amp;&amp; params["mailinglistID"].value != 0){
 	mailinglistID = params["mailinglistID"];
 }
-valueList = domainDataSet.getDomainStat(params["companyID"], targetID, mailinglistID, params["maxdomains"], params["language"], params["topLevelDomain"]);
+valueList = domainDataSet.getDomainStat(params["companyID"], targetID, mailinglistID, params["maxDomains"], params["language"], params["topLevelDomain"]);
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if( currentrow < valueList.size() ) {

@@ -12,6 +12,7 @@ package org.agnitas.ecs.backend.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,36 +44,53 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 
 	@Override
 	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode) throws Exception {
+		return getClickStatInfo(companyId, mailingId, mode, 0);
+	}
+
+	@Override
+	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode, int deviceClass) throws Exception {
         try {
 			String sqlClicksPerMail;
 			String sqlClicksPerLink;
+			List<Object> optionsClicksPerMail = new ArrayList<>();
+			List<Object> optionsClicksPerLink = new ArrayList<>();
 			
 			if (mode == EcsGlobals.MODE_GROSS_CLICKS) {
 				sqlClicksPerMail = "SELECT COUNT(customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
 					+ " WHERE mailing_id = ?";
+				optionsClicksPerMail.add(mailingId);
+
+				sqlClicksPerMail += getDeviceClassClause(deviceClass, optionsClicksPerMail);
 				
 				sqlClicksPerLink = "SELECT url_id, COUNT(customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE mailing_id = ?"
-					+ " GROUP BY url_id"
+					+ " WHERE mailing_id = ?";
+				optionsClicksPerLink.add(mailingId);
+				
+				sqlClicksPerLink += getDeviceClassClause(deviceClass, optionsClicksPerLink);
+				sqlClicksPerLink += " GROUP BY url_id"
 					+ " ORDER BY clicks DESC";
 			} else if (mode == EcsGlobals.MODE_NET_CLICKS) {
 				sqlClicksPerMail = "SELECT COUNT(DISTINCT customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
 					+ " WHERE mailing_id = ?";
+				optionsClicksPerMail.add(mailingId);
 				
 				sqlClicksPerLink = "SELECT url_id, COUNT(DISTINCT customer_id) clicks"
 					+ " FROM rdirlog_" + companyId + "_tbl"
-					+ " WHERE mailing_id = ?"
-					+ " GROUP BY url_id"
+					+ " WHERE mailing_id = ?";
+				optionsClicksPerLink.add(mailingId);
+				
+				sqlClicksPerLink += getDeviceClassClause(deviceClass, optionsClicksPerLink);
+				sqlClicksPerLink += " GROUP BY url_id"
 					+ " ORDER BY clicks DESC";
 			} else {
 				throw new Exception("Invalid mode: " + mode);
 			}
 
-			int clicksPerMail = selectInt(logger, sqlClicksPerMail, mailingId);
-			List<Map<String, Object>> resultClicksPerLink = select(logger, sqlClicksPerLink, mailingId);
+			int clicksPerMail = selectInt(logger, sqlClicksPerMail, optionsClicksPerMail.toArray());
+			List<Map<String, Object>> resultClicksPerLink = select(logger, sqlClicksPerLink, optionsClicksPerLink.toArray());
 
 			ClickStatInfo clickStatInfo = new ClickStatInfoImpl();
 			for (Map<String, Object> row : resultClicksPerLink) {
@@ -90,6 +108,15 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 			logger.error("Cannot getClickStatInfo: " + e.getMessage(), e);
 			throw e;
 		}
+	}
+	
+    private String getDeviceClassClause(int deviceClass, List<Object> options) {
+		if (deviceClass > 0) {
+			String sql = " AND device_class_id = ?";
+			options.add(deviceClass);
+			return sql;
+		}
+		return "";
 	}
 	
     protected class ClickStatColor_RowMapper implements RowMapper<ClickStatColor> {

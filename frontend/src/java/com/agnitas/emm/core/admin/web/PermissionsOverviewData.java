@@ -20,10 +20,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.AdminGroup;
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
-import org.agnitas.beans.AdminGroup;
-import org.apache.commons.lang.StringUtils;
 
 public class PermissionsOverviewData {
     
@@ -51,6 +52,7 @@ public class PermissionsOverviewData {
         private ComAdmin admin;
         private ComAdmin adminToEdit;
         private boolean masterShowAllowed;
+        private boolean newPermissionManagement;
     
         private Set<Permission> visiblePermissions;
         private Set<Permission> companyPermissions;
@@ -75,6 +77,10 @@ public class PermissionsOverviewData {
         
         public void setGroupPermissions(boolean groupPermissions) {
             this.groupPermissions = groupPermissions;
+        }
+        
+        public void setNewPermissionManagement(boolean newPermissionManagement) {
+            this.newPermissionManagement = newPermissionManagement;
         }
     
         public PermissionsOverviewData build() {
@@ -122,9 +128,9 @@ public class PermissionsOverviewData {
             }
         }
     
-        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup adminGroup, Set<Permission> visiblePermissions) {
+        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup adminGroup, Set<Permission> filteredVisiblePermissions) {
             Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
-            for (Permission permission : visiblePermissions) {
+            for (Permission permission : filteredVisiblePermissions) {
                 String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
                 String categoryName = permission.getCategory();
     
@@ -144,16 +150,26 @@ public class PermissionsOverviewData {
             permissionEntry.name = permission.toString();
             permissionEntry.granted = adminToEdit.permissionAllowed(permission);
             
-            if (!groupPermissions && adminGroup != null && adminGroup.permissionAllowed(permission)) {
+            if (!groupPermissions && adminGroup != null && adminGroup.permissionAllowed(adminGroup.getCompanyID(), permission)) {
                 permissionEntry.drivenByAdminCategory = true;
                 permissionEntry.changeable = false;
                 permissionEntry.adminGroup = adminGroup;
-            } else if (standardCategories.contains(categoryName)) {
-                permissionEntry.changeable = true;
-            } else if (premiumCategories.contains(categoryName)) {
-                permissionEntry.changeable = companyPermissions.contains(permission);
+            } else if (newPermissionManagement) {
+            	if (permission.isPremium()) {
+                    permissionEntry.changeable = companyPermissions.contains(permission);
+                } else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory()) || Permission.CATEGORY_KEY_OTHERS.equals(permission.getCategory())) {
+                    permissionEntry.changeable = admin.permissionAllowed(permission) || masterShowAllowed;
+                } else {
+                	permissionEntry.changeable = true;
+                }
             } else {
-                permissionEntry.changeable = admin.permissionAllowed(permission) || masterShowAllowed;
+            	if (standardCategories.contains(categoryName)) {
+                    permissionEntry.changeable = true;
+                } else if (premiumCategories.contains(categoryName)) {
+                    permissionEntry.changeable = companyPermissions.contains(permission);
+                } else {
+                    permissionEntry.changeable = admin.permissionAllowed(permission) || masterShowAllowed;
+                }
             }
             
             return permissionEntry;
@@ -175,18 +191,16 @@ public class PermissionsOverviewData {
         private boolean drivenByAdminCategory;
         private String name;
         private boolean granted;
-        private boolean showInfoTooltip;
     
         public PermissionEntry() {
         }
     
-        public PermissionEntry(boolean changeable, AdminGroup adminGroup, boolean drivenByAdminCategory, String name, boolean granted, boolean showInfoTooltip) {
+        public PermissionEntry(boolean changeable, AdminGroup adminGroup, boolean drivenByAdminCategory, String name, boolean granted) {
             this.changeable = changeable;
             this.adminGroup = adminGroup;
             this.drivenByAdminCategory = drivenByAdminCategory;
             this.name = name;
             this.granted = granted;
-            this.showInfoTooltip = showInfoTooltip;
         }
     
         public boolean isChangeable() {

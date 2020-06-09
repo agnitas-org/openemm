@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -159,7 +158,7 @@ public class LoadBalancerFilter implements Filter {
 	public void init(FilterConfig filterConfig) throws ServletException {
 		try {
 			// Read system URL. This URL will be used for redirection in case of invalid sessions on disabled nodes.
-			systemUrl = ConfigService.getInstance().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
+			systemUrl = ConfigService.getInstance().getValue(ConfigValue.SystemUrl);
 		} catch (Exception e) {
 			throw new ServletException("Cannot read system url: " + e.getMessage(), e);
 		}

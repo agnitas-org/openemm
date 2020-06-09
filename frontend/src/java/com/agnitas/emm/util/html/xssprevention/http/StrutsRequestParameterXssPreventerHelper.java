@@ -13,30 +13,22 @@ package com.agnitas.emm.util.html.xssprevention.http;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
-import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
 
 public class StrutsRequestParameterXssPreventerHelper extends RequestParameterXssPreventerHelper {
 
 	private final HtmlCheckErrorToActionErrorMapper errorMapper;
 	
 	public StrutsRequestParameterXssPreventerHelper() {
-		this(new HtmlXSSPreventer(), x -> false, new DefaultHtmlCheckErrorToActionErrorsMapper());
+		this(x -> false, new DefaultHtmlCheckErrorToActionErrorsMapper());
 	}
 	
 	public StrutsRequestParameterXssPreventerHelper(final Function<String, Boolean> isParameterExcludedFromCheck, final HtmlCheckErrorToActionErrorMapper errorMapper) {
-		this(new HtmlXSSPreventer(), isParameterExcludedFromCheck, errorMapper);
-	}
-	
-	public StrutsRequestParameterXssPreventerHelper(final HtmlXSSPreventer preventer, final Function<String, Boolean> isParameterExcludedFromCheck, final HtmlCheckErrorToActionErrorMapper errorMapper) {
-		super(preventer, isParameterExcludedFromCheck);
-		
+		super(isParameterExcludedFromCheck);
 		this.errorMapper = Objects.requireNonNull(errorMapper, "Error mapper cannot be null");
 	}
 

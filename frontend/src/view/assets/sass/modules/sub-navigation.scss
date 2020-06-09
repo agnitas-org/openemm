@@ -6,7 +6,8 @@
 
   position: fixed;
   top: 60px;
-  left: 0; right: 0;
+  left: 65px;
+  right: 0;
   z-index: 1000;
 
   & + .l-main-view {
@@ -14,10 +15,6 @@
   }
 
   .menu-is-active & {
-    left: 230px;
-  }
-
-  @media (min-width: $screen-md-min) {
     left: 230px;
   }
 
@@ -135,4 +132,8 @@
 
   }
 
+}
+
+body.wide-sidebar .sub-navigation {
+  left: 240px;
 }

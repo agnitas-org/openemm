@@ -15,11 +15,6 @@ import java.util.Date;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MaildropEntry {
-	int GEN_SCHEDULED = 0;
-    int GEN_NOW = 1;
-    int GEN_WORKING = 2;
-    int GEN_FINISHED = 3;
-    
 	int getAdminTestTargetID();
 	
 	void setAdminTestTargetID( int targetID);

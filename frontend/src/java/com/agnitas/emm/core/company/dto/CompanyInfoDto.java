@@ -11,17 +11,20 @@
 package com.agnitas.emm.core.company.dto;
 
 import java.nio.charset.Charset;
+import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CompanyInfoDto {
 
     private String name;
-
     private int id;
     private String description;
-
-    public int getId() {
+    private String status;
+    private Date timestamp;
+    private String info;
+    
+	public int getId() {
         return id;
     }
 
@@ -48,4 +51,28 @@ public class CompanyInfoDto {
     public void setDescription(String description) {
         this.description = description;
     }
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public Date getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Date timestamp) {
+		this.timestamp = timestamp;
+	}
+
+    public String getInfo() {
+		return info;
+	}
+
+	public void setInfo(String info) {
+		this.info = info;
+	}
 }

@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
@@ -33,9 +34,12 @@ public interface ComOptimizationDao {
 	 * @param oneOfTheSplitMailingID one of the mailing for AutoOptimization, in auto_optimization_tbl this is group1_id or group2_id...
 	 * @return final mailing ID
 	 */
-    int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID);
-
-    int save(ComOptimization optimization);
+    int getFinalMailingID(@VelocityCheck int companyID, int workflowID, int oneOfTheSplitMailingID);
+    int getFinalMailingId(@VelocityCheck int companyId, int workflowId);
+	
+	AutoOptimizationLight getAutoOptimizationLight(@VelocityCheck int companyId, int workflowId);
+	
+	int save(ComOptimization optimization);
 	
 	boolean delete(ComOptimization optimization);
 
@@ -68,5 +72,6 @@ public interface ComOptimizationDao {
 	List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate);
 
 	List<ComOptimization> getOptimizationsForCalendar_New(@VelocityCheck int companyId, Date startDate, Date endDate);
-
+    
+    int getOptimizationByFinalMailingId(int finalMailingId, @VelocityCheck int companyId);
 }

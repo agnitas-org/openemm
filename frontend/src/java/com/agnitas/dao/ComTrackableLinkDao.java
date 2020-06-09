@@ -55,6 +55,8 @@ public interface ComTrackableLinkDao extends TrackableLinkDao {
     
     List<ComTrackableLink> getTrackableLinks(@VelocityCheck int companyID, int mailingID);
     
+    List<ComTrackableLink> getTrackableLinks(@VelocityCheck int companyID, List<Integer> urlIds);
+    
     String getLinkUrl(@VelocityCheck int companyID, int mailingID, int linkID);
 
 	void deleteTrackableLinksExceptIds(@VelocityCheck int companyID, int mailingID, Collection<Integer> ids);

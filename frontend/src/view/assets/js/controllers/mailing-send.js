@@ -119,7 +119,7 @@ AGN.Lib.Controller.new('mailing-send', function() {
     emailAddresses.push($email.val());
     $emailAddresses.val(emailAddresses.join(' '));
     Form.get(this.el).submit().done(function() {
-      $('#newStatusMail').focus();
+      $('#newStatusMail').trigger("focus");
     });
   });
 
@@ -175,7 +175,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
 
   this.addAction({click: 'remove-test-recipient'}, function() {
     var $tr = this.el.closest('tr');
-    Tooltip.remove($tr.all('[data-tooltip]'));
     $tr.remove();
   });
 

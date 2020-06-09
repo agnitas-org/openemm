@@ -6,6 +6,12 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <c:set var="ACTION_IMPORT" value="<%= ComUserFormEditAction.ACTION_IMPORT %>"/>
+<c:set var="ACTION_IMPORT_TEMPLATES" value="<%= ComUserFormEditAction.ACTION_IMPORT_TEMPLATES %>"/>
+
+<c:set var="importAction" value="${ACTION_IMPORT}"/>
+<c:if test="${not empty param.importFromTemplates and param.importFromTemplates}">
+	<c:set var="importAction" value="${ACTION_IMPORT_TEMPLATES}"/>
+</c:if>
 
 <agn:agnForm action="/userform" id="userFormImport" enctype="multipart/form-data" data-form="static">
 	<html:hidden property="action"/>
@@ -24,7 +30,7 @@
 							<html:file property="uploadFile" styleId="uploadFile" styleClass="form-control" />
 						</div>
 						<div class="input-group-btn">
-							<button type="button" class="btn btn-regular btn-primary" data-form-persist="upload_file: 'upload_file', action: ${ACTION_IMPORT}" data-form-submit>
+							<button type="button" class="btn btn-regular btn-primary" data-form-persist="upload_file: 'upload_file', action: ${importAction}" data-form-submit>
 								<i class="icon icon-cloud-upload"></i>
 								<span class="text">
 									<bean:message key="forms.import"/>

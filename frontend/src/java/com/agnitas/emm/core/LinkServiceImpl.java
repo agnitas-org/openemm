@@ -13,8 +13,10 @@ package com.agnitas.emm.core;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.beans.Company;
+import com.agnitas.util.Caret;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.impl.TagDetailsImpl;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -38,7 +40,7 @@ import org.agnitas.util.TimeoutLRUMap;
 import org.agnitas.util.UnclosedTagException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -86,7 +88,7 @@ public class LinkServiceImpl implements LinkService {
 
 	private static final Pattern PROTOCOL_SCHEMA_PATTERN = Pattern.compile("^(\\p{Alpha}+):.*$");
 	private static final Pattern HTTP_PATTERN = Pattern.compile("https?://[0-9A-Z_.+-]+(:[0-9]+)?", Pattern.CASE_INSENSITIVE);
-	
+
 	private static final Pattern URL_DETECTION_PATTERN = Pattern.compile("((?:href|src|background)=)|(https?://[0-9A-Z_.+-]+(:[0-9]+)?)", Pattern.CASE_INSENSITIVE);
 	
 	private ConfigService configService;
@@ -258,7 +260,14 @@ public class LinkServiceImpl implements LinkService {
 				String format = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
 				
 				try {
-					hashTagReplacement = mailingDao.getSendDate(format, link.getCompanyID(), link.getMailingID());
+					Date sendDate = mailingDao.getSendDate(link.getCompanyID(), link.getMailingID());
+					if (sendDate != null) {
+						// Legacy: old examples in documentation said "mm" stands for month-2digits (db convention), so it must be replaced for Java format conventions into "MM"
+						// Legacy: old examples in documentation said "DD" stands for day-2digits (db convention), so it must be replaced for Java format conventions into "dd"
+						hashTagReplacement = new SimpleDateFormat(format.replace("mm", "MM").replace("DD", "dd")).format(sendDate);
+					} else {
+						hashTagReplacement = "";
+					}
 				} catch (Exception e) {
 					hashTagReplacement = "";
 				}
@@ -390,11 +399,11 @@ public class LinkServiceImpl implements LinkService {
 				final Matcher schemaMatcher = PROTOCOL_SCHEMA_PATTERN.matcher(linkUrl);
 				final String schema = schemaMatcher.matches() ? schemaMatcher.group(1) : null;
 				
-				if(schema != null && schema.length() < 2) { // Schema present, but length too short -> Treat as local
+				if (schema != null && schema.length() < 2) { // Schema present, but length too short -> Treat as local
 					localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
-				} else if(schema != null && ("file".equalsIgnoreCase(schema))) {	// "file:" is always local
+				} else if (schema != null && ("file".equalsIgnoreCase(schema))) {	// "file:" is always local
 					localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
-				} else if(schema != null && !"http".equalsIgnoreCase(schema) && !"https".equalsIgnoreCase(schema)) {
+				} else if (schema != null && !"http".equalsIgnoreCase(schema) && !"https".equalsIgnoreCase(schema)) {
 					// Skip links with schema no starting with "http:" or "https:"
 				} else if (finalTextWithReplacedHashTags.substring(start, end).trim().contains(" ")) {
 					// HASH-Tags and AgnTags may contain blanks, but the resulting html link with the replaced tags may not
@@ -408,39 +417,43 @@ public class LinkServiceImpl implements LinkService {
 							// No HASH-Tags in image links allowed
 							foundErrorneousLinks.add(new ErrorneousLink("error.mailing.imagelink.hash", start, linkUrl));
 						} else {
-							if(linkUrl.toLowerCase().startsWith("http://") || linkUrl.toLowerCase().startsWith("https://")) {
+							if (isHttpUrl(linkUrl.toLowerCase())) {
 								foundImages.add(linkUrl);
-							} else {
-								if (linkUrl.contains("[agn") || linkUrl.contains("[gridPH")) {
-									foundImages.add(linkUrl);
-								} else {
-									localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
-								}
-							}
-						}
-					} else {
-						if (linkUrl.contains("[agn") || linkUrl.contains("[gridPH")) {
-							foundNotTrackableLinks.add(linkUrl);
-						} else {
-							if(linkUrl.toLowerCase().startsWith("http://") || linkUrl.toLowerCase().startsWith("https://")) {
-								ComTrackableLink link = new ComTrackableLinkImpl();
-								link.setFullUrl(linkUrl);
-								link.setActionID(getActionIdForLink(text, start, linkUrl));
-								link.setAltText(getTitleForLink(text, start, linkUrl));
-								link.setShortname(getTitleForLink(text, start, linkUrl));
-								foundTrackableLinks.add(link);
+							} else if (containsDynTag(linkUrl)) {
+								foundImages.add(linkUrl);
 							} else {
 								localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
 							}
 						}
+					} else {
+						if (containsDynTag(linkUrl)) {
+							foundNotTrackableLinks.add(linkUrl);
+						} else if (isHttpUrl(linkUrl.toLowerCase())) {
+							ComTrackableLink link = new ComTrackableLinkImpl();
+							link.setFullUrl(linkUrl);
+							link.setActionID(getActionIdForLink(text, start, linkUrl));
+							link.setAltText(getTitleForLink(text, start, linkUrl));
+							link.setShortname(getTitleForLink(text, start, linkUrl));
+							foundTrackableLinks.add(link);
+						} else if (!linkUrl.startsWith("#")) {
+							localLinks.add(new ErrorneousLink("error.mailing.url.local", start, linkUrl));
+						}
 					}
 				}
 			});
-		} catch (RuntimeException e){
+		} catch (RuntimeException e) {
 			throw new Exception(e);
 		}
 
 		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErrorneousLinks, localLinks);
+	}
+
+	private boolean isHttpUrl(String url) {
+		return url.startsWith("http://") || url.startsWith("https://");
+	}
+
+	private boolean containsDynTag(String url) {
+		return url.contains("[agn") || url.contains("[gridPH");
 	}
 
 	@Override
@@ -486,7 +499,7 @@ public class LinkServiceImpl implements LinkService {
 				}
 				
 				if (end < 0) {
-					throw new ParseLinkRuntimeException("Missing closing apostrophe char for link url at position: " + matcher.start(), matcher.group());
+					throw createParseException("Missing closing apostrophe char for link url at position: ", matcher, text);
 				}
 			} else { // Matches starting with http:// or https://
 				final char previousChar = AgnUtils.getCharacterBefore(text, matcher.start());
@@ -499,22 +512,22 @@ public class LinkServiceImpl implements LinkService {
 				} else if (previousChar == '\'') {
 					end = text.indexOf('\'', matcher.start());
 					if (end < 0) {
-						throw new ParseLinkRuntimeException("Missing closing apostrophe char for link url at position: " + matcher.start(), matcher.group());
+						throw createParseException("Missing closing apostrophe char for link url at position: ", matcher, text);
 					}
 				} else if (previousChar == '"') {
 					end = text.indexOf('"', matcher.start());
 					if (end < 0) {
-						throw new ParseLinkRuntimeException("Missing closing quote char for link url at position: " + matcher.start(), matcher.group());
+						throw createParseException("Missing closing quote char for link url at position: ", matcher, text);
 					}
 				} else if (previousChar == '(') {
 					end = text.indexOf(')', matcher.start());
 					if (end < 0) {
-						throw new ParseLinkRuntimeException("Missing closing bracket char for link url at position: " + matcher.start(), matcher.group());
+						throw createParseException("Missing closing bracket char for link url at position: ", matcher, text);
 					}
 				} else if (previousChar == '>') {
 					end = text.indexOf('<', matcher.start());
 					if (end < 0) {
-						throw new ParseLinkRuntimeException("Missing enclosing tag end for link url at position: " + matcher.start(), matcher.group());
+						throw createParseException("Missing enclosing tag end for link url at position: ", matcher, text);
 					}
 				} else {
 					end = AgnUtils.getNextIndexOf(text, matcher.start(), ' ', '>', '\n', '\r', '\t');
@@ -551,22 +564,22 @@ public class LinkServiceImpl implements LinkService {
 			} else if (previousChar == '\'') {
 				end = text.indexOf('\'', matcher.start());
 				if (end < 0) {
-					throw new ParseLinkRuntimeException("Missing closing apostrophe char for link url at position: " + matcher.start(), matcher.group());
+					throw createParseException("Missing closing apostrophe char for link url at position: ", matcher, text);
 				}
 			} else if (previousChar == '"') {
 				end = text.indexOf('"', matcher.start());
 				if (end < 0) {
-					throw new ParseLinkRuntimeException("Missing closing quote char for link url at position: " + matcher.start(), matcher.group());
+					throw createParseException("Missing closing quote char for link url at position: ", matcher, text);
 				}
 			} else if (previousChar == '(') {
 				end = text.indexOf(')', matcher.start());
 				if (end < 0) {
-					throw new ParseLinkRuntimeException("Missing closing bracket char for link url at position: " + matcher.start(), matcher.group());
+					throw createParseException("Missing closing bracket char for link url at position: ", matcher, text);
 				}
 			} else if (previousChar == '>') {
 				end = text.indexOf('<', matcher.start());
 				if (end < 0) {
-					throw new ParseLinkRuntimeException("Missing enclosing tag end for link url at position: " + matcher.start(), matcher.group());
+					throw createParseException("Missing enclosing tag end for link url at position: ", matcher, text);
 				}
 			} else {
 				end = AgnUtils.getNextIndexOf(text, matcher.start(), ' ', '>', '\n', '\r', '\t');
@@ -675,19 +688,11 @@ public class LinkServiceImpl implements LinkService {
 
 	@Override
 	public String encodeTagStringLinkTracking(int companyID, int mailingID, int linkID, int customerID) {
-		String baseUrl = getBaseUrlCache().get(mailingID);
-		if (baseUrl == null) {
+		String rdirDomain = getBaseUrlCache().get(mailingID);
+		if (rdirDomain == null) {
 			try {
-				String autoURL = mailingDao.getAutoURL(mailingID, companyID);
-				
-				if (StringUtils.isBlank(autoURL)) {
-					Company company = companyDao.getCompany(companyID);
-					baseUrl = company.getRdirDomain() + "/r.html?";
-				} else {
-					baseUrl = autoURL + "/r.html?";
-				}
-
-				getBaseUrlCache().put(mailingID, baseUrl);
+				rdirDomain = mailingDao.getMailingRdirDomain(mailingID, companyID);
+				getBaseUrlCache().put(mailingID, rdirDomain);
 			} catch (Exception e) {
 				logger.error("encodeTagStringLinkTracking", e);
 				return "";
@@ -695,7 +700,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 
 		try {
-			final int licenseID = this.configService.getLicenseID();
+			final int licenseID = configService.getLicenseID();
 		
 			final ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID, mailingID, linkID);
 
@@ -710,7 +715,11 @@ public class LinkServiceImpl implements LinkService {
 				uidString = "";
 			}
 			
-			return baseUrl + "uid=" + uidString;
+			if (configService.getBooleanValue(ConfigValue.UseRdirContextLinks, companyID)) {
+				return rdirDomain + "/r/" + uidString;
+			} else {
+				return rdirDomain + "/r.html?uid=" + uidString;
+			}
 		} catch (Exception e) {
 			logger.error("Exception in UID", e);
 			return "";
@@ -833,10 +842,19 @@ public class LinkServiceImpl implements LinkService {
 	@Override
 	public Integer getLineNumberOfFirstRdirLink(String text) {
 		int indexOfRdirLink = text.indexOf(RDIRLINK_SEARCH_STRING);
+		int indexOfRdirLinkNewFormat = text.indexOf("/r/");
 		if (indexOfRdirLink < 0) {
-			return null;
+			if (indexOfRdirLinkNewFormat < 0) {
+				return null;
+			} else {
+				return AgnUtils.getLineNumberOfTextposition(text, indexOfRdirLinkNewFormat);
+			}
 		} else {
-			return AgnUtils.getLineNumberOfTextposition(text, indexOfRdirLink);
+			if (indexOfRdirLinkNewFormat < 0) {
+				return AgnUtils.getLineNumberOfTextposition(text, indexOfRdirLink);
+			} else {
+				return AgnUtils.getLineNumberOfTextposition(text, Math.min(indexOfRdirLink, indexOfRdirLinkNewFormat));
+			}
 		}
 	}
 
@@ -932,5 +950,10 @@ public class LinkServiceImpl implements LinkService {
 			}
 		}
 		return resultList;
+	}
+
+	private ParseLinkRuntimeException createParseException(String message, Matcher matcher, String text) {
+		Caret caret = Caret.at(text, matcher.start());
+		return new ParseLinkRuntimeException(message + caret, matcher.group(), caret);
 	}
 }

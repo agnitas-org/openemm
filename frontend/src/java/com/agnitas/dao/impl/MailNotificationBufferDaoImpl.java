@@ -16,7 +16,7 @@ import java.util.Date;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;

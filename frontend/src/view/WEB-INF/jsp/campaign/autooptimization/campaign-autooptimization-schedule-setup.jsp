@@ -8,9 +8,6 @@
 <%@ taglib uri="http://ajaxtags.org/tags/ajax" prefix="ajax" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="DATE_PATTERN_FULL" value="<%= Constants.DATE_PATTERN_FULL %>" scope="request"/>
-<c:set var="DATE_PATTERN" value="<%= Constants.DATE_PATTERN %>" scope="request"/>
-
 <emm:CheckLogon />
 
 <emm:Permission token="campaign.autoopt" />

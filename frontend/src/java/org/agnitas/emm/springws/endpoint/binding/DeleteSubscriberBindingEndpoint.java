@@ -20,7 +20,6 @@ import org.agnitas.emm.springws.jaxb.DeleteSubscriberBindingResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class DeleteSubscriberBindingEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

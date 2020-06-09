@@ -11,78 +11,51 @@
 package com.agnitas.web;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.GenericValidator;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.beans.ComCompany;
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 
 public class ComAdminForm extends StrutsFormBase {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComAdminForm.class);
 
 	private static final long serialVersionUID = -5934996047571867787L;
-	protected String statEmail;
-    protected String companyName;
-	protected String initialCompanyName;
-    protected String email;
-    protected int layoutBaseId;
-    protected int startPage;
-    protected int dashboardMailingsView;
-    protected int navigationLocation;
-    protected int mailingSettingsView;
-    protected int livePreviewPosition;
-    protected int statisticLoadType;
-    protected int gender = 2;
-    protected String title;
-    protected String searchFirstName;
-    protected String searchLastName;
-    protected String searchEmail;
-    protected String searchCompany;
-    protected String filterCompanyId;
-    protected String filterMailinglistId;
-    protected String filterAdminGroupId;
-    protected String filterLanguage;
-    protected String firstname;
-    private Set<Integer> bulkIDs = new HashSet<>();
-    private int mailinglistID;
-    private List<Mailinglist> mailinglists;
-    private Set<Integer> disabledMailinglistsIds = new HashSet<>();
-    private List<ComCompany> companies;
-    private List<AdminGroup> adminGroups;
-    private boolean isOneTimePassword;
-    protected int action;
-	protected int previousAction;
-	protected int adminID = 0;
-	protected int companyID = 1;
-	protected int customerID;
-	protected int layoutID = 0;
-	protected int mailingContentView;
-	protected String username;
-	protected String password;
-	protected String fullname;
-	protected String adminTimezone;
+	private String statEmail;
+	private String companyName;
+	private String initialCompanyName;
+	private String email;
+	private int layoutBaseId;
+	private int startPage;
+	private int dashboardMailingsView;
+	private int navigationLocation;
+    private int mailingSettingsView;
+    private int livePreviewPosition;
+	private int statisticLoadType;
+    private int gender = 2;
+	protected String title;
+    private String firstname;
+    private String action;
+	private int adminID = 0;
+	private int companyID = 1;
+	private int mailingContentView;
+	private String username;
+	private String password;
+	private String fullname;
+	private String adminTimezone;
 	private String language;
 	private Locale adminLocale;
 	private String passwordConfirm;
-	private String adminPhone;
+
 
 	/**
 	 * Holds value of property userRights.
@@ -93,8 +66,7 @@ public class ComAdminForm extends StrutsFormBase {
 	 * Holds value of property groupID.
 	 */
 	private int groupID = 0;
-	private ActionMessages messages;
-	
+
 	// constructor:
 	public ComAdminForm() {
         super();
@@ -141,18 +113,17 @@ public class ComAdminForm extends StrutsFormBase {
 	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
 		ActionErrors actionErrors = new ActionErrors();
 		boolean doNotDelete = request.getParameter("delete") == null || request.getParameter("delete").isEmpty();
-		if (doNotDelete && (action == ComAdminAction.ACTION_SAVE || action == ComAdminAction.ACTION_NEW)) {
-			if (username.length() < 3) {
+		if (doNotDelete && "save".equals(action)) {
+			if (username == null || username.length() < 3) {
 				actionErrors.add("username", new ActionMessage("error.username.tooShort"));
+			} else if(username.length() > 180) {
+				actionErrors.add("username", new ActionMessage("error.username.tooLong"));
 			}
 
-			if (!password.equals(passwordConfirm)) {
+			if (!StringUtils.equals(password, passwordConfirm)) {
 				actionErrors.add("password", new ActionMessage("error.password.mismatch"));
 			}
 
-			if (username.length() > 180) {
-				actionErrors.add("username", new ActionMessage("error.username.tooLong"));
-			}
 			if (StringUtils.isBlank(fullname) || fullname.length() < 2) {
 				actionErrors.add("fullname", new ActionMessage("error.name.too.short"));
 			} else if (fullname.length() > 100) {
@@ -175,40 +146,8 @@ public class ComAdminForm extends StrutsFormBase {
 				actionErrors.add("mailForReport", new ActionMessage("error.invalid.email"));
 			}
 		}
-
-		if (action == ComAdminAction.ACTION_SAVE_RIGHTS) {
-			Enumeration<String> aEnum = request.getParameterNames();
-			while (aEnum.hasMoreElements()) {
-				String paramName = aEnum.nextElement();
-				if (paramName.startsWith("user_right")) {
-					String value = request.getParameter(paramName);
-					if (value != null) {
-						if (value.startsWith("user__")) {
-							value = value.substring(6);
-							userRights.add(value);
-						}
-					}
-				}
-			}
-		}
 		return actionErrors;
 	}
-	
-	@Override
-	protected ActionMessages checkForHtmlTags(HttpServletRequest request) {
-		if (action != ComAdminAction.ACTION_VIEW_WITHOUT_LOAD) {
-			return super.checkForHtmlTags(request);
-		}
-		return new ActionErrors();
-	}
-
-    public boolean isOneTimePassword() {
-        return isOneTimePassword;
-    }
-
-    public void setOneTimePassword(boolean oneTimePassword) {
-        isOneTimePassword = oneTimePassword;
-    }
 
     public String getStatEmail() {
 		return statEmail;
@@ -290,77 +229,13 @@ public class ComAdminForm extends StrutsFormBase {
         this.livePreviewPosition = livePreviewPosition;
     }
 
-    public int getStatisticLoadType() {
-        return statisticLoadType;
-    }
+	public int getStatisticLoadType() {
+		return statisticLoadType;
+	}
 
-    public void setStatisticLoadType(int statisticLoadType) {
-        this.statisticLoadType = statisticLoadType;
-    }
-
-    public String getSearchFirstName() {
-        return searchFirstName;
-    }
-
-    public void setSearchFirstName(String searchFirstName) {
-        this.searchFirstName = searchFirstName;
-    }
-
-    public String getSearchLastName() {
-        return searchLastName;
-    }
-
-    public void setSearchLastName(String searchLastName) {
-        this.searchLastName = searchLastName;
-    }
-
-    public String getSearchEmail() {
-        return searchEmail;
-    }
-
-    public void setSearchEmail(String searchEmail) {
-        this.searchEmail = searchEmail;
-    }
-
-    public String getSearchCompany() {
-        return searchCompany;
-    }
-
-    public void setSearchCompany(String searchCompany) {
-        this.searchCompany = searchCompany;
-    }
-
-    public String getFilterCompanyId() {
-        return filterCompanyId;
-    }
-
-    public String getFilterMailinglistId() {
-        return filterMailinglistId;
-    }
-
-    public void setFilterMailinglistId(String filterMailinglistId) {
-        this.filterMailinglistId = filterMailinglistId;
-    }
-
-    public void setFilterCompanyId(String filterCompanyId) {
-        this.filterCompanyId = filterCompanyId;
-    }
-
-    public String getFilterAdminGroupId() {
-        return filterAdminGroupId;
-    }
-
-    public void setFilterAdminGroupId(String filterAdminGroupId) {
-        this.filterAdminGroupId = filterAdminGroupId;
-    }
-
-    public String getFilterLanguage() {
-        return filterLanguage;
-    }
-
-    public void setFilterLanguage(String filterLanguage) {
-        this.filterLanguage = filterLanguage;
-    }
+	public void setStatisticLoadType(int statisticLoadType) {
+		this.statisticLoadType = statisticLoadType;
+	}
 
     public String getFirstname() {
         return firstname;
@@ -381,74 +256,12 @@ public class ComAdminForm extends StrutsFormBase {
 	public void setTitle(String title) {
 		this.title = title;
 	}
-    public void setBulkID(int id, String value) {
-        if (AgnUtils.interpretAsBoolean(value))
-            this.bulkIDs.add(id);
-    }
-    public String getBulkID(int id) {
-        return this.bulkIDs.contains(id) ? "on" : "";
-    }
-    public Set<Integer> getBulkIds() {
-        return this.bulkIDs;
-    }
-    public void clearBulkIds() {
-        this.bulkIDs.clear();
-    }
-
-    public List<Mailinglist> getMailinglists() {
-        return mailinglists;
-    }
-
-    public void setMailinglists(List<Mailinglist> mailinglists) {
-        this.mailinglists = mailinglists;
-    }
-
-    public Set<Integer> getDisabledMailinglistsIds() {
-        return disabledMailinglistsIds;
-    }
-
-    public void setEnabledMailinglist(int id, String value){
-        if (AgnUtils.interpretAsBoolean(value)){
-            disabledMailinglistsIds.remove(id);
-        } else {
-            disabledMailinglistsIds.add(id);
-        }
-    }
-
-    public String getEnabledMailinglist(int id){
-        return disabledMailinglistsIds.contains(id) ? "" : "on";
-    }
-
-    public int getMailinglistID() {
-        return mailinglistID;
-    }
-
-    public void setMailinglistID(int mailinglistID) {
-        this.mailinglistID = mailinglistID;
-    }
-
-    public List<ComCompany> getCompanies() {
-        return companies;
-    }
-
-    public void setCompanies(List<ComCompany> companies) {
-        this.companies = companies;
-    }
-
-    public List<AdminGroup> getAdminGroups() {
-        return adminGroups;
-    }
-
-    public void setAdminGroups(List<AdminGroup> adminGroups) {
-        this.adminGroups = adminGroups;
-    }
-    
-    /**
+	/**
 	 * Getter for property action.
 	 *
 	 * @return Value of property action.
 	 */
-	public int getAction() {
+	public String getAction() {
 		return action;
 	}
 
@@ -498,30 +311,12 @@ public class ComAdminForm extends StrutsFormBase {
 	}
 
 	/**
-	 * Getter for property customerID.
-	 *
-	 * @return Value of property customerID.
-	 */
-	public int getCustomerID() {
-		return customerID;
-	}
-
-	/**
 	 * Getter for property adminTimezone.
 	 *
 	 * @return Value of property adminTimezone.
 	 */
 	public String getAdminTimezone() {
 		return adminTimezone;
-	}
-
-	/**
-	 * Getter for property layoutID.
-	 *
-	 * @return Value of property layoutID.
-	 */
-	public int getLayoutID() {
-		return layoutID;
 	}
 
 	/**
@@ -566,7 +361,7 @@ public class ComAdminForm extends StrutsFormBase {
 	 * @param action
 	 *            New value of property action.
 	 */
-	public void setAction(int action) {
+	public void setAction(String action) {
 		this.action = action;
 	}
 
@@ -621,16 +416,6 @@ public class ComAdminForm extends StrutsFormBase {
 	}
 
 	/**
-	 * Setter for property customerID.
-	 *
-	 * @param customerID
-	 *            New value of property customerID.
-	 */
-	public void setCustomerID(int customerID) {
-		this.customerID = customerID;
-	}
-
-	/**
 	 * Setter for property admineTimezone.
 	 *
 	 * @param timezone
@@ -638,16 +423,6 @@ public class ComAdminForm extends StrutsFormBase {
 	 */
 	public void setAdminTimezone(String timezone) {
 		this.adminTimezone = timezone;
-	}
-
-	/**
-	 * Setter for property layoutID.
-	 *
-	 * @param layoutID
-	 *            New value of property layoutID.
-	 */
-	public void setLayoutID(int layoutID) {
-		this.layoutID = layoutID;
 	}
 
 	/**
@@ -730,28 +505,4 @@ public class ComAdminForm extends StrutsFormBase {
 		this.groupID = groupID;
 	}
 
-	public int getPreviousAction() {
-		return previousAction;
-	}
-
-	public void setPreviousAction(int previousAction) {
-		this.previousAction = previousAction;
-	}
-
-	public ActionMessages getMessages() {
-		return messages;
-	}
-
-	public void setMessages(ActionMessages messages) {
-		this.messages = messages;
-	}
-
-	public String getAdminPhone() {
-		return adminPhone;
-	}
-
-	public void setAdminPhone(String adminPhone) {
-		this.adminPhone = adminPhone;
-	}
-	
 }

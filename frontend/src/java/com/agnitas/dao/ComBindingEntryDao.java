@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.dao.BindingEntryDaoException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTarget;
@@ -151,8 +150,7 @@ public interface ComBindingEntryDao {
 
 	List<CompositeBindingEntry> getCompositeBindings(@VelocityCheck int companyID, int recipientID);
 
-	void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern,
-										   int userStatus, String remark) throws BindingEntryDaoException;
+	void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int userStatus, String remark) throws Exception;
 
 	void lockBindings(int companyId, List<SimpleEntry<Integer, Integer>> cmPairs);
 }

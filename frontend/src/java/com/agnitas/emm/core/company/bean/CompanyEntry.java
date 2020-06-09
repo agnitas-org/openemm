@@ -10,11 +10,14 @@
 
 package com.agnitas.emm.core.company.bean;
 
-public class CompanyEntry {
+import java.util.Date;
 
+public class CompanyEntry {
     private int companyId;
     private String shortname;
     private String description;
+    private String status;
+    private Date timestamp;
     
     public int getCompanyId() {
         return companyId;
@@ -39,4 +42,20 @@ public class CompanyEntry {
     public void setDescription(String description) {
         this.description = description;
     }
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public Date getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Date timestamp) {
+		this.timestamp = timestamp;
+	}
 }

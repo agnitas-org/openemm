@@ -4,8 +4,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<emm:CheckLogon/>
-
 <c:set var="agnNavigationKey" 		value="RecipientsReport" 	scope="request" />
 <c:set var="agnTitleKey" 			value="statistic.protocol" 	scope="request" />
 <c:set var="agnSubtitleKey" 		value="statistic.protocol" 	scope="request" />

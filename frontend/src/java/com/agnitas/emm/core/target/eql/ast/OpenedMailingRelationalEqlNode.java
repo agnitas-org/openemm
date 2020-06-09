@@ -12,11 +12,13 @@ package com.agnitas.emm.core.target.eql.ast;
 
 import com.agnitas.emm.core.target.eql.ast.devicequery.AbstractDeviceQueryNode;
 import com.agnitas.emm.core.target.eql.ast.transform.ShiftNotDownTransform.SpecialNotOperatorHandling;
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
+import com.agnitas.emm.core.target.eql.ast.traversal.TraversalUtil;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
 @SpecialNotOperatorHandling(mustHaveReceivedMailing = true)
-public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlNode {
+public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlNode implements DeviceQuerySupportingNode {
 
 	private final CodeLocation startLocation;
 	private final int mailingId;
@@ -53,6 +55,7 @@ public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlN
 	 * 
 	 * @return node of device query or <code>null</code>
 	 */
+	@Override
 	public final AbstractDeviceQueryNode getDeviceQueryNode() {
 		return this.deviceQueryNode;
 	}
@@ -71,7 +74,15 @@ public final class OpenedMailingRelationalEqlNode extends AbstractRelationalEqlN
 		collector.addMailingReference(this.mailingId);
 	}
 
+	@Override
 	public final boolean hasDeviceQuery() {
 		return this.deviceQueryNode != null;
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		TraversalUtil.traverse(deviceQueryNode, visitor);
+		visitor.leavingNode(this);
 	}
 }

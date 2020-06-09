@@ -33,8 +33,11 @@
             <c:set var="agnNavigationKey" 		value="mailingView"                         scope="request" />
         </c:otherwise>
     </c:choose>
+    <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+        <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingSendForm.mailingID}"/>
+        <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+    </emm:instantiate>
     <c:set var="agnNavigationKey"			value="mailingView"											scope="request" />
-    <c:set var="agnNavHrefAppend"			value="&mailingID=${mailingSendForm.mailingID}&init=true"	scope="request" />
     <c:set var="agnTitleKey"				value="Mailing"												scope="request" />
     <c:set var="agnSubtitleKey"				value="Mailing"												scope="request" />
     <c:set var="agnSubtitleValue"			value="${mailingSendForm.shortname}"						scope="request" />

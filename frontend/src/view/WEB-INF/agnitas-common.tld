@@ -418,6 +418,27 @@
 
     <tag>
         <description>
+            Sets bundle to variable named as value of attribute 'var' with value returned from WebStorage bean
+            by key which has to be set to attribute 'key'.
+        </description>
+        <name>webStorage</name>
+        <tag-class>com.agnitas.taglib.WebStorageTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>var</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>key</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>org.agnitas.service.WebStorageBundle</type>
+        </attribute>
+    </tag>
+    <tag>
+        <description>
             Sets the absolute path to the variable.
         </description>
         <name>setAbsolutePath</name>
@@ -441,13 +462,47 @@
         </attribute>
     </tag>
 
+    <tag>
+        <description>
+            Sets the additional params to a url for a sidemenu tab.
+        </description>
+        <name>sideMenuAdditionalParam</name>
+        <tag-class>com.agnitas.taglib.SideMenuAdditionalParamTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <description>Name of the additional side menu param.</description>
+            <name>name</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>Value of the additional side menu param.</description>
+            <name>value</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>
+                Mark the param as for submenu only.
+                If 'false' the parameter will be added for the root item of the submenu also.
+                Default value is 'true';
+            </description>
+            <name>forSubmenuOnly</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+    </tag>
+
     <function>
         <description>
             Escape a string to make it suitable for use in a JS string literal
         </description>
         <name>escapeJs</name>
-        <function-class>org.apache.commons.lang.StringEscapeUtils</function-class>
-        <function-signature>java.lang.String escapeJavaScript(java.lang.String)</function-signature>
+        <function-class>org.apache.commons.text.StringEscapeUtils</function-class>
+        <function-signature>java.lang.String escapeEcmaScript(java.lang.String)</function-signature>
         <example>
             &lt;script type="text/javascript">
                 var foo = '${emm:escapeJs(foo)}';
@@ -461,7 +516,7 @@
             Replace trailing characters with ellipsis when string length exceeds limit.
         </description>
         <name>abbreviate</name>
-        <function-class>org.apache.commons.lang.StringUtils</function-class>
+        <function-class>org.apache.commons.lang3.StringUtils</function-class>
         <function-signature>java.lang.String abbreviate(java.lang.String,int)</function-signature>
         <example>
             &lt;span class="title">${emm:abbreviate(title, 10)}&lt;/span>
@@ -528,8 +583,8 @@
             Join collection items to a string using separator.
         </description>
         <name>join</name>
-        <function-class>org.apache.commons.lang.StringUtils</function-class>
-        <function-signature>java.lang.String join(java.util.Collection,java.lang.String)</function-signature>
+        <function-class>org.apache.commons.lang3.StringUtils</function-class>
+        <function-signature>java.lang.String join(java.util.Iterator,java.lang.String)</function-signature>
         <example>
             &lt;c:set var=&quot;rowGutters&quot; value=&quot;${emm:join(${gridTemplateForm.rowGutters}, &#39;, &#39;)}&quot;/&gt;
 
@@ -655,7 +710,7 @@
             Parse a string representation of integer value.
         </description>
         <name>toInt</name>
-        <function-class>org.apache.commons.lang.math.NumberUtils</function-class>
+        <function-class>org.apache.commons.lang3.math.NumberUtils</function-class>
         <function-signature>int toInt(java.lang.String,int)</function-signature>
         <example>
             &lt;c:set var="imageId" value="${emm:toInt(content, 0)}"/&gt;

@@ -13,7 +13,7 @@ package org.agnitas.util;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class SqlScriptReader extends BasicReader {
 	public SqlScriptReader(InputStream inputStream) throws Exception {

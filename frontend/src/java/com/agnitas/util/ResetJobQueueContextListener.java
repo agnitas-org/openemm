@@ -23,6 +23,8 @@ import org.apache.log4j.Logger;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+
 public class ResetJobQueueContextListener implements ServletContextListener {
 	private static final transient Logger logger = Logger.getLogger(ResetJobQueueContextListener.class);
 
@@ -51,6 +53,14 @@ public class ResetJobQueueContextListener implements ServletContextListener {
 	            int resettedAutoExports = autoExportDao.resetAutoExportsForCurrentHost();
 	            if (resettedAutoExports > 0) {
 	    			logger.error("Resetting " + resettedAutoExports + " hanging AutoExports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
+	    		}
+            }
+
+            if (springContext.containsBean("BirtReportDao")) {
+            	ComBirtReportDao birtReportDao = (ComBirtReportDao) springContext.getBean("BirtReportDao");
+	            int resettedReports = birtReportDao.resetBirtReportsForCurrentHost();
+	            if (resettedReports > 0) {
+	    			logger.error("Resetting " + resettedReports + " hanging BirtReports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
 	    		}
             }
 		} catch (Exception e) {

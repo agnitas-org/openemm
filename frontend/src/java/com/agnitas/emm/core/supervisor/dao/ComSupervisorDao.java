@@ -15,9 +15,9 @@ import java.util.List;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SortCriterion;
-import com.agnitas.emm.core.supervisor.common.SortDirection;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
+import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
+import com.agnitas.emm.util.SortDirection;
 
 /**
  * Interface for accessing supervisor data.
@@ -46,7 +46,7 @@ public interface ComSupervisorDao {
 	 *
 	 * @throws SupervisorException on errors listing supervisors
 	 */
-	List<Supervisor> listAllSupervisors(SortCriterion criterion, SortDirection direction) throws SupervisorException;
+	List<Supervisor> listAllSupervisors(SupervisorSortCriterion criterion, SortDirection direction) throws SupervisorException;
 	
 	/**
 	 * Returns supervisor by ID.
@@ -104,4 +104,6 @@ public interface ComSupervisorDao {
 	void cleanupUnusedSupervisorBindings(int daysBeforeInactive);
 	
 	boolean deleteSupervisor(int supervisorId);
+
+	boolean existsSupervisor(String supervisorName);
 }

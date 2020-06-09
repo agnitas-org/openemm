@@ -20,7 +20,6 @@ import org.agnitas.emm.springws.jaxb.GetAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class GetAttachmentEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

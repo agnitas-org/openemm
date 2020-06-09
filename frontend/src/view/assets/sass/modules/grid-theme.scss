@@ -292,13 +292,18 @@ $tool-panel-box-padding: 4px 4px 10px 4px;
   }
   //
   // HEADER SECTION
-  .ag-header-select-all,
   .ag-header-cell-menu-button {
       margin-top: 3px;
       line-height: 1rem;
   }
+
   .ag-header-select-all {
+      line-height: 26px;  // Same as for .ag-cell-label-container
       padding-right: $checkbox-horizontal-margin;
+  }
+
+  .ag-header-select-all:only-child {
+    float: none;
   }
 
   .ag-filter-header-container > label {

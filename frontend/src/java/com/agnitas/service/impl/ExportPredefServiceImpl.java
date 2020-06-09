@@ -14,7 +14,6 @@ import java.util.List;
 
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -22,7 +21,6 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.service.ExportPredefService;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
-    private MailinglistDao mailinglistDao;
     private ExportPredefDao exportPredefDao;
 
     @Override
@@ -52,11 +50,6 @@ public class ExportPredefServiceImpl implements ExportPredefService {
 
     public final ExportPredefDao getExportPredefDao() {
     	return this.exportPredefDao;
-    }
-    
-    @Required
-    public void setMailinglistDao(MailinglistDao mailinglistDao) {
-        this.mailinglistDao = mailinglistDao;
     }
 
     @Required

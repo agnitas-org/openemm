@@ -13,18 +13,18 @@ package org.agnitas.ecs.backend.web;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.agnitas.messages.I18nString;
+import cz.vutbr.web.domassign.DeclarationMap;
 import org.agnitas.ecs.EcsGlobals;
 import org.agnitas.ecs.EcsPreviewSize;
 import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
@@ -32,13 +32,11 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HtmlUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
-
-import com.agnitas.messages.I18nString;
-
-import cz.vutbr.web.domassign.DeclarationMap;
 
 /**
  * Servlet for generating Embedded click statistics mailing HTML.
@@ -53,11 +51,15 @@ public class EmbeddedClickStatView extends HttpServlet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(EmbeddedClickStatView.class);
 
-	private static final Charset ENCODING = StandardCharsets.UTF_8;
-
-	public static final String PATH = "/ecs_view";
-	
 	protected ConfigService configService;
+	
+	private static final String CSS_STYLES =
+					"html {\n" +
+					"    width: %dpx;\n" +
+					"}\n" +
+					"body {\n" +
+					"    margin: 0;\n" +
+					"}\n";
 
     private ConfigService getConfigService() {
 		if (configService == null) {
@@ -93,7 +95,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 			String charsetPattern = "<meta http-equiv *= *\"content-type\".*charset *= *[A-Za-z0-9-.:_]*";
 
 			res.setContentType("text/html");
-			res.setCharacterEncoding(ENCODING.name());
+			res.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
 			try (ServletOutputStream out = res.getOutputStream()) {
 
@@ -103,14 +105,15 @@ public class EmbeddedClickStatView extends HttpServlet {
 				if (req.getParameter("mailingID") == null || req.getParameter("recipientId") == null || req.getParameter("viewMode") == null) {
 				    logger.error("EmbeddedClickStatView: Parameters error (not enough parameters to show EmbeddedClickStat View)");
 					String errorMsg = I18nString.getLocaleString("ecs.Error.NoParams", locale);
-					out.write(errorMsg.getBytes(ENCODING));
+					out.write(errorMsg.getBytes(StandardCharsets.UTF_8));
 				} else {
-				    int mailingId = Integer.valueOf(req.getParameter("mailingID"));
-				    int recipientId = Integer.valueOf(req.getParameter("recipientId"));
-				    int viewMode = Integer.valueOf(req.getParameter("viewMode"));
+				    int mailingId = NumberUtils.toInt(req.getParameter("mailingID"));
+				    int recipientId = NumberUtils.toInt(req.getParameter("recipientId"));
+				    int viewMode = NumberUtils.toInt(req.getParameter("viewMode"));
+					int deviceTypeId = NumberUtils.toInt(req.getParameter("deviceType"));
 				    if (recipientId == 0) {
 						String errorMsg = I18nString.getLocaleString("ecs.Error.NoTestRecipients", locale);
-				        out.write(errorMsg.getBytes(ENCODING));
+				        out.write(errorMsg.getBytes(StandardCharsets.UTF_8));
 				    } else {
 				        String mailingContent = service.getMailingContent(mailingId, recipientId);
 				        
@@ -119,17 +122,14 @@ public class EmbeddedClickStatView extends HttpServlet {
 				        mailingContent = matcher.replaceAll("<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8");
 	
 				        if (viewMode != EcsGlobals.MODE_PURE_MAILING) {
-				            mailingContent = service.addStatsInfo(mailingContent, viewMode, mailingId, companyId);
+				            mailingContent = service.addStatsInfo(mailingContent, viewMode, mailingId, companyId, deviceTypeId);
 				        }
 
-						EcsPreviewSize previewSize = null;
-						if (AgnUtils.parameterNotBlank(req, "previewSize")) {
-							previewSize = EcsPreviewSize.getForId(Integer.parseInt(req.getParameter("previewSize")));
-						}
+						EcsPreviewSize previewSize = EcsPreviewSize.getForIdOrNull(NumberUtils.toInt(req.getParameter("previewSize"), -1));
 
 						String scriptsAndStyles = getScriptsAndStyles(previewSize);
 
-				        if (mailingContent.toLowerCase().contains("</head>")) {
+				        if (StringUtils.containsIgnoreCase(mailingContent, "</head>")) {
 				            mailingContent = mailingContent.replaceAll("(?i)</head>", scriptsAndStyles + "\n</head>");
 				        } else {
 				            mailingContent = scriptsAndStyles + mailingContent;
@@ -141,18 +141,18 @@ public class EmbeddedClickStatView extends HttpServlet {
 							final String media = "print";
 
 							try {
-								Document document = HtmlUtils.parseDocument(mailingContent, ENCODING.name());
+								Document document = HtmlUtils.parseDocument(mailingContent, StandardCharsets.UTF_8.name());
 
 								URL base = null;
 								try {
-									base = new URL(getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
+									base = new URL(getConfigService().getValue(ConfigValue.SystemUrl));
 								} catch (MalformedURLException e) {
 									logger.error("Error occurred: " + e.getMessage(), e);
 								}
 
-								DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, ENCODING.name(), base);
+								DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, StandardCharsets.UTF_8.name(), base);
 								HtmlUtils.StylesEmbeddingOptions options = HtmlUtils.stylesEmbeddingOptionsBuilder()
-										.setEncoding(ENCODING)
+										.setEncoding(StandardCharsets.UTF_8)
 										.setBaseUrl(base)
 										.setMediaType(media)
 										.setEscapeAgnTags(true)
@@ -166,7 +166,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 							}
 						}
 
-						out.write(mailingContent.getBytes(ENCODING));
+						out.write(mailingContent.getBytes(StandardCharsets.UTF_8));
 				    }
 				}
 			}
@@ -176,10 +176,12 @@ public class EmbeddedClickStatView extends HttpServlet {
     }
 
 	private String getScriptsAndStyles(EcsPreviewSize previewSize) {
-		final String contextPath = getConfigService().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
+		final String baseUrl = StringUtils.removeEnd(getConfigService().getValue(ConfigValue.SystemUrl), "/");
 
-		return  "<script type=\"text/javascript\" src=\"" + contextPath + "/js/lib/jquery-1.6.2.min.js\"></script>\n" +
-				"<script type=\"text/javascript\" src=\"" + contextPath + "/js/lib/ecs/statLabelAdjuster.js\"></script>\n" +
+		return  "<script type=\"text/javascript\" src=\"" + baseUrl + "/assets/js/vendor/jquery-3.4.1.js\"></script>\n" +
+				"<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/grid/jquery.imagesloaded.min.js\"></script>\n" +
+				"<script type=\"text/javascript\" src=\"" + baseUrl + "/assets/js/vendor/lodash-4.17.15.js\"></script>\n" +
+				"<script type=\"text/javascript\" src=\"" + baseUrl + "/js/lib/ecs/statLabelAdjuster.js\"></script>\n" +
 				"<style>\n" +
 				getCssStyles(previewSize) +
 				"</style>\n";
@@ -189,12 +191,7 @@ public class EmbeddedClickStatView extends HttpServlet {
 		if (previewSize == null) {
 			return "";
 		}
-
-		return  "html {\n" +
-				"    width: " + previewSize.getWidth() + "px;\n" +
-				"}\n" +
-				"body {\n" +
-				"    margin: 0;\n" +
-				"}\n";
+		
+		return String.format(CSS_STYLES, previewSize.getWidth());
 	}
 }

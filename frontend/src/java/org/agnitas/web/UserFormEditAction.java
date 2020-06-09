@@ -33,7 +33,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -102,7 +102,7 @@ public class UserFormEditAction extends StrutsActionBase {
      * @exception IOException if an input/output error occurs
      * @exception ServletException if a servlet exception occurs
      * @return the action to forward to.
-     * @throws Exception 
+     * @throws Exception
      */
     @Override
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse res) throws IOException, ServletException, Exception {
@@ -117,7 +117,9 @@ public class UserFormEditAction extends StrutsActionBase {
         }
 
         aForm=(UserFormEditForm)form;
-        if (logger.isInfoEnabled()) logger.info("Action: "+aForm.getAction());
+        if (logger.isInfoEnabled()) {
+			logger.info("Action: "+aForm.getAction());
+		}
 
         try {
             switch(aForm.getAction()) {
@@ -179,6 +181,8 @@ public class UserFormEditAction extends StrutsActionBase {
         }
 
 		if (destination != null && ("list".equals(destination.getName()) || "success".equals(destination.getName()))) {
+			AgnUtils.setAdminDateTimeFormatPatterns(request);
+			
 			if (aForm.getColumnwidthsList() == null) {
 				aForm.setColumnwidthsList(getInitializedColumnWidthList(3));
 			}
@@ -268,7 +272,7 @@ public class UserFormEditAction extends StrutsActionBase {
      * @param aForm on input contains the id of the form.
      *              On exit contains the data read from the database.
      * @param req request
-     * @throws Exception 
+     * @throws Exception
      */
     protected void loadUserForm(UserFormEditForm aForm, HttpServletRequest req) throws Exception {
     	if (aForm.getFormID() != 0) {

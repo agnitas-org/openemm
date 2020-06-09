@@ -13,7 +13,19 @@ package com.agnitas.emm.core.birtstatistics.recipient.web;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.web.forms.FormDate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
@@ -24,21 +36,10 @@ import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormDate;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.context.request.RequestContextHolder;
 
 @Controller
 @RequestMapping("/statistics/recipient")
-@PermissionMapping("recipient.stats.new")
+@PermissionMapping("recipient.stats")
 public class RecipientStatController {
     
     private static Logger logger = Logger.getLogger(RecipientStatController.class);
@@ -51,7 +52,7 @@ public class RecipientStatController {
     private UserActivityLogService userActivityLogService;
     
     public RecipientStatController(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
-                                   MediaTypesService mediaTypesService, ConversionService conversionService,
+                                   @Qualifier("MediaTypesService") MediaTypesService mediaTypesService, ConversionService conversionService,
                                    MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService) {
         this.birtStatisticsService = birtStatisticsService;
         this.targetService = targetService;
@@ -63,16 +64,21 @@ public class RecipientStatController {
     
     @RequestMapping("/view")
     public String view(ComAdmin admin, @ModelAttribute(name="form") RecipientStatisticForm form, Model model, Popups popups) throws Exception {
-        if(!validateDates(admin.getLocale(), form.getStartDate(), form.getEndDate(), popups)){
+        if(!validateDates(admin, form.getStartDate(), form.getEndDate(), popups)){
             return "messages";
         }
     
-        SimpleDateFormat datePickerFormat = AgnUtils.getDatePickerFormat(admin, true);
+        SimpleDateFormat datePickerFormat = admin.getDateFormat();
         setDefaultDateValuesIfEmpty(form, datePickerFormat);
     
         String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-        RecipientStatisticDto statisticDto = conversionService.convert(form, RecipientStatisticDto.class);
-    
+        
+        // Admins date format is missing in FormDate, so add it
+        form.getStartDate().setFormatter(admin.getDateFormatter());
+        form.getEndDate().setFormatter(admin.getDateFormatter());
+        
+        RecipientStatisticDto statisticDto = convertToDto(form, admin);
+
         model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, sessionId, statisticDto));
         
         model.addAttribute("localeDatePattern", datePickerFormat.toPattern());
@@ -86,7 +92,34 @@ public class RecipientStatController {
         
         userActivityLogService.writeUserActivityLog(admin, "recipient statistics", "active submenu - recipient overview", logger);
 
-        return "stats_birt_recipient_stat_new";
+        return "stats_birt_recipient_stat";
+    }
+
+    private RecipientStatisticDto convertToDto(final RecipientStatisticForm form, final ComAdmin admin) {
+        final RecipientStatisticDto statisticDto = conversionService.convert(form, RecipientStatisticDto.class);
+        resolveDateModeDateRestrictions(statisticDto, form, admin);
+        return statisticDto;
+    }
+
+    private void resolveDateModeDateRestrictions(final RecipientStatisticDto dto, final RecipientStatisticForm form, final ComAdmin admin) {
+        switch (form.getDateMode()) {
+            case LAST_WEEK:
+                LocalDate now = LocalDate.now();
+                dto.setLocalEndDate(now.minusDays(1));
+                dto.setLocalStartDate(now.minusWeeks(1));
+                break;
+
+            case SELECT_PERIOD:
+                dto.setLocalStartDate(form.getStartDate().get(admin.getDateFormatter()));
+                dto.setLocalEndDate(form.getEndDate().get(admin.getDateFormatter()));
+                break;
+
+            case SELECT_MONTH:
+            default:
+                LocalDate dateByParams = LocalDate.of(form.getYear(), form.getMonthValue(), 1);
+                dto.setLocalStartDate(dateByParams);
+                dto.setLocalEndDate(dateByParams.plusMonths(1).minusDays(1));
+        }
     }
 
     private void setDefaultDateValuesIfEmpty(final RecipientStatisticForm form, SimpleDateFormat datePickerFormat) {
@@ -111,12 +144,12 @@ public class RecipientStatController {
         }
     }
 
-    private boolean validateDates(final Locale locale, final FormDate startDate, final FormDate endDate, final Popups popups) {
+    private boolean validateDates(final ComAdmin admin, final FormDate startDate, final FormDate endDate, final Popups popups) {
         if(StringUtils.isBlank(startDate.getDate()) && StringUtils.isBlank(endDate.getDate())){
             return true;
         }
         
-        String pattern = AgnUtils.getLocaleDateFormatSpecific(locale).toPattern();
+        String pattern = admin.getDateFormat().toPattern();
         if (!AgnUtils.isDateValid(startDate.getDate(), pattern) || !AgnUtils.isDateValid(endDate.getDate(), pattern)) {
             popups.alert("error.date.format");
             return false;

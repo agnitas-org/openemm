@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.web.forms.WorkflowParameters;
 import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.support.RequestContextUtils;

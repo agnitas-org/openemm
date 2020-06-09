@@ -184,7 +184,6 @@
     </script>
 
     <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
-    <!--XYZ: ${absoluteImagePath}-->
 
     <script data-initializer="campaign-manager-init" type="application/json">
         {
@@ -197,6 +196,7 @@
             "newStatus": "${workflowForm.statusMaybeChangedTo}",
             "workflowId": "${workflowForm.workflowId}",
             "workflowUndoHistoryData":${workflowForm.workflowUndoHistoryData},
+            "workflowAutoOptData": ${emm:toJson(autoOptData)},
             "imageUrl": "${absoluteImagePath}",
             "enabledToggleButton": "${workflowToggleTestingButtonEnabled}",
             "isStatusOpen": "${workflowForm.status == STATUS_OPEN}",
@@ -315,54 +315,55 @@
         </div>
     </div>
 
-<div id="invisible">
-    <div id="connectRapidButton">
-        <img src="${absoluteImagePath}/campaignManager/icon_arrow_rapid.png" alt="arrow">
-    </div>
-    <jsp:include page="editors/workflow-start-editor.jsp">
-        <jsp:param name="adminTimezone" value="${adminTimezone}"/>
-    </jsp:include>
-    <jsp:include page="editors/workflow-decision-editor.jsp"/>
-    <jsp:include page="editors/workflow-deadline-editor.jsp"/>
-    <jsp:include page="editors/workflow-parameter-editor.jsp"/>
-    <jsp:include page="editors/workflow-report-editor.jsp"/>
-    <jsp:include page="editors/workflow-recipient-editor.jsp"/>
-    <jsp:include page="editors/workflow-archive-editor.jsp"/>
-    <jsp:include page="editors/workflow-form-editor.jsp"/>
-    <jsp:include page="editors/workflow-ownworkflow-editor.jsp"/>
-    <jsp:include page="editors/workflow-mailing-editor.jsp"/>
-    <jsp:include page="editors/workflow-action-based-mailing-editor.jsp"/>
-    <jsp:include page="editors/workflow-date-based-mailing-editor.jsp"/>
-    <jsp:include page="editors/workflow-followup-based-mailing-editor.jsp"/>
-    <jsp:include page="editors/workflow-import-editor.jsp"/>
-    <jsp:include page="editors/workflow-export-editor.jsp"/>
-    <jsp:include page="editors/workflow-icon-comment-editor.jsp"/>
-    <jsp:include page="editors/workflow-ownworkflow-usecopy-dialog.jsp"/>
-    <jsp:include page="workflow-save-before-pdf-dialog.jsp"/>
-    <jsp:include page="workflow-copy-dialog.jsp">
-        <jsp:param name="workflowId" value="${workflowForm.workflowId}"/>
-    </jsp:include>
-    <jsp:include page="workflow-undoHistoryIsEmpty-dialog.jsp"/>
-    <jsp:include page="workflow-simple-dialog.jsp">
-        <jsp:param name="messageKey" value="error.workflow.connection.notAllowed"/>
-        <jsp:param name="titleKey" value="error.workflow.connection.deactivated"/>
-        <jsp:param name="dialogName" value="NotAllowedConnection"/>
-    </jsp:include>
-    <jsp:include page="workflow-simple-dialog.jsp">
-        <jsp:param name="messageKey" value="error.workflow.notAllowedSeveralConnections.description"/>
-        <jsp:param name="titleKey" value="error.workflow.connection.deactivated"/>
-        <jsp:param name="dialogName" value="NotAllowedSeveralConnections"/>
-    </jsp:include>
-    <jsp:include page="workflow-simple-dialog.jsp">
-        <jsp:param name="messageKey" value="error.workflow.notAllowedEditing.description"/>
-        <jsp:param name="titleKey" value="error.workflow.notAllowedEditing.title"/>
-        <jsp:param name="dialogName" value="NotAllowedEditing"/>
-    </jsp:include>
-    <jsp:include page="workflow-simple-dialog.jsp">
-        <jsp:param name="messageKey" value="error.workflow.noStatistics.description"/>
-        <jsp:param name="titleKey" value="error.workflow.noStatistics.title"/>
-        <jsp:param name="dialogName" value="noStatistics"/>
-    </jsp:include>
+    <div id="invisible">
+        <div id="connectRapidButton">
+            <c:url var="icon_arrow_rapid" value="/assets/core/images/campaignManager/icon_arrow_rapid.png"/>
+            <img src="${icon_arrow_rapid}" alt="arrow">
+        </div>
+        <jsp:include page="editors/workflow-start-editor.jsp">
+            <jsp:param name="adminTimezone" value="${adminTimezone}"/>
+        </jsp:include>
+        <jsp:include page="editors/workflow-decision-editor.jsp"/>
+        <jsp:include page="editors/workflow-deadline-editor.jsp"/>
+        <jsp:include page="editors/workflow-parameter-editor.jsp"/>
+        <jsp:include page="editors/workflow-report-editor.jsp"/>
+        <jsp:include page="editors/workflow-recipient-editor.jsp"/>
+        <jsp:include page="editors/workflow-archive-editor.jsp"/>
+        <jsp:include page="editors/workflow-form-editor.jsp"/>
+        <jsp:include page="editors/workflow-ownworkflow-editor.jsp"/>
+        <jsp:include page="editors/workflow-mailing-editor.jsp"/>
+        <jsp:include page="editors/workflow-action-based-mailing-editor.jsp"/>
+        <jsp:include page="editors/workflow-date-based-mailing-editor.jsp"/>
+        <jsp:include page="editors/workflow-followup-based-mailing-editor.jsp"/>
+        <jsp:include page="editors/workflow-import-editor.jsp"/>
+        <jsp:include page="editors/workflow-export-editor.jsp"/>
+        <jsp:include page="editors/workflow-icon-comment-editor.jsp"/>
+        <jsp:include page="editors/workflow-ownworkflow-usecopy-dialog.jsp"/>
+        <jsp:include page="workflow-save-before-pdf-dialog.jsp"/>
+        <jsp:include page="workflow-copy-dialog.jsp">
+            <jsp:param name="workflowId" value="${workflowForm.workflowId}"/>
+        </jsp:include>
+        <jsp:include page="workflow-undoHistoryIsEmpty-dialog.jsp"/>
+        <jsp:include page="workflow-simple-dialog.jsp">
+            <jsp:param name="messageKey" value="error.workflow.connection.notAllowed"/>
+            <jsp:param name="titleKey" value="error.workflow.connection.deactivated"/>
+            <jsp:param name="dialogName" value="NotAllowedConnection"/>
+        </jsp:include>
+        <jsp:include page="workflow-simple-dialog.jsp">
+            <jsp:param name="messageKey" value="error.workflow.notAllowedSeveralConnections.description"/>
+            <jsp:param name="titleKey" value="error.workflow.connection.deactivated"/>
+            <jsp:param name="dialogName" value="NotAllowedSeveralConnections"/>
+        </jsp:include>
+        <jsp:include page="workflow-simple-dialog.jsp">
+            <jsp:param name="messageKey" value="error.workflow.notAllowedEditing.description"/>
+            <jsp:param name="titleKey" value="error.workflow.notAllowedEditing.title"/>
+            <jsp:param name="dialogName" value="NotAllowedEditing"/>
+        </jsp:include>
+        <jsp:include page="workflow-simple-dialog.jsp">
+            <jsp:param name="messageKey" value="error.workflow.noStatistics.description"/>
+            <jsp:param name="titleKey" value="error.workflow.noStatistics.title"/>
+            <jsp:param name="dialogName" value="noStatistics"/>
+        </jsp:include>
 
         <c:if test="${workflowToggleTestingButtonEnabled}">
             <c:choose>
@@ -387,7 +388,7 @@
     </div>
 
     <mvc:form servletRelativeAction="/workflow/save.action" cssClass="form-vertical" id="workflowForm"  modelAttribute="workflowForm" data-form="resource">
-    <input type="hidden" name="method" value="save" id="action_method"/>
+    <%--<input type="hidden" name="method" value="save" id="action_method"/>--%>
     <input type="hidden" name="workflowId" value="${workflowForm.workflowId}"/>
     <input type="hidden" name="schema" id="schema" value=""/>
     <input type="hidden" name="editorPositionTop" id="editorPositionTop" value=""/>
@@ -456,7 +457,7 @@
                                     <div class="toggle-control"></div>
                                 </label>
                             </c:if>
-                            <input id="workflow-status" type="hidden" name="__STRUTS_CHECKBOX_workflow.statusString" value="${workflowForm.status}"/>
+                            <input id="workflow-status" type="hidden" name="status" value="${workflowForm.status}"/>
                         </div>
                     </div>
                 </emm:ShowByPermission>

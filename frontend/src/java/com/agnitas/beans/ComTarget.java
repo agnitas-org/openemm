@@ -119,6 +119,4 @@ public interface ComTarget extends TargetLight {
 	 * @return true, if target group is simple structured
 	 */
 	boolean isSimpleStructured();
-
-
 }

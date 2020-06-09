@@ -32,8 +32,6 @@ public interface DeliveryStatDao {
 	MaildropEntry getFirstMaildropGenerationStatus(int companyId, int mailingId, String statusField);
 
 	int getTotalMails(int mailingID);
-
-	boolean cancelDelivery(int companyID, int mailingID);
 	
 	public boolean deleteMaildropStatusByCompany(int companyID);
 }

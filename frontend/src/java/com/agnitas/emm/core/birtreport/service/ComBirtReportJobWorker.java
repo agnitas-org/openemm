@@ -10,30 +10,24 @@
 
 package com.agnitas.emm.core.birtreport.service;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobWorker;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.JavaMailAttachment;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.util.ComBirtReportUtils;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.messages.I18nString;
 
 public class ComBirtReportJobWorker extends JobWorker {
 	/** The logger. */
@@ -42,63 +36,24 @@ public class ComBirtReportJobWorker extends JobWorker {
 	@Override
 	public String runJob() {
 		try {
-			final ComBirtReportService birtReportService = serviceLookupFactory.getBeanBirtReportService();
-            final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
-			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-			final Date currentDate = new Date();
-
-			// get reports which we need to send
-			final List<ComBirtReport> reportsForSend = birtReportService.getReportsToSend(currentDate);
-
-			// iterate through the reports and send each one
-			for (ComBirtReport report : reportsForSend) {
-				if (logger.isDebugEnabled()) {
-					logger.debug(String.format("Processing report '%s' (ID %d)", report.getShortname(), report.getId()));
-				}
-
-				try {
-					final int companyID = report.getCompanyID();
-
-					final Integer accountId = companyDao.getCompany(companyID).getId();
-					final Map<String, String> urlsMap = new HashMap<>();
-					final List<ComBirtReportSettings> reportSettings = report.getSettings();
-
-					try {
-						// if we have a time-triggered report (daily, weekly etc.)
-						if (!report.isTriggeredByMailing()) {
-							urlsMap.putAll(birtStatisticsService
-									.getReportStatisticsUrlMap(reportSettings, currentDate, report, companyID, accountId));
-
-							sendReport(report, urlsMap);
-						}
-						// if we have a mailing-triggered report (After mailing dispatch option)
-						else {
-							// even if we have several mailing ids - we need to send each report separately as the report is triggered
-							// by mailing sending, so the user will be confused if he gets reports for several mailings in one report-email
-							final List<Integer> mailingsIdsToSend = report.getReportMailingSettings().getMailingsIdsToSend();
-							for (Integer mailingId : mailingsIdsToSend) {
-								report.getReportMailingSettings().setMailingsToSend(Collections.singletonList(mailingId));
-								urlsMap.putAll(
-										birtStatisticsService.getReportStatisticsUrlMap(
-												Collections.singletonList(report.getReportMailingSettings()),
-												currentDate, report, companyID, accountId));
-								sendReport(report, urlsMap);
-							}
-
-							// Restore previously separated list of mailing IDs
-							report.getReportMailingSettings().setMailingsToSend(mailingsIdsToSend);
-						}
-						birtReportService.logSentReport(report);
-					} catch (MalformedURLException e) {
-						logger.fatal("Malformed report URL reported in report ID: " + report.getId() + ": " + e.getMessage(), e);
-						for (Map.Entry<String, String> entry : urlsMap.entrySet()) {
-							logger.fatal(String.format("  + Report '%s' : %s", entry.getKey(), entry.getValue()));
-						}
-					}
-				} catch (Exception e) {
-					logger.error("Error processing report ID: " + report.getId() + ": " + e.getMessage(), e);
-				}
-			}
+			String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
+	        List<Integer> includedCompanyIds = null;
+	        if (StringUtils.isNotBlank(includedCompanyIdsString)) {
+	        	includedCompanyIds = AgnUtils.splitAndTrimList(includedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+	        }
+	        
+	        String excludedCompanyIdsString = job.getParameters().get("excludedCompanyIds");
+	        List<Integer> excludedCompanyIds = null;
+	        if (StringUtils.isNotBlank(excludedCompanyIdsString)) {
+	        	excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
+	        }
+	        
+	        int maximumRunningAutoExports = configService.getIntegerValue(ConfigValue.MaximumParallelReports);
+	        int currentlyRunningAutoExports = serviceLookupFactory.getBeanBirtReportService().getRunningReportsByHost(AgnUtils.getHostName());
+	        if (currentlyRunningAutoExports < maximumRunningAutoExports) {
+	        	final List<ComBirtReport> reportsForSend = serviceLookupFactory.getBeanBirtReportService().getReportsToSend(maximumRunningAutoExports - currentlyRunningAutoExports, includedCompanyIds, excludedCompanyIds);
+	        	sendReports(reportsForSend, false);
+	        }
 		} catch (Exception e) {
 			logger.error("Unknown error in ComBirtReportJobWorker.runJob(): " + e.getMessage(), e);
 		}
@@ -106,65 +61,51 @@ public class ComBirtReportJobWorker extends JobWorker {
 		return null;
 	}
 
-	protected void sendReports(List<ComBirtReport> reportsForSend) {
-		try {
-			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-            final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
-			final Date currentDate = new Date();
-
-			// iterate through the reports and send each one
+	protected void sendReports(final List<ComBirtReport> reportsForSend, final boolean sendAsWorkflowTriggeredReport) {
+		if (reportsForSend != null && !reportsForSend.isEmpty()) {
 			for (ComBirtReport report : reportsForSend) {
-				final Map<String, String> urlsMap = new HashMap<>();
-
+				if (logger.isDebugEnabled()) {
+					logger.debug(String.format("Processing report '%s' (ID %d)", report.getShortname(), report.getId()));
+				}
+	
 				try {
+			        final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
+					final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
+					
 					final int companyID = report.getCompanyID();
 					final Integer accountId = companyDao.getCompany(companyID).getId();
+					final Map<String, String> urlsMap = new HashMap<>();
 					final List<ComBirtReportSettings> reportSettings = report.getSettings();
-
-					urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(reportSettings, currentDate, report, companyID, accountId));
-					sendReport(report, urlsMap);
-				} catch (MalformedURLException e) {
-					logger.fatal("Malformed report URL reported in report ID: " + report.getId() + ": " + e.getMessage(), e);
-					for (Map.Entry<String, String> entry : urlsMap.entrySet()) {
-						logger.fatal(String.format("  + Report '%s' : %s", entry.getKey(), entry.getValue()));
+	
+					if (sendAsWorkflowTriggeredReport || !report.isTriggeredByMailing()) {
+						// time-triggered report (daily, weekly etc.)
+						urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(reportSettings, new Date(), report, companyID, accountId));
+						startReportExecution(birtStatisticsService, report, urlsMap);
+					} else {
+						// mailing-triggered report (After mailing dispatch option)
+						// even if we have several mailing ids - we need to send each report separately as the report is triggered
+						// by mailing sending, so the user will be confused if he gets reports for several mailings in one report-email
+						ComBirtReportMailingSettings mailingSettings = report.getReportMailingSettings();
+						final List<Integer> mailingsIdsToSend = mailingSettings.getMailingsIdsToSend();
+						for (Integer mailingId : mailingsIdsToSend) {
+							mailingSettings.setMailingsToSend(Collections.singletonList(mailingId));
+							urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(Collections.singletonList(mailingSettings), new Date(), report, companyID, accountId));
+							startReportExecution(birtStatisticsService, report, urlsMap);
+						}
+	
+						// Restore previously separated list of mailing IDs
+						mailingSettings.setMailingsToSend(mailingsIdsToSend);
 					}
 				} catch (Exception e) {
-					logger.error("Error processing report ID " + report.getId() + ": " + e.getMessage(), e);
+					logger.error("Error processing report ID: " + report.getId() + ": " + e.getMessage(), e);
 				}
 			}
-		} catch (Exception e) {
-			logger.error("Unknown error: " + e.getMessage(), e);
 		}
 	}
 
-	private void sendReport(ComBirtReport report, Map<String, String> urlsMap) throws MalformedURLException {
-		String birtUrl = configService.getValue(ConfigValue.BirtUrlIntern);
-		if (StringUtils.isBlank(birtUrl)) {
-			birtUrl = configService.getValue(ConfigValue.BirtUrl);
-		}
-
-		final HttpClient httpClient = ComBirtReportUtils.initializeHttpClient(birtUrl);
-
-		final List<JavaMailAttachment> attachments = new ArrayList<>();
-        for(final Map.Entry<String, String> entry : urlsMap.entrySet()) {
-        	try {
-                logger.error("BIRT report for sending\nreport id: " + report.getId() + "\nURL:" + entry.getValue());
-        		File temporaryFile = ComBirtReportUtils.getBirtReportBodyAsTemporaryFile(report.getId(), entry.getValue(), httpClient, logger);
-        		attachments.add(new JavaMailAttachment(entry.getKey(), FileUtils.readFileToByteArray(temporaryFile), String.format("application/%s", report.getFormatName())));
-        	} catch( Exception e) {
-        		logger.error( "Error retrieving report data for BIRT report " + report.getId(), e);
-        	}
-        }
-
-        final String email = report.getSendEmail();
-        final String emailSubject = report.getEmailSubject();
-        String content = "";
-        if (StringUtils.isBlank(report.getEmailDescription())) {
-        	content = I18nString.getLocaleString("report.body.text", new Locale(report.getLanguage()));
-        } else {
-        	content = report.getEmailDescription();
-        }
-        final String emailDescription = content;
-        serviceLookupFactory.getBeanJavaMailService().sendEmail(email, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
+	private void startReportExecution(BirtStatisticsService birtStatisticsService, ComBirtReport birtReport, Map<String, String> urlsMap) {
+		BirtReportExecutor birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport, urlsMap);
+		Thread executorThread = new Thread(birtReportExecutor);
+		executorThread.start();
 	}
 }

@@ -536,27 +536,35 @@ public class XMLWriter {
 		limit = ((len + 2) / 3) * 3;
 		count = 0;
 		for (int n = 0; n < limit; n += 3) {
-			if (count == 0)
+			if (count == 0) {
 				buf.append ('\n');
+			}
+			if (cont == null) {
+				throw new RuntimeException("Unexpected empty cont");
+			}
 			i0 = cont[n] & 0xff;
 			if (n + 1 < len) {
 				i1 = cont[n + 1] & 0xff;
-				if (n + 2 < len)
+				if (n + 2 < len) {
 					i2 = cont[n + 2] & 0xff;
-				else
+				} else {
 					i2 = 0;
-			} else
+				}
+			} else {
 				i1 = i2 = 0;
+			}
 			buf.append (code.charAt (i0 >>> 2));
 			buf.append (code.charAt (((i0 & 0x3) << 4) | (i1 >>> 4)));
 			if (n + 1 < len) {
 				buf.append (code.charAt (((i1 & 0xf) << 2) | (i2 >>> 6)));
-				if (n + 2 < len)
+				if (n + 2 < len) {
 					buf.append (code.charAt (i2 & 0x3f));
-				else
+				} else {
 					buf.append ("=");
-			} else
+				}
+			} else {
 				buf.append ("==");
+			}
 			count += 4;
 			if (count >= 76) {
 				count = 0;

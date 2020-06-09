@@ -10,16 +10,13 @@
 
 package com.agnitas.dao;
 
-import java.sql.SQLException;
 import java.util.Map;
-
-import org.agnitas.emm.core.commons.util.ConfigKey;
 
 /**
  * This class is intended to simplify access to the config_tbl.
  */
 public interface ConfigTableDao {
-	Map<ConfigKey, String> getAllEntries() throws SQLException;
+	Map<String, Map<Integer, String>> getAllEntriesForThisHost();
 
 	@DaoUpdateReturnValueCheck
 	void storeEntry(String classString, String name, String value);

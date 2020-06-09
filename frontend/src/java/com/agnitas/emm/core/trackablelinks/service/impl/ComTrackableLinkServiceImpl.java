@@ -28,7 +28,7 @@ import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -47,6 +47,8 @@ import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+
 /**
  * Service class dealing with trackable links.
  */
@@ -54,8 +56,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
 	/** The logger. */
     private static final transient Logger logger = Logger.getLogger(ComTrackableLinkServiceImpl.class);
-    
-    public static final int KEEP_UNCHANGED = -1;
     
     /** DAO for accessing trackable links. */
     private ComTrackableLinkDao trackableLinkDao;
@@ -75,16 +75,12 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
                 for (TrackableLink link : trackableLinkList) {
                     if (linksIds.contains(link.getId())) {
                         // Change link properties
-                        List<LinkProperty> existingProperties = ((ComTrackableLink) link).getProperties();
-                        List<LinkProperty> updatedProperties = new ArrayList<>();
                         // boolean changedProperty = false;
-                        for (LinkProperty property : existingProperties) {
-                            if (property.getPropertyType() != PropertyType.LinkExtension) {
-                                updatedProperties.add(property);
-                            }
-                        }
+                        Set<LinkProperty> updatedProperties = link.getProperties().stream()
+                                .filter(property -> property.getPropertyType() != PropertyType.LinkExtension)
+                                .collect(Collectors.toSet());
                         updatedProperties.addAll(passedLinkProperties);
-                        ((ComTrackableLink) link).setProperties(updatedProperties);
+                        link.setProperties(new ArrayList<>(updatedProperties));
                     }
                 }
             }
@@ -220,7 +216,17 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
         checkMailing(mailingID, companyId);
         return trackableLinkDao.listTrackableLinksForMailing(companyId, mailingID);
     }
-
+    
+    @Override
+    public List<ComTrackableLink> getTrackableLinks(int companyId, List<Integer> urlIds) {
+        if (companyId < 0) {
+            return new ArrayList<>();
+        }
+    
+        List<Integer> filteredUrlIds = urlIds.stream().filter(id -> id != 0).collect(Collectors.toList());
+        return trackableLinkDao.getTrackableLinks(companyId, filteredUrlIds);
+    }
+    
     @Override
     public TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId) {
         ComTrackableLink trackableLink = (ComTrackableLink) trackableLinkDao.getTrackableLink(linkID, companyId);

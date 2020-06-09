@@ -25,7 +25,6 @@ import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
-@SuppressWarnings("deprecation")
 public class ListTrackableLinksEndpoint extends AbstractMarshallingPayloadEndpoint {
 
     @Resource

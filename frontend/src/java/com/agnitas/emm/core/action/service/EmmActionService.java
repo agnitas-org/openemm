@@ -43,4 +43,10 @@ public interface EmmActionService {
 	int copyActionOperations(int sourceActionCompanyID, int sourceActionID, int destinationActionCompanyId, int destinationActionID);
 
 	List<Integer> getReferencedMailinglistsFromAction(int companyID, int actionID);
+
+	/**
+	 * Loads list of emm actions that uses the mailing with concrete mailing id.
+	 * @return List of emm actions
+	 */
+	List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
 }

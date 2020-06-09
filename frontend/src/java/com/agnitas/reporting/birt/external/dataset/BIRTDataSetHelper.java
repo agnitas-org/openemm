@@ -34,37 +34,38 @@ public class BIRTDataSetHelper {
     }
     
     private void initConfigService(DataSource dataSource) {
-        ConfigService configService = ConfigService.getInstance();
+        ConfigService newConfigService = ConfigService.getInstance();
         
         javaMailservice = new JavaMailServiceImpl();
-        ((JavaMailServiceImpl) javaMailservice).setConfigService(configService);
+        ((JavaMailServiceImpl) javaMailservice).setConfigService(newConfigService);
 
         ConfigTableDao configTableDao = new ConfigTableDaoImpl();
         ((ConfigTableDaoImpl) configTableDao).setDataSource(dataSource);
         ((ConfigTableDaoImpl) configTableDao).setJavaMailService(javaMailservice);
-        configService.setConfigTableDao(configTableDao);
+        newConfigService.setConfigTableDao(configTableDao);
         
         CompanyInfoDao companyInfoDao = new CompanyInfoDao();
         companyInfoDao.setDataSource(dataSource);
         companyInfoDao.setJavaMailService(javaMailservice);
-        configService.setCompanyInfoDao(companyInfoDao);
+        newConfigService.setCompanyInfoDao(companyInfoDao);
         
         ComCompanyDao companyDao = new ComCompanyDaoImpl();
         ((ComCompanyDaoImpl) companyDao).setDataSource(dataSource);
         ((ComCompanyDaoImpl) companyDao).setJavaMailService(javaMailservice);
-        configService.setCompanyDao(companyDao);
+        newConfigService.setCompanyDao(companyDao);
         
         LicenseDao licenseDao = new LicenseDaoImpl();
         ((LicenseDaoImpl) licenseDao).setDataSource(dataSource);
         ((LicenseDaoImpl) licenseDao).setJavaMailService(javaMailservice);
-        configService.setLicenseDao(licenseDao);
+        newConfigService.setLicenseDao(licenseDao);
         
         ComAdminDao adminDao = new ComAdminDaoImpl();
         ((ComAdminDaoImpl) adminDao).setDataSource(dataSource);
         ((ComAdminDaoImpl) adminDao).setJavaMailService(javaMailservice);
-        configService.setAdminDao(adminDao);
+        newConfigService.setAdminDao(adminDao);
         
-        this.configService = configService;
+        // Use only the fully initialized object
+        this.configService = newConfigService;
     }
     
     public static BIRTDataSetHelper getInstance() {

@@ -18,7 +18,6 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComAdminGroupDao {
-
 	/**
      * Loads an AdminGroup identified by admin group id.
      * @param groupID
@@ -50,4 +49,6 @@ public interface ComAdminGroupDao {
     List<AdminGroup> getAdminGroupByAdminID(int adminId);
     
     Set<String> getGroupPermissionsTokens(int adminGroupId);
+
+	AdminGroup getAdminGroupByName(String adminGroupName, int companyID);
 }

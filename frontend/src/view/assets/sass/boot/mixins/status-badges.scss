@@ -87,3 +87,7 @@
   }
 
 }
+
+@mixin campaign-badge-variant-background($state, $background) {
+  background-color: $background;
+}

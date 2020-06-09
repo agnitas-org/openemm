@@ -21,13 +21,12 @@ import org.agnitas.emm.springws.jaxb.ListAttachmentsResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class ListAttachmentsEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private ComponentService componentService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

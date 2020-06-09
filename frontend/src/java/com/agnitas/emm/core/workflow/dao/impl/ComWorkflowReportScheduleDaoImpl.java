@@ -22,16 +22,19 @@ import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportImpl;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReportScheduleDao;
 
 public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements ComWorkflowReportScheduleDao {
 
 	private static final transient Logger logger = Logger.getLogger(ComWorkflowReportScheduleDaoImpl.class);
+	
+	private BirtReportFactory birtReportFactory;
 
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -55,17 +58,24 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
     }
 
     @Override
-    public List<Integer> getAllWorkflowBirtReportIdsToSend(CompaniesConstraints constraints) {
+    public List<Integer> getAllWorkflowBirtReportIdsToSend(int maximumNumberOfReports, CompaniesConstraints constraints) {
         String query = "SELECT wrs.report_id " +
                 "       FROM workflow_report_schedule_tbl wrs " +
                 "         LEFT JOIN birtreport_tbl br " +
-                "           ON wrs.report_id = br.report_id " +
+                "           ON wrs.report_id = br.report_id AND wrs.company_id = br.company_id" +
                 "       WHERE wrs.send_date < CURRENT_TIMESTAMP " +
                 "         AND wrs.sent = 0 " +
-                "         AND wrs.company_id = br.company_id" +
+				"         AND running = 0" +
                 DbUtilities.asCondition(" AND %s", constraints, "wrs.company_id");
 
-        return select(logger, query, new IntegerRowMapper());
+        String selectStatement;
+        if (isOracleDB()) {
+			selectStatement = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + query + ") selection) WHERE r <= ?";
+		} else {
+			selectStatement = query + " LIMIT ?";
+		}
+        
+        return select(logger, selectStatement, new IntegerRowMapper(), maximumNumberOfReports);
     }
 
 	@Override
@@ -82,10 +92,15 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
     protected class ScheduledBirtReportRowMapper implements RowMapper<ComBirtReport> {
         @Override
         public ComBirtReport mapRow(ResultSet resultSet, int i) throws SQLException {
-            ComBirtReport report = new ComBirtReportImpl();
+            ComBirtReport report = birtReportFactory.createReport();
             report.setCompanyID(resultSet.getInt("company_id"));
             report.setId(resultSet.getInt("report_id"));
             return report;
         }
+    }
+    
+    @Required
+    public void setBirtReportFactory(BirtReportFactory birtReportFactory) {
+        this.birtReportFactory = birtReportFactory;
     }
 }

@@ -12,6 +12,7 @@ package org.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -56,6 +57,7 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -68,8 +70,7 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ProfileImportReporter;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
@@ -324,7 +325,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			done = false;
 			waitingForInteraction = false;
 			
-			if (!ImportUtils.checkIfFileHasData(importFile.getLocalFile(), importProfile)) {
+			if (!ImportUtils.checkIfImportFileHasData(importFile.getLocalFile(), importProfile.isZipped(), importProfile.getZipPassword())) {
 				if (autoImport != null && autoImport.isEmptyFileAllowed()) {
 					endTime = new Date();
 			    	
@@ -499,93 +500,85 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		
 		char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
 		Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-		@SuppressWarnings("resource")
-		InputStream dataInputStream = null;
-		File unzipPath = null;
-		try {
-			if (importProfile.isZipped()) {
-				try {
-					if (importProfile.getZipPassword() == null) {
-						dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()));
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						}
-					} else {
-						unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
-						unzipPath.mkdir();
-						ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
-						
-						// Check if there was only one file within the zip file and use it for import
-						String[] filesToImport = unzipPath.list();
-						if (filesToImport.length != 1) {
-							throw new Exception("Invalid number of files included in zip file");
-						}
-						dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
+
+		CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
+		List<ColumnMapping> autoMapping = new ArrayList<>();
+		if (importProfile.isCsvImport()) {
+			try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
+				csvReader.setAlwaysTrim(true);
+				List<String> csvHeaders = csvReader.readNextCsvLine();
+				for (String csvHeader : csvHeaders) {
+					if (StringUtils.isBlank(csvHeader)) {
+						throw new Exception("Invalid empty csvfile header for import automapping");
+					} else if (customerDbFields.containsKey(csvHeader)) {
+						ColumnMapping columnMapping = new ColumnMappingImpl();
+						columnMapping.setFileColumn(csvHeader);
+						columnMapping.setDatabaseColumn(csvHeader.toLowerCase());
+						autoMapping.add(columnMapping);
 					}
-				} catch (ImportException e) {
-					throw e;
-				} catch (Exception e) {
-					throw new ImportException(false, "error.unzip", e.getMessage());
 				}
-			} else {
-				dataInputStream = new FileInputStream(importFile.getLocalFile());
 			}
+		} else {
+			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
+				jsonReader.readNextToken();
+				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					throw new Exception("Json data does not contain expected JsonArray");
+				}
+				
+				Set<String> jsonObjectAttributes = new HashSet<>();
+				while (jsonReader.readNextJsonNode()) {
+					Object currentObject = jsonReader.getCurrentObject();
+					if (currentObject == null || !(currentObject instanceof JsonObject)) {
+						throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+					}
+					jsonObjectAttributes.addAll(((JsonObject) currentObject).keySet());
+				}
+				
+				for (String jsonObjectAttribute : jsonObjectAttributes) {
+					if (StringUtils.isBlank(jsonObjectAttribute)) {
+						throw new Exception("Invalid empty json attribute for import");
+					} else if (customerDbFields.containsKey(jsonObjectAttribute)) {
+						ColumnMapping columnMapping = new ColumnMappingImpl();
+						columnMapping.setFileColumn(jsonObjectAttribute);
+						columnMapping.setDatabaseColumn(jsonObjectAttribute.toLowerCase());
+						autoMapping.add(columnMapping);
+					}
+				}
+			}
+		}
+		importProfile.setColumnMapping(autoMapping);
+	}
 	
-			CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
-			List<ColumnMapping> autoMapping = new ArrayList<>();
-			if (importProfile.isCsvImport()) {
-				try (CsvReader csvReader = new CsvReader(dataInputStream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-					csvReader.setAlwaysTrim(true);
-					List<String> csvHeaders = csvReader.readNextCsvLine();
-					for (String csvHeader : csvHeaders) {
-						if (StringUtils.isBlank(csvHeader)) {
-							throw new Exception("Invalid empty csvfile header for import automapping");
-						} else if (customerDbFields.containsKey(csvHeader)) {
-							ColumnMapping columnMapping = new ColumnMappingImpl();
-							columnMapping.setFileColumn(csvHeader);
-							columnMapping.setDatabaseColumn(csvHeader.toLowerCase());
-							autoMapping.add(columnMapping);
-						}
+	private InputStream getImportInputStream() throws FileNotFoundException {
+		if (importProfile.isZipped()) {
+			try {
+				if (importProfile.getZipPassword() == null) {
+					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()));
+					ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+					if (zipEntry == null) {
+						throw new ImportException(false, "error.unzip.noEntry");
 					}
-				}
-			} else {
-				try (Json5Reader jsonReader = new Json5Reader(dataInputStream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
-					jsonReader.readNextToken();
-					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-						throw new Exception("Json data does not contain expected JsonArray");
-					}
+					return dataInputStream;
+				} else {
+					File unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
+					unzipPath.mkdir();
+					ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
 					
-					Set<String> jsonObjectAttributes = new HashSet<>();
-					while (jsonReader.readNextJsonNode()) {
-						Object currentObject = jsonReader.getCurrentObject();
-						if (currentObject == null || !(currentObject instanceof JsonObject)) {
-							throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
-						}
-						jsonObjectAttributes.addAll(((JsonObject) currentObject).keySet());
+					// Check if there was only one file within the zip file and use it for import
+					String[] filesToImport = unzipPath.list();
+					if (filesToImport.length != 1) {
+						throw new Exception("Invalid number of files included in zip file");
 					}
-					
-					for (String jsonObjectAttribute : jsonObjectAttributes) {
-						if (StringUtils.isBlank(jsonObjectAttribute)) {
-							throw new Exception("Invalid empty json attribute for import");
-						} else if (customerDbFields.containsKey(jsonObjectAttribute)) {
-							ColumnMapping columnMapping = new ColumnMappingImpl();
-							columnMapping.setFileColumn(jsonObjectAttribute);
-							columnMapping.setDatabaseColumn(jsonObjectAttribute.toLowerCase());
-							autoMapping.add(columnMapping);
-						}
-					}
+					InputStream dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
+					return new TempFileInputStream(dataInputStream, unzipPath);
 				}
+			} catch (ImportException e) {
+				throw e;
+			} catch (Exception e) {
+				throw new ImportException(false, "error.unzip", e.getMessage());
 			}
-			importProfile.setColumnMapping(autoMapping);
-		} finally {
-			if (dataInputStream != null) {
-				IOUtils.closeQuietly(dataInputStream);
-			}
-			
-			if (unzipPath != null) {
-				FileUtils.removeRecursively(unzipPath);
-			}
+		} else {
+			return new FileInputStream(importFile.getLocalFile());
 		}
 	}
 
@@ -630,6 +623,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 		ImportModeHandler importModeHandler = importModeHandlerFactory.getImportModeHandler(ImportMode.getFromInt(importProfile.getImportMode()).getImportModeHandlerName());
 		
+		importModeHandler.handlePreProcessing(emmActionService, status, importProfile, temporaryImportTableName, datasourceId, mailingListIdsToAssign);
+		
 		importModeHandler.handleNewCustomers(status, importProfile, temporaryImportTableName, duplicateIndexColumn, transferDbColumns, datasourceId);
 		
 		importModeHandler.handleExistingCustomers(status, importProfile, temporaryImportTableName, importIndexColumn, transferDbColumns, datasourceId);
@@ -651,79 +646,38 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		// This counts csv lines (see also: escaped linebreaks in csv format) for the progressbar 100% value
 		char separator = Separator.getSeparatorById(importProfile.getSeparator()).getValueChar();
 		Character stringQuote = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-		@SuppressWarnings("resource")
-		InputStream dataInputStream = null;
-		File unzipPath = null;
-		try {
-			if (importProfile.isZipped()) {
-				try {
-					if (importProfile.getZipPassword() == null) {
-						dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()));
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						}
-					} else {
-						unzipPath = new File(importFile.getLocalFile().getAbsolutePath() + ".unzipped");
-						unzipPath.mkdir();
-						ZipUtilities.decompressFromEncryptedZipFile(importFile.getLocalFile(), unzipPath, importProfile.getZipPassword());
-						
-						// Check if there was only one file within the zip file and use it for import
-						String[] filesToImport = unzipPath.list();
-						if (filesToImport.length != 1) {
-							throw new Exception("Invalid number of files included in zip file");
-						}
-						dataInputStream = new FileInputStream(unzipPath.getAbsolutePath() + "/" + filesToImport[0]);
-					}
-				} catch (ImportException e) {
-					throw e;
-				} catch (Exception e) {
-					throw new ImportException(false, "error.unzip", e.getMessage());
-				}
-			} else {
-				dataInputStream = new FileInputStream(importFile.getLocalFile());
-			}
-	
-			if (importProfile.isCsvImport()) {
-				try (CsvReader csvReader = new CsvReader(dataInputStream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
-					csvReader.setAlwaysTrim(true);
-					linesInFile = csvReader.getCsvLineCount();
-					if (!importProfile.isNoHeaders()) {
-						linesInFile = linesInFile - 1;
-					}
-				}
-			} else {
-				try (Json5Reader jsonReader = new Json5Reader(dataInputStream, Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
-					jsonReader.readNextToken();
-					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-						throw new Exception("Json data does not contain expected JsonArray");
-					}
-					
-					int itemCount = 0;
-					while (jsonReader.readNextJsonNode()) {
-						Object currentObject = jsonReader.getCurrentObject();
-						if (currentObject == null || !(currentObject instanceof JsonObject)) {
-							throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
-						}
-						itemCount++;
-					}
-					
-					linesInFile = itemCount;
+		
+		if (importProfile.isCsvImport()) {
+			try (CsvReader csvReader = new CsvReader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName(), separator, stringQuote)) {
+				csvReader.setAlwaysTrim(true);
+				linesInFile = csvReader.getCsvLineCount();
+				if (!importProfile.isNoHeaders()) {
+					linesInFile = linesInFile - 1;
 				}
 			}
+		} else {
+			try (Json5Reader jsonReader = new Json5Reader(getImportInputStream(), Charset.getCharsetById(importProfile.getCharset()).getCharsetName())) {
+				jsonReader.readNextToken();
+				if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
+					throw new Exception("Json data does not contain expected JsonArray");
+				}
+				
+				int itemCount = 0;
+				while (jsonReader.readNextJsonNode()) {
+					Object currentObject = jsonReader.getCurrentObject();
+					if (currentObject == null || !(currentObject instanceof JsonObject)) {
+						throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
+					}
+					itemCount++;
+				}
+				
+				linesInFile = itemCount;
+			}
+		}
 
-			int maximumNumberOfRowsInImportFile = configService.getIntegerValue(ConfigValue.ProfileRecipientImportMaxRows, admin.getCompanyID());
-			if (maximumNumberOfRowsInImportFile > 0 && linesInFile > maximumNumberOfRowsInImportFile) {
-				throw new ImportException(false, "error.import.maxlinesexceeded", linesInFile, maximumNumberOfRowsInImportFile);
-			}
-		} finally {
-			if (dataInputStream != null) {
-				IOUtils.closeQuietly(dataInputStream);
-			}
-			
-			if (unzipPath != null) {
-				FileUtils.removeRecursively(unzipPath);
-			}
+		int maximumNumberOfRowsInImportFile = configService.getIntegerValue(ConfigValue.ProfileRecipientImportMaxRows, admin.getCompanyID());
+		if (maximumNumberOfRowsInImportFile > 0 && linesInFile > maximumNumberOfRowsInImportFile) {
+			throw new ImportException(false, "error.import.maxlinesexceeded", linesInFile, maximumNumberOfRowsInImportFile);
 		}
 		
 		// Import csv data in temporary import table and set the correct number of lines found

@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.commons.lang.StringUtils;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -26,23 +27,37 @@ public class CompanyInfoDao extends BaseDaoImpl {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(CompanyInfoDao.class);
 	
-	public Map<ConfigKey, String> getAllEntries() throws SQLException {
-		List<Map<String, Object>> results = select(logger, "SELECT company_id, hostname, cname, cvalue FROM company_info_tbl");
-		Map<ConfigKey, String> returnMap = new HashMap<>();
+	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() throws SQLException {
+		String sql;
+		if (isOracleDB()) {
+			sql = "SELECT cname, company_id, hostname, cvalue FROM company_info_tbl WHERE hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ? ORDER BY cname, company_id, hostname";
+		} else {
+			sql = "SELECT cname, company_id, hostname, cvalue FROM company_info_tbl WHERE hostname IS NULL OR TRIM(hostname) = '' OR hostname = ? ORDER BY cname, company_id, hostname";
+		}
+		
+		List<Map<String, Object>> results = select(logger, sql, AgnUtils.getHostName());
+		Map<String, Map<Integer, String>> returnMap = new HashMap<>();
 		for (Map<String, Object> resultRow : results) {
 			String configValueName = (String) resultRow.get("cname");
-			String hostname = (String) resultRow.get("hostname");
-			if (StringUtils.isBlank(hostname)) {
-				hostname = null;
-			}
 			Number companyID = (Number) resultRow.get("company_id");
 			int companyIDInt = 0;
 			if (companyID != null && companyID.intValue() != 0) {
 				companyIDInt = companyID.intValue();
 			}
+			String hostname = (String) resultRow.get("hostname");
+			if (StringUtils.isBlank(hostname)) {
+				hostname = null;
+			}
 			String value = (String) resultRow.get("cvalue");
 			
-			returnMap.put(new ConfigKey(configValueName, companyIDInt, hostname), value);
+			Map<Integer, String> configValueMap = returnMap.get(configValueName);
+			if (configValueMap == null) {
+				configValueMap = new HashMap<>();
+				returnMap.put(configValueName, configValueMap);
+			}
+			if (!configValueMap.containsKey(companyIDInt) || hostname != null) {
+				configValueMap.put(companyIDInt, value);
+			}
 		}
 		return returnMap;
 	}

@@ -11,24 +11,14 @@
 
 package com.agnitas.emm.core.birtstatistics.recipient.converter;
 
-import java.time.LocalDate;
-import javax.servlet.http.HttpServletRequest;
-
-import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticForm;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RecipientStatisticFormToRecipientStatisticDtoConverter implements Converter<RecipientStatisticForm, RecipientStatisticDto> {
-    
-    @Autowired
-    private HttpServletRequest request;
-	
 	@Override
 	public RecipientStatisticDto convert(RecipientStatisticForm form) {
 		RecipientStatisticDto dto = new RecipientStatisticDto();
@@ -38,30 +28,6 @@ public class RecipientStatisticFormToRecipientStatisticDtoConverter implements C
 		dto.setMailinglistId(form.getMailingListId());
 		dto.setHourScale(false);
 
-		resolveDateModeDateRestrictions(dto, form);
 		return dto;
 	}
-    
-    private void resolveDateModeDateRestrictions(RecipientStatisticDto dto, RecipientStatisticForm form) {
-	    switch (form.getDateMode()) {
-            case LAST_WEEK:
-                LocalDate now = LocalDate.now();
-                dto.setLocalEndDate(now);
-                dto.setLocalStartDate(now.minusWeeks(1));
-                break;
-            
-            case SELECT_PERIOD:
-                ComAdmin admin = AgnUtils.getAdmin(request);
-                assert admin != null;
-                dto.setLocalStartDate(form.getStartDate().get(admin.getDateFormatter()));
-                dto.setLocalEndDate(form.getEndDate().get(admin.getDateFormatter()));
-                break;
-                
-            case SELECT_MONTH:
-            default:
-                LocalDate dateByParams = LocalDate.of(form.getYear(), form.getMonthValue(), 1);
-                dto.setLocalStartDate(dateByParams);
-                dto.setLocalEndDate(dateByParams.plusMonths(1));
-        }
-    }
 }

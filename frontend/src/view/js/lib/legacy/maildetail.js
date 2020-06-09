@@ -6,14 +6,14 @@ $(document).ready(function()
 		$('.settings_general_container').hide();
 		$('.settings_targetgroups_container').hide();
         
-		$(".schablonen_toggle").click(function(event4){
+		$(".schablonen_toggle").on("click", function(event4){
 					$(this).toggleClass('toggle_open');						   
 					$(this).toggleClass('toggle_closed');						   
 					$(this).next().toggle();
 					event4.preventDefault();	 
 		});
 		
-		$(".settings_toggle").click(function(event3){
+		$(".settings_toggle").on("click", function(event3){
 					$(this).toggleClass('toggle_open');
 					$(this).toggleClass('toggle_closed');
 					$(this).next().toggle();
@@ -21,12 +21,12 @@ $(document).ready(function()
 		});
 		
 		/*
-		$(".help_link").click(function(event){
+		$(".help_link").on("click", function(event){
 					$('#helpbox_container').toggle();
 					event.preventDefault();	 
 									   });
 		*/			
-		$(".settings_targetgroups_add").click(function(event5){
+		$(".settings_targetgroups_add").on("click", function(event5){
 								var targetgroup = '<div>'+$('#settings_targetgroups_select :selected').text()+'<a href="#" class="removeTargetgroup"><img src="../img/removetargetgroup.png" /></a></div>';
 								$(targetgroup).appendTo('.settings_targetgroups_added_targetgroups');
 								event5.preventDefault();	 
@@ -40,7 +40,7 @@ $(document).ready(function()
 									   });
 		
 		*/
-		$(".help_close A").click(
+		$(".help_close A").on("click",
 				function(event2){				 
 						$('#helpbox_container').hide();
 								 });

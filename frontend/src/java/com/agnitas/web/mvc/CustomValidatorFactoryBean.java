@@ -14,8 +14,10 @@ import java.util.Set;
 
 import javax.validation.ConstraintViolation;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.NotReadablePropertyException;
+import org.springframework.context.MessageSource;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -23,8 +25,18 @@ import org.springframework.validation.ObjectError;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import com.agnitas.messages.Message;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CustomValidatorFactoryBean extends LocalValidatorFactoryBean {
+    private static final Logger logger = Logger.getLogger(CustomValidatorFactoryBean.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public void setValidationMessageSource(MessageSource messageSource) {
+        throw new IllegalStateException("Inject messageInterpolator instead");
+    }
+
     @Override
     protected void processConstraintViolations(Set<ConstraintViolation<Object>> violations, Errors errors) {
         for (ConstraintViolation<Object> violation : violations) {
@@ -75,21 +87,41 @@ public class CustomValidatorFactoryBean extends LocalValidatorFactoryBean {
         return error == null || !error.isBindingFailure();
     }
 
-    private boolean checkTemplateRequiresInterpolation(String template) {
-        if (StringUtils.isNotEmpty(template)) {
-            return template.startsWith("{") && template.endsWith("}");
+    private Message getMessage(ConstraintViolation<Object> violation, Object invalidValue) {
+        return getMessage(violation.getMessageTemplate(), violation.getMessage(), invalidValue);
+    }
+
+    private Message getMessage(String template, String interpolatedMessage, Object invalidValue) {
+        if (StringUtils.isBlank(template)) {
+            return Message.exact(template);
+        }
+
+        if (template.startsWith("{") && template.endsWith("}")) {
+            return Message.exact(interpolatedMessage);
         } else {
-            return false;
+            if (interpolatedMessage.endsWith("]")) {
+                int position = interpolatedMessage.indexOf('[');
+                if (position > 0) {
+                    Object[] arguments = parseArguments(interpolatedMessage.substring(position));
+
+                    if (arguments == null) {
+                        return Message.of(interpolatedMessage.substring(0, position), invalidValue);
+                    } else {
+                        return Message.of(interpolatedMessage.substring(0, position), arguments);
+                    }
+                }
+            }
+
+            return Message.of(interpolatedMessage, invalidValue);
         }
     }
 
-    private Message getMessage(ConstraintViolation<Object> violation, Object invalidValue) {
-        String template = violation.getConstraintDescriptor().getMessageTemplate();
-
-        if (checkTemplateRequiresInterpolation(template)) {
-            return Message.exact(violation.getMessage());
-        } else {
-            return Message.of(template, invalidValue);
+    private Object[] parseArguments(String argumentsJson) {
+        try {
+            return objectMapper.readValue(argumentsJson, new TypeReference<Object[]>() {/* empty by intention */});
+        } catch (Exception e) {
+            logger.error("Error occurred: " + e.getMessage(), e);
+            return null;
         }
     }
 }

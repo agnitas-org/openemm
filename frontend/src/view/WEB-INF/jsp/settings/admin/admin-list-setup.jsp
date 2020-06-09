@@ -1,13 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComAdminAction" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-
-<c:set var="ACTION_LIST" 			value="<%= ComAdminAction.ACTION_LIST %>" 			scope="request" />
-<c:set var="ACTION_VIEW" 			value="<%= ComAdminAction.ACTION_VIEW %>" 			scope="request" />
-<c:set var="ACTION_CONFIRM_DELETE" 	value="<%= ComAdminAction.ACTION_CONFIRM_DELETE %>" scope="request" />
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 
 <emm:CheckLogon/>
 <emm:Permission token="admin.show"/>
@@ -23,12 +17,8 @@
 <c:set var="agnHelpKey" 			value="User" 				scope="request" />
 
 <emm:ShowByPermission token="admin.new">
-    <c:set var="createNewItemUrl" scope="request">
-        <html:rewrite page='/admin.do?action=2&adminID=0'/>
-    </c:set>
-    <c:set var="createNewItemLabel" scope="request">
-        <bean:message key="settings.New_Admin"/>
-    </c:set>
+    <c:url var="createNewItemUrl" value="/admin/create.action" scope="request"/>
+    <mvc:message var="createNewItemLabel" code="settings.New_Admin" scope="request"/>
 </emm:ShowByPermission>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

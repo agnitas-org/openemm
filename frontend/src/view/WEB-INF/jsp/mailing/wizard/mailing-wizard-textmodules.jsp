@@ -8,7 +8,6 @@
 
 <c:set var="ACTION_FINISH" value="<%= MailingWizardAction.ACTION_FINISH %>"/>
 <c:set var="ACTION_TEXTMODULE" value="<%= MailingWizardAction.ACTION_TEXTMODULE %>"/>
-<c:set var="ACTION_DELETE_TEXTBLOCK" value="<%= ComMailingContentAction.ACTION_DELETE_TEXTBLOCK %>"/>
 <c:set var="ACTION_TEXTMODULES_PREVIOUS" value="<%= MailingWizardAction.ACTION_TEXTMODULES_PREVIOUS %>"/>
 
 <agn:agnForm action="/mwTextmodules" id="wizard-step-8" data-form="resource">

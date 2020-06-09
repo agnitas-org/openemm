@@ -66,20 +66,20 @@ public enum ExtensibleUidVersion {
 		return this.versionCode;
 	}
 	
-	public final boolean isNewerThan(final int versionCode) {
-		return this.versionCode > versionCode;
+	public final boolean isNewerThan(final int otherVersionCode) {
+		return this.versionCode > otherVersionCode;
 	}
 	
 	public final boolean isNewerThan(final ExtensibleUidVersion version) {
 		return version == null || isNewerThan(version.versionCode);
 	}
 	
-	public final boolean isOlderThan(final Number versionCode) {
-		if (Objects.isNull(versionCode)) {
+	public final boolean isOlderThan(final Number otherVersionCode) {
+		if (Objects.isNull(otherVersionCode)) {
 			return false;
 		}
 
-		return this.versionCode < versionCode.intValue();
+		return this.versionCode < otherVersionCode.intValue();
 	}
 
 	public final boolean isOlderThan(final ExtensibleUidVersion version) {

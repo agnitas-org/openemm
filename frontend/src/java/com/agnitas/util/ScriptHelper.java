@@ -53,7 +53,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.XmlUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -200,7 +200,7 @@ public class ScriptHelper {
 		return Long.toString(i);
 	}
 
-	public void logFile(@VelocityCheck final int companyID, final String fName, final String content) {
+	public void logFile(@VelocityCheck final int companyIdToLog, final String fName, final String content) {
 
     	/*
     	 * **************************************************
@@ -212,12 +212,12 @@ public class ScriptHelper {
 
 		try {
 			final DecimalFormat aFormat = new DecimalFormat("0000");
-			final File tmpFile = File.createTempFile(aFormat.format(companyID) + "_", "_" + fName, new File(configService.getValue(ConfigValue.VelocityLogDir)));
+			final File tmpFile = File.createTempFile(aFormat.format(companyIdToLog) + "_", "_" + fName, new File(configService.getValue(ConfigValue.VelocityLogDir)));
 			try (FileWriter aWriter = new FileWriter(tmpFile)) {
 				aWriter.write(content);
 			}
 		} catch (final Exception e) {
-			logger.error("could not log script: " + e + "\n" + companyID + " " + fName + " " + content, e);
+			logger.error("could not log script: " + e + "\n" + companyIdToLog + " " + fName + " " + content, e);
 		}
 	}
 
@@ -574,12 +574,12 @@ public class ScriptHelper {
 	/**
 	 * this method returns the last sent mailing for the given customer.
 	 *
-	 * @param companyID
+	 * @param companyIdToCheck
 	 * @param customerID
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastSentMailingID(@VelocityCheck final int companyID, final int customerID) throws Exception {
+	public int getLastSentMailingID(@VelocityCheck final int companyIdToCheck, final int customerID) throws Exception {
 
     	/*
     	 * **************************************************
@@ -592,7 +592,7 @@ public class ScriptHelper {
 		if (helperService == null) {
 			throw new Exception("No ScriptHelperService is set. You must call setHelperService first!");
 		} else {
-			return helperService.getLastSentMailingID(companyID, customerID);
+			return helperService.getLastSentMailingID(companyIdToCheck, customerID);
 		}
 	}
 
@@ -601,11 +601,11 @@ public class ScriptHelper {
 	 * world-mailing and was sent to the given mailinglist. If the given
 	 * mailinglistID is null or "0" it will be ignored.
 	 *
-	 * @param companyID
+	 * @param companyIdToCheck
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastSentWorldMailingIDByCompanyAndMailinglist(@VelocityCheck final int companyID, final int mailingListID) throws Exception {
+	public int getLastSentWorldMailingIDByCompanyAndMailinglist(@VelocityCheck final int companyIdToCheck, final int mailingListID) throws Exception {
 
     	/*
     	 * **************************************************
@@ -618,11 +618,11 @@ public class ScriptHelper {
 		if (helperService == null) {
 			throw new Exception("No ScriptHelperService is set. You must call setHelperService first!");
 		} else {
-			return helperService.getLastSentWorldMailingByCompanyAndMailinglist(companyID, mailingListID);
+			return helperService.getLastSentWorldMailingByCompanyAndMailinglist(companyIdToCheck, mailingListID);
 		}
 	}
 
-	public Object getAnonymousLastSentMailing(@VelocityCheck final int companyID, final int customerID) {
+	public Object getAnonymousLastSentMailing(@VelocityCheck final int companyIdToCheck, final int customerID) {
 
     	/*
     	 * **************************************************
@@ -633,10 +633,10 @@ public class ScriptHelper {
     	 */
 
 		try {
-			final Map <String, Object> returnTable = helperService.getAnonLastSentMailing(companyID, customerID);
+			final Map <String, Object> returnTable = helperService.getAnonLastSentMailing(companyIdToCheck, customerID);
 			return returnTable.get(Preview.ID_HTML);
 		} catch (final Exception e) {
-			logger.error("Anonymous Preview failed. CompanyID: " + companyID + " customerID: " + customerID + e, e);
+			logger.error("Anonymous Preview failed. CompanyID: " + companyIdToCheck + " customerID: " + customerID + e, e);
 			return null;
 		}
 	}
@@ -645,11 +645,11 @@ public class ScriptHelper {
 	 * this method returns the HTML part for the given mailingID with the given
 	 * customerID.
 	 *
-	 * @param mailingID
+	 * @param mailingIdToCheck
 	 * @param customerID
 	 * @return
 	 */
-	public Object getAnonymousLastSentMailingByMailingID(final int mailingID, final int customerID) {
+	public Object getAnonymousLastSentMailingByMailingID(final int mailingIdToCheck, final int customerID) {
 
     	/*
     	 * **************************************************
@@ -661,7 +661,7 @@ public class ScriptHelper {
 
 		Object returnObject = null;
 		try {
-			returnObject = helperService.getAnonLastSentMailingByMailingID(mailingID, customerID);
+			returnObject = helperService.getAnonLastSentMailingByMailingID(mailingIdToCheck, customerID);
 		} catch (final Exception e) {
 			logger.error("ComScriptHelper:getAnonymousLastSentMailingByMailingID -> Error creating Fullview: \n" + e);
 		}
@@ -880,7 +880,7 @@ public class ScriptHelper {
 		return result;
 	}
 
-    public final int updateRecipientWithEmailChangeConfirmation(final Recipient recipient, final int mailingID, final String profileFieldForConfirmationCode) {
+    public final int updateRecipientWithEmailChangeConfirmation(final Recipient recipient, final int mailingIdToSet, final String profileFieldForConfirmationCode) {
 
     	/*
     	 * **************************************************
@@ -891,11 +891,11 @@ public class ScriptHelper {
     	 */
 
     	try {
-    		this.recipientService.updateRecipientWithEmailChangeConfiguration(recipient, mailingID, profileFieldForConfirmationCode);
+    		this.recipientService.updateRecipientWithEmailChangeConfiguration(recipient, mailingIdToSet, profileFieldForConfirmationCode);
 
     		return recipient.getCustomerID();
     	} catch(final Exception e) {
-    		final String msg = String.format("Error updating recipient %d with email change confirmation (mailing ID %d)", recipient.getCustomerID(), mailingID);
+    		final String msg = String.format("Error updating recipient %d with email change confirmation (mailing ID %d)", recipient.getCustomerID(), mailingIdToSet);
     		logger.error(msg, e);
 
     		return -1;
@@ -1040,12 +1040,12 @@ public class ScriptHelper {
 	 *
 	 * @param customerID
 	 *            Id of the recipient for the newsletter.
-	 * @param companyID
+	 * @param companyIdToCheck
 	 *            the company to look in.
 	 * @return The mailingID of the last newsletter that would have been sent to
 	 *         this recipient.
 	 */
-	public int findLastNewsletter(final int customerID, @VelocityCheck final int companyID, final int mailinglist) {
+	public int findLastNewsletter(final int customerID, @VelocityCheck final int companyIdToCheck, final int mailinglist) {
 
     	/*
     	 * **************************************************
@@ -1055,17 +1055,17 @@ public class ScriptHelper {
     	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
     	 */
 
-		final int mailingID = mailingDao.findLastNewsletter(customerID, companyID, mailinglist);
+		final int lastNewsletterMailingID = mailingDao.findLastNewsletter(customerID, companyIdToCheck, mailinglist);
 
-		if (mailingID <= 0) {
+		if (lastNewsletterMailingID <= 0) {
 			// No such mailing found
 			return 0;
 		} else {
 			// Check if event-mailing entry already exists. Only one single event-mailing maildropStatus entry should exist.
-			final List<MaildropEntry> maildropStatusList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyID, mailingID);
+			final List<MaildropEntry> maildropStatusList = maildropStatusDao.getMaildropStatusEntriesForMailing(companyIdToCheck, lastNewsletterMailingID);
 			for (final MaildropEntry entry : maildropStatusList) {
 				if (entry.getStatus() == MaildropStatus.ACTION_BASED.getCode()) {
-					return mailingID;
+					return lastNewsletterMailingID;
 				}
 			}
 
@@ -1077,12 +1077,12 @@ public class ScriptHelper {
 			drop.setGenDate(new java.util.Date());
 			drop.setGenStatus(1);
 			drop.setGenChangeDate(new java.util.Date());
-			drop.setMailingID(mailingID);
-			drop.setCompanyID(companyID);
+			drop.setMailingID(lastNewsletterMailingID);
+			drop.setCompanyID(companyIdToCheck);
 
 			maildropStatusDao.saveMaildropEntry(drop);
 
-			return mailingID;
+			return lastNewsletterMailingID;
 		}
 	}
 
@@ -1174,17 +1174,15 @@ public class ScriptHelper {
 	public boolean sendEventMailing(final Mailing mailing, final int customerID, final int delayMinutes, final String bccEmails, final String userStatus, final Map<String, String> overwrite) {
 		List<Integer> userStatusList = null;
 		if (userStatus != null) {
-			if (userStatus != null) {
-				userStatusList = new Vector<>();
+			userStatusList = new Vector<>();
 
-				final int status = Integer.parseInt(userStatus);
-				if (status == UserStatus.Active.getStatusCode() || status == UserStatus.WaitForConfirm.getStatusCode()) {
-					// This block is for backward compatibility only!
-					userStatusList.add(UserStatus.Active.getStatusCode());
-					userStatusList.add(UserStatus.WaitForConfirm.getStatusCode());
-				} else {
-					userStatusList.add(status);
-				}
+			final int status = Integer.parseInt(userStatus);
+			if (status == UserStatus.Active.getStatusCode() || status == UserStatus.WaitForConfirm.getStatusCode()) {
+				// This block is for backward compatibility only!
+				userStatusList.add(UserStatus.Active.getStatusCode());
+				userStatusList.add(UserStatus.WaitForConfirm.getStatusCode());
+			} else {
+				userStatusList.add(status);
 			}
 		}
 		return sendEventMailing(mailing, customerID, delayMinutes, bccEmails, userStatusList, overwrite);
@@ -1304,8 +1302,16 @@ public class ScriptHelper {
 		this.helperService = helperService;
 	}
 	
-	public Date getMailingSendDate(final int companyID, final int mailingID) {
-		return mailingDao.getMailingSendDate(companyID, mailingID);
+	public Date getMailingSendDate(final int companyIdToCheck, final int mailingIdToCheck) {
+		return mailingDao.getMailingSendDate(companyIdToCheck, mailingIdToCheck);
+	}
+	
+	public String getMailingSubject(final int mailingIdParameter) {
+		return mailingDao.getMailing(mailingIdParameter, companyID).getEmailParam().getSubject();
+	}
+	
+	public String getMailingName(final int mailingIdParameter) {
+		return mailingDao.getMailing(mailingIdParameter, companyID).getShortname();
 	}
 
 	@Required

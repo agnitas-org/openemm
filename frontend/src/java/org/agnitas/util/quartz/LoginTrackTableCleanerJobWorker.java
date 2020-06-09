@@ -10,9 +10,9 @@
 
 package org.agnitas.util.quartz;
 
-import org.agnitas.dao.LoginTrackDao;
+import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
 import org.agnitas.service.JobWorker;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -61,13 +61,17 @@ public class LoginTrackTableCleanerJobWorker extends JobWorker {
 			throw new Exception("Parameter deleteBlockSize is missing or invalid", e);
 		}
 		
-		LoginTrackDao loginTrackDao = daoLookupFactory.getBeanLoginTrackDao();//((LoginTrackDao) applicationContext.getBean("LoginTrackDao"));
+		workWithLoginTrackDao(daoLookupFactory.getBeanGuiLoginTrackDao(), retentionTime, deleteBlockSize);
+		workWithLoginTrackDao(daoLookupFactory.getBeanWsLoginTrackDao(), retentionTime, deleteBlockSize);
 		
-		int affectedRows;
-		
+		return null;
+	}
+	
+	private final void workWithLoginTrackDao(final LoginTrackDao loginTrackDao, final int retentionTime, final int deleteBlockSize) {
 		if(loginTrackDao == null) {
-			logger.error("no LoginTrackDao object defined - job stopped");
+			logger.error("no LoginTrackDao object defined");
 		} else {
+			int affectedRows;
 			// Delete in blocks
 			while((affectedRows = loginTrackDao.deleteOldRecords(retentionTime, deleteBlockSize)) > 0) {
 				if (logger.isInfoEnabled()) {
@@ -76,6 +80,5 @@ public class LoginTrackTableCleanerJobWorker extends JobWorker {
 			}
 		}
 		
-		return null;
 	}
 }

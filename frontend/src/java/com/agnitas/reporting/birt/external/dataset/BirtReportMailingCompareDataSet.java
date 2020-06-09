@@ -12,6 +12,8 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.reporting.birt.external.beans.BirtReportCompareStatRow;
@@ -29,13 +39,6 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import com.agnitas.reporting.birt.external.utils.FormatTools;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
 
 public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 	private static final transient Logger logger = Logger.getLogger(BirtReportMailingCompareDataSet.class);
@@ -77,22 +80,35 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         categoriesByTable.put(CommonKeys.SENT_TEXT_INDEX, 6);
         categoriesByTable.put(CommonKeys.SENT_OFFLINE_HTML_INDEX, 6);
     }
-
-    public static final RowMapper<BirtReportCompareStatRow> COMPARE_STAT_ROW_ROW_MAPPER = (resultSet, i) -> {
-        BirtReportCompareStatRow row = new BirtReportCompareStatRow();
-        row.setCategory(resultSet.getString("category"));
-        row.setCategoryindex(resultSet.getInt("category_index"));
-        row.setTargetgroup(resultSet.getString("targetgroup"));
-        row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
-        row.setCount(resultSet.getInt("value"));
-        row.setRate(resultSet.getDouble("rate"));
-        row.setMailingId(resultSet.getInt("mailing_id"));
-        row.setMailingName(resultSet.getString("mailing_name"));
-        row.setSendDate(resultSet.getTimestamp("send_date"));
-        row.setScheduledSendTime(resultSet.getTimestamp("scheduled_send_time"));
-        row.setAssignedTargets(resultSet.getString("assigned_targets"));
-        return row;
-    };
+    
+    public class CompareStatRowRowMapper implements RowMapper<BirtReportCompareStatRow> {
+		@Override
+		public BirtReportCompareStatRow mapRow(ResultSet resultSet, int index) throws SQLException {
+	        try {
+				BirtReportCompareStatRow row = new BirtReportCompareStatRow();
+				
+				row.setCategory(resultSet.getString("category"));
+				row.setCategoryindex(resultSet.getInt("category_index"));
+				row.setTargetgroup(resultSet.getString("targetgroup"));
+				row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
+				row.setCount(resultSet.getInt("value"));
+				row.setRate(resultSet.getDouble("rate"));
+				row.setMailingId(resultSet.getInt("mailing_id"));
+				row.setMailingName(resultSet.getString("mailing_name"));
+				row.setSendDate(resultSet.getTimestamp("send_date"));
+				row.setScheduledSendTime(resultSet.getTimestamp("scheduled_send_time"));
+				row.setAssignedTargets(resultSet.getString("assigned_targets"));
+				
+				return row;
+			} catch (SQLException e) {
+				logger.error("Error in CompareStatRowRowMapper: " + e.getMessage(), e);
+				throw e;
+			} catch (Exception e) {
+				logger.error("Error in CompareStatRowRowMapper: " + e.getMessage(), e);
+				throw e;
+			}
+		}
+    }
 
     public int prepareReport(String mailingIdsStr, @VelocityCheck int companyId, String targetsStr, String figuresOptions) throws Exception {
 		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
@@ -217,7 +233,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
 	/**
 	 * Count values sentHtml, sentText, sentOfflineHTML if needed
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private void addSentMailsByMailtypeData(List<Integer> mailingIds, @VelocityCheck int companyId, int tempTableID, List<BirtReporUtils.BirtReportFigure> figures) throws Exception {
 		if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
@@ -318,7 +334,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
                 "    ON md.mailing_id = mail.mailing_id " +
                 "  LEFT JOIN mailing_account_tbl ma " +
                 "    ON ma.mailing_id = mail.mailing_id " +
-                "WHERE mail.mailing_id IN (" + StringUtils.join(mailingIds, ',') +") AND mail.company_id = ? " +
+                "WHERE mail.mailing_id IN (" + StringUtils.join(mailingIds, ',') + ") AND mail.company_id = ? " +
                 "GROUP BY mail.shortname, mail.mailing_id";
         List<Map<String, Object>> resultList = select(logger, query, companyId);
         for (Map<String, Object> map : resultList) {
@@ -363,11 +379,11 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
 	private List<BirtReportCompareStatRow> getResultsFromTempTable(int tempTableID) throws Exception {
 		String query = "SELECT * FROM tmp_report_aggregation_" + tempTableID + "_tbl ORDER BY category_index, targetgroup_index ";
-		return selectEmbedded(logger, query, COMPARE_STAT_ROW_ROW_MAPPER);
+		return selectEmbedded(logger, query, new CompareStatRowRowMapper());
 	}
 
     private Map<Map<Integer, Integer>, Map<Integer, BirtReportCompareStatRow>> getCategoriesData(String query, List<Integer> categories, int blockNumber) throws Exception {
-        List<BirtReportCompareStatRow> block = selectEmbedded(logger, query.replace("?", StringUtils.join(categories.toArray(), ", ")), COMPARE_STAT_ROW_ROW_MAPPER);
+        List<BirtReportCompareStatRow> block = selectEmbedded(logger, query.replace("?", StringUtils.join(categories.toArray(), ", ")), new CompareStatRowRowMapper());
         Map<Map<Integer, Integer>, Map<Integer, BirtReportCompareStatRow>> categoriesData = new HashMap<>();
         for (int i = 0; i < block.size(); i++) {
             Map<Integer, Integer> key = new HashMap<>();

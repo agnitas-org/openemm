@@ -52,8 +52,9 @@ public class Cache {
 	}
 
 	protected Page makePreview (long customerID, String selector, boolean anon,
-					boolean convertEntities, boolean ecsUIDs,
-					boolean cachable) throws Exception {
+				    boolean convertEntities, boolean ecsUIDs,
+				    boolean cachable, long[] targetIDs
+	) throws Exception {
 		Page output = new PageImpl ();
 
 		opts.put ("preview-for", customerID);
@@ -64,6 +65,7 @@ public class Cache {
 		opts.put ("preview-convert-entities", Boolean.valueOf (convertEntities));
 		opts.put ("preview-ecs-uids", Boolean.valueOf (ecsUIDs));
 		opts.put ("preview-cachable", Boolean.valueOf (cachable));
+		opts.put ("preview-target-ids", targetIDs);
 		mailout.execute (opts);
 		return output;
 	}

@@ -10,11 +10,13 @@
 
 package org.agnitas.emm.core.commons.password;
 
-import org.apache.commons.lang.StringUtils;
+import java.util.Objects;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComAdminDao;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 
@@ -23,8 +25,7 @@ import com.agnitas.service.SimpleServiceResult;
  */
 public class PasswordCheckImpl implements PasswordCheck {
 
-	/** DAO for accessing admin data. */
-	private ComAdminDao adminDao;
+	private AdminService adminService;
 
 	@Override
 	public boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler) {
@@ -34,7 +35,7 @@ public class PasswordCheckImpl implements PasswordCheck {
 
 			if (admin != null) {
 				// Check that given password differs from current Admin password
-				if (adminDao.isAdminPassword(admin, password)) {
+				if (adminService.isAdminPassword(admin, password)) {
 					throw new PasswordMatchesCurrentPasswordException();
 				}
 			}
@@ -54,7 +55,7 @@ public class PasswordCheckImpl implements PasswordCheck {
 
 			if (admin != null) {
 				// Check that given password differs from current admin's password.
-				if (adminDao.isAdminPassword(admin, password)) {
+				if (adminService.isAdminPassword(admin, password)) {
 					throw new PasswordMatchesCurrentPasswordException();
 				}
 			}
@@ -113,8 +114,9 @@ public class PasswordCheckImpl implements PasswordCheck {
 
     @Override
     public boolean passwordChanged(String username, String password) {
-    	ComAdmin admin = adminDao.getAdminByLogin(username, password);
-        if (StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0)) {
+    	final ComAdmin admin = adminService.getAdminByLogin(username, password);
+
+    	if (StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0)) {
             return false;
         } else {
             return true;
@@ -122,13 +124,8 @@ public class PasswordCheckImpl implements PasswordCheck {
     }
 
 	// ---------------------------------------------------------------------------------------------------- Dependency Injection
-	/**
-	 * Set DAO accessing admin data.
-	 * 
-	 * @param dao DAO accessing admin data.
-	 */
 	@Required
-	public void setAdminDao(ComAdminDao dao) {
-		this.adminDao = dao;
+	public void setAdminService(AdminService service) {
+		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 }

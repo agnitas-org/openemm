@@ -10,32 +10,44 @@
 
 package com.agnitas.preview;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
 import org.agnitas.preview.PreviewImpl;
+import org.springframework.beans.factory.annotation.Required;
 
 public class PreviewFactoryImpl implements PreviewFactory {
-
 	private static PreviewFactory instance;
-	private Preview preview;
 	
-	private PreviewFactoryImpl() {
-		
+	private ConfigService configService;
+	
+	private Preview preview;
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 
 	public static PreviewFactory createInstance() {
-		if ( instance == null ) {
+		if (instance == null) {
 			instance = new PreviewFactoryImpl();
 		}
 		return instance;
 	}
-	
+
 	@Override
 	public Preview createPreview() {
-		if( preview == null) {
-			preview = new PreviewImpl();
+		if (preview == null) {
+			preview = new PreviewImpl(
+				configService.getValue(ConfigValue.PreviewMailgunCacheAge),
+				configService.getValue(ConfigValue.PreviewMailgunCacheSize),
+				configService.getValue(ConfigValue.PreviewPageCacheAge),
+				configService.getValue(ConfigValue.PreviewPageCacheSize),
+				configService.getValue(ConfigValue.PreviewLogName),
+				configService.getValue(ConfigValue.PreviewLogLevel)
+			);
 		}
 		return preview;
 	}
-
 }

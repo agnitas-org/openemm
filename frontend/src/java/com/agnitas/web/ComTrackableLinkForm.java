@@ -13,19 +13,15 @@ package com.agnitas.web;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.web.TrackableLinkForm;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMapping;
-
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.LinkProperty;
 
 public class ComTrackableLinkForm extends TrackableLinkForm {
 	
@@ -35,30 +31,21 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComTrackableLinkForm.class);
 
-	public static final String PROPERTY_NAME_PREFIX = "propertyName_";
-	public static final String PROPERTY_VALUE_PREFIX = "propertyValue_";
-
-    private String altText;
-
-	private String linkExtension;
-
-	private List<LinkProperty> commonLinkExtensions;
-
 	private int globalRelevance;
 
-	private boolean trackableContainerVisible;
 	private boolean linkContainerVisible;
+	
 	private boolean linkExtensionsContainerVisible;
-	private boolean actionContainerVisible;
+	
 	private boolean webshopContainerVisible;
 
 	private Set<Integer> adminLinkIds = new HashSet<>();
+	
 	private boolean adminLink;
 
 	private boolean everyPositionLink;
 
 	private ComTrackableLink linkToView;
-	private boolean companyHasDefaultLinkExtension = false;
 
     private boolean keepExtensionsUnchanged;
     
@@ -70,11 +57,7 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
     
     private boolean intelliAdShown;
 
-    private Map<Integer, Integer> linkItemRelevance = new HashMap<>();
-
     private Map<Integer, Integer> linkItemDeepTracking = new HashMap<>();
-
-    private Map<Integer, String> linkItemName = new HashMap<>();
 
 	private int workflowId;
 
@@ -85,23 +68,7 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	private boolean isMailingUndoAvailable;
 	
 	private boolean staticLink;
-
-    public boolean isKeepExtensionsUnchanged() {
-        return keepExtensionsUnchanged;
-    }
-
-    public void setKeepExtensionsUnchanged(boolean keepExtensionsUnchanged) {
-        this.keepExtensionsUnchanged = keepExtensionsUnchanged;
-    }
-
-    public String getAltText() {
-		return this.altText;
-	}
 	
-	public void setAltText(String altText) {
-		this.altText = altText;
-	}
-
 	/**
 	 * this variable is used for the following issue: if you have two or more
 	 * SAME Links in a Mailing, you can not them in the mailing statistic,
@@ -110,7 +77,40 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	 * is true (no difference between the links)
 	 */
 	private boolean countLinkIsUnique = true;
+	
+	@Override
+	public void reset(ActionMapping mapping, HttpServletRequest request) {
+		super.reset(mapping, request);
+		String aCBox;
+		String name;
+		String value;
+		this.intelliAdShown = false;
+		this.staticLink = false;
 
+		Enumeration<String> names = request.getParameterNames();
+		while (names.hasMoreElements()) {
+			name = names.nextElement();
+			if (name.startsWith(STRUTS_CHECKBOX) && name.length() > 18) {
+				aCBox = name.substring(18);
+				try {
+					if ((value = request.getParameter(name)) != null) {
+						BeanUtils.setProperty(this, aCBox, value);
+					}
+				} catch (Exception e) {
+					logger.error("reset: " + e.getMessage());
+				}
+			}
+		}
+	}
+	
+    public boolean isKeepExtensionsUnchanged() {
+        return keepExtensionsUnchanged;
+    }
+	
+    public void setKeepExtensionsUnchanged(boolean keepExtensionsUnchanged) {
+        this.keepExtensionsUnchanged = keepExtensionsUnchanged;
+    }
+    
 	/**
 	 * if "true", no difference is made between same links. if "false", same
 	 * links are made different (by us).
@@ -131,30 +131,12 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 		this.countLinkIsUnique = countLinksUnique;
 	}
 
-	public String getLinkExtension() {
-		return linkExtension;
-	}
-
-	public void setLinkExtension(String linkExtension) {
-		this.linkExtension = linkExtension;
-	}
-
 	public int getGlobalRelevance() {
 		return globalRelevance;
 	}
 
 	public void setGlobalRelevance(int globalRelevance) {
 		this.globalRelevance = globalRelevance;
-	}
-
-	@Override
-	public boolean isTrackableContainerVisible() {
-		return trackableContainerVisible;
-	}
-
-	@Override
-	public void setTrackableContainerVisible(boolean trackableContainerVisible) {
-		this.trackableContainerVisible = trackableContainerVisible;
 	}
 
 	public boolean isLinkContainerVisible() {
@@ -172,16 +154,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
     public void setLinkExtensionsContainerVisible(boolean linkExtensionsContainerVisible) {
         this.linkExtensionsContainerVisible = linkExtensionsContainerVisible;
     }
-
-    @Override
-	public boolean isActionContainerVisible() {
-		return actionContainerVisible;
-	}
-
-	@Override
-	public void setActionContainerVisible(boolean actionContainerVisible) {
-		this.actionContainerVisible = actionContainerVisible;
-	}
 
 	public boolean isWebshopContainerVisible() {
 		return webshopContainerVisible;
@@ -227,53 +199,12 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 		this.everyPositionLink = everyPositionLink;
 	}
 
-	@Override
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		super.reset(mapping, request);
-		String aCBox = null;
-		String name = null;
-		String value = null;
-		this.intelliAdShown = false;
-		this.staticLink = false;
-
-		Enumeration<String> names = request.getParameterNames();
-		while (names.hasMoreElements()) {
-			name = names.nextElement();
-			if (name.startsWith(STRUTS_CHECKBOX) && name.length() > 18) {
-				aCBox = name.substring(18);
-				try {
-					if ((value = request.getParameter(name)) != null) {
-						BeanUtils.setProperty(this, aCBox, value);
-					}
-				} catch (Exception e) {
-					logger.error("reset: " + e.getMessage());
-				}
-			}
-		}
-	}
-
 	public void setLinkToView(ComTrackableLink linkToView) {
 		this.linkToView = linkToView;
 	}
 
 	public ComTrackableLink getLinkToView() {
 		return linkToView;
-	}
-
-	public boolean getCompanyHasDefaultLinkExtension() {
-		return companyHasDefaultLinkExtension;
-	}
-
-	public void setCompanyHasDefaultLinkExtension(boolean companyHasDefaultLinkExtension) {
-		this.companyHasDefaultLinkExtension = companyHasDefaultLinkExtension;
-	}
-
-	public List<LinkProperty> getCommonLinkExtensions() {
-		return commonLinkExtensions;
-	}
-
-	public void setCommonLinkExtensions(List<LinkProperty> commonLinkExtensions) {
-		this.commonLinkExtensions = commonLinkExtensions;
 	}
 	
 	/**
@@ -330,21 +261,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 		return this.intelliAdShown;
 	}
 
-    public int getLinkItemRelevance(int id){
-        return linkItemRelevance.getOrDefault(id, 0);
-    }
-
-    public void setLinkItemRelevance(int id, int value) {
-        linkItemRelevance.put(id, value);
-    }
-
-    public void clearLinkItemRelevance() {
-        this.linkItemRelevance.clear();
-    }
-	
-	public Map<Integer, Integer> getLinkItemsRelevance() {
-		return linkItemRelevance;
-	}
 	
     public int getLinkItemDeepTracking(int id){
         return linkItemDeepTracking.getOrDefault(id, 0);
@@ -360,22 +276,6 @@ public class ComTrackableLinkForm extends TrackableLinkForm {
 	
 	public Map<Integer, Integer> getLinkItemsDeepTracking() {
 		return linkItemDeepTracking;
-	}
-	
-	public String getLinkItemName(int id){
-        return linkItemName.get(id);
-    }
-
-    public void setLinkItemName(int id, String value) {
-        linkItemName.put(id, value);
-    }
-
-    public void clearLinkItemName() {
-        this.linkItemName.clear();
-    }
-	
-	public Map<Integer, String> getLinkItemNames() {
-		return linkItemName;
 	}
 	
 	public int getWorkflowId() {

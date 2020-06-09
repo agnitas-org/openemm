@@ -13,7 +13,12 @@ package com.agnitas.emm.core.dashboard.form;
 import org.agnitas.web.forms.PaginationForm;
 
 public class DashboardForm extends PaginationForm {
-
+    private static final int ROWNUMS = 20;
+    
+    public DashboardForm() {
+        setNumberOfRows(ROWNUMS);
+    }
+    
     private int lastSentMailingId;
 
     public int getLastSentMailingId() {

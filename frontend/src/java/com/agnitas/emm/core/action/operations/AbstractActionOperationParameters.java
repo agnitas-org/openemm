@@ -10,8 +10,12 @@
 
 package com.agnitas.emm.core.action.operations;
 
-import org.apache.struts.action.ActionErrors;
-import org.springframework.context.ApplicationContext;
+import java.util.Locale;
+
+import org.apache.struts.action.ActionMessages;
+
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTrackpointDao;
 
 public abstract class AbstractActionOperationParameters extends ActionOperationParameters {
 	private int id;
@@ -53,17 +57,21 @@ public abstract class AbstractActionOperationParameters extends ActionOperationP
 	
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		AbstractActionOperationParameters other = (AbstractActionOperationParameters) obj;
 		if (id == 0) {
 			return false;
-		} else if (id != other.id)
+		} else if (id != other.id) {
 			return false;
+		}
 		return true;
 	}
 
@@ -72,7 +80,7 @@ public abstract class AbstractActionOperationParameters extends ActionOperationP
 		return id;
 	}
 
-	public boolean validate(ActionErrors errors, ApplicationContext applicationContext) {
+	public boolean validate(ActionMessages errors, Locale locale, ComRecipientDao recipientDao, ComTrackpointDao trackpointDao) throws Exception {
 		return true;
 	}
 

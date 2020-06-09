@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import org.agnitas.beans.WebStorageEntry;
 import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
@@ -36,17 +36,17 @@ public class WebStorageImpl implements WebStorage {
 
     @Override
     public void setup(String dataAsJson) {
-        Map<String, WebStorageEntry> dataMap = new ConcurrentHashMap<>();
+        Map<String, WebStorageEntry> newDataMap = new ConcurrentHashMap<>();
 
         if (StringUtils.isNotBlank(dataAsJson)) {
             try {
-                collectDataMap(dataMap, dataAsJson);
+                collectDataMap(newDataMap, dataAsJson);
             } catch (Exception e) {
                 logger.error("Error occurred: " + e.getMessage(), e);
             }
         }
 
-        this.dataMap = dataMap;
+        this.dataMap = newDataMap;
     }
 
     @Override
@@ -91,7 +91,7 @@ public class WebStorageImpl implements WebStorage {
         }
     }
 
-    private void collectDataMap(Map<String, WebStorageEntry> dataMap, String dataAsJson) throws IOException {
+    private void collectDataMap(Map<String, WebStorageEntry> dataMapToCollectIn, String dataAsJson) throws IOException {
         Map<String, Class<? extends WebStorageEntry>> typeMap = new HashMap<>();
         ObjectMapper mapper = new ObjectMapper();
 
@@ -124,7 +124,7 @@ public class WebStorageImpl implements WebStorage {
                         logger.warn("Missing expected definition for `" + name + "` bundle");
                     } else {
                         try {
-                            dataMap.put(name, mapper.readValue(parser.readValueAsTree(), type));
+                            dataMapToCollectIn.put(name, mapper.readValue(parser.readValueAsTree(), type));
                         } catch (JsonMappingException e) {
                             logger.warn("Failed to deserialize `" + name + "` bundle", e);
                         }

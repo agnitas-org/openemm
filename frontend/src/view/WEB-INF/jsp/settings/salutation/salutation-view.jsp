@@ -13,7 +13,14 @@
     <html:hidden property="salutationID"/>
     <html:hidden property="action"/>
     <input type="hidden" id="save" name="save" value=""/>
-
+    <c:choose>
+    	<c:when test="${salutationForm.salutationCompanyID ne 0}">
+	        <c:set var="dontEdit" value="false"/>
+    	</c:when>
+    	<c:otherwise>
+        	<c:set var="dontEdit" value="true"/>
+    	</c:otherwise>
+	</c:choose>
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
@@ -47,7 +54,7 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="recipient-salutation-description" styleClass="form-control" property="shortname" />
+                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-description" styleClass="form-control" property="shortname" />
                 </div>
             </div>
             <div class="form-group">
@@ -57,7 +64,7 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="recipient-salutation-male" styleClass="form-control" property="salMale" />
+                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-male" styleClass="form-control" property="salMale" />
                 </div>
             </div>
             <div class="form-group">
@@ -67,7 +74,7 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="recipient-salutation-female" styleClass="form-control" property="salFemale" />
+                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-female" styleClass="form-control" property="salFemale" />
                 </div>
             </div>
             <div class="form-group">
@@ -77,7 +84,7 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text styleId="recipient-salutation-unknown" styleClass="form-control" property="salUnknown" />
+                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-unknown" styleClass="form-control" property="salUnknown" />
                 </div>
             </div>
 
@@ -89,7 +96,7 @@
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleId="recipient-salutation-miss" styleClass="form-control" property="salMiss" />
+                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-miss" styleClass="form-control" property="salMiss" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -99,7 +106,7 @@
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleId="recipient-salutation-practice" styleClass="form-control" property="salPractice" />
+                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-practice" styleClass="form-control" property="salPractice" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -109,7 +116,7 @@
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text styleId="recipient-salutation-company" styleClass="form-control" property="salCompany" />
+                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-company" styleClass="form-control" property="salCompany" />
                     </div>
                 </div>
             </emm:ShowByPermission>

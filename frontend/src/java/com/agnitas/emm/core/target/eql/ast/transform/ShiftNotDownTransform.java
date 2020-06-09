@@ -31,6 +31,7 @@ import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.ReceivedMailingRelationalEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RelationalBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.RevenueByMailingRelationalEqlNode;
+import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags;
 
 /**
  * This transform on the syntax tree shifts <i>NOT</i> operators down as far as possible applying
@@ -57,13 +58,13 @@ public final class ShiftNotDownTransform {
 		public boolean mustHaveReceivedMailing() default false;
 	}
 
-	public static final BooleanExpressionTargetRuleEqlNode shiftNotDown(final BooleanExpressionTargetRuleEqlNode node) {
-		return shiftNotDown(node, false);
+	public static final BooleanExpressionTargetRuleEqlNode shiftNotDown(final BooleanExpressionTargetRuleEqlNode node, final CodeGenerationFlags flags) {
+		return shiftNotDown(node, false, flags);
 	}
 	
-	private static final BooleanExpressionTargetRuleEqlNode shiftNotDown(final BooleanExpressionTargetRuleEqlNode node, final boolean inNot) {
+	private static final BooleanExpressionTargetRuleEqlNode shiftNotDown(final BooleanExpressionTargetRuleEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
 		if(node.getChild().isPresent()) {
-			final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild().get(), inNot);
+			final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild().get(), inNot, flags);
 			
 			// If same instance of child node, then subtree has not been changed. So we can return the node itself.
 			if(newChild == node.getChild().get()) {
@@ -77,22 +78,22 @@ public final class ShiftNotDownTransform {
 		}
 	}
 	
-	private static final AbstractBooleanEqlNode shiftNotDown(final AbstractBooleanEqlNode node, final boolean inNot) {
+	private static final AbstractBooleanEqlNode shiftNotDown(final AbstractBooleanEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
 		if(node instanceof AnnotationBooleanEqlNode) {
-			return shiftNotDown((AnnotationBooleanEqlNode) node, inNot);
+			return shiftNotDown((AnnotationBooleanEqlNode) node, inNot, flags);
 		} else if(node instanceof BinaryOperatorBooleanEqlNode) {
-			return shiftNotDown((BinaryOperatorBooleanEqlNode) node, inNot);
+			return shiftNotDown((BinaryOperatorBooleanEqlNode) node, inNot, flags);
 		} else if(node instanceof NotOperatorBooleanEqlNode) {
-			return shiftNotDown((NotOperatorBooleanEqlNode) node, inNot);	
+			return shiftNotDown((NotOperatorBooleanEqlNode) node, inNot, flags);	
 		} else if(node instanceof RelationalBooleanEqlNode) {
-			return shiftNotDown((RelationalBooleanEqlNode) node, inNot);
+			return shiftNotDown((RelationalBooleanEqlNode) node, inNot, flags);
 		} else {
 			throw new RuntimeException("Unhandled node type " + node.getClass().getCanonicalName());
 		}
 	}
 	
-	private static final AbstractBooleanEqlNode shiftNotDown(final AnnotationBooleanEqlNode node, final boolean inNot) {
-		final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild(), inNot);
+	private static final AbstractBooleanEqlNode shiftNotDown(final AnnotationBooleanEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
+		final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild(), inNot, flags);
 		
 		if(newChild == node.getChild()) {
 			return node;
@@ -101,9 +102,9 @@ public final class ShiftNotDownTransform {
 		}
 	}
 	
-	private static final AbstractBooleanEqlNode shiftNotDown(final BinaryOperatorBooleanEqlNode node, final boolean inNot) {
-		final AbstractBooleanEqlNode newLeft = shiftNotDown(node.getLeft(), inNot);
-		final AbstractBooleanEqlNode newRight = shiftNotDown(node.getRight(), inNot);
+	private static final AbstractBooleanEqlNode shiftNotDown(final BinaryOperatorBooleanEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
+		final AbstractBooleanEqlNode newLeft = shiftNotDown(node.getLeft(), inNot, flags);
+		final AbstractBooleanEqlNode newRight = shiftNotDown(node.getRight(), inNot, flags);
 		
 		if(newLeft == node.getLeft() && newRight == node.getRight()) {
 			return node;
@@ -131,20 +132,20 @@ public final class ShiftNotDownTransform {
 		}
 	}
 	
-	private static final AbstractBooleanEqlNode shiftNotDown(final NotOperatorBooleanEqlNode node, final boolean inNot) {
-		final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild(), !inNot);
+	private static final AbstractBooleanEqlNode shiftNotDown(final NotOperatorBooleanEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
+		final AbstractBooleanEqlNode newChild = shiftNotDown(node.getChild(), !inNot, flags);
 		
 		return newChild;
 	}
 	
-	private static final AbstractBooleanEqlNode shiftNotDown(final RelationalBooleanEqlNode node, final boolean inNot) {
+	private static final AbstractBooleanEqlNode shiftNotDown(final RelationalBooleanEqlNode node, final boolean inNot, final CodeGenerationFlags flags) {
 		if(inNot) {
 			final AbstractRelationalEqlNode childNode = node.getChild();
 			final SpecialNotOperatorHandling annotation = childNode.getClass().getAnnotation(SpecialNotOperatorHandling.class);
 
 			if(annotation != null) {
 				// Adding the tracking veto condition must be done before adding the "must have received mailing" condition, otherwise this condition will be negated, too.
-				AbstractBooleanEqlNode transformedNode = handleRespectTrackingVeto(childNode, annotation.respectTrackingVeto());
+				AbstractBooleanEqlNode transformedNode = handleRespectTrackingVeto(childNode, annotation.respectTrackingVeto() && !flags.isIgnoreTrackingVeto());
 				transformedNode = handleMustHaveReceivedMailing(transformedNode, childNode, annotation.mustHaveReceivedMailing());
 				
 				return transformedNode;

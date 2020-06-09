@@ -20,13 +20,12 @@ import org.agnitas.emm.springws.jaxb.AddBlacklistResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class AddBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private BlacklistService blacklistService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
@@ -36,6 +35,7 @@ public class AddBlacklistEndpoint extends AbstractMarshallingPayloadEndpoint {
 		BlacklistModel model = new BlacklistModel();
 		model.setCompanyId(Utils.getUserCompany());
 		model.setEmail(request.getEmail());
+		model.setReason(request.getReason());
 		response.setValue(blacklistService.insertBlacklist(model));
 		return response;
 	}

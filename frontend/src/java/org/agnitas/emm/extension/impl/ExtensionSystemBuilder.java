@@ -27,7 +27,7 @@ public class ExtensionSystemBuilder {
 	private String jspBaseDirectory;
 	private String databaseName;
 	
-	private PluginDao pluginDao;
+	protected PluginDao pluginDao;
 	private DataSource dataSource;
 	
 	public ExtensionSystemImpl createExtensionSystem() {
@@ -43,7 +43,7 @@ public class ExtensionSystemBuilder {
 		DatabaseScriptExecutor scriptExecutor = new DatabaseScriptExecutor( dataSource, scriptValidator);
 		PluginInstaller pluginInstaller = createPluginInstaller( configuration, jspRestoreUtil, scriptExecutor);
 		
-		return createInstance( configuration, jspRestoreUtil, pluginInstaller, pluginDao);
+		return createInstance( configuration, jspRestoreUtil, pluginInstaller);
 	}
 	
 	public String getSystemPluginBaseDirectory() {
@@ -70,7 +70,7 @@ public class ExtensionSystemBuilder {
 		return new PluginInstallerImpl( configuration, jspRestoreUtil, scriptExecutor);
 	}
 	
-	protected ExtensionSystemImpl createInstance( ExtensionSystemConfiguration configuration, JspRestoreUtil jspRestoreUtil, PluginInstaller pluginInstaller, PluginDao pluginDao) {
+	protected ExtensionSystemImpl createInstance( ExtensionSystemConfiguration configuration, JspRestoreUtil jspRestoreUtil, PluginInstaller pluginInstaller) {
 		return new ExtensionSystemImpl( configuration, jspRestoreUtil, pluginInstaller, pluginDao);
 	}
 	

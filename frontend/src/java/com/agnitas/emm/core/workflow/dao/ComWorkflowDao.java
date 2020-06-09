@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.workflow.dao;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -112,7 +113,7 @@ public interface ComWorkflowDao {
      */
     void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency);
     
-    List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId);
+    List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 
@@ -137,6 +138,8 @@ public interface ComWorkflowDao {
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
     List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, WorkflowDependency dependency, boolean exceptInactive);
+
+    List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive);
 
     /**
      * Get a list of active workflows depending on customer profile field (referenced by {@code column}) that is required

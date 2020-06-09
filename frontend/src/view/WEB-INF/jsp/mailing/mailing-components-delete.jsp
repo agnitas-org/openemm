@@ -9,6 +9,8 @@
 
 <emm:Permission token="mailing.components.change"/>
 
+<%--@elvariable id="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm"--%>
+
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">

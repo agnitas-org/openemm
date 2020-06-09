@@ -11,16 +11,16 @@
 package org.agnitas.beans;
 
 public interface MailingSendStatus {
-    public boolean getHasMailtracks();
+    boolean getHasMailtracks();
 
-    public void setHasMailtracks(boolean hasMailtracks);
+    void setHasMailtracks(boolean hasMailtracks);
 
-    public int getExpirationDays();
+    int getExpirationDays();
 
-    public void setExpirationDays(int expirationDays);
+    void setExpirationDays(int expirationDays);
 
-    public boolean getHasMailtrackData();
+    boolean getHasMailtrackData();
 
-    public void setHasMailtrackData(boolean hasMailtrackData);
+    void setHasMailtrackData(boolean hasMailtrackData);
 
 }

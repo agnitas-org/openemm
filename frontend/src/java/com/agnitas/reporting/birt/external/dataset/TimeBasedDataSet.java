@@ -19,21 +19,15 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+
 public class TimeBasedDataSet extends BIRTDataSet {
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(TimeBasedDataSet.class);
-	
-	protected static String getOnePixelLogDeviceTableName(int companyId) {
-		return "onepixellog_device_" + companyId + "_tbl";
-	}
-	
-	protected static String getClickLogDeviceTableName(int companyId) {
-		return "rdirlog_" + companyId + "_tbl";
-	}
 	
 	protected static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";

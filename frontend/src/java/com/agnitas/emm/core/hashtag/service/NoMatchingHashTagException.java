@@ -12,5 +12,5 @@
 package com.agnitas.emm.core.hashtag.service;
 
 public class NoMatchingHashTagException extends Exception {
-
+	private static final long serialVersionUID = 529073392139690353L;
 }

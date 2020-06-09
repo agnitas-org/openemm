@@ -10,7 +10,6 @@
 
 package org.agnitas.util;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -22,7 +21,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.jcraft.jsch.Channel;
@@ -36,7 +35,7 @@ import com.jcraft.jsch.SftpException;
 /**
  * The Class SFtpHelper.
  */
-public class SFtpHelper implements Closeable {
+public class SFtpHelper implements RemoteFileHelper {
 
 	/** The Constant logger. */
 	private static final transient Logger logger = Logger.getLogger(SFtpHelper.class);
@@ -170,8 +169,8 @@ public class SFtpHelper implements Closeable {
 	 * Instantiates a new sftp helper.
 	 * Default port for SFTP is 22
 	 *
-	 * @param fileServerAndAuthConfigString like "[username[:password]@]server[:port][;hostKeyFingerprint][/baseDirectory]". The hostKeyFingerprint should be given without ":"-Characters 
-	 * @throws Exception 
+	 * @param fileServerAndAuthConfigString like "[username[:password]@]server[:port][;hostKeyFingerprint][/baseDirectory]". The hostKeyFingerprint should be given without ":"-Characters
+	 * @throws Exception
 	 */
 	public SFtpHelper(String fileServerAndAuthConfigString) throws Exception {
 		if (fileServerAndAuthConfigString.toLowerCase().startsWith("ftp://")) {
@@ -257,6 +256,7 @@ public class SFtpHelper implements Closeable {
 	 *
 	 * @throws Exception the exception
 	 */
+	@Override
 	public void connect() throws Exception {
 		try {
 			if (privateSshKeyFile != null) {
@@ -264,10 +264,7 @@ public class SFtpHelper implements Closeable {
 			} else if (privateSshKeyData != null) {
 				jsch.addIdentity(user, privateSshKeyData.getBytes("UTF-8"), null, privateSshKeyPassphrase);
 			} else if (password == null) {
-				String homeDir = System.getProperty("user.home");
-				if (homeDir != null && homeDir.endsWith(File.separator)) {
-					homeDir = homeDir.substring(0, homeDir.length() - 1);
-				}
+				String homeDir = AgnUtils.getUserHomeDir();
 				if (new File(homeDir + "/.ssh/id_dsa").exists()) {
 					jsch.addIdentity(homeDir + "/.ssh/id_dsa");
 				} else if (new File(homeDir + "/.ssh/id_rsa").exists()) {
@@ -329,6 +326,7 @@ public class SFtpHelper implements Closeable {
 	 * @param path the path
 	 * @throws SftpException the sftp exception
 	 */
+	@Override
 	public void cd(String path) throws Exception {
 		checkForConnection();
 		channel.cd(path);
@@ -363,12 +361,12 @@ public class SFtpHelper implements Closeable {
 	 *
 	 * @param inputStream the inputStream
 	 * @param dstFile the dstFile
-	 * @param mode the mode (see ChannelSftp.xxx for allowed modes)
 	 * @throws SftpException the sftp exception
 	 */
-	public void put(InputStream inputStream, String dstFile, int mode) throws Exception {
+	@Override
+	public void put(InputStream inputStream, String dstFile) throws Exception {
 		checkForConnection();
-		channel.put(inputStream, dstFile, mode);
+		channel.put(inputStream, dstFile, ChannelSftp.OVERWRITE);
 	}
 
 	/**
@@ -378,6 +376,7 @@ public class SFtpHelper implements Closeable {
 	 * @return the input stream
 	 * @throws SftpException the sftp exception
 	 */
+	@Override
 	public InputStream get(String name) throws Exception {
 		checkForConnection();
 		return channel.get(name);
@@ -405,8 +404,9 @@ public class SFtpHelper implements Closeable {
 	 * @return the vector
 	 * @throws SftpException the sftp exception
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
-	public Vector<LsEntry> ls(String path) throws Exception {
+	public List<String> ls(String path) throws Exception {
 		if (StringUtils.isEmpty(path)) {
 			path = ".";
 		} else if (!path.trim().startsWith("/")) {
@@ -415,7 +415,11 @@ public class SFtpHelper implements Closeable {
 		
 		checkForConnection();
 		Vector<LsEntry> returnVector = channel.ls(path);
-		return returnVector;
+		List<String> returnList = new ArrayList<>();
+		for (LsEntry item : returnVector) {
+			returnList.add(item.getFilename());
+		}
+		return returnList;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -462,8 +466,9 @@ public class SFtpHelper implements Closeable {
 	 * 
 	 * @param directoryPath
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
+	@Override
 	public boolean directoryExists(String directoryPath) throws Exception {
 		checkForConnection();
 		try {
@@ -489,6 +494,7 @@ public class SFtpHelper implements Closeable {
 	 * @return
 	 * @throws Exception on invalid directory
 	 */
+	@Override
 	public boolean fileExists(String filePath) throws Exception {
 		checkForConnection();
 		String directoryPath = "";
@@ -503,7 +509,7 @@ public class SFtpHelper implements Closeable {
 			filename = filename.substring(lastSlash + 1);
 		}
 		
-		List<LsEntry> directoryEntries;
+		List<String> directoryEntries;
 		try {
 			if (StringUtils.isNotBlank(directoryPath)) {
 				directoryEntries = ls(directoryPath);
@@ -516,8 +522,8 @@ public class SFtpHelper implements Closeable {
 		
 		boolean fileFound = false;
 		if (directoryEntries != null) {
-			for (LsEntry lsEntry : directoryEntries) {
-				if (lsEntry.getFilename().equals(filename)) {
+			for (String fileName : directoryEntries) {
+				if (fileName.equals(filename)) {
 					fileFound = true;
 					break;
 				}

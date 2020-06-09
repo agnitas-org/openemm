@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Interest]]></title>
+    <content><![CDATA[You can use interest-based profile fields to influence the sequence of the contents of your mailing. If, for example, a newsletter contains the categories Package Travel, City Trips and Last Minute, you could use interest-based fields to record the click frequency on the recipient profile. When filling in the module, you specify the interest-based profile field to which the content belongs in the Interest selection field. When generating the mail, the EMM then sorts the modules into package tours, city trips and last minute according to the click frequency of each recipient.]]></content>
+</HelpBalloon>

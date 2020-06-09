@@ -19,21 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.dao.BindingEntryDaoException;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.MailinglistDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.beans.ComTarget;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
@@ -43,6 +28,19 @@ import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryImpl;
 import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
+import org.agnitas.beans.BindingEntry;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.BindingEntryImpl;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
 
 public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEntryDao {
 	
@@ -137,6 +135,9 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 				return false;
 			}
 			
+			// Check for valid UserStatus code
+			UserStatus.getUserStatusByID(entry.getUserStatus());
+			
 			int touchedLines;
 			
 			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
@@ -180,6 +181,9 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 				return false;
 			} else {
 				if (checkAssignedProfileFieldIsSet(entry, companyID)) {
+					// Check for valid UserStatus code
+					UserStatus.getUserStatusByID(entry.getUserStatus());
+					
 					List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 					
 					String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
@@ -240,6 +244,9 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			if (companyID <= 0) {
 				return false;
 			}
+			
+			// Check for valid UserStatus code
+			UserStatus.getUserStatusByID(entry.getUserStatus());
 			
 			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 			
@@ -378,7 +385,10 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int userStatus, String remark) throws BindingEntryDaoException {
+	public void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int userStatus, String remark) throws Exception {
+		// Check for valid UserStatus code
+		UserStatus.getUserStatusByID(userStatus);
+		
 		String sql = "UPDATE customer_" + companyId + "_binding_tbl " + "SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email LIKE ?)";
 		update(logger, sql, userStatus, remark, emailPattern);
 	}
@@ -478,16 +488,16 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		private static final String DEFAULT_MAILING_LIST_PREFIX = "ml_";
 
 		private final String columnPrefix;
-		private final MailinglistDaoImpl.MailinglistRowMapper mailinglistRowMapper;
+		private final MailinglistRowMapper mailinglistRowMapper;
 
 		public CompositeBindingEntryRowMapperWithMailinglist(){
 			columnPrefix = StringUtils.EMPTY;
-			mailinglistRowMapper = new MailinglistDaoImpl.MailinglistRowMapper(DEFAULT_MAILING_LIST_PREFIX);
+			mailinglistRowMapper = new MailinglistRowMapper(DEFAULT_MAILING_LIST_PREFIX);
 		}
 
 		public CompositeBindingEntryRowMapperWithMailinglist(String mailinglistColumnPrefix) {
 			columnPrefix = StringUtils.EMPTY;
-			mailinglistRowMapper = new MailinglistDaoImpl.MailinglistRowMapper(mailinglistColumnPrefix);
+			mailinglistRowMapper = new MailinglistRowMapper(mailinglistColumnPrefix);
 		}
 
 		@Override

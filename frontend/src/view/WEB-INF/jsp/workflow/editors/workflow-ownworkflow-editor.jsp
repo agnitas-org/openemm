@@ -46,7 +46,7 @@
                     </a>
 
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="ownworkflow-editor-save">
-                        <bean:message key="button.Save"/>
+                        <bean:message key="button.Apply"/>
                     </a>
                 </div>
             </div>

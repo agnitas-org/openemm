@@ -94,3 +94,7 @@ Drops come in a solid or shell form. The default is solid - use `.drop-shell` to
 .drop-alert {
   color: $c-state-alert;
 }
+
+.drop-inactive {
+  color: $c-campaign-inactive;
+}

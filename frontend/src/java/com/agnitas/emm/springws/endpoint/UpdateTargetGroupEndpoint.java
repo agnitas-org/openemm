@@ -13,7 +13,7 @@ package com.agnitas.emm.springws.endpoint;
 import javax.annotation.Resource;
 
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
@@ -23,7 +23,6 @@ import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
 import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.UpdateTargetGroupRequest;
 
-@SuppressWarnings("deprecation")
 public class UpdateTargetGroupEndpoint extends AbstractMarshallingPayloadEndpoint {
 
     private ObjectFactory objectFactory;

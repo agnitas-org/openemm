@@ -39,8 +39,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
@@ -74,6 +74,8 @@ public abstract class BaseDaoImpl {
 
 	private static Integer MYSQL_MAXPACKETSIZE = null;
 	
+	protected static final String DISABLED_MAILINGLIST_QUERY = " (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ";
+	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
@@ -95,6 +97,12 @@ public abstract class BaseDaoImpl {
 	private JdbcTemplate jdbcTemplate = null;
 	
 	protected JavaMailService javaMailService;
+	
+	/**
+	 * Cache the existence state of table 'disabled_mailinglist_tbl'
+	 */
+	private Boolean isDisabledMailingListsSupported;
+
 	
 	/**
 	 * Dependency injection method
@@ -452,6 +460,18 @@ public abstract class BaseDaoImpl {
 	
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
+	 *
+	 * @param logger
+	 * @param statement
+	 * @param parameter
+	 * @return single db entry as int value or 0 in case of nothing was found
+	 */
+	protected long selectLong(Logger logger, String statement, Object... parameter) {
+		return selectLongWithDefaultValue(logger, statement, 0l, parameter);
+	}
+	
+	/**
+	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * The given default value is returned, if the statement return an EmptyResultDataAccessException,
 	 * which indicates that the selected value is missing and no rows are returned by DB.
 	 * All other Exceptions are not touched and will be thrown in the usual way.
@@ -467,6 +487,39 @@ public abstract class BaseDaoImpl {
 			validateStatement(statement);
 			logSqlStatement(logger, statement, parameter);
 			Integer value = getJdbcTemplate().queryForObject(statement, parameter, Integer.class);
+			
+			return value != null ? value : defaultValue;
+		} catch (EmptyResultDataAccessException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Empty result, using default value: " + defaultValue);
+			}
+			return defaultValue;
+		} catch (DataAccessException e) {
+			logSqlError(e, logger, statement, parameter);
+			throw e;
+		} catch (RuntimeException e) {
+			logSqlError(e, logger, statement, parameter);
+			throw e;
+		}
+	}
+	
+	/**
+	 * Logs the statement and parameter in debug-level, executes select and logs error.
+	 * The given default value is returned, if the statement return an EmptyResultDataAccessException,
+	 * which indicates that the selected value is missing and no rows are returned by DB.
+	 * All other Exceptions are not touched and will be thrown in the usual way.
+	 *
+	 * @param logger
+	 * @param statement
+	 * @param defaultValue
+	 * @param parameter
+	 * @return single db entry as int value, default value if not found
+	 */
+	protected long selectLongWithDefaultValue(Logger logger, String statement, long defaultValue, Object... parameter) {
+		try {
+			validateStatement(statement);
+			logSqlStatement(logger, statement, parameter);
+			Long value = getJdbcTemplate().queryForObject(statement, parameter, Long.class);
 			
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
@@ -1026,14 +1079,6 @@ public abstract class BaseDaoImpl {
 		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, delimiter);
 	}
 
-	/**
-	 * @deprecated use COALESCE operator instead. It's the same for Oracle and MySQL/MariaDB.
-	 */
-	@Deprecated
-	protected String getIfNull() {
-		return isOracleDB() ? "NVL" : "IFNULL";
-	}
-
 	protected String getIsEmpty(String column) {
 		return getIsEmpty(column, true);
 	}
@@ -1140,4 +1185,12 @@ public abstract class BaseDaoImpl {
             return "OCTET_LENGTH(content)";
         }
     }
+    
+    protected boolean isDisabledMailingListsSupported() {
+		if (isDisabledMailingListsSupported == null) {
+			isDisabledMailingListsSupported = DbUtilities.checkIfTableExists(getDataSource(), "disabled_mailinglist_tbl");
+		}
+
+		return isDisabledMailingListsSupported;
+	}
 }

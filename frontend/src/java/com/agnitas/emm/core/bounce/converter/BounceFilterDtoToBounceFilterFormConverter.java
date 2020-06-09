@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.bounce.converter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +27,9 @@ public class BounceFilterDtoToBounceFilterFormConverter implements Converter<Bou
         filterForm.setShortName(bounceFilterDto.getShortName());
         filterForm.setDescription(bounceFilterDto.getDescription());
         filterForm.setFilterEmail(bounceFilterDto.getFilterEmail());
+        if(StringUtils.isNotBlank(bounceFilterDto.getFilterEmail())) {
+            filterForm.setOwnForwardEmailSelected(true);
+        }
         filterForm.setForwardEmail(bounceFilterDto.getForwardEmail());
         filterForm.setDoForward(bounceFilterDto.isDoForward());
         filterForm.setDoSubscribe(bounceFilterDto.isDoSubscribe());
@@ -33,10 +37,6 @@ public class BounceFilterDtoToBounceFilterFormConverter implements Converter<Bou
         filterForm.setUserFormId(bounceFilterDto.getUserFormId());
         filterForm.setDoAutoRespond(bounceFilterDto.isDoAutoRespond());
         filterForm.setArMailingId(bounceFilterDto.getArMailingId());
-        filterForm.setArSenderAddress(bounceFilterDto.getArSenderAddress());
-        filterForm.setArSubject(bounceFilterDto.getArSubject());
-        filterForm.setArText(bounceFilterDto.getArText());
-        filterForm.setArHtml(bounceFilterDto.getArHtml());
         filterForm.setSecurityToken(bounceFilterDto.getSecurityToken());
         return filterForm;
     }

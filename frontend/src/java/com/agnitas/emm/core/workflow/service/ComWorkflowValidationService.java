@@ -10,6 +10,23 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
+import static org.agnitas.target.TargetNode.OPERATOR_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_GT;
+import static org.agnitas.target.TargetNode.OPERATOR_GT_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_IS;
+import static org.agnitas.target.TargetNode.OPERATOR_LIKE;
+import static org.agnitas.target.TargetNode.OPERATOR_LT;
+import static org.agnitas.target.TargetNode.OPERATOR_LT_EQ;
+import static org.agnitas.target.TargetNode.OPERATOR_MOD;
+import static org.agnitas.target.TargetNode.OPERATOR_NEQ;
+import static org.agnitas.target.TargetNode.OPERATOR_NLIKE;
+import static org.agnitas.target.TargetNode.OPERATOR_NO;
+import static org.agnitas.target.TargetNode.OPERATOR_NOT_CONTAINS;
+import static org.agnitas.target.TargetNode.OPERATOR_NOT_STARTS_WITH;
+import static org.agnitas.target.TargetNode.OPERATOR_STARTS_WITH;
+import static org.agnitas.target.TargetNode.OPERATOR_YES;
+
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -28,9 +45,29 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetOperator;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.util.DbColumnType.SimpleDataType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -60,40 +97,6 @@ import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
 import com.agnitas.messages.Message;
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetNode;
-import org.agnitas.target.TargetOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import static org.agnitas.target.TargetNode.OPERATOR_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_GT;
-import static org.agnitas.target.TargetNode.OPERATOR_GT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_IS;
-import static org.agnitas.target.TargetNode.OPERATOR_LIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_LT;
-import static org.agnitas.target.TargetNode.OPERATOR_LT_EQ;
-import static org.agnitas.target.TargetNode.OPERATOR_MOD;
-import static org.agnitas.target.TargetNode.OPERATOR_NEQ;
-import static org.agnitas.target.TargetNode.OPERATOR_NLIKE;
-import static org.agnitas.target.TargetNode.OPERATOR_NO;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_CONTAINS;
-import static org.agnitas.target.TargetNode.OPERATOR_NOT_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_STARTS_WITH;
-import static org.agnitas.target.TargetNode.OPERATOR_YES;
 
 public class ComWorkflowValidationService {
     private static final Logger logger = Logger.getLogger(ComWorkflowValidationService.class);
@@ -335,7 +338,7 @@ public class ComWorkflowValidationService {
 
                         if (WorkflowReactionType.CHANGE_OF_PROFILE == start.getReaction() && mailingListId > 0) {
                             for (Workflow workflow : getActiveWorkflowsDrivenByProfileChange(companyId, mailingListId, start)) {
-                                String name = StringEscapeUtils.escapeHtml(workflow.getShortname());
+                                String name = StringEscapeUtils.escapeHtml4(workflow.getShortname());
                                 messages.add(Message.of("error.workflow.reaction.trigger.unique", name));
                             }
                         }
@@ -428,6 +431,9 @@ public class ComWorkflowValidationService {
                                     }
                                 }
                                 break;
+                                
+							default:
+								break;
                         }
                     }
                 }
@@ -490,7 +496,7 @@ public class ComWorkflowValidationService {
         if (entry.getStatus() == MaildropStatus.WORLD.getCode()) {
             result = true;
         } else if (entry.getStatus() == MaildropStatus.TEST.getCode() || entry.getStatus() == MaildropStatus.ADMIN.getCode()) {
-            if (entry.getGenStatus() != MaildropEntry.GEN_FINISHED) {
+            if (entry.getGenStatus() != MaildropGenerationStatus.FINISHED.getCode()) {
                 return true;
             }
         }
@@ -608,6 +614,9 @@ public class ComWorkflowValidationService {
                         return false;
                     }
                     break;
+                    
+				default:
+					break;
             }
         }
 
@@ -635,6 +644,9 @@ public class ComWorkflowValidationService {
                         return true;
                     }
                     break;
+                    
+				default:
+					break;
             }
         }
 
@@ -1301,6 +1313,9 @@ public class ComWorkflowValidationService {
                         }
                     }
                     break;
+                    
+				default:
+					break;
             }
         }
 

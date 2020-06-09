@@ -12,4 +12,6 @@ package com.agnitas.emm.core.wsmanager.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
-public class WebserviceUserListForm extends PaginationForm {}
+public class WebserviceUserListForm extends PaginationForm {
+	// nothing to do
+}

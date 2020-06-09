@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.autoimport.service;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public enum Filter {
 

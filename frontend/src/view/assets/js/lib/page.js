@@ -95,7 +95,6 @@
         var deferred = $.Deferred();
 
         renderMessages($resp);
-        $resp.appendTo($(document.body));
 
         Confirm.create($resp);
         deferred.resolve(Confirm.get($resp));

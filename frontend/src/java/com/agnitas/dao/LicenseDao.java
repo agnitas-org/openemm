@@ -10,14 +10,14 @@
 
 package com.agnitas.dao;
 
+import java.util.Date;
+
 public interface LicenseDao {
 	byte[] getLicenseData() throws Exception;
 	
-	void storeLicenseData(byte[] licenseData) throws Exception;
+	public void storeLicense(byte[] licenseData, byte[] licenseSignatureData, Date licenseDate) throws Exception;
 	
 	byte[] getLicenseSignatureData() throws Exception;
-	
-	void storeLicenseSignatureData(byte[] licenseSignatureData) throws Exception;
 
 	boolean hasLicenseData() throws Exception;
 }

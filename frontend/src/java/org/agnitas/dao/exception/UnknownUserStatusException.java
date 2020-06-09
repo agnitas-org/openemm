@@ -12,8 +12,9 @@
 package org.agnitas.dao.exception;
 
 public class UnknownUserStatusException extends Exception {
-    
-    public UnknownUserStatusException(int invalidUserStatusCode) {
+	private static final long serialVersionUID = -67595967170836859L;
+
+	public UnknownUserStatusException(int invalidUserStatusCode) {
         super("Invalid user binding status: " + invalidUserStatusCode);
     }
 }

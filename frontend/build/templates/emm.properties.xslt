@@ -32,8 +32,6 @@ system.mailgun=<xsl:value-of select="properties/mailgun/system"/>
 </xsl:if>
 # Path to ghostscript installation
 system.ghostscript=/usr/bin/gs
-# Path to salt file for login passwords
-system.salt.file=<xsl:value-of select="properties/security/salt-file"/>
 
 # Installation path of html to pdf converter application
 wkhtmltopdf=<xsl:value-of select="properties/htmlPdfConverter"/>
@@ -76,11 +74,6 @@ cdn.maxCacheTimeMillis=300000
 mailgun.maxCache=100
 # Maximum cachetime of eventmails delivered by mailgun
 mailgun.maxCacheTimeMillis=300000
-
-# Maximum cachesize of meassuered links in the rdir application
-rdir.urls.maxCache=<xsl:value-of select="properties/rdir/urls/maxCache"/>
-# Maximum cachetime of meassuered links in the rdir application
-rdir.urls.maxCacheTimeMillis=<xsl:value-of select="properties/rdir/urls/maxCacheTimeMillis"/>
 
 # Maximum cachesize of mailings in the rdir application
 rdir.mailingIds.maxCache=500
@@ -207,7 +200,7 @@ birt.plugin.directory=<xsl:value-of select="properties/birt-plugins"/>
 # Installpath of online help files
 manual_install_path=<xsl:value-of select="properties/manual_install_path"/>
 # Available languages of online help
-onlinehelp.languages=de,en,fr
+onlinehelp.languages=de,en
 
 #######################################################
 # Host authentication (Two-Way-Authentication)        #

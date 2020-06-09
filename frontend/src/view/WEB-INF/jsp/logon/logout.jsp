@@ -18,6 +18,8 @@
 
         <title><s:message code="logon.title"/></title>
 
+        <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
+
         <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body class="systempage">

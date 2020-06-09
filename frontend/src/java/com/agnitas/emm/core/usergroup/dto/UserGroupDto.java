@@ -25,8 +25,6 @@ public class UserGroupDto {
     
     private String description;
     
-    private boolean removable;
-    
     private Set<String> grantedPermissions;
     
     public int getUserGroupId() {

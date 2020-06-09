@@ -17,9 +17,9 @@ import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.departments.beans.Department;
 import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentIdException;
+import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentNameException;
 
 public final class DepartmentDaoImpl extends BaseDaoImpl implements DepartmentDao {
-
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(DepartmentDaoImpl.class);
 	
@@ -38,5 +38,26 @@ public final class DepartmentDaoImpl extends BaseDaoImpl implements DepartmentDa
 			return list.get(0);
 		}
 	}
+	
+	@Override
+	public final Department getDepartmentByShortname(final String shortname) throws UnknownDepartmentNameException {
+		final List<Department> list = select(logger, "SELECT * FROM department_tbl WHERE LOWER(slug) = LOWER(?)", new DepartmentRowMapper(), shortname);
+		
+		if (list.isEmpty()) {
+			return null;
+		} else {
+			return list.get(0);
+		}
+	}
 
+	@Override
+	public final Department createDepartment(String shortname, String description, boolean supervisorBindingToCompany0Allowed, boolean loginWithoutUserPermissionAllowed) throws Exception {
+		int newDepartmentID = selectInt(logger, "SELECT MAX(department_id) + 1 FROM department_tbl");
+		
+		if (1 == update(logger, "INSERT INTO department_tbl (department_id, slug, description, cid_0_allowed, no_permission_required) VALUES (?, ?, ?, ?, ?)", newDepartmentID, shortname, description, supervisorBindingToCompany0Allowed ? 1 : 0, loginWithoutUserPermissionAllowed ? 1 : 0)) {
+			return new Department(newDepartmentID, shortname, supervisorBindingToCompany0Allowed, loginWithoutUserPermissionAllowed);
+		} else {
+			throw new Exception("Cannot create department");
+		}
+	}
 }

@@ -10,21 +10,14 @@
 
 package com.agnitas.emm.core.serverstatus.forms;
 
-import org.apache.commons.lang.math.NumberUtils;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.apache.commons.lang3.math.NumberUtils;
+
 
 public class ServerConfigForm {
     
-    public interface Configuration {}
-    
     private int companyId;
-    
-    @NotEmpty(message = "error.name.is.empty", groups = Configuration.class)
     private String name;
-    
-    @NotEmpty(message = "error.mailing.parameter.value", groups = Configuration.class)
     private String value;
-    
 	private String description;
     
     public int getCompanyId() {

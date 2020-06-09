@@ -32,8 +32,6 @@ import com.agnitas.util.CryptographicUtilities;
 public class RSACryptUtil {
 
 	protected static final String ALGORITHM = "RSA";
-	private static String publicKey;
-	private static String privateKey;
 
 	/**
 	 * 
@@ -145,7 +143,7 @@ public class RSACryptUtil {
 	 * @param key
 	 *            The key (private or public)
 	 * @return A string representation of the key
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	public static String getKeyAsString(Key key) throws Exception {
 		return new String(Base64.encodeBase64(key.getEncoded()), "UTF-8");
@@ -186,7 +184,7 @@ public class RSACryptUtil {
 	 * 
 	 * @param bytes
 	 * @return Encoded string
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	private static String encodeBASE64(byte[] bytes) throws Exception {
 		return new String(Base64.encodeBase64(bytes), "UTF-8");
@@ -212,10 +210,7 @@ public class RSACryptUtil {
 	 * @throws IOException
 	 */
 	public static String getPublicKey(String filename) throws IOException {
-		if (publicKey == null) {
-			publicKey = readKeyFromFile(filename, true);
-		}
-		return publicKey;
+		return readKeyFromFile(filename, true);
 	}
 
 	/**
@@ -227,10 +222,7 @@ public class RSACryptUtil {
 	 */
 
 	public static String getPrivateKey(String filename) throws IOException {
-		if (privateKey == null) {
-			privateKey = readKeyFromFile(filename, false);
-		}
-		return privateKey;
+		return readKeyFromFile(filename, false);
 	}
 
 	/**

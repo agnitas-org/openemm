@@ -8,18 +8,28 @@ AGN.Lib.Controller.new('recipient-view', function() {
     Template = AGN.Lib.Template;
 
   var checker;
+  var isActiveSaveSubmenu = false;
 
   this.addDomInitializer('recipient-view', function($e) {
     var form = Form.get($e);
+    var self = this;
 
-    checker = new AddressChecker(this.config.urls.CHECK_ADDRESS, function(result) {
-      switch (result) {
+    checker = new AddressChecker(self.config.urls.CHECK_ADDRESS, function(result) {
+      var status = result.status;
+      switch (status) {
         case RESULT_OK:
           form.cleanFieldError('email');
           break;
 
         case RESULT_USED:
-          form.showFieldError('email', t('error.inUse'), true);
+          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace('{recipient-ID}', result.recipientID);
+          var messageErrorInUseUser =
+          '<div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">' +
+            t('error.inUse') +
+            '<a href="' + btnUrl + '" class="btn btn-regular btn-inverse">' + t('recipient.existing.btn') + '</a>' +
+          '</div>';
+
+          form.showFieldError('email', messageErrorInUseUser, true);
           break;
 
         case RESULT_BLACKLISTED:
@@ -34,11 +44,42 @@ AGN.Lib.Controller.new('recipient-view', function() {
   });
 
   this.addAction({
+    mouseleave: 'toggleSaveAndBack'
+  }, function() {
+    var $el = this.el;
+    var parent = $el.parent();
+    setTimeout(function() {
+      if (!isActiveSaveSubmenu && !$el.is(':hover')) {
+        parent.removeClass('open');
+      }
+    }, 400);
+  });
+
+  this.addAction({
+    mouseenter: 'toggleSaveAndBack'
+  }, function() {
+    this.el.parent().addClass('open');
+  });
+
+  this.addAction({
+    mouseenter: 'toggleSubmenuSaveAndBack'
+  }, function() {
+    isActiveSaveSubmenu = true;
+  });
+
+  this.addAction({
+    mouseleave: 'toggleSubmenuSaveAndBack'
+  }, function() {
+    isActiveSaveSubmenu = false;
+    this.el.closest(".dropdown").removeClass('open');
+  });
+
+  this.addAction({
     submission: 'recipient-save'
   }, function() {
     var form = Form.get(this.el);
     var address = $('#recipient-email').val();
-
+    this.event.preventDefault();
     if (checker && address && address.trim()) {
       checker.jqxhr(address.trim())
         .done(function(resp) {
@@ -100,7 +141,10 @@ AGN.Lib.Controller.new('recipient-view', function() {
             self.running = false;
           }).done(function(resp) {
             self.lastAddress = address;
-            self.lastResult = (resp.isBlacklisted === true ? RESULT_BLACKLISTED : (resp.inUse === true ? RESULT_USED : RESULT_OK));
+            self.lastResult = {
+              status: (resp.isBlacklisted === true ? RESULT_BLACKLISTED : (resp.inUse === true ? RESULT_USED : RESULT_OK)),
+              recipientID: resp.existingRecipientId || 0
+            };
             self.report();
           });
       } catch (e) {

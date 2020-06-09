@@ -17,11 +17,24 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
 
   function updateBadges() {
     var index = 1;
-
+    var nextDateBasedIndex = 10;
     $orderedArea.children('.l-mailing-entry')
       .each(function() {
-        $(this).find('.l-badge .badge')
-          .text(index++);
+        var $e = $(this);
+        var priority = 0;
+        if ($e.data('type') == DATE_BASED_TYPE) {
+          priority = nextDateBasedIndex;
+          index = nextDateBasedIndex;
+          nextDateBasedIndex += 10;
+        } else {
+          priority = index;
+          if (index > nextDateBasedIndex) {
+            nextDateBasedIndex = Math.round(index / 10) * 10;
+          }
+        }
+        index++;
+
+        $e.find('.l-badge .badge').text(priority);
       });
   }
 
@@ -111,7 +124,7 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
     });
   }
 
-  var getAllDateBasedMailingsWithoutPriority = function(excludeIds) {
+  var getAllDateBasedMailingsPriority = function(excludeIds) {
     var dateBasedMailings = [];
     var exclude = _.clone(excludeIds);
     _.keys(mailingsMap).forEach(function(date){
@@ -119,9 +132,8 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
           if (e.mailingType == DATE_BASED_TYPE && !exclude.includes(e.id)) {
             //reset priority for general list
             var m = _.clone(e);
-            m.priority = 0;
             exclude.push(m.id);
-            dateBasedMailings.push(m);
+            dateBasedMailings.push(e);
           }
         });
 
@@ -134,7 +146,7 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
     var entries = mailingsMap[day] || [];
     entries = entries.filter(function(e){return e.mailingType != DATE_BASED_TYPE || (e.mailingType == DATE_BASED_TYPE && e.priority > 0);});
     var excludeIds = entries.map(function (e) { return e.id;});
-    return _.union(entries, getAllDateBasedMailingsWithoutPriority(excludeIds), 'id');
+    return _.union(entries, getAllDateBasedMailingsPriority(excludeIds), 'id').sort(function(a, b){return a.priority > b.priority ? 1 : -1});
   }
 
   function select(day) {

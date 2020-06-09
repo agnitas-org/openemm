@@ -16,14 +16,13 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.Mailing;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.util.HttpUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
@@ -31,14 +30,30 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperation {
-	/** The logger. */
-	@SuppressWarnings("unused")
+	/**
+	 * The logger.
+	 */
 	private static final transient Logger logger = Logger.getLogger(ActionOperationActivateDoubleOptInImpl.class);
 
-	/** DAO accessing mailing data. */
-	private MailingDao mailingDao;
-	
+	/**
+	 * DAO for accessing mailing data.
+	 */
+	private ComMailingDao mailingDao;
+
+	/**
+	 * DAO for accessing subscription/binding data.
+	 */
 	private ComBindingEntryDao bindingEntryDao;
+
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
+	
+	@Required
+	public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
+		this.bindingEntryDao = bindingEntryDao;
+	}
 
 	@Override
 	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> requestParameters, final EmmActionOperationErrors errors) throws Exception {
@@ -76,11 +91,11 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 						return false;
 					} else {
 						int mailingID = (Integer) requestParameters.get("mailingID");
-						Mailing mailing = mailingDao.getMailing(mailingID, companyID);
-						if (mailing == null) {
+						int mailinglistID = mailingDao.getMailinglistId(mailingID, companyID);
+						if (mailinglistID <= 0) {
 							return false;
 						} else {
-							BindingEntry bindingEntry = bindingEntryDao.get(customerID, companyID, mailing.getMailinglistID(), activateDoiOperation.getMediaType().getMediaCode());
+							BindingEntry bindingEntry = bindingEntryDao.get(customerID, companyID, mailinglistID, activateDoiOperation.getMediaType().getMediaCode());
 							if (bindingEntry != null) {
 								return changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 							} else {
@@ -109,20 +124,5 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
             default:
                 return false;
         }
-	}
-
-	/**
-	 * Set DAO accessing mailing data.
-	 * 
-	 * @param mailingDao DAO accessing mailing data
-	 */
-	@Required
-	public void setMailingDao(MailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-	
-	@Required
-	public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
-		this.bindingEntryDao = bindingEntryDao;
 	}
 }

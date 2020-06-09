@@ -19,14 +19,15 @@ import java.util.Objects;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.util.DateUtilities;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
 public class ProfileFieldHashTagSupport {
-	
 	/** The logger. */
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ProfileFieldHashTagSupport.class);
 	
 	/** Factory creating new recipients. */
@@ -48,7 +49,7 @@ public class ProfileFieldHashTagSupport {
 		for(final String s : parts) {
 			final String value = evaluateSubExpression(context, s, dateFormat);
 			
-			if(org.apache.commons.lang.StringUtils.isNotEmpty(value)) {
+			if (StringUtils.isNotEmpty(value)) {
 				return value;
 			}
 		}

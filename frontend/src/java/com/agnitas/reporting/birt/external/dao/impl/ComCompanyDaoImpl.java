@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 
 public class ComCompanyDaoImpl extends BaseDaoImpl implements ComCompanyDao {
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComCompanyDaoImpl.class);
 
 	@Override

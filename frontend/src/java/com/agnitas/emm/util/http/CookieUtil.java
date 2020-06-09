@@ -13,7 +13,7 @@ package com.agnitas.emm.util.http;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility methods dealing with HTTP cookies.

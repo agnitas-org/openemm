@@ -22,7 +22,7 @@ import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -99,14 +99,14 @@ public class ComShowTableTag extends BodyTagSupport {
 	 */
 	@Override
 	public int doAfterBody() throws JspException {
-		BodyContent bodyContent = getBodyContent();
-		if (bodyContent != null) {
+		BodyContent currentBodyContent = getBodyContent();
+		if (currentBodyContent != null) {
 			try {
-				bodyContent.getEnclosingWriter().write(bodyContent.getString());
+				currentBodyContent.getEnclosingWriter().write(currentBodyContent.getString());
 			} catch (IOException e) {
 				logger.error("Error writing body content", e);
 			}
-			bodyContent.clearBody();
+			currentBodyContent.clearBody();
 		}
 
 		Map<String, Object> result = getNextRecord();
@@ -144,7 +144,7 @@ public class ComShowTableTag extends BodyTagSupport {
 				colDataStr = "";
 			}
 			if (encodeHtml && String.class.isInstance(entry.getValue())) {
-				pageContext.setAttribute("_" + id + "_" + entry.getKey().toLowerCase(), StringEscapeUtils.escapeHtml(colDataStr));
+				pageContext.setAttribute("_" + id + "_" + entry.getKey().toLowerCase(), StringEscapeUtils.escapeHtml4(colDataStr));
 			} else {
 				pageContext.setAttribute("_" + id + "_" + entry.getKey().toLowerCase(), colDataStr);
 			}
@@ -153,10 +153,10 @@ public class ComShowTableTag extends BodyTagSupport {
 
 	@Override
 	public int doEndTag() {
-		BodyContent bodyContent = getBodyContent();
+		BodyContent currentBodyContent = getBodyContent();
 
-		if (bodyContent != null) {
-			bodyContent.clearBody();
+		if (currentBodyContent != null) {
+			currentBodyContent.clearBody();
 		}
 
 		return EVAL_PAGE;

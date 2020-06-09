@@ -1,47 +1,50 @@
 .l-logo {
-  position: relative;
-  width: 240px;
-  height: 60px;
-  padding: 10px 45px 10px 10px;
+  flex-shrink: 0;
+  text-align: center;
 
   background-color: $c-white;
 
-  @media (min-width: $screen-md-min) {
-    position: fixed;
-    left: 0; top: 0;
-    z-index: 1001;
-  }
-
-
   .logo {
-    width: 200px;
+    height: 60px;
+    line-height: 60px;
+
+    .logo-image {
+      vertical-align: middle;
+      float: none;
+      margin: 0;
+      width: 30px;
+    }
   }
 
-  .headline, .version {
-    width: 145px;
-    overflow: hidden;
-    text-overflow: clip;
+  .headline,
+  .version {
+    display: none;
   }
 
   .menu-close {
-    display: block;
-    width: 45px; height: 60px;
+    display: none;
+  }
+}
 
-    position: absolute;
-    top: 0; right: 0;
+body.wide-sidebar .l-sidebar .l-logo {
+  height: 60px;
+  padding: 10px 45px 10px 10px;
+  text-align: left;
 
-    text-align: center;
-    color: $c-blue-27;
-    font-size: 16px;
-    line-height: 60px;
+  .logo {
+    line-height: normal;
 
-    &:hover {
-      color: lighten($c-blue-27, 10%);
-    }
-
-    @media (min-width:$screen-md-min) {
-      display: none;
+    .logo-image {
+      width: 40px;
+      float: left;
+      margin-right: 5px;
     }
   }
 
+  .headline,
+  .version {
+    display: block;
+    overflow: hidden;
+    text-overflow: clip;
+  }
 }

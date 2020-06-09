@@ -12,9 +12,12 @@ package com.agnitas.emm.core.birtstatistics.monthly.web;
 
 
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
+import com.agnitas.emm.core.birtstatistics.monthly.form.MonthlyStatisticForm;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.apache.log4j.Logger;
@@ -23,13 +26,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.RequestContextHolder;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
-import com.agnitas.emm.core.birtstatistics.monthly.form.MonthlyStatisticForm;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/statistics/monthly")
@@ -43,8 +39,6 @@ public class MonthlyStatisticController {
 	
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 	private static final String BIRT_STATISTIC_URL_CSV_REPORT = "birtStatisticUrlCsvReport";
-	
-	private static final int INITIAL_YEAR = 2000;
 	
 	private BirtStatisticsService birtStatisticsService;
 	private ConversionService conversionService;
@@ -74,7 +68,7 @@ public class MonthlyStatisticController {
 
 		String urlWithoutFormat = birtStatisticsService.getMonthlyStatisticsUrlWithoutFormat(admin, sessionId, monthlyStatisticDto, false);
 
-		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(getStartYear(admin)));
+		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
 		model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());
 		model.addAttribute(BIRT_STATISTIC_URL_WITHOUT_FORMAT, urlWithoutFormat);
 		model.addAttribute(BIRT_STATISTIC_URL_CSV_REPORT, urlWithoutFormat.replaceFirst(form.getReportName(), MonthlyStatisticForm.MONTHLY_REPORT_CSV_NAME));
@@ -83,18 +77,4 @@ public class MonthlyStatisticController {
 		
 		return "stats_birt_month_stat";
 	}
-	
-	private int getStartYear(ComAdmin admin) {
-        ComCompany company = (ComCompany) AgnUtils.getCompany(admin);
-        GregorianCalendar startDate = new GregorianCalendar();
-		assert (company != null);
-		Date creationDate = company.getCreationDate();
-
-        if (creationDate == null) {
-            creationDate = new Date();
-        }
-        startDate.setTime(creationDate);
-
-        return Math.max(startDate.get(Calendar.YEAR) - 1, INITIAL_YEAR);
-    }
 }

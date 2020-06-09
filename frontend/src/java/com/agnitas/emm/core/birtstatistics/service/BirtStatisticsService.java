@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.service;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +19,15 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
+import com.agnitas.emm.core.birtstatistics.optimization.dto.OptimizationStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.log4j.Logger;
 
 public interface BirtStatisticsService {
 	
@@ -83,5 +88,13 @@ public interface BirtStatisticsService {
 
     String changeFormat(String inputUrl, String newFormat);
     
-    String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
+    String getMailingComparisonStatisticUrl(ComAdmin admin, String sessionId, MailingComparisonDto mailingComparisonDto) throws Exception;
+	
+	File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto) throws Exception;
+	
+	File getBirtReportTmpFile(int birtReportId, String birtUrl, HttpClient httpClient, Logger logger);
+	
+	String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
+
+	String getOptimizationStatisticUrl(ComAdmin admin, OptimizationStatisticDto optimizationDto) throws Exception;
 }

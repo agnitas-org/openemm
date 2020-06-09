@@ -28,7 +28,7 @@ import org.agnitas.dao.MailingDao;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.NetworkUtil;
 import org.agnitas.util.XmlUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.nio.charset.StandardCharsets;
+
 import javax.annotation.Resource;
 
 import org.agnitas.emm.core.component.service.ComponentModel;
@@ -22,7 +24,6 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.springws.jaxb.ObjectFactory;
 import com.agnitas.emm.springws.jaxb.UpdateMailingContentRequest;
 
-@SuppressWarnings("deprecation")
 public class UpdateMailingContentEndpoint extends AbstractMarshallingPayloadEndpoint {
     @Resource
     private ComComponentService componentService;
@@ -53,7 +54,7 @@ public class UpdateMailingContentEndpoint extends AbstractMarshallingPayloadEndp
         model.setComponentName(request.getComponentName());
 
         String content = request.getNewContent();
-        model.setData(StringUtils.isEmpty(content) ? new byte[0] : content.getBytes());
+        model.setData(StringUtils.isEmpty(content) ? new byte[0] : content.getBytes(StandardCharsets.UTF_8));
 
         return model;
     }

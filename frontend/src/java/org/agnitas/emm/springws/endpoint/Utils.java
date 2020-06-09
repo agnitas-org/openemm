@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
@@ -29,8 +30,9 @@ import org.w3c.dom.Element;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.impl.ComAdminImpl;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.emm.springws.endpoint.BulkSizeLimitExeededExeption;
+import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 public class Utils {
 	
@@ -100,13 +102,23 @@ public class Utils {
 		return resultMap;
 	}
 	
-	public static void checkBulkSizeLimit(String endpointName, ComAdminDao comAdminDao, int size) throws BulkSizeLimitExeededExeption {
-		String username = Utils.getUserName();
-		Integer bulkSizeLimit = comAdminDao.getWsBulkSizeLimit(username);
-		if (bulkSizeLimit != null && bulkSizeLimit != 0 && bulkSizeLimit < size) {
-			throw new BulkSizeLimitExeededExeption(endpointName, 
-					username, bulkSizeLimit, size);
+	
+	public static void checkBulkSizeLimit(final String endpointName, final WebserviceUserService userService, final int size) throws BulkSizeLimitExeededExeption {
+		final String username = Utils.getUserName();
+		final OptionalInt bulkSizeLimitOptional = readBulkSizeLimitForWebserviceUser(userService, username);
+		
+		if (bulkSizeLimitOptional.isPresent() && bulkSizeLimitOptional.getAsInt() != 0 && bulkSizeLimitOptional.getAsInt() < size) {
+			throw new BulkSizeLimitExeededExeption(endpointName, username, bulkSizeLimitOptional.getAsInt(), size);
 		}
 	}
+	
+	private static final OptionalInt readBulkSizeLimitForWebserviceUser(final WebserviceUserService userService, final String username) {
+		try {
+			final WebserviceUserSettings settings = userService.findSettingsForWebserviceUser(username);
+			return settings.getBulkSizeLimit();
+		} catch(final Exception e) {
+			return OptionalInt.empty();
+		}
+	} 
 	
 }

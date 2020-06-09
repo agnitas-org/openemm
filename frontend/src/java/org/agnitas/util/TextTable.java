@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class TextTable {
@@ -62,19 +62,19 @@ public class TextTable {
 	public TextTable(List<Map<String, Object>> data, boolean oneLinePerDataRow) throws Exception {
 		this();
 		
-		SortedSet<String> columnNames = new TreeSet<>();
+		SortedSet<String> newColumnNames = new TreeSet<>();
 		for (Map<String, Object> lineOfData : data) {
 			for (String key : lineOfData.keySet()) {
-				columnNames.add(key);
+				newColumnNames.add(key);
 			}
 		}
-		for (String column : columnNames) {
+		for (String column : newColumnNames) {
 			addColumn(column);
 		}
 		
 		for (Map<String, Object> lineOfData : data) {
 			startNewLine();
-			for (String key : columnNames) {
+			for (String key : newColumnNames) {
 				Object dataValue = lineOfData.get(key);
 				String dataValueString = "";
 				if (dataValue != null) {
@@ -341,7 +341,7 @@ public class TextTable {
 	
 	public String toHtmlString(String tableTitle, int fontsizeInPt) {
 		StringBuilder htmlTableStringBuffer = new StringBuilder();
-		htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml(tableTitle) + "<br>\n");
+		htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml4(tableTitle) + "<br>\n");
 		if (fontsizeInPt > 0)
 			htmlTableStringBuffer.append("<STYLE TYPE=\"text/css\"><!--TD{font-family: Arial; font-size: " + fontsizeInPt + "pt;}---></STYLE>");
 		htmlTableStringBuffer.append("<table border='1' cellspacing='1' cellpadding='1'>\n");
@@ -357,9 +357,9 @@ public class TextTable {
 			else
 				htmlTableStringBuffer.append("<td bgcolor='" + convertXlsColor2HtmlColor(columnColors.get(columnIndex)) + "'>");
 			
-			htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml(columnNames.get(0).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
+			htmlTableStringBuffer.append(StringEscapeUtils.escapeHtml4(columnNames.get(0).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
 			if (columnNames.size() > 1)
-				htmlTableStringBuffer.append("<br/>" + StringEscapeUtils.escapeHtml(columnNames.get(1).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
+				htmlTableStringBuffer.append("<br/>" + StringEscapeUtils.escapeHtml4(columnNames.get(1).get(columnIndex)).replace(" ", "&nbsp;").replace("-", "&#8209;"));
 			htmlTableStringBuffer.append("</td>");
 		}
 		htmlTableStringBuffer.append("</tr>\n");
@@ -379,7 +379,7 @@ public class TextTable {
 				String cellContentString = content.get(lineIndex).get(columnIndex);
 				if (cellContentString != null && cellContentString.startsWith("'") && !cellContentString.endsWith("'"))
 					cellContentString = cellContentString.substring(1);
-				htmlTableStringBuffer.append("<td align='" + (columnRightAligned.get(columnIndex) ? "right" : "left") + "'>" + StringEscapeUtils.escapeHtml(cellContentString).replace(" ", "&nbsp;").replace("-", "&#8209;") + "</td>");
+				htmlTableStringBuffer.append("<td align='" + (columnRightAligned.get(columnIndex) ? "right" : "left") + "'>" + StringEscapeUtils.escapeHtml4(cellContentString).replace(" ", "&nbsp;").replace("-", "&#8209;") + "</td>");
 			}
 			htmlTableStringBuffer.append("</tr>\n");
 

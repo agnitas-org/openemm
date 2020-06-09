@@ -1,4 +1,4 @@
-(function(){
+(function($){
 
   var get,
       set,
@@ -61,7 +61,12 @@
 
     function getData() {
       var data = type == 'session' ? window.name : readCookie('localStorage');
-      return data ? JSON.parse(data) : {};
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        console.warn("Could not parse storage data: " + data + " cause: " + e);
+      }
+      return {};
     }
 
 
@@ -116,25 +121,33 @@
   }
 
   get = function(key) {
-    var result = currentStorage.getItem(key);
-
-    if (result) {
-      return JSON.parse(result);
-    } else {
-      return undefined;
+    try {
+      var result = currentStorage.getItem(key);
+      if (result) {
+        return JSON.parse(result);
+      }
+    } catch (e) {
+      console.warn("Could not get Storage key: " + key + " cause: " + e);
     }
-
-  }
+    return undefined;
+  };
 
   set = function(key, value) {
-    value = JSON.stringify(value);
-
-    currentStorage.setItem(key, value);
-  }
+    try {
+      value = JSON.stringify(value);
+      currentStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Could not set Storage key:value " + key + ":" + value + " cause: " + e)
+    }
+  };
 
   deleteByKey = function(key) {
-    currentStorage.removeItem(key);
-  }
+    try {
+      currentStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Could not remove Storage key:" + key + " cause: " + e);
+    }
+  };
 
   deleteByNamespace = function(namespace) {
     var namespaceLength = namespace.length;
@@ -144,7 +157,7 @@
         deleteByKey(key);
       }
     })
-  }
+  };
 
   getFromRealStorage = function(key) {
     var result;
@@ -158,12 +171,15 @@
       result = currentStorage.getItem(key, true);
     }
 
-    if (result) {
-      return JSON.parse(result);
-    } else {
-      return undefined;
+    try {
+      if (result) {
+        return JSON.parse(result);
+      }
+    } catch (e) {
+      console.warn("Could not parse (key:value) " + key + ': ' + result, e);
     }
-  }
+    return undefined;
+  };
 
   /**
    * Stores fields values in locale storage (supports select-one/select-multiple/text/textarea/radio/checkbox).
@@ -172,16 +188,17 @@
    */
   saveChosenFields = function (selector) {
     selector.each(function () {
-      if ($(this).is("[data-stored-field]") && $(this).is("input") || $(this).is("select")){
+      var $e = $(this);
+      if ($e.is("[data-stored-field]") && ($e.is("input") || $e.is("select"))){
         //Simple field
-        saveStoredField($(this));
+        saveStoredField($e);
       }else{
-        $(this).find("[data-stored-field]").each(function () {
+        $e.find("[data-stored-field]").each(function () {
           saveStoredField($(this));
         })
       }
     });
-  }
+  };
 
   /**
    * Restores fields values from locale storage by name.
@@ -189,13 +206,15 @@
   restoreChosenFields = function (selector) {
     var wasChanged = false;
     selector.each(function () {
-      if ($(this).is("[data-stored-field]") && ($(this).is("input") || $(this).is("select"))){
+      var $e = $(this);
+
+      if ($e.is("[data-stored-field]") && ($e.is("input") || $e.is("select"))){
         //Simple field
-        if (restoreStoredField($(this))){
+        if (restoreStoredField($e)){
           wasChanged = true;
         }
       }else{
-        $(this).find("[data-stored-field]").each(function () {
+        $e.find("[data-stored-field]").each(function () {
           if (restoreStoredField($(this))){
             wasChanged = true;
           }
@@ -207,12 +226,12 @@
   
   function saveStoredField(field){
     var scope = field.data("stored-field") | "";
-    var property = field.attr("name");
+    var property = field.prop("name");
 
     if (property != undefined){
       var value = undefined;
-      if (field.attr("type") == "checkbox") {
-        value = field.prop("checked");
+      if (field.prop("type") == "checkbox") {
+        value = field.is(":checked");
       } else if (field.is("input") || field.is("select")){
         value = field.val();
       }
@@ -225,10 +244,10 @@
   function restoreStoredField(field) {
     var scope = field.data("stored-field") | "";
     var wasChanged = false;
-    var property = field.attr("name");
+    var property = field.prop("name");
 
     if (property != undefined){
-      var type = field.attr("type") || field.prop("type");
+      var type = field.prop("type") || field.prop("type");
       var value = get(createStoredFieldKey(property, scope));
 
       if (value === undefined){
@@ -236,10 +255,10 @@
       }
 
       if(type == "radio"){
-        if (field.val() !== value && field.prop("checked") == true){
+        if (field.val() !== value && field.is(":checked")){
           field.prop("checked", false);
           return true;
-        } else if (field.val() == value && field.prop("checked") == false){
+        } else if (field.val() == value && !field.is(":checked")){
           field.prop("checked", true);
           return true;
         }
@@ -314,4 +333,4 @@
     restoreChosenFields: restoreChosenFields
   }
 
-})();
+})(jQuery);

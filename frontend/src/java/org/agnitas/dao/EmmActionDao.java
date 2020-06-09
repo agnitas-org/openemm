@@ -14,11 +14,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.action.operations.ActionOperationType;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
-
-import com.agnitas.emm.core.action.operations.ActionOperationType;
 
 /**
  * DAO accessing EMM actions.
@@ -83,6 +82,8 @@ public interface EmmActionDao {
     String getEmmActionName(int actionId, @VelocityCheck int companyId);
 
     List<Tuple<Integer, String>> getEmmActionNames(int companyID, List<Integer> actionIDs);
+    
+    Map<Integer, String> getEmmActionNamesNew(int companyId, List<Integer> actionIds);
 
     /**
      *  Loads all emm actions for certain company except actions of form type
@@ -161,4 +162,10 @@ public interface EmmActionDao {
     Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, @VelocityCheck int companyId);
 
     void setActiveness(Collection<Integer> actionIds, boolean active, @VelocityCheck int companyId);
+
+    /**
+     * Loads list of emm actions that contain send mailing operation for a concrete mailing id.
+     * @return List of emm actions
+     */
+    List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId);
 }

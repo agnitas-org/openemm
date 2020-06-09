@@ -12,7 +12,7 @@ package com.agnitas.web;
 
 import java.awt.Color;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public enum HtmlColor {
 	BLACK("Black", 0x000000),

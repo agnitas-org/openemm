@@ -26,6 +26,7 @@ AGN_FACEBOOK.LeadAds.connect_pages = function(userAccessToken, url, selector, ma
 	var payload = {
 			mailinglist_id : mailinglistId,
 			doi_mailing_id : doiMailingId,
+			user_access_token: userAccessToken,
 			pages : ids
 	};
 		
@@ -87,4 +88,13 @@ AGN_FACEBOOK.LeadAds.list_manageable_pages = function(userAccessToken, url, sele
 					}
 	});
 	
+}
+
+AGN_FACEBOOK.LeadAds.renew_page_access_tokens = function(userAccessToken, url, onSuccess) {
+	$.ajax({
+		url:	url,
+		type:	"POST",
+		data: 	{ user_access_token: userAccessToken },
+		success: function(result) { onSuccess(result); }
+	})
 }

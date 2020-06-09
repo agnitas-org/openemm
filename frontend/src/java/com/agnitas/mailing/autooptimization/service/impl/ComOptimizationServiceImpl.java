@@ -10,15 +10,6 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_EVAL_IN_PROGRESS;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_FINISHED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_TEST_SEND;
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +26,29 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
+import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
@@ -46,42 +60,28 @@ import org.agnitas.util.beans.impl.SelectOption;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.Predicate;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.DeliveryStat;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_EVAL_IN_PROGRESS;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_FINISHED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
+import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_TEST_SEND;
 
 public class ComOptimizationServiceImpl implements ComOptimizationService, ApplicationContextAware { // TODO: Remove dependency to ApplicationContextAware
 	
-	/** The logger. */ 
+	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(ComOptimizationServiceImpl.class);
 	
-	/** This flag indicates, that finishOptimizationsSingle() is already running. */ 
+	/** This flag indicates, that finishOptimizationsSingle() is already running. */
 	private volatile boolean optimizationInProgress;
 	
 	private ComOptimizationDao optimizationDao;
@@ -93,7 +93,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	private ComMailingDao mailingDao;
 
 	private ApplicationContext applicationContext; // when we will get rid off that ???
-	// you can't reuse anything from existing code without a huge refactoring and/or including side effects and/or work with that ugly stuff .. 
+	// you can't reuse anything from existing code without a huge refactoring and/or including side effects and/or work with that ugly stuff ..
 	
 	private ComOptimizationCommonService optimizationCommonService;
 	private ComOptimizationStatService optimizationStatService;
@@ -132,10 +132,10 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 		
 		List<Integer> testMailingIDs = optimization.getTestmailingIDs();
 		for(Integer mailingID:testMailingIDs) {
-			Mailing testmailing = mailingDao.getMailing(mailingID,optimization.getCompanyID());
+			Mailing testmailing = mailingDao.getMailing(mailingID, optimization.getCompanyID());
 			MediatypeEmail emailParam  = testmailing.getEmailParam();
 			emailParam.setDoublechecking(optimization.isDoubleCheckingActivated());
-			mailingDao.saveMailing(testmailing, false);			
+			mailingDao.saveMailing(testmailing, false);
 		}
 		
 		return optimizationDao.save(optimization);
@@ -152,7 +152,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 		ComOptimization comOptimization = optimizationDao.get(optimizationID, companyID);
 		 
 		// For the send date use the 1st testmailing and take the maildrop status entry where the status_field = 'W' or 'T'
-		int firstTestMailingID = comOptimization.getGroup1(); 
+		int firstTestMailingID = comOptimization.getGroup1();
 		if( firstTestMailingID != 0) {
 			Mailing mailing = mailingDao.getMailing(firstTestMailingID, companyID);
 			MaildropEntry entry = getEffectiveMaildrop(mailing.getMaildropStatus(), comOptimization.isTestRun());
@@ -169,8 +169,16 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 		
 		return comOptimization;
 	}
-
-	private MaildropEntry getEffectiveMaildrop(Set<MaildropEntry> entries, boolean isTestRun) {
+    
+    @Override
+    public int getOptimizationIdByFinalMailing(int finalMailingId, int companyId) {
+        if (finalMailingId > 0 && companyId > 0) {
+        	return optimizationDao.getOptimizationByFinalMailingId(finalMailingId, companyId);
+		}
+		return 0;
+    }
+    
+    private MaildropEntry getEffectiveMaildrop(Set<MaildropEntry> entries, boolean isTestRun) {
 		for (MaildropEntry e : entries) {
 			if (isTestRun) {
 				if (e.getStatus() == MaildropStatus.TEST.getCode()) {
@@ -220,12 +228,12 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 
 		if (testRun) {
 			drop.setStatus(MaildropStatus.TEST.getCode());
-			drop.setGenStatus(MaildropEntry.GEN_SCHEDULED);
+			drop.setGenStatus(MaildropGenerationStatus.SCHEDULED.getCode());
 		} else {
 			drop.setBlocksize(blockSize);
 			drop.setStepping(stepping);
 			drop.setStatus(MaildropStatus.WORLD.getCode());
-			drop.setGenStatus(MaildropEntry.GEN_NOW);
+			drop.setGenStatus(MaildropGenerationStatus.NOW.getCode());
 		}
 
 		mailing.getMaildropStatus().add(drop);
@@ -360,7 +368,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 				optimization.getGroup5() };
 		
 		int bestMailingID = optimization.getGroup1();
-		double bestRate = calculateFactor(stats.get(optimization.getGroup1()), optimization.getEvalType());		
+		double bestRate = calculateFactor(stats.get(optimization.getGroup1()), optimization.getEvalType());
 				
 		for(Integer mailingID : mailingIDs) {
 					
@@ -379,7 +387,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	public void finishOptimizationsSingle(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
 		
 		/*
-		 * This method implements a litte more complex logic to take control over execution. 
+		 * This method implements a litte more complex logic to take control over execution.
 		 * This method should terminate as soon as possible if another execution of this
 		 * method is detected. This will release the thread taken from the thread pool as
 		 * soon as possible and will not lock as longer as needed.
@@ -455,8 +463,9 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 		List<ComOptimization> dueOnThresholdOptimizations = getDueOnThresholdOptimizations(includedCompanyIds, excludedCompanyIds);
 
 		if( logger.isDebugEnabled()) {
-			for( ComOptimization optimization : dueOnThresholdOptimizations)
+			for( ComOptimization optimization : dueOnThresholdOptimizations) {
 				logger.debug( "  optimization (threshold): " + optimization.getId() + ", company ID: " + optimization.getCompanyID() + ", hashCode(this) = " + this.hashCode());
+			}
 		}
 
 		for( ComOptimization optimization : dueOnThresholdOptimizations ) {
@@ -528,17 +537,20 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 
 		if (subscribers >= 1.0) {
 			switch (evalType) {
-			case AO_CRITERIA_CLICKRATE:
-				result = (aEntry.getClicks()) / subscribers;
-				break;
-
-			case AO_CRITERIA_OPENRATE:
-				result = (aEntry.getOpened()) / subscribers;
-				break;
-
-            case AO_CRITERIA_REVENUE:
-				result = aEntry.getRevenue() / subscribers;
-				break;
+				case AO_CRITERIA_CLICKRATE:
+					result = (aEntry.getClicks()) / subscribers;
+					break;
+	
+				case AO_CRITERIA_OPENRATE:
+					result = (aEntry.getOpened()) / subscribers;
+					break;
+	
+	            case AO_CRITERIA_REVENUE:
+					result = aEntry.getRevenue() / subscribers;
+					break;
+				
+				default:
+					break;
 			}
 		}
 
@@ -743,7 +755,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 					return ! excludedMailingIDs.contains(Integer.parseInt(option.getValue()));
 				}
 				
-			});	
+			});
 		}
 
 		return mailingNames;
@@ -758,15 +770,15 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	@Override
 	public int getState(ComOptimization optimization) {
 		
-		// The state STATUS_FINISHED is the only state which is directly written to the database 
+		// The state STATUS_FINISHED is the only state which is directly written to the database
 		ComOptimization optimizationFromDB = optimizationDao.get(optimization.getId(), optimization.getCompanyID());
 				
 		if (optimizationFromDB.getStatus() == ComOptimization.STATUS_FINISHED) {
 			return ComOptimization.STATUS_FINISHED;
 		}
 		
-		// ... all other optimization states depend on the states of the test mailings 
-		// assume the first test mailing represents the state of the others   
+		// ... all other optimization states depend on the states of the test mailings
+		// assume the first test mailing represents the state of the others
 		
 		List<Integer> testMailingIDs = optimization.getTestmailingIDs();
 		
@@ -776,7 +788,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 			int testMailingStatus = mailingDao.getLastGenstatus(testMailingIDs.get(0), optimization.isTestRun() ? MaildropStatus.TEST.getCode() : MaildropStatus.WORLD.getCode());
 
 			//Method for selecting mailings throws no exception, but returns -1 as default, if no entry was found
-			if (testMailingStatus == -1) {	
+			if (testMailingStatus == -1) {
 				return STATUS_NOT_STARTED;
 			}
 			
@@ -804,6 +816,20 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	@Override
 	public int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID){
 		return optimizationDao.getFinalMailingID(companyID, workflowID, oneOfTheSplitMailingID);
+	}
+	
+	@Override
+	public int getFinalMailingId(@VelocityCheck int companyId, int workflowId) {
+		return optimizationDao.getFinalMailingId(companyId, workflowId);
+	}
+	
+	@Override
+	public AutoOptimizationLight getOptimizationLight(int companyId, int workflowId) {
+		AutoOptimizationLight autoOptimizationLight = optimizationDao.getAutoOptimizationLight(companyId, workflowId);
+		if (autoOptimizationLight == null) {
+			autoOptimizationLight = new AutoOptimizationLight();
+		}
+		return autoOptimizationLight;
 	}
 	
 	// make properties 'injectable'

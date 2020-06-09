@@ -9,9 +9,9 @@
 <emm:Permission token="forms.show"/>
 
 <c:set var="agnNavigationKey" 		value="formDelete" 				scope="request" />
-<c:set var="agnTitleKey" 			value="workflow.panel.forms" 					scope="request" />
-<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 					scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 			scope="request" />
-<c:set var="sidemenu_sub_active"	value="workflow.panel.forms" 					scope="request" />
+<c:set var="agnTitleKey" 			value="workflow.panel.forms" 	scope="request" />
+<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 	scope="request" />
+<c:set var="sidemenu_active" 		value="Forms"		 			scope="request" />
+<c:set var="sidemenu_sub_active"	value="workflow.panel.forms" 	scope="request" />
 <c:set var="agnHighlightKey" 		value="settings.form.delete"	scope="request" />
 <c:set var="agnHelpKey" 			value="formList" 				scope="request" />

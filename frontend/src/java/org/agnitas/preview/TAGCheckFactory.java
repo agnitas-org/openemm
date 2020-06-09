@@ -10,6 +10,9 @@
 
 package org.agnitas.preview;
 
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
 public interface TAGCheckFactory {
-	public TAGCheck createTAGCheck(long mailingID) throws Exception;
+	TAGCheck createTAGCheck(int mailingId) throws Exception;
+	TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId) throws Exception;
 }

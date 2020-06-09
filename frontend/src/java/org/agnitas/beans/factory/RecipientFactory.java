@@ -22,7 +22,7 @@ public interface RecipientFactory {
 	 * 
 	 * @return new recipient.
 	 */
-    public Recipient newRecipient();
+    Recipient newRecipient();
 	
 	/**
 	 * Creates a new recipient. Profile field structure is loaded, if company ID > 0.
@@ -31,5 +31,5 @@ public interface RecipientFactory {
 	 * 
 	 * @return new recipient
 	 */
-	public Recipient newRecipient(final int companyID);
+	Recipient newRecipient(final int companyID);
 }

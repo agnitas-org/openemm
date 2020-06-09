@@ -12,7 +12,7 @@ package com.agnitas.emm.core.calendar.form;
 
 import java.util.Objects;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CommentForm {
     private int commentId;

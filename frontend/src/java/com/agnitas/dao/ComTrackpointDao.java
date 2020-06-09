@@ -18,7 +18,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import com.agnitas.beans.ComTrackpointDef;
 
 public interface ComTrackpointDao {
-
     /**
      * Getter for property trackpoint by trackpoint id and company id.
      *
@@ -34,8 +33,7 @@ public interface ComTrackpointDao {
 
     List<ComTrackpointDef> getAllByCompanyID(@VelocityCheck int companyID);
 
-    PaginatedListImpl<ComTrackpointDef> getAll(@VelocityCheck int companyID, String sort, String direction,
-                                               int pageNumber, int pageSize);
+    PaginatedListImpl<ComTrackpointDef> getAll(@VelocityCheck int companyID, String sort, String direction, int pageNumber, int pageSize);
 
     boolean deleteTrackpointsByCompany(@VelocityCheck int companyId);
 }

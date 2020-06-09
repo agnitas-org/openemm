@@ -14,7 +14,7 @@ AGN.Lib.Controller.new('device-statistic', function() {
 
     _.each($('[data-action="switch-device-tab"]'), function(el){
       if ($(el).data('type') === active) {
-        el.click();
+        el.trigger("click");
       }
     })
   });

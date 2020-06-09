@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.userform.service.UserFormFilter;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
@@ -133,4 +134,7 @@ public interface UserFormDao {
 	 */
 	PaginatedListImpl<UserForm> getUserFormsWithActionIDs(String sortColumn, String sortDirection, int pageNumber,
 														  int pageSize, Boolean activenessFilter, @VelocityCheck int companyID);
+	
+	PaginatedListImpl<UserForm> getUserFormsWithActionIdsNew(String sortColumn, String sortDirection, int pageNumber,
+			int pageSize, UserFormFilter filter, @VelocityCheck int companyID);
 }

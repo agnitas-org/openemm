@@ -18,7 +18,7 @@ import org.agnitas.dao.DocMappingDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.web.ComManualServlet;
@@ -37,7 +37,7 @@ public class ComHelpUtil {
 		
 		StringBuilder manualUrl = new StringBuilder();
 		// Some new SpringMVC based sites use url-context, so we must use the EMM systemurl for direct site root-context in manual links.
-		manualUrl.append(ConfigService.getInstance().getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl));
+		manualUrl.append(ConfigService.getInstance().getValue(ConfigValue.SystemUrl));
 		manualUrl.append("/");
 		manualUrl.append(ComManualServlet.MANUAL_CONTEXT);
 		manualUrl.append("/");

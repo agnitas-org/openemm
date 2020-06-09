@@ -1,4 +1,4 @@
-(function() {
+(function($) {
   var CampaignManagerSelection = {
 
     selected: [],
@@ -77,4 +77,4 @@
   };
 
   AGN.Lib.WM.CampaignManagerSelection = CampaignManagerSelection;
-})();
+})(jQuery);

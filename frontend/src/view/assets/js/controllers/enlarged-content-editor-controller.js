@@ -60,7 +60,7 @@ AGN.Lib.Controller.new("enlarged-content-editor-controller", function () {
 
     var tabLink = $('[data-toggle-tab$="' + editorType + '"]');
     if (tabLink) {
-      tabLink.click();
+      tabLink.trigger("click");
     }
   };
 });

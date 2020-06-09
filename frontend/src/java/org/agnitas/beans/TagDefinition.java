@@ -16,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.util.AgnTagUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class TagDefinition {
 	public static Pattern COMPLEX_PARAMETER_PATTERN = Pattern.compile("\\{[A-Za-z0-9_]+\\}");

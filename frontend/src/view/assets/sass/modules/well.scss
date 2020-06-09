@@ -10,6 +10,10 @@
   border-radius: 2px;
 }
 
+.well.no-border{
+  border-width: 0px;
+}
+
 // contextual variants
 @each $conf in $states {
   $state: nth($conf, 1);

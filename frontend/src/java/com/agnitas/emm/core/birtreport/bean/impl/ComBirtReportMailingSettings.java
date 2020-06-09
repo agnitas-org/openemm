@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.util.EmmCalendar;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -33,8 +33,8 @@ import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class ComBirtReportMailingSettings extends ComBirtReportSettings {
-
-    private static final transient Logger logger = Logger.getLogger(ComBirtReportMailingSettings.class);
+    @SuppressWarnings("unused")
+	private static final transient Logger logger = Logger.getLogger(ComBirtReportMailingSettings.class);
 
     public static final String ACTION_MAILING_ID_KEY = "actionMailingId";
     public static final String MAILINGS_TO_SEND_KEY = "mailingsToSend";

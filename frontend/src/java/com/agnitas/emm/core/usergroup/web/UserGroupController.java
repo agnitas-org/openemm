@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
@@ -38,18 +37,17 @@ import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/administration/usergroup")
@@ -144,21 +142,25 @@ public class UserGroupController {
     }
 
     @PostMapping("/save.action")
-    public String save(ComAdmin admin, @Valid UserGroupForm form, BindingResult result, RedirectAttributes model, Popups popups) throws Exception {
+    public String save(ComAdmin admin, UserGroupForm form, Popups popups) throws Exception {
         int userGroupId = form.getId();
         boolean isNew = userGroupId == NEW_USER_GROUP_ID;
 
-        if(!isValid(admin, form, result, popups)) {
-            model.addFlashAttribute("userGroupForm", form);
-            return "redirect:/administration/usergroup/list.action";
+        if(!isValid(admin, form, popups)) {
+            return "messages";
         }
-
-        if(isNew || form.getCompanyId() == admin.getCompanyID() || admin.getAdminID() == ROOT_ADMIN_ID) {
+        
+        boolean isAvailableToCreateOrUpdate = isNew ||
+                form.getCompanyId() == admin.getCompanyID() ||
+                admin.getAdminID() == ROOT_ADMIN_ID;
+        
+        if (isAvailableToCreateOrUpdate) {
             UserGroupDto oldUserGroup = userGroupService.getUserGroup(admin, userGroupId);
 
             int savedUsergroupId = userGroupService.saveUserGroup(admin, conversionService.convert(form, UserGroupDto.class));
-            if (savedUsergroupId >= 0) {
+            if (savedUsergroupId > 0) {
                 form.setId(savedUsergroupId);
+                
                 popups.success("default.changes_saved");
                 userActivityLogService.writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "user group", getDescription(form), logger);
 
@@ -170,8 +172,9 @@ public class UserGroupController {
                 List<String> addedPermissions = ListUtils.removeAll(savedPermissions, oldPermissions);
 
                 writeUserGroupPermissionChangesLog(admin, form, addedPermissions, removedPermissions);
+                return "redirect:/administration/usergroup/list.action";
             } else {
-                logger.error("Cannot save userGroup with ID:" + userGroupId);
+                logger.error("Cannot save userGroup with ID: " + userGroupId);
                 popups.alert(isNew ? "error.usergroup.save": "error.group.change.permission");
             }
         }
@@ -217,18 +220,30 @@ public class UserGroupController {
         return "redirect:/administration/usergroup/list.action";
     }
 
-    private boolean isValid(ComAdmin admin, UserGroupForm form, BindingResult result, Popups popups) throws Exception {
+    private boolean isValid(ComAdmin admin, UserGroupForm form, Popups popups) {
         int userGroupId = form.getId();
 
         if(!admin.permissionAllowed(Permission.ROLE_CHANGE)) {
-            throw new Exception("Missing permission to change rights", null);
+            throw new PermissionDeniedDataAccessException("Missing permission to change rights", null);
         }
 
-        if(result.hasErrors()) {
+        String shortname = form.getShortname();
+        if (StringUtils.isBlank(shortname)) {
+            popups.field("shortname", "error.name.is.empty");
+            return false;
+        }
+    
+        if (StringUtils.length(shortname) < 3) {
+            popups.field("shortname", "error.name.too.short");
+            return false;
+        }
+    
+        if (StringUtils.length(shortname) > 100) {
+            popups.field("shortname", "error.username.tooLong");
             return false;
         }
 
-        if(!userGroupService.isShortnameUnique(form.getShortname(), userGroupId, form.getCompanyId())) {
+        if(!userGroupService.isShortnameUnique(shortname, userGroupId, form.getCompanyId())) {
             popups.field("shortname", "error.usergroup.duplicate");
             return false;
         }

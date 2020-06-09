@@ -13,7 +13,7 @@ package com.agnitas.emm.core.workflow.beans;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.IntEnum;
 
@@ -166,18 +166,19 @@ public class Workflow {
     }
 
     public enum WorkflowStatus implements IntEnum {
-        STATUS_NONE(0, true), // Just a special value, not a valid campaign's status
-        STATUS_OPEN(1, true),
-        STATUS_ACTIVE(2, false),
-        STATUS_INACTIVE(3, true),
-        STATUS_COMPLETE(4, false),
-        STATUS_TESTING(5, false),
-        STATUS_TESTED(6, true),
-        STATUS_FAILED(7, true),
-        STATUS_TESTING_FAILED(8, true);
-
+        STATUS_NONE(0, true, "none"), // Just a special value, not a valid campaign's status
+        STATUS_OPEN(1, true, "open"),
+        STATUS_ACTIVE(2, false, "active"),
+        STATUS_INACTIVE(3, true, "inactive"),
+        STATUS_COMPLETE(4, false, "completed"),
+        STATUS_TESTING(5, false, "testing"),
+        STATUS_TESTED(6, true, "tested"),
+        STATUS_FAILED(7, true, "failed"),
+        STATUS_TESTING_FAILED(8, true, "testing_failed");
+        
         private final int id;
         private final boolean changeable;
+        private final String name;
 
         public static WorkflowStatus fromId(int id) {
             return IntEnum.fromId(WorkflowStatus.class, id);
@@ -187,9 +188,10 @@ public class Workflow {
             return IntEnum.fromId(WorkflowStatus.class, id, safe);
         }
 
-        WorkflowStatus(int id, boolean changeable) {
+        WorkflowStatus(int id, boolean changeable, String name) {
             this.id = id;
             this.changeable = changeable;
+            this.name = name;
         }
 
         @Override
@@ -199,6 +201,10 @@ public class Workflow {
 
         public boolean isChangeable() {
             return changeable;
+        }
+        
+        public String getName() {
+            return name;
         }
     }
 }

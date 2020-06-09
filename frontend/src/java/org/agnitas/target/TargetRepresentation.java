@@ -16,8 +16,6 @@ import java.util.List;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.emm.core.target.eql.EqlFacade;
-
 @Deprecated
 public interface TargetRepresentation extends Serializable {
 	/**
@@ -42,18 +40,6 @@ public interface TargetRepresentation extends Serializable {
 	public String generateBsh();
 
 	/**
-	 * Generates sql statement.
-	 *
-     * Due to introduction of EQL, this method is deprecated. 
-	 * 
-     * @see EqlFacade#convertEqlToSql(String, int)
-     * @see EqlFacade#convertTargetRepresentationToEql(com.agnitas.beans.ComTarget)
-     * @see EqlFacade#convertTargetRepresentationToEql(TargetRepresentation, int)
-	 */
-	@Deprecated
-	//public String generateSQL();
-
-	/**
 	 * Getter for allNodes.
 	 * 
 	 * @return Value of allNodes.
@@ -73,7 +59,7 @@ public interface TargetRepresentation extends Serializable {
 	 * Rules with no errors are shown by {@code null} or empty collections.
 	 * 
 	 * @param validatorKit validator kit used for validation
-	 * @param companyId ID of company 
+	 * @param companyId ID of company
 	 * 
 	 * @return List of error data
 	 */
@@ -84,7 +70,7 @@ public interface TargetRepresentation extends Serializable {
 	 * 
 	 * @param representation instance of {@link TargetRepresentation} to compare with
 	 * 
-	 * @return true if node structures are identical 
+	 * @return true if node structures are identical
 	 */
 	public boolean hasSameNodeStructureAs(TargetRepresentation representation);
 }

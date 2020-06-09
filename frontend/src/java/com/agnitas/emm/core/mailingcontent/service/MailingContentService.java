@@ -12,6 +12,7 @@ package com.agnitas.emm.core.mailingcontent.service;
 
 import java.util.List;
 
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -23,5 +24,7 @@ public interface MailingContentService {
 
     Mailing getMailing(@VelocityCheck int companyId, int mailingId);
 
-    List<UserAction> updateDynContent(Mailing mailing, DynTagDto dynTagDto, ComAdmin admin) throws Exception;
+    ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, ComAdmin admin) throws Exception;
+
+    DynTagDto getDynTag(@VelocityCheck int companyId, int dynNameId);
 }

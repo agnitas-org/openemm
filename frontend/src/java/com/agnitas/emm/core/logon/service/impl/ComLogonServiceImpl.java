@@ -18,34 +18,28 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import org.agnitas.beans.Company;
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComAdminPreferencesDao;
-import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.dao.PasswordResetDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -83,15 +77,9 @@ public class ComLogonServiceImpl implements ComLogonService {
 	
 	private ConfigService configService;
 
-	/** DAO for accessing EMM user data. */
-	private ComAdminDao adminDao;
-
 	private ComAdminPreferencesDao adminPreferencesDao;
 
 	private ComEmmLayoutBaseDao emmLayoutBaseDao;
-	
-	/** DAO for accessing company data. */
-	private ComCompanyDao companyDao;
 	
 	private AdminService adminService;
 
@@ -105,8 +93,6 @@ public class ComLogonServiceImpl implements ComLogonService {
 	private LoginTrackService loginTrackService;
 
 	private JavaMailService javaMailService;
-
-	private Set<String> supportedHtmlLanguages;
 
 	// ----------------------------------------------------------- Business code
 	
@@ -131,10 +117,10 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * @throws LogonServiceException on errors during login (invalid username/password, ...)
 	 */
 	private ComAdmin doRegularLogin( String username, String password, String hostIpAddress) throws LogonServiceException {
-		ComAdmin admin = adminDao.getAdminByLogin( username, password);
+		final Optional<ComAdmin> adminOptional = adminService.findAdminByCredentials(username, password);
 		
 		// Check, if we got an Admin (combination of username and password is valid)
-		if (admin == null) {
+		if (!adminOptional.isPresent()) {
 			if (logger.isInfoEnabled()) {
 				logger.info("Login for user " + username + " failed - invalid combination of username and password");
 			}
@@ -143,15 +129,16 @@ public class ComLogonServiceImpl implements ComLogonService {
 			throw new LogonFailedException(false);
 		}
 		
-		// Check, if IP is currently blocked
-		checkIPBlockState( admin.getCompanyID(), username, hostIpAddress);
+		final ComAdmin admin = adminOptional.get();
 		
+		// Check, if IP is currently blocked
+		checkIPBlockState(admin.getCompanyID(), username, hostIpAddress);
 			
 		if (logger.isInfoEnabled()) {
-			logger.info( "Login for user " + username + " successful");
+			logger.info("Login for user " + username + " successful");
 		}
 		
-		loginTrackService.trackLoginSuccessful( hostIpAddress, username);
+		loginTrackService.trackLoginSuccessful(hostIpAddress, username);
 
 		return admin;
 	}
@@ -166,8 +153,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * @throws LogonFailedException if IP is blocked
 	 */
 	private void checkIPBlockState( int companyID, String loginName, String hostIpAddress) throws LogonFailedException {
-		Company company = companyDao.getCompany( companyID);
-		if (loginTrackService.isIPLogonBlocked(hostIpAddress, company.getMaxLoginFails(), company.getLoginBlockTime())) {
+		if(loginTrackService.isIpAddressLocked(hostIpAddress, companyID)) {
 			if (logger.isInfoEnabled()) {
 				logger.info( "Login for user " + loginName + " failed - IP address blocked");
 			}
@@ -361,25 +347,28 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	@Override
 	public ServiceResult<ComAdmin> resetPassword(String username, String token, String password, String clientIp) {
-		ComAdmin admin;
-
-		try {
-			admin = adminDao.getAdmin(username);
-		} catch (AdminException e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+		
+		if(!adminOptional.isPresent()) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Unknown username '%s'", username));
+			}
+			
 			loginTrackService.trackLoginFailed(clientIp, username);
+			
 			return new ServiceResult<>(null, false, Message.of("error.passwordReset.auth"));
 		}
+		
+		final ComAdmin admin = adminOptional.get();
 
 		if (passwordResetDao.existsPasswordResetTokenHash(username, getTokenHash(token))) {
-			passwordResetDao.remove(admin.getAdminID());
-
 			SimpleServiceResult result = setPassword(admin, password);
 
 			if (result.isSuccess()) {
+				passwordResetDao.remove(admin.getAdminID());
 				return new ServiceResult<>(admin, true);
 			} else {
-				return new ServiceResult<>(null, false, result.getMessages());
+				return new ServiceResult<>(null, false, result.getSuccessMessages(), result.getWarningMessages(), result.getErrorMessages());
 			}
 		} else {
 			// If a password reset token is there increment errors count (to prevent brute force attack).
@@ -391,7 +380,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	private String getPasswordResetLink(String linkPattern, String username, String token) {
 		try {
-			String baseUrl = configService.getValue(AgnUtils.getHostName(), ConfigValue.SystemUrl);
+			String baseUrl = configService.getValue(ConfigValue.SystemUrl);
 			String link = linkPattern.replace("{token}", URLEncoder.encode(token, "UTF-8"))
 					.replace("{username}", URLEncoder.encode(username, "UTF-8"));
 
@@ -406,17 +395,23 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	private ComAdmin getAdmin(String username, String email) {
-		try {
-			ComAdmin admin = adminDao.getAdmin(username);
-
-			if (StringUtils.equalsIgnoreCase(admin.getEmail(), email)) {
-				return admin;
+		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+		
+		if(!adminOptional.isPresent()) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Unknown username '%s'", username));
 			}
-		} catch (AdminException e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+			
+			return null;
 		}
+		
+		final ComAdmin admin = adminOptional.get();
 
-		return null;
+		if (StringUtils.equalsIgnoreCase(admin.getEmail(), email)) {
+			return admin;
+		} else {
+			return null;
+		}
 	}
 
 	private String generatePasswordResetToken(ComAdmin admin, String clientIp) {
@@ -483,7 +478,9 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	private String getHelpLanguage(String preferredLanguage) {
-		if (supportedHtmlLanguages.contains(preferredLanguage)) {
+		List<String> availableLanguages = configService.getListValue(ConfigValue.OnlineHelpLanguages);
+
+		if (availableLanguages.contains(preferredLanguage.toLowerCase())) {
 			return preferredLanguage;
 		} else {
 			return DEFAULT_HELP_LANGUAGE;
@@ -495,16 +492,6 @@ public class ComLogonServiceImpl implements ComLogonService {
 		this.configService = configService;
 	}
 
-	/**
-	 * Set DAO for accessing admin data.
-	 *
-	 * @param dao DAO for accessing admin data
-	 */
-	@Required
-	public void setAdminDao( ComAdminDao dao) {
-		this.adminDao = dao;
-	}
-
 	@Required
 	public void setAdminPreferencesDao(ComAdminPreferencesDao dao) {
 		this.adminPreferencesDao = dao;
@@ -513,16 +500,6 @@ public class ComLogonServiceImpl implements ComLogonService {
 	@Required
 	public void setEmmLayoutBaseDao(ComEmmLayoutBaseDao emmLayoutBaseDao) {
 		this.emmLayoutBaseDao = emmLayoutBaseDao;
-	}
-
-	/**
-	 * Set DAO for accessing company data.
-	 *
-	 * @param dao DAo for accessing company data
-	 */
-	@Required
-	public void setCompanyDao( ComCompanyDao dao) {
-		this.companyDao = dao;
 	}
 
 	/**
@@ -563,14 +540,5 @@ public class ComLogonServiceImpl implements ComLogonService {
 	@Required
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
-	}
-
-	@Required
-	public void setSupportedHtmlLanguages(String[] supportedHtmlLanguages) {
-		this.supportedHtmlLanguages = Stream.of(supportedHtmlLanguages)
-				.map(StringUtils::trimToNull)
-				.filter(Objects::nonNull)
-				.map(String::toLowerCase)
-				.collect(Collectors.toSet());
 	}
 }

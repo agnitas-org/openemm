@@ -15,11 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
-import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
-import com.agnitas.emm.core.globalblacklist.beans.GlobalBlacklistDto;
-import com.agnitas.service.ExtendedConversionService;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -34,6 +29,12 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
+import com.agnitas.emm.core.globalblacklist.beans.GlobalBlacklistDto;
+import com.agnitas.service.ExtendedConversionService;
 
 public class BlacklistServiceImpl implements BlacklistService {
 
@@ -56,7 +57,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 			throw new BlacklistAlreadyExistException();
 		}
 		
-		boolean result = blacklistDao.insert(model.getCompanyId(), model.getEmail());
+		boolean result = blacklistDao.insert(model.getCompanyId(), model.getEmail(), model.getReason());
 		
 		if( result) {
 			try {
@@ -130,14 +131,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 
 	@Override
 	public boolean isAlreadyExist(@VelocityCheck int companyId, String email) {
-
 		return blacklistDao.exist(companyId, email);
 	}
 
 	@Override
-	public boolean add(@VelocityCheck int companyId, int adminId, String email) {
-
-		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email);
+	public boolean add(@VelocityCheck int companyId, int adminId, String email, String reason) throws Exception {
+		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
 		if (isSuccessfullyInserted) {
 			String remark = "Blacklisted by " + adminId;
 			recipientDao.updateStatusByEmailPattern(companyId, email, UserStatus.Blacklisted.getStatusCode(), remark);
@@ -149,6 +148,11 @@ public class BlacklistServiceImpl implements BlacklistService {
 	@Override
 	public void add(GlobalBlacklistDto globalBlacklistDto) {
 		blacklistDao.insertGlobal(globalBlacklistDto.getEmail(), globalBlacklistDto.getReason());
+	}
+
+	@Override
+	public boolean update(@VelocityCheck int companyId, String email, String reason) {
+		return blacklistDao.update(companyId, email, reason);
 	}
 
 	@Override

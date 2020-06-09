@@ -37,7 +37,7 @@
   };
 
   DateFilter.prototype.afterGuiAttached = function() {
-    AGN.Initializers.PickADate($(this.eGui));
+    AGN.Lib.CoreInitializer.run('pickadate', $(this.eGui));
   }
 
   DateFilter.prototype.destroy = function() {

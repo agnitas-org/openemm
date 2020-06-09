@@ -36,17 +36,22 @@ public class TAGCheckImpl implements TAGCheck {
 	private Data			data;
 	private Map <String, Seen>	seen;
 
-	public TAGCheckImpl (long mailingID) throws Exception {
-		data = new Data ("tagcheck", "preview:" + mailingID, "silent");
-		
+	public TAGCheckImpl (int mailingId) throws Exception {
+		data = new Data("tagcheck", "preview:" + mailingId, "silent");
+
 		BlockCollection	bc = new BlockCollection ();
 		data.setBlocks (bc);
 		bc.setupBlockCollection (data, null);
 		seen = new HashMap<>();
 	}
 
-	public TAGCheckImpl () throws Exception {
-		this (0);
+	public TAGCheckImpl (int companyId, int mailinglistId) throws Exception {
+		data = new Data("tagcheck", "preview:0," + companyId + "," + mailinglistId, "silent");
+
+		BlockCollection	bc = new BlockCollection ();
+		data.setBlocks (bc);
+		bc.setupBlockCollection (data, null);
+		seen = new HashMap<>();
 	}
 
 	@Override

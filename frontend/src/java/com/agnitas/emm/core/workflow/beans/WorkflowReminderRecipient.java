@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.workflow.beans;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 // Must be kept immutable.
 public final class WorkflowReminderRecipient {

@@ -14,10 +14,14 @@ package com.agnitas.emm.core.mailing.web;
 import java.util.List;
 import java.util.Objects;
 
+import com.agnitas.web.dto.BooleanResponseDto;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -67,6 +71,16 @@ public final class MailingAjaxController {
 			json.put("error", "Internal server error");
 			
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(json.toString());
+		}
+	}
+
+	@PostMapping("{mailingId:\\d+}/lock.action")
+	public ResponseEntity<BooleanResponseDto> tryToLock(ComAdmin admin, @PathVariable int mailingId) {
+		try {
+			// Start or prolong locking unless other admin is holding it.
+			return ResponseEntity.ok(new BooleanResponseDto(mailingService.tryToLock(admin, mailingId)));
+		} catch (MailingNotExistException e) {
+			return ResponseEntity.notFound().build();
 		}
 	}
 }

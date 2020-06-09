@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingImpl;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -24,14 +23,14 @@ public class LightweightMailingRowMapper implements RowMapper<LightweightMailing
 
 	@Override
 	public LightweightMailing mapRow(ResultSet resultSet, int index) throws SQLException {
-		LightweightMailing mailing = new LightweightMailingImpl();
-
-		mailing.setCompanyID(resultSet.getInt("company_id"));
-		mailing.setMailingID(resultSet.getInt("mailing_id"));
-		mailing.setShortname(resultSet.getString("shortname") != null ? resultSet.getString("shortname") : "");
-		mailing.setMailingDescription(resultSet.getString("description") != null ? resultSet.getString("description") : "");
-
-		return mailing;
+		final int companyID = resultSet.getInt("company_id");
+		final int mailingID = resultSet.getInt("mailing_id");
+		final String shortname = resultSet.getString("shortname") != null ? resultSet.getString("shortname") : "";
+		final String description = resultSet.getString("description") != null ? resultSet.getString("description") : "";
+		final int mailingTypeCode = resultSet.getInt("mailing_type");
+		final String workStatus = resultSet.getString("work_status");
+		
+		return new LightweightMailing(companyID, mailingID, shortname, description, mailingTypeCode, workStatus);
 	}
 
 }

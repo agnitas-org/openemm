@@ -32,23 +32,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.sql.DataSource;
 
-import bsh.Interpreter;
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.LinkService;
-import com.agnitas.emm.core.LinkService.LinkScanResult;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
-import com.agnitas.service.AgnDynTagGroupResolverFactory;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.web.ShowImageServlet;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.backend.Mailgun;
 import org.agnitas.beans.DynamicTagContent;
@@ -64,11 +51,28 @@ import org.agnitas.util.SafeString;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.DateConverter;
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.LinkService;
+import com.agnitas.emm.core.LinkService.LinkScanResult;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.web.ShowImageServlet;
+
+import bsh.Interpreter;
 
 public class MailingImpl extends MailingBaseImpl implements Mailing {
 
@@ -100,8 +104,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	protected boolean isPrioritizationAllowed;
 	protected boolean archived;
     private List<EmmAction> possibleActions;
+	private boolean isFrequencyCounterDisabled;
 
-    private LinkService linkService;
+	private LinkService linkService;
 
 	/**
 	 * mailingType can hold the values 0-3 0: Normal mailing 1: Action-Based 2:
@@ -130,24 +135,27 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	@Override
 	public void addComponent(MailingComponent aComp) {
 
-		if (components == null)
+		if (components == null) {
 			components = new HashMap<>();
+		}
 
 		if (!components.containsKey(aComp.getComponentName())) {
 			components.put(aComp.getComponentName(), aComp);
 		}
 	}
 
-	private void addComponents( Set<MailingComponent> components) {
-		for( MailingComponent component : components)
+	private void addComponents( Set<MailingComponent> componentsToAdd) {
+		for( MailingComponent component : componentsToAdd) {
 			addComponent( component);
+		}
 	}
 
 	@Override
 	public void addAttachment(MailingComponent aComp) {
 
-		if (attachments == null)
+		if (attachments == null) {
 			attachments = new Hashtable<>();
+		}
 
 		attachments.put(aComp.getComponentName(), aComp);
 	}
@@ -209,7 +217,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return names;
 	}
 
-	public Vector<String> scanForComponents(ApplicationContext con, int companyID, ActionMessages errors) throws Exception {
+	public Vector<String> scanForComponents(ApplicationContext con, int companyIDToCheckFor, ActionMessages errors) throws Exception {
 		Vector<String> addedTags = new Vector<>();
 
 		Set<MailingComponent> componentsToAdd = new HashSet<>();
@@ -217,7 +225,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		for (Entry<String, MailingComponent> componentsEntry : components.entrySet()) {
 			MailingComponent tmpComp = componentsEntry.getValue();
 			if (tmpComp.getType() == MailingComponent.TYPE_TEMPLATE) {
-				addedTags.addAll(scanForComponents(tmpComp.getEmmBlock(), con, componentsToAdd, companyID, errors));
+				addedTags.addAll(scanForComponents(tmpComp.getEmmBlock(), con, componentsToAdd, companyIDToCheckFor, errors));
                 addedTags.addAll(TagSyntaxChecker.scanForAgnTagNameValues(tmpComp.getEmmBlock(), "agnIMAGE", "agnIMGLINK"));
             }
 		}
@@ -231,7 +239,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			for (Entry<Integer, DynamicTagContent> dynTagContentEntry : dyntag.getDynContent().entrySet()) {
 				DynamicTagContent dyncontent = dynTagContentEntry.getValue();
 				try {
-					addedTags.addAll(scanForComponents(dyncontent.getDynContent(), con, componentsToAdd, companyID, errors));
+					addedTags.addAll(scanForComponents(dyncontent.getDynContent(), con, componentsToAdd, companyIDToCheckFor, errors));
 					addedTags.addAll(TagSyntaxChecker.scanForAgnTagNameValues(dyncontent.getDynContent(), "agnIMAGE", "agnIMGLINK"));
 				} catch (LinkService.ParseLinkException e){
 					logger.error("Error in dyncontent " + name + ": " + e.getMessage(), e);
@@ -296,23 +304,22 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				}
 			}
 
-			LinkService linkService = getLinkService(context);
 			components.values().stream()
 					.filter((component) -> component.getType() == MailingComponent.TYPE_TEMPLATE)
-					.forEach((component) -> component.setEmmBlock(addNumbersToLinks(moreThanOne, component.getEmmBlock(), linkService), component.getMimeType()));
+					.forEach((component) -> component.setEmmBlock(addNumbersToLinks(moreThanOne, component.getEmmBlock(), getLinkService(context)), component.getMimeType()));
 
 			dynTags.values().stream()
 					.flatMap((tag) -> tag.getDynContent().values().stream())
-					.forEach((content) -> content.setDynContent(addNumbersToLinks(moreThanOne, content.getDynContent(), linkService)));
+					.forEach((content) -> content.setDynContent(addNumbersToLinks(moreThanOne, content.getDynContent(), getLinkService(context))));
 		}
 
 		return hasDuplicates;
 	}
 
-	protected String addNumbersToLinks(Map<String, Integer> linksCounters, String original, LinkService linkService){
+	protected String addNumbersToLinks(Map<String, Integer> linksCounters, String original, LinkService linkServiceToUse) {
 		StringBuilder changed = new StringBuilder(original);
 		final int[] accumulatedDiff = {0};
-		linkService.findAllLinks(this.companyID, original, (start, end) -> {
+		linkServiceToUse.findAllLinks(this.companyID, original, (start, end) -> {
 			String toReplace = original.substring(start, end);
 			Integer count = linksCounters.get(original.substring(start, end));
 			if(count != null){
@@ -335,15 +342,15 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		}
 	}
 
-	private Vector<String> scanForComponents(String text, ApplicationContext applicationContext, Set<MailingComponent> componentsToAdd, int companyID, ActionMessages errors) throws Exception {
+	private Vector<String> scanForComponents(String text, ApplicationContext applicationContext, Set<MailingComponent> componentsToAdd, int companyIDToCheckFor, ActionMessages errors) throws Exception {
 		Vector<String> foundComponentUrls = new Vector<>();
-		LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, companyID);
+		LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, companyIDToCheckFor);
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         for (String componentLinkString : linkScanResult.getImageLinks()) {
             executorService.execute(() -> {
                 MailingComponent foundComponent = (MailingComponent) applicationContext.getBean("MailingComponent");
-                foundComponent.setCompanyID(companyID);
+                foundComponent.setCompanyID(companyIDToCheckFor);
                 foundComponent.setMailingID(id);
                 foundComponent.setComponentName(componentLinkString);
                 foundComponent.setType(MailingComponent.TYPE_IMAGE);
@@ -380,12 +387,12 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception {
-		throw new NotImplementedException();
+		throw new NotImplementedException("Not implemented");
 	}
 
 	@Override
 	public Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception {
-		throw new NotImplementedException();
+		throw new NotImplementedException("Not implemented");
 	}
 
     /**
@@ -548,7 +555,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		String preview = output.toString();
 
-		if (inputType == Mailing.INPUT_TYPE_TEXT) {
+		if (inputType == MailingPreviewHelper.INPUT_TYPE_HTML) {
 			preview = SafeString.removeHTMLTags(preview);
 			if (getEmailParam().getLinefeed() > 0) {
 				preview = SafeString.cutLineLength(preview, getEmailParam().getLinefeed());
@@ -589,7 +596,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 * Scans a textblock for trackable links and replaces them with encoded
 	 * rdir-links.
 	 */
-	public String insertTrackableLinks(String aText1, int customerID, ApplicationContext con) {
+	public String insertTrackableLinks(String aText1, int customerID, ApplicationContext context) {
 		if (trackableLinks == null) {
 			return aText1;
 		}
@@ -633,9 +640,8 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 					}
 				}
 				if (isHref) {
-					LinkService linkService = (LinkService) con.getBean("LinkService");
 					TrackableLink trackableLink = trackableLinks.get(aLink);
-					sb.replace(start_link, start_link + aLink.length(), linkService.encodeTagStringLinkTracking(trackableLink.getCompanyID(), trackableLink.getMailingID(), trackableLink.getId(), customerID));
+					sb.replace(start_link, start_link + aLink.length(), getLinkService(context).encodeTagStringLinkTracking(trackableLink.getCompanyID(), trackableLink.getMailingID(), trackableLink.getId(), customerID));
 				}
 			}
 		}
@@ -645,6 +651,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	@Override
 	public MailingComponent getTemplate(String type) {
 		return components.get("agn" + type);
+	}
+	
+	@Override
+	public MailingComponent getTemplate(MediaTypes type) {
+		return components.get(type.getComponentNames()[0]);
 	}
 
 	@Override
@@ -871,28 +882,28 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public void init( @VelocityCheck int companyID, ApplicationContext con) {
+	public void init( @VelocityCheck int newCompanyID, ApplicationContext con) {
 		MailingComponent comp = null;
 		Mediatype type = null;
 
-		this.companyID = companyID;
+		this.companyID = newCompanyID;
 
 		comp = (MailingComponent) con.getBean("MailingComponent");
-		comp.setCompanyID(companyID);
+		comp.setCompanyID(newCompanyID);
 		comp.setComponentName("agnText");
 		comp.setType(MailingComponent.TYPE_TEMPLATE);
 		comp.setEmmBlock("[agnDYN name=\"Text-Version\"/]", "text/plain");
 		components.put("agnText", comp);
 
 		comp = (MailingComponent) con.getBean("MailingComponent");
-		comp.setCompanyID(companyID);
+		comp.setCompanyID(newCompanyID);
 		comp.setComponentName("agnHtml");
 		comp.setType(MailingComponent.TYPE_TEMPLATE);
 		comp.setEmmBlock("[agnDYN name=\"HTML-Version\"/]", "text/html");
 		components.put("agnHtml", comp);
 
 		type = (Mediatype) con.getBean("MediatypeEmail");
-		type.setCompanyID(companyID);
+		type.setCompanyID(newCompanyID);
 		mediatypes.put(MediaTypes.EMAIL.getMediaCode(), type);
 	}
 
@@ -1047,34 +1058,40 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception {
-		Vector<String> dynTags = new Vector<>();
-		Vector<String> components = new Vector<>();
+		Vector<String> componentsToCheck = new Vector<>();
 		Vector<String> links = new Vector<>();
 
 		// scan for Dyntags
 		// in template-components and Mediatype-Params
 		if (scanDynTags) {
-			dynTags.addAll(findDynTagsInTemplates(con));
+			Vector<String> dynNamesInUse = new Vector<>(findDynTagsInTemplates(con));
+
 			MediatypeEmail emailParam = getEmailParam();
 			if (emailParam != null) {
-				dynTags.addAll(findDynTagsInTemplates(emailParam.getSubject(), con));
-				dynTags.addAll(findDynTagsInTemplates(emailParam.getReplyAdr(), con));
-				dynTags.addAll(findDynTagsInTemplates(emailParam.getFromAdr(), con));
+				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getSubject(), con));
+				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getReplyAdr(), con));
+				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getFromAdr(), con));
 			}
-			List<String> excludedDynNames = cleanupDynTags(dynTags);
+
+			if (dynNamesInUse.size() > 0) {
+				dynNamesInUse.addAll(findDynTagsInDynContent(dynNamesInUse, con));
+			}
+
+			List<String> excludedDynNames = cleanupDynTags(dynNamesInUse);
 
 			if (dynNamesForDeletion != null) {
 				dynNamesForDeletion.addAll(excludedDynNames);
 			}
 		}
+
 		// scan for Components
 		// in template-components and dyncontent
 		try {
-			components.addAll(scanForComponents(con, companyID, errors));
+			componentsToCheck.addAll(scanForComponents(con, companyID, errors));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
-		cleanupMailingComponents(components);
+		cleanupMailingComponents(componentsToCheck);
 
 		// scan for Links
 		// in template-components and dyncontent
@@ -1085,6 +1102,37 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		// }
 
 		return true;
+	}
+
+	private Vector<String> findDynTagsInDynContent(Vector<String> names, ApplicationContext con) throws Exception {
+		Set<String> dynNamesInUse = new HashSet<>(names);
+		Set<String> namesToScan = new HashSet<>(dynNamesInUse);
+
+		while (namesToScan.size() > 0) {
+			Vector<String> found = new Vector<>();
+
+			for (String name : namesToScan) {
+				DynamicTag dynamicTag = dynTags.get(name);
+
+				if (dynamicTag != null) {
+					for (DynamicTagContent dynamicTagContent : dynamicTag.getDynContent().values()) {
+						found.addAll(findDynTagsInTemplates(dynamicTagContent.getDynContent(), con));
+					}
+				}
+			}
+
+			namesToScan.clear();
+
+			for (String name : found) {
+				if (dynNamesInUse.add(name)) {
+					namesToScan.add(name);
+				}
+			}
+		}
+
+		dynNamesInUse.removeAll(names);
+
+		return new Vector<>(dynNamesInUse);
 	}
 
 	@Override
@@ -1235,6 +1283,16 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     public void setPossibleActions(List<EmmAction> possibleActions) {
         this.possibleActions = possibleActions;
     }
+
+	@Override
+	public boolean isFrequencyCounterDisabled() {
+		return isFrequencyCounterDisabled;
+	}
+
+	@Override
+	public void setFrequencyCounterDisabled(boolean isDisabled) {
+		isFrequencyCounterDisabled = isDisabled;
+	}
 
     /**
      * For testing purposes only

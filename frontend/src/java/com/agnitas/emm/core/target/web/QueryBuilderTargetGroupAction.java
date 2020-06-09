@@ -10,29 +10,41 @@
 
 package com.agnitas.emm.core.target.web;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.TargetUtils;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.emm.legacy.EqlToTargetRepresentationConversionException;
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.TargetCopyService;
+import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
 import com.agnitas.emm.core.target.web.util.EditorContentSynchronizationException;
 import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
 import com.agnitas.emm.core.target.web.util.FormHelper;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
+import com.agnitas.service.GridServiceWrapper;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.service.WebStorage;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.target.impl.TargetRepresentationImpl;
 import org.agnitas.util.AgnUtils;
@@ -40,7 +52,8 @@ import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.DispatchBaseAction;
 import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -56,26 +69,30 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(QueryBuilderTargetGroupAction.class);
-	
+
 	/** Server class dealing with target groups. */
 	private ComTargetService targetService;
-	
+
+	private RecipientService recipientService;
+
 	/** Copy service for target groups. */
 	private TargetCopyService targetCopyService;
-	
+
 	/** Factory to create new ComTarget instances. */
 	private TargetFactory targetFactory;
-	
+
 	/** Presentation-layer utility to synchronize editor views. */
 	private EditorContentSynchronizer editorContentSynchronizer;
 
-	private ComMailingBaseService mailingService;
+	private GridServiceWrapper gridService;
 
 	private EqlFacade eqlFacade;
-	
+
     private MailinglistApprovalService mailinglistApprovalService;
 
-    protected BirtStatisticsService birtStatisticsService;
+	protected WebStorage webStorage;
+	
+	protected BirtStatisticsService birtStatisticsService;
 
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if dispatch URL parameter is missing.
@@ -94,7 +111,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	public final ActionForward unspecified(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
 		return show(mapping, form0, request, response);
 	}
-	
+
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if dispatch URL parameter indicates
 	 * showing a target group is requested. This method is also invoked by {@link #unspecified(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}.
@@ -111,19 +128,22 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	public final ActionForward show(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
-		
+		int companyId = admin.getCompanyID();
 		WorkflowUtils.updateForwardParameters(request);
 		final Integer forwardTargetItemId = (Integer) request.getSession().getAttribute(WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID);
 		if (forwardTargetItemId != null && forwardTargetItemId != 0) {
 			form.setTargetID(forwardTargetItemId);
 		}
 
+		boolean mailTrackingAvailable = AgnUtils.isMailTrackingAvailable(admin);
+		request.setAttribute("mailTrackingAvailable", mailTrackingAvailable);
+
 		if(form.getFormat() == null) {
 			form.setFormat(TargetgroupViewFormat.QUERY_BUILDER);
 		}
-		
+
 		try {
-			final ComTarget target = this.targetService.getTargetGroup(form.getTargetID(), admin.getCompanyID());
+			final ComTarget target = this.targetService.getTargetGroup(form.getTargetID(), companyId);
 			form.setTargetID(target.getId());
 			form.setShortname(target.getTargetName());
 			form.setDescription(target.getTargetDescription());
@@ -131,15 +151,24 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
 			form.setLocked(target.isLocked());
 			form.setSimpleStructure(target.isSimpleStructured());
+			form.setComplexityGrade(TargetUtils.getComplexityGrade(target.getComplexityIndex(), recipientService.getNumberOfRecipients(companyId)));
 
 			try {
 				// Make data for QueryBuilder available from EQL
-				this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
+				final ActionMessages actionMessages = new ActionMessages();
+				EqlAnalysisResult simpleEqlAnalysisResult = eqlFacade.analyseEql(form.getEql());
+				if (simpleEqlAnalysisResult.isMailTrackingRequired() && !AgnUtils.isMailTrackingAvailable(admin)) {
+					form.setFormat(TargetgroupViewFormat.EQL);
+					actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.target.mailtrackingRequired"));
+					saveMessages(request, actionMessages);
+				} else {
+					this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
+				}
 
 				if (!form.isSimpleStructure()) {
 					form.setFormat(TargetgroupViewFormat.EQL);
 				}
-			} catch (final EditorContentSynchronizationException e) {
+			} catch (final EditorContentSynchronizationException | EqlSyntaxErrorException e) {
 				form.setFormat(TargetgroupViewFormat.EQL);
 
 				return viewEQL(mapping, form0, request, response);
@@ -150,7 +179,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 					: viewEQL(mapping, form0, request, response);
 		} catch(final UnknownTargetGroupIdException e) {
 			logger.warn(String.format("Unknown target group ID %d", form.getTargetID()), e);
-			
+
 			return mapping.findForward("list");
 		}
 	}
@@ -201,14 +230,14 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		form.setEql("");
 		form.setFormat(TargetgroupViewFormat.QUERY_BUILDER);
 		form.setSimpleStructure(true);
-		
-		
+
+
 		// Make data for QueryBuilder available from EQL
 		this.editorContentSynchronizer.synchronizeEqlToQuerybuilder(admin, form);
 
 		return viewQB(mapping, form0, request, response);
 	}
-	
+
 	/**
 	 * Called from dispatcher in {@link #execute(ActionMapping, ActionForm, HttpServletRequest, HttpServletResponse)}, if the user requested switching the editor view to
 	 * the Querybuilder.
@@ -225,25 +254,57 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	public final ActionForward viewQB(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final ActionMessages errors = new ActionMessages();
 
 		final TargetgroupViewFormat currentViewFormat = TargetgroupViewFormat.fromCode(form.getFormat(), TargetgroupViewFormat.QUERY_BUILDER);
 
+		boolean mailTrackingAvailable = AgnUtils.isMailTrackingAvailable(admin);
+		request.setAttribute("mailTrackingAvailable", mailTrackingAvailable);
+
 		try {
-			form.setFormat(this.editorContentSynchronizer.synchronizeEditors(admin, form, TargetgroupViewFormat.QUERY_BUILDER));
+			editorContentSynchronizer.synchronizeEditors(admin, form, TargetgroupViewFormat.EQL);
+		} catch (Exception e) {
+			logger.error("Error occurred: " + e.getMessage(), e);
+		}
+
+		try {
+			EqlAnalysisResult analyseEql = eqlFacade.analyseEql(form.getEql());
+			final ActionMessages actionMessages = new ActionMessages();
+			if (analyseEql.isMailTrackingRequired() && !AgnUtils.isMailTrackingAvailable(admin)) {
+				form.setFormat(TargetgroupViewFormat.EQL);
+				actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.target.mailtrackingRequired"));
+				saveMessages(request, actionMessages);
+			} else {
+				form.setFormat(this.editorContentSynchronizer.synchronizeEditors(admin, form, TargetgroupViewFormat.QUERY_BUILDER));
+			}
+		} catch(final EqlSyntaxErrorException e) {
+			form.setFormat(currentViewFormat);
+			final List<EqlSyntaxError> syntaxErrors = e.getErrors();
+
+			syntaxErrors.forEach(syntaxError -> {
+				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
+				errors.add("eqlErrors", new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
+			});
+			
+			saveErrors(request, errors);
 		} catch(final EditorContentSynchronizationException e) {
 			form.setFormat(currentViewFormat);
-			
+
 			if(logger.isInfoEnabled()) {
 				logger.info("There was an error synchronizing editor content. Keeping current view format.", e);
 				logger.info("EQL: " + form.getEql());
 			}
-			
-			final ActionMessages errors = new ActionMessages();
+
 			errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("targetgroup.tooComplex"));
-			saveErrors(request, errors);
 		}
 
-		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
+		if (!errors.isEmpty()) {
+			saveErrors(request, errors);
+			return viewEQL(mapping, form0, request, response);
+		}
+		
+		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
+		form.setComplexityGrade(getComplexityGrade(form.getEql(), admin.getCompanyID()));
 
 		return mapping.findForward("view");
 	}
@@ -264,34 +325,39 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 	public final ActionForward viewEQL(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final ActionMessages errors = new ActionMessages();
 
 		final TargetgroupViewFormat currentViewFormat = TargetgroupViewFormat.fromCode(form.getFormat(), TargetgroupViewFormat.QUERY_BUILDER);
 		TargetgroupViewFormat targetFormat = TargetgroupViewFormat.EQL;
-		
+
 		try {
 			targetFormat = this.editorContentSynchronizer.synchronizeEditors(admin, form, TargetgroupViewFormat.EQL);
 		} catch(final EditorContentSynchronizationException e) {
 			targetFormat = currentViewFormat;
-			
+
 			logger.info("There was an error synchronizing editor content. Keeping current view format.", e);
-			
-			final ActionMessages errors = new ActionMessages();
+
 			errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("targetgroup.tooComplex"));
-			saveErrors(request, errors);
-			
+
 			logger.warn("EQL: " + form.getEql(), e);
 		}
 
 		form.setMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
 		form.setFormat(targetFormat);
-		
+		form.setComplexityGrade(getComplexityGrade(form.getEql(), admin.getCompanyID()));
+
+		if (!errors.isEmpty()) {
+			saveErrors(request, errors);
+			return mapping.findForward("messages");
+		}
+
 		if(targetFormat != TargetgroupViewFormat.EQL) {
 			return viewQB(mapping, form0, request, response);
 		} else {
 			return mapping.findForward("view");
 		}
 	}
-	
+
 	public final ActionForward save(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
 		final ComAdmin admin = AgnUtils.getAdmin(request);
@@ -329,18 +395,34 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 				if (logger.isInfoEnabled()) {
 					logger.info("EQL expression is not convertible to TargetRepresentation", e);
 				}
-				
+
 				newTarget.setTargetStructure(new TargetRepresentationImpl());
 				isTargetGroupValid = false;
 			}
 
 			try {
-				int newTargetId = targetService.saveTarget(admin, newTarget, oldTarget, errors, this::writeUserActivityLog);
+				final TargetSavingAndAnalysisResult savingResult = targetService.saveTargetWithAnalysis(admin, newTarget, oldTarget, errors, this::writeUserActivityLog);
+				final int newTargetId = savingResult.getTargetID();
 
 				if (newTargetId > 0 && errors.isEmpty()) {
-					ActionMessages messages = new ActionMessages();
-					messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
-					saveMessages(request, messages);
+					ActionMessages actionMessages = new ActionMessages();
+					actionMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+
+					TargetComplexityGrade complexityGrade = targetService.getTargetComplexityGrade(companyID, newTargetId);
+
+					if (complexityGrade == TargetComplexityGrade.RED) {
+						actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.target.group.performance.red"));
+					} else if (complexityGrade == TargetComplexityGrade.YELLOW) {
+						actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.target.group.performance.yellow"));
+					}
+
+					if(savingResult.getAnalysisResult().isPresent()) {
+						if(savingResult.getAnalysisResult().get().isMailTrackingRequired() && !AgnUtils.isMailTrackingAvailable(admin)) {
+							actionMessages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.target.mailtrackingRequired"));
+						}
+					}
+
+					saveMessages(request, actionMessages);
 					form.setTargetID(newTargetId);
 				} else {
 					saveErrors(request, errors);
@@ -368,7 +450,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
 				errors.add("eqlErrors", new ActionMessage("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()));
 			});
-			
+
 			saveErrors(request, errors);
 
 			reloadTargetGroupFromDB = false;
@@ -377,7 +459,7 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 
 			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.saving"));
 			saveErrors(request, errors);
-			
+
 			reloadTargetGroupFromDB = false;
 		}
 
@@ -388,6 +470,13 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		}
 	}
 
+	private TargetComplexityGrade getComplexityGrade(String eql, @VelocityCheck int companyId) {
+		int complexityIndex = targetService.calculateComplexityIndex(eql, companyId);
+		int recipientsCount = recipientService.getNumberOfRecipients(companyId);
+
+		return TargetUtils.getComplexityGrade(complexityIndex, recipientsCount);
+	}
+
 	private String getReportUrl(ComAdmin admin, HttpServletRequest request, QueryBuilderTargetGroupForm form) throws Exception {
 		try {
 			RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
@@ -395,12 +484,12 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 			statisticDto.setTargetId(form.getTargetID());
 			statisticDto.setMailinglistId(form.getMailinglistId());
 			statisticDto.setFormat("html");
-			
+
 			return birtStatisticsService.getRecipientStatusStatisticUrl(admin, request.getSession(false).getId(), statisticDto);
 		} catch (Exception e) {
 			logger.error("Error during generation statistic url " + e);
 		}
-		
+
 		return StringUtils.EMPTY;
 	}
 
@@ -428,36 +517,56 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		return show(mapping, form0, request, response);
 	}
 
-	public final ActionForward viewMailings(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+	public final ActionForward listDependents(final ActionMapping mapping, final ActionForm form0, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+		final int companyId = AgnUtils.getCompanyID(request);
 		final QueryBuilderTargetGroupForm form = (QueryBuilderTargetGroupForm) form0;
-		form.setUsedInMailings(mailingService.getMailingsDependentOnTargetGroup(AgnUtils.getCompanyID(request), form.getTargetID()));
+
+        webStorage.access(WebStorage.TARGET_DEPENDENTS_OVERVIEW, entry -> {
+        	if (form.getNumberOfRows() > 0) {
+        		entry.setRowsCount(form.getNumberOfRows());
+        		if (form.getFilterTypes() == null) {
+					entry.setFilterTypes(null);
+				} else {
+					entry.setFilterTypes(Arrays.asList(form.getFilterTypes()));
+				}
+			} else {
+        		form.setNumberOfRows(entry.getRowsCount());
+        		form.setFilterTypes(entry.getFilterTypes().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+			}
+		});
+
+		PaginatedListImpl<Dependent<TargetGroupDependentType>> dependents = targetService.getDependents(companyId, form.getTargetID(), form.getFilterTypesSet(), form.getPageNumber(), form.getNumberOfRows(), form.getSort(), form.getOrder());
 		form.setShortname(targetService.getTargetName(form.getTargetID(), AgnUtils.getCompanyID(request)));
-		return mapping.findForward("view_mailings");
+		form.setDependents(dependents);
+
+		List<Integer> mailingIds = dependents.getList().stream()
+				.filter(dependent -> TargetGroupDependentType.MAILING == dependent.getType() || TargetGroupDependentType.MAILING_CONTENT == dependent.getType())
+				.map(Dependent::getId)
+				.collect(Collectors.toList());
+
+		request.setAttribute("mailingGridTemplateMap", gridService.getGridTemplateIdsByMailingIds(companyId, mailingIds));
+
+		return mapping.findForward("dependents_list");
 	}
 
 	@Required
 	public final void setTargetService(final ComTargetService service) {
 		this.targetService = service;
 	}
-	
+
 	@Required
 	public final void setEditorContentSynchronizer(final EditorContentSynchronizer synchronizer) {
 		this.editorContentSynchronizer = synchronizer;
 	}
-	
+
 	@Required
 	public final void setTargetFactory(final TargetFactory factory) {
 		this.targetFactory = factory;
 	}
-	
+
 	@Required
 	public final void setTargetCopyService(final TargetCopyService service) {
 		this.targetCopyService = service;
-	}
-
-	@Required
-	public void setMailingService(ComMailingBaseService mailingService) {
-		this.mailingService = mailingService;
 	}
 
 	@Required
@@ -465,13 +574,28 @@ public final class QueryBuilderTargetGroupAction extends DispatchBaseAction {
 		this.eqlFacade = eqlFacade;
 	}
 
+	@Required
+	public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
+		this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
+	}
+
     @Required
-    public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
-    	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
+    public void setWebStorage(WebStorage webStorage) {
+        this.webStorage = webStorage;
     }
-    
+
     @Required
+	public void setGridService(GridServiceWrapper gridService) {
+		this.gridService = gridService;
+	}
+	
+	@Required
 	public void setBirtStatisticsService(BirtStatisticsService birtStatisticsService) {
 		this.birtStatisticsService = birtStatisticsService;
+	}
+
+	@Required
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = recipientService;
 	}
 }

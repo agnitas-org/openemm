@@ -10,19 +10,21 @@
 
 package com.agnitas.emm.core.birtreport.bean;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportComparisonSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportTopDomainsSettings;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 /**
  * Interface for BirtReports. Allows managing BirtReports with an easy interface.
  */
-public interface ComBirtReport extends Serializable {
+public interface ComBirtReport {
 
     int FORMAT_PDF_INDEX = 0;
     int FORMAT_CSV_INDEX = 1;
@@ -30,45 +32,15 @@ public interface ComBirtReport extends Serializable {
     String FORMAT_PDF = "pdf";
     String FORMAT_CSV = "csv";
 
-    int MONDAY = 0x01;
-    int TUESDAY = 0x02;
-    int WEDNESDAY = 0x04;
-    int THURSDAY = 0x08;
-    int FRIDAY = 0x10;
-    int SATURDAY = 0x20;
-    int SUNDAY = 0x40;
-
     int MAILINGS = 0;
     int MAILINGLIST = 1;
     int TARGETGROUP = 2;
 
-
     ComBirtReportComparisonSettings getReportComparisonSettings();
-    void setReportComparisonSettings(ComBirtReportComparisonSettings reportComparisonSettings);
-
     ComBirtReportMailingSettings getReportMailingSettings();
-    void setReportMailingSettings(ComBirtReportMailingSettings reportMailingSettings);
-
     ComBirtReportRecipientSettings getReportRecipientSettings();
-    void setReportRecipientSettings(ComBirtReportRecipientSettings reportRecipientSettings);
+    ComBirtReportTopDomainsSettings getReportTopDomainsSettings();
 
-    /**
-     * Check if the report should be sent on the given day.
-     * @param day Check whether the report should be sent on this day.
-     * @return true if report should be send on that day, false otherwise.
-     */
-    boolean isSend(int day);
-
-    /**
-     * Enable/Disable the report for the given day.
-     * @param day Set the value for this day.
-     * @param send Send the report on the given day if true,
-     *             otherwise don't send.
-     */
-    void setSend(int day, boolean send);
-    void parseSendDays(String input);
-
-    String buildSendDate();
     void calculateSendDate();
 
     int getId();
@@ -82,9 +54,6 @@ public interface ComBirtReport extends Serializable {
 
     String getDescription();
     void setDescription(String description);
-
-    String getSendEmail();
-    void setSendEmail(String sendEmail);
 
     String getEmailSubject();
     void setEmailSubject(String emailSubject);
@@ -103,24 +72,14 @@ public interface ComBirtReport extends Serializable {
 
     String getFormatName();
 
-    Date getSendDate();
-    void setSendDate(Date sendDate);
-
-    Date getSendTime();
-    void setSendTime(Date sendTime);
-
-    int getSendDays();
-    void setSendDays(int sendDays);
-
     List<ComBirtReportSettings> getSettings();
+    void setSettings(Map<ReportSettingsType, ComBirtReportSettings> settings);
 
     Date getActivationDate();
     void setActivationDate(Date activationDate);
 
     Date getEndDate();
     void setEndDate(Date endDate);
-
-    boolean isEnabled();
 
     void setActiveTab(int activeTab);
     int getActiveTab();
@@ -136,11 +95,20 @@ public interface ComBirtReport extends Serializable {
 
     Date getChangeDate();
     void setChangeDate(Date changeDate);
+    
+    void setSettingParameter(ReportSettingsType type, String name, Object value);
+    
+    ComBirtReportSettings getSetting(ReportSettingsType type);
 
-    /**
-     * @return Last time when this report was generated and delivered
-     */
-    Date getDeliveryDate();
-
-    void setDeliveryDate(Date deliveryDate);
+    void setEmailRecipientList(List<String> emailRecipientList);
+    List<String> getEmailRecipientList();
+    
+	void setIntervalpattern(String intervalpattern);
+	String getIntervalpattern();
+	
+	void setNextStart(Date nextStart);
+	Date getNextStart();
+	
+	void setLastresult(String lastresult);
+	String getLastresult();
 }

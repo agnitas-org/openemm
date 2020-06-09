@@ -88,4 +88,8 @@ public interface MailingComponent {
 	Date getEndDate();
 
 	void setEndDate(Date endDate);
+	
+	boolean isSourceComponent();
+	
+	boolean isMobileImage();
 }

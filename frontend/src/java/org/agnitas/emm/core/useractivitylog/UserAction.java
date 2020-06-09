@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.useractivitylog;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class UserAction {
     private final String action;

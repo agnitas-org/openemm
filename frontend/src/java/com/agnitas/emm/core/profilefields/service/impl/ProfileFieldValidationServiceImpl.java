@@ -23,8 +23,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.KeywordList;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 

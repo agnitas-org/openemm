@@ -24,7 +24,6 @@ import com.agnitas.emm.core.datasource.bean.DataSource;
 import com.agnitas.emm.core.datasource.form.DatasourceForm;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.DataSourceService;
-import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
@@ -35,16 +34,13 @@ public class DatasourceController {
     private static final Logger logger = Logger.getLogger(DatasourceController.class);
 
     private UserActivityLogService userActivityLogService;
-    private ExtendedConversionService conversionService;
     private DataSourceService dataSourceService;
     private WebStorage webStorage;
 
     public DatasourceController(UserActivityLogService userActivityLogService,
-                                ExtendedConversionService conversionService,
                                 DataSourceService dataSourceService,
                                 WebStorage webStorage) {
         this.userActivityLogService = userActivityLogService;
-        this.conversionService = conversionService;
         this.dataSourceService = dataSourceService;
         this.webStorage = webStorage;
     }

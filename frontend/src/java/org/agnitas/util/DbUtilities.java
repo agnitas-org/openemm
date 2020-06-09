@@ -53,7 +53,7 @@ import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.FloatValidator;
 import org.apache.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
@@ -252,7 +252,6 @@ public class DbUtilities {
 	/**
 	 *	Requests own dataSource connection and commits DB changes.
 	 */
-	@SuppressWarnings("resource")
 	@DaoUpdateReturnValueCheck
 	public static Map<Integer, Object[]> importDataInTable(DataSource dataSource, String tableName, String[] tableColumns, List<Object[]> dataSets, boolean commitOnFullSuccessOnly) throws Exception {
 		Connection connection = null;
@@ -356,18 +355,13 @@ public class DbUtilities {
 		} catch (Exception e){
 			throw e;
 		} finally {
-			try {
-				if (connection != null) {
-					connection.rollback();
-				}
-
-				DbUtilities.closeQuietly(resultSet);
-				DbUtilities.closeQuietly(preparedStatement);
-			} catch (Exception e) {
-				logger.error("Cannot close db resources: " + e.getMessage(), e);
-			} finally {
-	            DbUtilities.closeQuietly(connection);
+			if (connection != null) {
+				connection.rollback();
 			}
+
+			DbUtilities.closeQuietly(resultSet);
+			DbUtilities.closeQuietly(preparedStatement);
+			DbUtilities.closeQuietly(connection);
 		}
 	}
 
@@ -1069,7 +1063,7 @@ public class DbUtilities {
 					}
 
 					// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
-					String sql = "SELECT NVL(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? AND column_name = ?";
+					String sql = "SELECT COALESCE(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? AND column_name = ?";
 					try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 						preparedStatement.setString(1, tableName.toUpperCase());
 						preparedStatement.setString(2, columnName.toUpperCase());
@@ -1174,7 +1168,7 @@ public class DbUtilities {
 						}
 
 						// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
-						String sql = "SELECT column_name, NVL(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ?";
+						String sql = "SELECT column_name, COALESCE(substr(data_type, 1, instr(data_type, '(') - 1), data_type) as data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ?";
 						try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 							preparedStatement.setString(1, tableName.toUpperCase());
 
@@ -2473,5 +2467,188 @@ public class DbUtilities {
 				}
 			}
 		}
+	}
+	
+	public static boolean checkIfTableOrSynonymExists(DataSource dataSource, String tableOrSynonymName) {
+		if (dataSource == null) {
+			return false;
+		} else if (StringUtils.isBlank(tableOrSynonymName)) {
+			return false;
+		} else {
+			try (final Connection connection = dataSource.getConnection()) {
+				return checkIfTableOrSynonymExists(connection, tableOrSynonymName);
+			} catch (SQLException e) {
+				return false;
+			}
+		}
+	}
+
+	public static boolean checkIfTableOrSynonymExists(Connection connection, String tableOrSynonymName) {
+		if (connection == null) {
+			return false;
+		} else if (StringUtils.isBlank(tableOrSynonymName)) {
+			return false;
+		} else {
+			if (checkIfTableExists(connection, tableOrSynonymName)) {
+				return true;
+			} else {
+				if (checkDbVendorIsOracle(connection)) {
+					try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_synonyms WHERE synonym_name = ?")) {
+						preparedStatement.setString(1, tableOrSynonymName.toUpperCase());
+						try (ResultSet resultSet = preparedStatement.executeQuery()) {
+							resultSet.next();
+							return resultSet.getInt(1) > 0;
+						} catch (Exception e) {
+							return false;
+						}
+					} catch (Exception e) {
+						return false;
+					}
+				} else {
+					// There are no synonyms in mysql/mariadb
+					return false;
+				}
+			}
+		}
+	}
+
+	public static boolean checkIfConstraintExists(DataSource dataSource, String constraintName) {
+		if (dataSource == null) {
+			return false;
+		} else if (StringUtils.isBlank(constraintName)) {
+			return false;
+		} else {
+			try (final Connection connection = dataSource.getConnection()) {
+				return checkIfConstraintExists(connection, constraintName);
+			} catch (SQLException e) {
+				return false;
+			}
+		}
+	}
+
+	public static boolean checkIfConstraintExists(Connection connection, String constraintName) {
+		if (connection == null) {
+			return false;
+		} else if (StringUtils.isBlank(constraintName)) {
+			return false;
+		} else {
+			if (checkDbVendorIsOracle(connection)) {
+				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_constraints WHERE LOWER(constraint_name) = LOWER(?)")) {
+					preparedStatement.setString(1, constraintName);
+					try (ResultSet resultSet = preparedStatement.executeQuery()) {
+						resultSet.next();
+						return resultSet.getInt(1) > 0;
+					} catch (Exception e) {
+						return false;
+					}
+				} catch (Exception e) {
+					return false;
+				}
+			} else {
+				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE LOWER(constraint_name) = LOWER(?)")) {
+					preparedStatement.setString(1, constraintName);
+					try (ResultSet resultSet = preparedStatement.executeQuery()) {
+						resultSet.next();
+						return resultSet.getInt(1) > 0;
+					} catch (Exception e) {
+						return false;
+					}
+				} catch (Exception e) {
+					return false;
+				}
+			}
+		}
+	}
+
+	public static boolean dropForeignKeyIfExists(DataSource dataSource, String tableName, String foreignKeyName) {
+		if (dataSource == null) {
+			return false;
+		} else if (StringUtils.isBlank(tableName)) {
+			return false;
+		} else if (StringUtils.isBlank(foreignKeyName)) {
+			return false;
+		} else {
+			try (final Connection connection = dataSource.getConnection()) {
+				return dropForeignKeyIfExists(connection, tableName, foreignKeyName);
+			} catch (SQLException e) {
+				return false;
+			}
+		}
+	}
+
+	public static boolean dropForeignKeyIfExists(Connection connection, String tableName, String foreignKeyName) {
+		if (connection == null) {
+			return false;
+		} else if (StringUtils.isBlank(tableName)) {
+			return false;
+		} else if (StringUtils.isBlank(foreignKeyName)) {
+			return false;
+		} else {
+			if (checkDbVendorIsOracle(connection)) {
+				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM all_constraints WHERE LOWER(table_name) = LOWER(?) AND LOWER(constraint_name) = LOWER(?)")) {
+					preparedStatement.setString(1, tableName);
+					preparedStatement.setString(2, foreignKeyName);
+					try (ResultSet resultSet = preparedStatement.executeQuery()) {
+						resultSet.next();
+						if (resultSet.getInt(1) == 0) {
+							return false;
+						}
+					} catch (Exception e) {
+						return false;
+					}
+				} catch (Exception e) {
+					return false;
+				}
+
+				// Oracle needs the key word "CONSTRAINT"
+				try (PreparedStatement preparedStatement = connection.prepareStatement("ALTER TABLE " + tableName + " DROP CONSTRAINT " + foreignKeyName)) {
+					preparedStatement.execute();
+					return true;
+				} catch (Exception e) {
+					return false;
+				}
+			} else {
+				try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.key_column_usage WHERE LOWER(table_name) = LOWER(?) AND LOWER(constraint_name) = LOWER(?)")) {
+					preparedStatement.setString(1, tableName);
+					preparedStatement.setString(2, foreignKeyName);
+					try (ResultSet resultSet = preparedStatement.executeQuery()) {
+						resultSet.next();
+						if (resultSet.getInt(1) == 0) {
+							return false;
+						}
+					} catch (Exception e) {
+						return false;
+					}
+				} catch (Exception e) {
+					return false;
+				}
+
+				// MySQL needs the key word "FOREIGN KEY"
+				try (PreparedStatement preparedStatement = connection.prepareStatement("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + foreignKeyName)) {
+					preparedStatement.execute();
+					return true;
+				} catch (Exception e) {
+					return false;
+				}
+			}
+		}
+	}
+
+	public static String joinColumnsNames(final Collection<String> columns, final boolean addCommaBefore) {
+		if(CollectionUtils.isEmpty(columns)) {
+			return StringUtils.EMPTY;
+		}
+
+		String result = StringUtils.join(columns, ", ") + " ";
+		return addCommaBefore ? ", " + result : result;
+	}
+
+	public static String joinColumnsNamesForUpdate(final Collection<String> columns, final boolean addCommaBefore) {
+		if(CollectionUtils.isEmpty(columns)) {
+			return StringUtils.EMPTY;
+		}
+
+		String result = StringUtils.join(columns, " = ?, ") + " = ? ";
+		return addCommaBefore ? ", " + result : result;
 	}
 }

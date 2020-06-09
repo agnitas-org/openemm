@@ -17,7 +17,7 @@ import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.JobQueueDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 
@@ -45,7 +45,7 @@ public abstract class JobWorker implements Runnable {
 	/**
 	 * Service instance having control on this JobWorker object
 	 */
-	protected JobQueueService service;
+	protected JobQueueService jobQueueService;
 	
 	/**
 	 * Database object containing all data on this jobqueue entry
@@ -92,8 +92,8 @@ public abstract class JobWorker implements Runnable {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 	
-	public void setService(JobQueueService service) {
-		this.service = service;
+	public void setJobQueueService(JobQueueService jobQueueService) {
+		this.jobQueueService = jobQueueService;
 	}
 
 	public void setJob(JobDto job) {
@@ -144,7 +144,7 @@ public abstract class JobWorker implements Runnable {
 		Date runStart = new Date();
 		job.setRunning(true);
 		job.setLastStart(runStart);
-		jobQueueDao.updateJobStatus(job);
+		jobQueueDao.updateJob(job);
 
 		logger.info("Starting JobWorker: " + job.getDescription() + " (" + job.getId() + ")");
 		
@@ -157,7 +157,6 @@ public abstract class JobWorker implements Runnable {
 			}
 			
 			job.setLastResult("OK");
-			job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
 		} catch (Throwable t) {
 			logger.error("Error in " + this.getClass().getName() + ": " + t.getMessage(), t);
 			// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
@@ -177,13 +176,14 @@ public abstract class JobWorker implements Runnable {
 		logger.info("JobWorker done: " + job.getDescription() + " (" + job.getId() + ")");
 		
 		job.setRunning(false);
+		job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
 		jobQueueDao.updateJobStatus(job);
 		
 		// Write JobResult after job has ended
 		jobQueueDao.writeJobResult(job.getId(), new Date(), resultText, job.getLastDuration(), AgnUtils.getHostName());
 
 		// show report ended
-		service.showJobEnd(this);
+		jobQueueService.showJobEnd(this);
 	}
 
 	/**

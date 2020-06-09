@@ -15,13 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.json.JSONArray;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.Campaign;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComProfileField;
@@ -37,6 +30,12 @@ import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.userform.bean.UserForm;
+import net.sf.json.JSONArray;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.Campaign;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComWorkflowService {
 
@@ -44,7 +43,7 @@ public interface ComWorkflowService {
 
 	void saveWorkflow(Workflow workflow);
 
-	Workflow getWorkflow(int workflowId, int companyId);
+	Workflow getWorkflow(int workflowId, @VelocityCheck int companyId);
 
     /**
      * Get object representation of workflow schema (icons and connections) or {@code null} if referenced workflow doesn't exist.
@@ -81,15 +80,15 @@ public interface ComWorkflowService {
 
 	void deleteWorkflow(int workflowId, int companyId);
 
-    List<Workflow> getWorkflowsOverview(int companyId);
+    List<Workflow> getWorkflowsOverview(ComAdmin admin);
 
-	List<LightweightMailing> getAllMailings(int companyId);
+	List<LightweightMailing> getAllMailings(ComAdmin admin);
 
-    List<LightweightMailing> getAllMailingsSorted(int companyId, String sortFiled, String sortDirection);
+    List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection);
 
-    List<Map<String, Object>> getAllMailings(int companyId, List<Integer> mailingTypes, String status,
-                                                    String mailingStatus, boolean takeMailsForPeriod, String sort,
-                                                    String order);
+    List<Map<String, Object>> getAllMailings(ComAdmin admin, List<Integer> mailingTypes, String status,
+                                             String mailingStatus, boolean takeMailsForPeriod, String sort,
+                                             String order);
 
     List<Map<String, Object>> getMailings(@VelocityCheck int companyId, String commaSeparatedMailingIds);
 
@@ -129,9 +128,9 @@ public interface ComWorkflowService {
 
     void bulkDelete(Set<Integer> workflowIds, @VelocityCheck int companyId);
 
-    void bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception;
+    Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception;
 
-	void changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception;
+	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception;
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 
@@ -265,5 +264,7 @@ public interface ComWorkflowService {
     
     void convertTargetRepresentationToEQL(@VelocityCheck int companyId);
 
-    JSONArray getWorkflowListJson(int companyId);
+    List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId);
+
+    JSONArray getWorkflowListJson(ComAdmin admin);
 }

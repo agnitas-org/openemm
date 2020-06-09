@@ -5,7 +5,7 @@
          import="org.agnitas.util.*, org.agnitas.web.*, com.agnitas.web.*, java.util.*, org.agnitas.beans.*, org.agnitas.util.importvalues.ImportMode"
          errorPage="/error.do" %>
 <%@page import="com.agnitas.beans.ComAdmin"%>
-<%@page import="org.apache.commons.lang.StringUtils"%>
+<%@page import="org.apache.commons.lang3.StringUtils"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>

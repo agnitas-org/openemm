@@ -27,6 +27,8 @@ public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorage
     @JsonProperty("mailing-type-interval")
     private boolean mailingTypeInterval = false;
 
+    private String searchQueryText;
+
     public List<String> getSelectedFields() {
         return selectedFields;
     }
@@ -55,12 +57,21 @@ public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorage
         this.mailingTypeInterval = mailingTypeInterval;
     }
 
+    public String getSearchQueryText() {
+        return searchQueryText;
+    }
+
+    public void setSearchQueryText(String searchQueryText) {
+        this.searchQueryText = searchQueryText;
+    }
+
     @Override
     public ComMailingOverviewWebStorageEntry clone() throws CloneNotSupportedException {
         ComMailingOverviewWebStorageEntry entry = (ComMailingOverviewWebStorageEntry) super.clone();
         entry.setSelectedFields(selectedFields.isEmpty() ? Collections.emptyList() : new ArrayList<>(selectedFields));
         entry.setMailingTypeFollowup(mailingTypeFollowup);
         entry.setMailingTypeInterval(mailingTypeInterval);
+        entry.setSearchQueryText(searchQueryText);
         return entry;
     }
 }

@@ -90,7 +90,7 @@
 	              	<div class="col-sm-8">
 		           		<html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
 		  				<label class="toggle">
-		  					<html:checkbox property="mailingContentTypeAdvertising" />
+		  					<html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
 		                  	<div class="toggle-control"></div>
 		  				</label>
 	           		</div>

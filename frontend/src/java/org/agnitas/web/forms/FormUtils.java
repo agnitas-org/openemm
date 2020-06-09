@@ -42,4 +42,17 @@ public class FormUtils {
         form.setPage(paginatedList.getPageNumber());
         form.setNumberOfRows(paginatedList.getObjectsPerPage());
     }
+
+    public static <E> void syncSearchParams(FormSearchParams<E> searchParams, E form, boolean restore) {
+        if(restore) {
+            searchParams.restoreParams(form);
+        } else {
+            searchParams.storeParams(form);
+        }
+    }
+
+    public static <E> void resetSearchParams(FormSearchParams<E> searchParams, E form) {
+        searchParams.resetParams();
+        searchParams.restoreParams(form);
+    }
 }

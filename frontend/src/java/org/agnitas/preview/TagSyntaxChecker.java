@@ -22,7 +22,8 @@ import org.agnitas.beans.TagDefinition;
 import org.agnitas.dao.TagDao;
 import org.agnitas.preview.AgnTagError.AgnTagErrorKey;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -162,6 +163,9 @@ public class TagSyntaxChecker {
 							try {
 								tagParameterMap = readTagParameterString(tagParameterString);
 							} catch (AgnTagError ate) {
+								if (ate.getErrorKey() == AgnTagErrorKey.invalidParameterSyntax) {
+									ate.setAdditionalErrorData(new String[] {tagName});
+								}
 								ate.setTagName(tagName);
 								ate.setFullAgnTagText(fullTagText);
 								ate.setTextPosition(contentText, tagStartIndex);
@@ -354,6 +358,9 @@ public class TagSyntaxChecker {
 								nameValues.add(tagParameterMap.get("name"));
 							}
 						} catch (AgnTagError ate) {
+							if (ate.getErrorKey() == AgnTagErrorKey.invalidParameterSyntax) {
+								ate.setAdditionalErrorData(new String[] {tagName});
+							}
 							ate.setTagName(tagName);
 							ate.setFullAgnTagText(contentText.substring(tagStartIndex, tagEndIndex + tagEndText.length()));
 							ate.setTextPosition(contentText, tagStartIndex);
@@ -490,7 +497,17 @@ public class TagSyntaxChecker {
 					}
 					nextChar = agnTagParameterString.charAt(index);
 				}
-				nextValue = new StringBuilder(nextValue.toString().trim());
+				if (nextValue.toString().trim().startsWith("&")) {
+					String nextValueString = StringEscapeUtils.unescapeHtml4(nextValue.toString().trim());
+					if (nextValueString.startsWith("\"")) {
+						nextValueString = StringUtils.strip(nextValueString, "\"");
+					} else if (nextValueString.startsWith("'")) {
+						nextValueString = StringUtils.strip(nextValueString, "'");
+					}
+					nextValue = new StringBuilder(nextValueString);
+				} else {
+					nextValue = new StringBuilder(nextValue.toString().trim());
+				}
 			}
 
 			if (nextKey.indexOf("'") > -1 || nextKey.indexOf("\"") > -1) {

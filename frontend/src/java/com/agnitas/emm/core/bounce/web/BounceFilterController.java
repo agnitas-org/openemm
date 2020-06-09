@@ -11,36 +11,20 @@
 package com.agnitas.emm.core.bounce.web;
 
 import java.util.concurrent.Callable;
-
 import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.web.forms.FormUtils;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterForm;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.emm.core.bounce.form.validation.BounceFilterFormValidator;
 import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedAutoResponderEmailException;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.bounce.util.BounceUtils;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.userform.service.ComUserformService;
@@ -48,38 +32,59 @@ import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 @PermissionMapping("bounce.filter")
 @RequestMapping("/administration/bounce")
 public class BounceFilterController {
+    
+    private static final Logger logger = Logger.getLogger(BounceFilterController.class);
+    
     private static final String MAILING_LISTS = "mailingLists";
     private static final String USER_FORM_LIST = "userFormList";
     private static final String BOUNCE_FILTER_FORM = "bounceFilterForm";
     private static final String ACTIONBASED_MAILINGS = "actionBasedMailings";
-    private static final String ALLOW_ACTIONBASED_AUTORESPONDER = "allowedActionBasedResponder";
+    private static final String FILTER_EMAIL_ADDRESS_DEFAULT = "filterEmailAddressDefault";
+    private static final String IS_ALLOWED_MAILLOOP_DOMAIN = "isAllowedMailloopDomain";
 
     public static final long DEFAULT_TIMEOUT = 1000L;
 
     private final BounceFilterService bounceFilterService;
-    private final ComMailinglistService mailingListService;
+    private final ComMailingBaseService mailingService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final ComUserformService userFormService;
     private final ConversionService conversionService;
-    private final ConfigService configService;
     private final WebStorage webStorage;
     private final UserActivityLogService userActivityLogService;
-    
 
-    public BounceFilterController(BounceFilterService bounceFilterService, ComMailinglistService mailingListService, final MailinglistApprovalService mailinglistApprovalService,
+    private final BounceFilterFormValidator bounceFilterFormValidator = new BounceFilterFormValidator();
+
+
+    public BounceFilterController(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, @Qualifier("MailingBaseService") ComMailingBaseService mailingService,
+                                  final MailinglistApprovalService mailinglistApprovalService,
                                   ComUserformService userFormService, ConversionService conversionService,
-                                  ConfigService configService, WebStorage webStorage,
+                                  WebStorage webStorage,
                                   UserActivityLogService userActivityLogService) {
         this.bounceFilterService = bounceFilterService;
-        this.mailingListService = mailingListService;
+        this.mailingService = mailingService;
         this.userFormService = userFormService;
         this.conversionService = conversionService;
-        this.configService = configService;
         this.webStorage = webStorage;
         this.userActivityLogService = userActivityLogService;
         this.mailinglistApprovalService = mailinglistApprovalService;
@@ -112,11 +117,15 @@ public class BounceFilterController {
 
     @GetMapping(value = "/{id:\\d+}/view.action")
     public String view(ComAdmin admin, @PathVariable int id, Model model) {
+        if (id <= 0) {
+            return "redirect:/administration/bounce/new.action";
+        }
         int companyId = admin.getCompanyID();
 
         BounceFilterForm form = loadBounceFilter(companyId, id, model);
         loadAdditionalFormData(admin, model);
-        configActionBasedResponder(companyId, form, model);
+
+        setFilterEmailAttributes(admin, model, id);
 
         writeUserActivityLog(admin, "view bounce filter", getBounceFilterDescription(form));
 
@@ -124,43 +133,44 @@ public class BounceFilterController {
     }
 
     @GetMapping(value = "/new.action")
-    public String create(ComAdmin admin, BounceFilterForm form, Model model) {
+    public String create(ComAdmin admin, @ModelAttribute BounceFilterForm form, Model model) {
         loadAdditionalFormData(admin, model);
-        configActionBasedResponder(admin.getCompanyID(), form, model);
+        setFilterEmailAttributes(admin, model, 0);
         return "bounce_filter_view";
     }
 
     @PostMapping(value = "/save.action")
-    public String save(ComAdmin admin, @Valid BounceFilterForm form, BindingResult result, RedirectAttributes model, Popups popups) throws Exception {
-        int id = form.getId();
-        if (result.hasErrors()) {
-            model.addFlashAttribute("bounceFilterForm", form);
-            return "redirect:/administration/bounce/" + id + "/view.action";
+    public String save(ComAdmin admin, @ModelAttribute BounceFilterForm form, Popups popups) throws Exception {
+        if (isValid(admin, form, popups)) {
+            BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
+            try {
+                boolean isNew = form.getId() <= 0;
+                int id = bounceFilterService.saveBounceFilter(admin, bounceFilter);
+        
+                if (id > 0) {
+                    popups.success("default.changes_saved");
+                    writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "bounce filter", getBounceFilterDescription(id, form.getShortName()));
+                } else {
+                    throw new Exception("Could not create bounce filter, returned ID is 0");
+                }
+        
+                return "redirect:/administration/bounce/" + id + "/view.action";
+            } catch (BlacklistedFilterEmailException e) {
+                logger.error("Could not save bounce filter!", e);
+                popups.alert("error.blacklistedFilterEmail");
+            } catch (BlacklistedForwardEmailException e) {
+                logger.error("Could not save bounce filter!", e);
+                popups.alert("error.blacklistedForwardEmail");
+            } catch (BlacklistedAutoResponderEmailException e) {
+                logger.error("Could not save bounce filter!", e);
+                popups.alert("error.blacklistedAutoresponderEmail");
+            } catch (Exception e) {
+                logger.error("Could not save bounce filter!", e);
+                popups.alert("Error");
+            }
         }
 
-        BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
-        int newId;
-		try {
-			newId = bounceFilterService.saveBounceFilter(admin, bounceFilter);
-			
-	        if (newId > 0) {
-	            form.setId(newId);
-	            popups.success("default.changes_saved");
-	            writeUserActivityLog(admin, (id == 0 ? "create " : "edit ") + "bounce filter", getBounceFilterDescription(form));
-	        } else {
-	            popups.alert("Error");
-	        }
-
-	        return "redirect:/administration/bounce/list.action";
-		} catch (BlacklistedFilterEmailException e) {
-			popups.alert("error.blacklistedFilterEmail");
-		} catch (BlacklistedForwardEmailException e) {
-			popups.alert("error.blacklistedForwardEmail");
-		} catch (BlacklistedAutoResponderEmailException e) {
-			popups.alert("error.blacklistedAutoresponderEmail");
-		}
-		
-        return "redirect:/administration/bounce/" + id + "/view.action";
+        return "messages";
     }
 
     @GetMapping(value = "/{id:\\d+}/confirmDelete.action")
@@ -193,18 +203,34 @@ public class BounceFilterController {
     private void loadAdditionalFormData(ComAdmin admin, Model model){
         model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute(USER_FORM_LIST, userFormService.getUserForms(admin.getCompanyID()));
+        model.addAttribute(ACTIONBASED_MAILINGS, mailingService.getMailingsByType(MailingTypes.ACTION_BASED, admin.getCompanyID(), false));
     }
 
-    private void configActionBasedResponder(int companyId, BounceFilterForm form, Model model) {
-        boolean isResponderEnabled = configService.isActionbasedMailloopAutoresponderInUiEnabled(companyId);
-        if(isResponderEnabled) {
-            model.addAttribute(ACTIONBASED_MAILINGS,
-                    mailingListService.getMailingListByType(MailingTypes.ACTION_BASED, companyId));
+    private boolean isValid(ComAdmin admin, BounceFilterForm form, Popups popups){
+        boolean success = true;
+        final String companyMailloopDomain = admin.getCompany().getMailloopDomain();
+        if(!isAllowedMailloopDomain(companyMailloopDomain) || form.isOwnForwardEmailSelected()) {
+            if(StringUtils.isBlank(form.getFilterEmail())) {
+                popups.field("filterEmail", "error.mailloop.address.empty");
+                success = false;
+            }
         }
+        success &= bounceFilterFormValidator.validate(form, popups);
+        return success;
+    }
 
-        boolean allowedActionBasedResponder = (form.getId() == 0 && isResponderEnabled) || form.getArMailingId() != 0;
-        // TODO: Remove after transition phase (EMM-3645)
-        model.addAttribute(ALLOW_ACTIONBASED_AUTORESPONDER, allowedActionBasedResponder);
+    private boolean isAllowedMailloopDomain(String mailloopDomain){
+        return mailloopDomain != null && mailloopDomain.matches("(^|(.+\\.))agnitas\\.de");
+    }
+
+    private void setFilterEmailAttributes(ComAdmin admin, Model model, int id) {
+        final String companyMailloopDomain = admin.getCompany().getMailloopDomain();
+        boolean isAllowedMailloopDomain = isAllowedMailloopDomain(companyMailloopDomain);
+        model.addAttribute(IS_ALLOWED_MAILLOOP_DOMAIN, isAllowedMailloopDomain);
+
+        if(id > 0 && isAllowedMailloopDomain) {
+            model.addAttribute(FILTER_EMAIL_ADDRESS_DEFAULT, BounceUtils.getFilterEmailDefault(companyMailloopDomain, id));
+        }
     }
 
     private void writeUserActivityLog(ComAdmin admin, String action, String description) {
@@ -212,6 +238,10 @@ public class BounceFilterController {
     }
 
     private String getBounceFilterDescription(BounceFilterForm form) {
-        return String.format("%s (%d)", form.getShortName(), form.getId());
+        return getBounceFilterDescription(form.getId(), form.getShortName());
+    }
+    
+    private String getBounceFilterDescription(int filterId, String shortname) {
+        return String.format("%s (%d)", shortname, filterId);
     }
 }

@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.autoimport.web.beans.ScheduledInterval;
 import com.agnitas.emm.core.autoimport.web.beans.ScheduledTime;
@@ -217,12 +217,12 @@ public class PatternScheduleBuilderService implements ScheduleBuilderService<Str
         return StringUtils.join(patterns, SEMICOLON);
     }
 
-    private String formatTime(String time, DateTimeFormatter fromFormat, DateTimeFormatter toFormat) {
-        LocalTime localTime = LocalTime.parse(time, fromFormat);
-        return toFormat.format(localTime);
+    private String formatTime(String time, DateTimeFormatter fromFormatToUse, DateTimeFormatter toFormatToUse) {
+        LocalTime localTime = LocalTime.parse(time, fromFormatToUse);
+        return toFormatToUse.format(localTime);
     }
 
-    private Map<String, Integer> reverseWeekDays(Map<Integer, String> weekDays) {
-        return weekDays.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+    private Map<String, Integer> reverseWeekDays(Map<Integer, String> weekDaysToReverse) {
+        return weekDaysToReverse.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 }

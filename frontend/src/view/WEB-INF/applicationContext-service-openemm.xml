@@ -22,17 +22,13 @@
 		http://www.springframework.org/schema/aop/spring-aop.xsd">
 		
 	<bean id="ConfigurationValidityCheck" class="com.agnitas.emm.core.ConfigurationValidityCheckBasicImpl">
+		<property name="dataSource" ref="dataSource" />
 		<property name="configService" ref="ConfigService" />
 		<property name="configTableDao" ref="ConfigTableDao" />
+		<property name="companyDao" ref="CompanyDao" />
+		<property name="targetService" ref="targetService"/>
+		<property name="layoutDao" ref="LayoutDao"/>
 	</bean>
-
-    <bean id="conversionService" class="com.agnitas.service.impl.ExtendedConversionServiceFactoryBean">
-        <property name="converters">
-			<list>
-				<bean class="com.agnitas.emm.core.mailing.dto.converter.ComMailingBaseFormToCalculationRecipientConfigConverter"/>
-			</list>
-        </property>
-    </bean>
 
 	<bean id="MailingExporter" class="org.agnitas.service.impl.MailingExporterImpl" />
 
@@ -118,7 +114,7 @@
 		<property name="targetService" ref="targetService" />
 		<property name="linkDao" ref="TrackableLinkDao" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="adminDao" ref="AdminDao" />
+		<property name="adminService" ref="AdminService" />
 		<property name="userFormDao" ref="UserFormDao" />
 		<property name="birtCompanyDao" ref="BirtCompanyDao" />
 		<property name="reactionDao" ref="WorkflowReactionDao" />
@@ -165,7 +161,6 @@
 
 	<bean id="ExportPredefService" class="com.agnitas.service.impl.ExportPredefServiceImpl">
 		<property name="exportPredefDao" ref="ExportPredefDao" />
-		<property name="mailinglistDao" ref="MailinglistDao" />
 	</bean>
 
 <!-- ============================================================================================================================== Target Groups -->
@@ -187,7 +182,6 @@
 	<bean id="ComCompanyService" class="com.agnitas.emm.core.company.service.impl.ComCompanyServiceImpl">
 		<property name="companyDao" ref="CompanyDao"/>
 		<property name="conversionService" ref="conversionService"/>
-		<property name="adminDao" ref="AdminDao"/>
 		<property name="configService" ref="ConfigService"/>
 		<property name="companyFactory" ref="CompanyFactory"/>
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService"/>

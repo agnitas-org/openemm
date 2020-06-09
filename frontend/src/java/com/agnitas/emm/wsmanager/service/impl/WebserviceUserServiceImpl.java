@@ -19,7 +19,7 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +29,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserEntryDto;
 import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
+import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
 import com.agnitas.emm.wsmanager.common.WebserviceUserCredential;
@@ -37,6 +38,7 @@ import com.agnitas.emm.wsmanager.common.WebserviceUserListItem;
 import com.agnitas.emm.wsmanager.common.impl.WebserviceUserCredentialImpl;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDaoException;
+import com.agnitas.emm.wsmanager.dao.WebserviceUserSettingsDao;
 import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
@@ -59,6 +61,9 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	/** DAO accessing webservice user data. */
 	private final WebserviceUserDao webserviceUserDao;
 	
+	/** DAO accessing settings. */
+	private final WebserviceUserSettingsDao webserviceUserSettingsDao;
+	
 	/** Service handling data sources. */
 	private final DataSourceService datasourceService;
 	
@@ -69,8 +74,9 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	
 	private final WebservicePermissionService permissionService;
 	
-	public WebserviceUserServiceImpl(final WebserviceUserDao webserviceUserDao, final DataSourceService datasourceService, final ConfigService configService, final ExtendedConversionService conversionService, final WebservicePermissionService permissionService) {
+	public WebserviceUserServiceImpl(final WebserviceUserDao webserviceUserDao, final WebserviceUserSettingsDao webserviceUserSettingsDao, final DataSourceService datasourceService, final ConfigService configService, final ExtendedConversionService conversionService, final WebservicePermissionService permissionService) {
 		this.webserviceUserDao = Objects.requireNonNull(webserviceUserDao);
+		this.webserviceUserSettingsDao = Objects.requireNonNull(webserviceUserSettingsDao, "Webservice User Settings DAO is null");
 		this.datasourceService = Objects.requireNonNull(datasourceService);
 		this.configService = Objects.requireNonNull(configService);
 		this.conversionService = Objects.requireNonNull(conversionService);
@@ -205,5 +211,16 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			sanitizePermissions(user);
 			this.webserviceUserDao.saveGrantedPermissionsAndGroups(user);
 		}
+	}
+
+	@Override
+	public final WebserviceUserSettings findSettingsForWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserServiceException {
+		final Optional<WebserviceUserSettings> optional = this.webserviceUserSettingsDao.findSettingsForWebserviceUser(username);
+		
+		if(!optional.isPresent()) {
+			throw new WebserviceUserServiceException(String.format("Unknown webservice user: '%s'", username));
+		}
+		
+		return optional.get();
 	}
 }

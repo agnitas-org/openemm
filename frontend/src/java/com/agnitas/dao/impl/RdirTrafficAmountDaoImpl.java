@@ -19,7 +19,7 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTrafficAmountDao {

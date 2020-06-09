@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.ast;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -34,4 +35,6 @@ public abstract class AbstractEqlNode {
 	 * @param collector instance of {@link ReferenceCollector}
 	 */
 	public abstract void collectReferencedItems(ReferenceCollector collector);
+	
+	public abstract void traverse(final EqlNodeVisitor visitor);
 }

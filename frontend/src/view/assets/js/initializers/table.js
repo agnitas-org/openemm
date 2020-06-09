@@ -2,7 +2,7 @@
 
   var Table = AGN.Lib.Table;
 
-  AGN.Initializers.Table = function($scope) {
+  AGN.Lib.CoreInitializer.new('table', function($scope) {
     if (!$scope) {
       $scope = $(document);
     }
@@ -29,7 +29,6 @@
         }
       }
     });
-
-  }
+  });
 
 })();

@@ -11,30 +11,13 @@
 package org.agnitas.ecs.backend.service;
 
 public class UrlMaker {
-	private int mailingID;
 	private int urlID;
-	private String prefix;
 
-
-	public UrlMaker(int mailingID) {
-		this.mailingID = mailingID;
+	public UrlMaker() {
 	}
-	/** 
-	 * Checks an URL if it should be used static
-	 * @return if the url is static
-	 */
-	private final boolean isStaticUrl(final String url) {
-	        return (! url.endsWith ("?")) && (! url.endsWith ("&"));
-	}
+	
 	public final void setURLID(final long url) {
 		this.urlID = (int)url;
-	}
-	public final void setPrefix(final String nPrefix) {
-		this.prefix = nPrefix;
-	}
-
-	public final void setCustomerID(final long customerID) {
-//		this.customerID = (int)customerID;
 	}
 
 	public final String makeUID() {

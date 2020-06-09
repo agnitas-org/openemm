@@ -10,24 +10,26 @@
 
 package org.agnitas.beans;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.Map;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Recipient {
-	final static int MAILTYPE_TEXT = 0;
-	final static int MAILTYPE_HTML = 1;
-	final static int MAILTYPE_HTML_OFFLINE = 2;
+	int MAILTYPE_TEXT = 0;
+	int MAILTYPE_HTML = 1;
+	int MAILTYPE_HTML_OFFLINE = 2;
 	
-	final static int GENDER_FEMALE = 1; 
-	final static int GENDER_MALE = 0;
-	final static int GENDER_UNKNOWN = 2;
+	int GENDER_FEMALE = 1;
+	int GENDER_MALE = 0;
+	int GENDER_UNKNOWN = 2;
 	
 	int getGender();
 	String getFirstname();
 	String getLastname();
 	String getEmail();
+	Timestamp getTimestamp();
 	
 	/**
      * Checks if E-Mail-Adress given in customerData-Map is valid.
@@ -144,8 +146,8 @@ public interface Recipient {
      * Updates customer data by analyzing given HTTP-Request-Parameters.
      *
      * @return true on success
-     * @param suffix Suffix appended to Database-Column-Names when searching for corresponding request parameters
-     * @param req Map containing all HTTP-Request-Parameters as key-value-pair.
+	 * @param requestParameters Map containing all HTTP-Request-Parameters as key-value-pair.
+	 * @param suffix Suffix appended to Database-Column-Names when searching for corresponding request parameters
      */
 	boolean importRequestParameters(Map<String, Object> requestParameters, String suffix);
 

@@ -43,6 +43,11 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 	public boolean isNullValueAllowedForData(DbColumnType columnType, NullValuesAction nullValuesAction) {
 		return columnType.isNullable() || nullValuesAction == NullValuesAction.IGNORE;
 	}
+	
+	@Override
+	public void handlePreProcessing(EmmActionService emmActionService, CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
+		// Do nothing
+	}
 
 	@Override
 	public void handleNewCustomers(CustomerImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {

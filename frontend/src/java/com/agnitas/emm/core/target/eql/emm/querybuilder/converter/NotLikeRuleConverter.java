@@ -17,7 +17,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConvers
 public class NotLikeRuleConverter implements RuleConverter {
     @Override
     public String convert(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException {
-        String value = StringUtil.makeEqlStringConstant(ruleNode.getValue().toString());
+        String value = StringUtil.makeEqlStringConstant(QueryBuilderUtil.getRuleNodeValueAsString(ruleNode));
         return String.format("`%s` NOT LIKE %s", ruleNode.getId(), value);
     }
 }

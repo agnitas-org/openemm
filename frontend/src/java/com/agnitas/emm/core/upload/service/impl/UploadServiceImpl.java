@@ -31,7 +31,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.SafeString;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
@@ -41,9 +41,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.upload.bean.DownloadData;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
@@ -55,12 +55,14 @@ import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
 import com.agnitas.messages.I18nString;
 
 public class UploadServiceImpl implements UploadService {
-    private static final Logger logger = Logger.getLogger(UploadServiceImpl.class);
+	
+	/** The logger. */
+    private static final transient Logger logger = Logger.getLogger(UploadServiceImpl.class);
 
     private ComUploadDao uploadDao;
     private ConversionService conversionService;
     private ComCompanyDao companyDao;
-    private ComAdminDao adminDao;
+    private AdminService adminService;
     private JavaMailService javaMailService;
     private ConfigService configService;
 
@@ -101,7 +103,7 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public List<AdminEntry> getUsers(int companyId) {
-        return adminDao.getAllAdminsByCompanyId(companyId);
+        return adminService.listAdminsByCompanyID(companyId);
     }
 
     @Override
@@ -132,6 +134,9 @@ public class UploadServiceImpl implements UploadService {
         try {
             DownloadData downloadData = uploadDao.getDownloadData(id);
             String suffix = downloadData.getFileType();
+            if (!suffix.startsWith(".")) {
+            	suffix = "." + suffix;
+            }
         	File tempFile = Files.createTempFile(null, suffix).toFile();
             try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                 uploadDao.sendDataToStream(id, outputStream);
@@ -213,7 +218,7 @@ public class UploadServiceImpl implements UploadService {
     }
 
     private PageUploadData calculateExpireDate(int companyId, PageUploadData pageUploadData) {
-        int expireRange = companyDao.getCompany(companyId).getExpireUpload();
+        int expireRange = configService.getIntegerValue(ConfigValue.ExpireUpload, companyId);
         LocalDate date = DateUtilities.toLocalDate(pageUploadData.getCreateDate());
         Date deleteDate = DateUtilities.toDate(date.plusDays(expireRange));
         pageUploadData.setDeleteDate(deleteDate);
@@ -274,12 +279,12 @@ public class UploadServiceImpl implements UploadService {
             }
 
             @Override
-            public void setFileName(String fileName) {
+            public void setFileName(String unusewdFileName) {
                 // nothing to do
             }
 
             @Override
-            public void setFileSize(int fileSize) {
+            public void setFileSize(int unsusedFileSize) {
                 // nothing to do
             }
         };
@@ -289,22 +294,27 @@ public class UploadServiceImpl implements UploadService {
 	public void setUploadDao(ComUploadDao uploadDao) {
 		this.uploadDao = uploadDao;
 	}
+    
     @Required
 	public void setConversionService(ConversionService conversionService) {
 		this.conversionService = conversionService;
 	}
+
     @Required
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
+    
     @Required
-	public void setAdminDao(ComAdminDao adminDao) {
-		this.adminDao = adminDao;
+	public void setAdminService(AdminService service) {
+		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
+    
     @Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
+    
     @Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;

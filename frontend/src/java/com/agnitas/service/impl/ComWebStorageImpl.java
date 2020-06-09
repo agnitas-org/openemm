@@ -14,4 +14,6 @@ import org.agnitas.service.impl.WebStorageImpl;
 
 import com.agnitas.service.ComWebStorage;
 
-public class ComWebStorageImpl extends WebStorageImpl implements ComWebStorage {}
+public class ComWebStorageImpl extends WebStorageImpl implements ComWebStorage {
+	// nothing to do
+}

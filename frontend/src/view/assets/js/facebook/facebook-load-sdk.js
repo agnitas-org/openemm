@@ -6,7 +6,6 @@ AGN_FACEBOOK.SDK.load_sdk = function (appId, afterInitCallback) {
 	window.fbAsyncInit = function() {
 		FB.init({
 			appId      : appId,
-			xfbml      : true,
 			version    : 'v3.3'
 		});
 		

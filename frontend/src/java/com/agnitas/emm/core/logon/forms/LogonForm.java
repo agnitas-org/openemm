@@ -10,12 +10,8 @@
 
 package com.agnitas.emm.core.logon.forms;
 
-import org.hibernate.validator.constraints.NotBlank;
-
 public class LogonForm {
-    @NotBlank(message = "error.username.required")
     private String username;
-    @NotBlank(message = "error.password.required")
     private String password;
 
     public String getUsername() {

@@ -1,5 +1,0 @@
-                                                    
-       <button type="button" class="btn btn-regular" data-form-action="${ACTION_ADD_TEXTBLOCK}" data-controls-group="save">
-           <i class="icon icon-plus"></i>
-           <span class="text"><bean:message key="button.Add"/></span>
-       </button>

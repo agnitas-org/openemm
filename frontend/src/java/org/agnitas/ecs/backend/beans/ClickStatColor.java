@@ -22,69 +22,69 @@ public interface ClickStatColor {
 	 *
 	 * @return id
 	 */
-	public int getId();
+	int getId();
 
 	/**
 	 * Setter for id property
 	 *
 	 * @param id new id of object
 	 */
-	public void setId(int id);
+	void setId(int id);
 
 	/**
 	 * Getter for companyId property
 	 *
 	 * @return id of company
 	 */
-	public int getCompanyId();
+	int getCompanyId();
 
 	/**
 	 * Setter for companyId property
 	 *
 	 * @param companyId new id of company
 	 */
-	public void setCompanyId(@VelocityCheck int companyId);
+	void setCompanyId(@VelocityCheck int companyId);
 
 	/**
 	 * Getter for color property (should be in HEX i.e. "FF00FF")
 	 *
 	 * @return color property
 	 */
-	public String getColor();
+	String getColor();
 
 	/**
 	 * Setter for color property (should be in HEX i.e. "FF00FF")
 	 *
 	 * @param color new color property for this object
 	 */
-	public void setColor(String color);
+	void setColor(String color);
 
 	/**
 	 * Getter for rangeStart property - lower limit of percent range
 	 *
 	 * @return rangeStart property
 	 */
-	public double getRangeStart();
+	double getRangeStart();
 
 	/**
 	 * Setter for rangeStart property - lower limit of percent range
 	 *
 	 * @param rangeStart new rangeStart for this object
 	 */
-	public void setRangeStart(double rangeStart);
+	void setRangeStart(double rangeStart);
 
 	/**
 	 * Getter for rangeEnd property - upper limit of percent range
 	 *
 	 * @return rangeEnd property
 	 */
-	public double getRangeEnd();
+	double getRangeEnd();
 
 	/**
 	 * Setter for rangeEnd property - upper limit of percent range
 	 *
 	 * @param rangeEnd new rangeEnd for this object
 	 */
-	public void setRangeEnd(double rangeEnd);
+	void setRangeEnd(double rangeEnd);
 
 }

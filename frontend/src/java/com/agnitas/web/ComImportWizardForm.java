@@ -296,11 +296,11 @@ public class ComImportWizardForm extends StrutsFormBase {
 		}
 	}
 
-	private boolean checkAllowedImportFileSize(int companyID, FormFile csvFile, ActionMessages errors) {
+	private boolean checkAllowedImportFileSize(int companyID, FormFile csvFileToCheck, ActionMessages errors) {
 		int maxSizeAllowedForClassicImport = getConfigService().getIntegerValue(ConfigValue.ClassicImportMaxFileSize, companyID);
 		if (maxSizeAllowedForClassicImport >= 0) {
             try {
-                int csvFileSize = csvFile.getFileSize();
+                int csvFileSize = csvFileToCheck.getFileSize();
                 if (csvFileSize > maxSizeAllowedForClassicImport) {
                     errors.add("global", new ActionMessage("error.import.maximum_filesize_exceeded", AgnUtils.getHumanReadableNumber(maxSizeAllowedForClassicImport, "Byte", false)));
                     return false;
@@ -315,7 +315,7 @@ public class ComImportWizardForm extends StrutsFormBase {
 		if (maxRowsAllowedForClassicImport >= 0) {
 			// Also there might be an error within the csv structure (escaped linebreaks in CSV), the linebreaks should be counted as csv entries.
 			// This is not fully correct, but allows the user to ignore some invalid csv lines later on in the GUI.
-			try (LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(csvFile.getInputStream()))) {
+			try (LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(csvFileToCheck.getInputStream()))) {
 				while ((lineNumberReader.readLine()) != null) {
 					// Just read through the data to count the number of lines
 				}
@@ -831,12 +831,12 @@ public class ComImportWizardForm extends StrutsFormBase {
                 }
 
                 @Override
-                public void setFileName(String fileName) {
+                public void setFileName(String fileNameUnused) {
         			// nothing to do
                 }
 
                 @Override
-                public void setFileSize(int fileSize) {
+                public void setFileSize(int fileSizeUnused) {
         			// nothing to do
                 }
             };

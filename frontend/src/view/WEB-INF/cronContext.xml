@@ -17,9 +17,11 @@
 	    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.0.xsd">
- 
-	<context:component-scan base-package="org.agnitas" />
-	<context:component-scan base-package="com.agnitas" />
+
+	<context:component-scan base-package="org.agnitas, com.agnitas">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
 
 	<!-- check for queued jobs to execute -->
 	<bean id="JobQueueJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">

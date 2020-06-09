@@ -10,15 +10,14 @@
 
 package com.agnitas.dao.impl;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigKey;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.commons.lang.StringUtils;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ConfigTableDao;
@@ -32,22 +31,43 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	private static final transient Logger logger = Logger.getLogger(ConfigTableDaoImpl.class);
 
 	@Override
-	public Map<ConfigKey, String> getAllEntries() throws SQLException {
-		List<Map<String, Object>> results;
+	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
+		String sql;
 		if (isOracleDB()) {
-			results = select(logger, "SELECT TRIM(LEADING '.' FROM class || '.' || name) AS key_for_value, hostname, value AS value FROM config_tbl");
+			sql = "SELECT TRIM(LEADING '.' FROM class || '.' || name) AS key_for_value, hostname, value AS value FROM config_tbl WHERE hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ? ORDER BY key_for_value, hostname";
 		} else {
-			results = select(logger, "SELECT TRIM(LEADING '.' FROM CONCAT(class, '.', name)) AS key_for_value, hostname, value AS value FROM config_tbl");
-		}
-		Map<ConfigKey, String> returnMap = new HashMap<>();
-		for (Map<String, Object> resultRow : results) {
-			returnMap.put(new ConfigKey((String) resultRow.get("key_for_value"), 0, (String) resultRow.get("hostname")), (String) resultRow.get("value"));
+			sql = "SELECT TRIM(LEADING '.' FROM CONCAT(class, '.', name)) AS key_for_value, hostname, value AS value FROM config_tbl WHERE hostname IS NULL OR TRIM(hostname) = '' OR hostname = ? ORDER BY key_for_value, hostname";
 		}
 		
+		List<Map<String, Object>> results = select(logger, sql, AgnUtils.getHostName());
+		Map<String, Map<Integer, String>> returnMap = new HashMap<>();
+		for (Map<String, Object> resultRow : results) {
+			String configValueName = (String) resultRow.get("key_for_value");
+			String hostname = (String) resultRow.get("hostname");
+			if (StringUtils.isBlank(hostname)) {
+				hostname = null;
+			}
+			String value = (String) resultRow.get("value");
+			
+			Map<Integer, String> configValueMap = returnMap.get(configValueName);
+			if (configValueMap == null) {
+				configValueMap = new HashMap<>();
+				returnMap.put(configValueName, configValueMap);
+			}
+			if (!configValueMap.containsKey(0) || hostname != null) {
+				configValueMap.put(0, value);
+			}
+		}
+		
+		Map<Integer, String> configValueMapForDbType = returnMap.get(ConfigValue.DB_Vendor.toString());
+		if (configValueMapForDbType == null) {
+			configValueMapForDbType = new HashMap<>();
+			returnMap.put(ConfigValue.DB_Vendor.toString(), configValueMapForDbType);
+		}
 		if (isOracleDB()) {
-			returnMap.put(new ConfigKey(ConfigValue.DB_Vendor.toString(), 0, null), "Oracle");
+			configValueMapForDbType.put(0, "Oracle");
 		} else {
-			returnMap.put(new ConfigKey(ConfigValue.DB_Vendor.toString(), 0, null), "MySQL");
+			configValueMapForDbType.put(0, "MySQL");
 		}
 		
 		return returnMap;
@@ -62,6 +82,10 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	@DaoUpdateReturnValueCheck
 	@Override
 	public void storeEntry(String classString, String name, String hostName, String value)  {
+		if (StringUtils.isNotBlank(value) && value.startsWith(AgnUtils.getUserHomeDir())) {
+			value = value.replace(AgnUtils.getUserHomeDir(), "${home}");
+		}
+		
 		if (StringUtils.isBlank(hostName)) {
 			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", classString, name);
 			if (results != null && results.size() > 0) {

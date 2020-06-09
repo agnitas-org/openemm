@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.messages.DBMessagesResource;
 import com.agnitas.messages.I18nString;
@@ -33,28 +35,8 @@ public class Permission {
 	public static final String CATEGORY_KEY_OTHERS = "others";
 	public static final String USERRIGHT_MESSAGEKEY_PREFIX = "UserRight.";
 
-	public static final String FEATURENAME_AUTOMATIONPACKAGE = "Automation Package";
-	public static final String FEATURENAME_RETARGETINGPACKAGE = "Retargeting Package";
-	public static final String FEATURENAME_WEBPUSHPACKAGE = "Webpush Package";
-	public static final String FEATURENAME_LAYOUTPACKAGE = "Layout Package";
-	public static final String FEATURENAME_ANALYTICSPACKAGE = "Analytics Package";
-	public static final String FEATURENAME_DELIVERYPACKAGE = "Delivery Package";
-
 	private static Map<Permission, String> CATEGORY_BY_SYSTEM_PERMISSIONS = null;
-	private static final Map<String, Permission> SYSTEM_PERMISSIONS = new HashMap<>();
-
-	public static final Permission ACTION_OP_ACTIVATEDOUBLEOPTIN = new Permission("action.op.ActivateDoubleOptIn", true, false);
-	public static final Permission ACTION_OP_CONTENTVIEW = new Permission("action.op.ContentView", true, true);
-	public static final Permission ACTION_OP_EXECUTESCRIPT = new Permission("action.op.ExecuteScript", true, false);
-	public static final Permission ACTION_OP_GETARCHIVELIST = new Permission("action.op.GetArchiveList", true, false);
-	public static final Permission ACTION_OP_GETARCHIVEMAILING = new Permission("action.op.GetArchiveMailing", true, false);
-	public static final Permission ACTION_OP_GETCUSTOMER = new Permission("action.op.GetCustomer", true, false);
-	public static final Permission ACTION_OP_IDENTIFYCUSTOMER = new Permission("action.op.IdentifyCustomer", true, false);
-	public static final Permission ACTION_OP_SENDMAILING = new Permission("action.op.SendMailing", true, false);
-	public static final Permission ACTION_OP_SERVICEMAIL = new Permission("action.op.ServiceMail", true, false);
-	public static final Permission ACTION_OP_SUBSCRIBECUSTOMER = new Permission("action.op.SubscribeCustomer", true, false);
-	public static final Permission ACTION_OP_UNSUBSCRIBECUSTOMER = new Permission("action.op.UnsubscribeCustomer", true, false);
-	public static final Permission ACTION_OP_UPDATECUSTOMER = new Permission("action.op.UpdateCustomer", true, false);
+	private static final Map<String, Permission> ALL_PERMISSIONS = new HashMap<>();
 
 	public static final Permission ACTIONS_CHANGE = new Permission("actions.change", true, false);
 	public static final Permission ACTIONS_DELETE = new Permission("actions.delete", true, false);
@@ -66,7 +48,7 @@ public class Permission {
 	public static final Permission ADMIN_SETGROUP = new Permission("admin.setgroup", true, false);
 	public static final Permission ADMIN_SETPERMISSION = new Permission("admin.setpermission", true, false);
 	public static final Permission ADMIN_SHOW = new Permission("admin.show", true, false);
-	public static final Permission ADMINLOG_SHOW = new Permission("adminlog.show", false, true);
+	public static final Permission ADMINLOG_SHOW = new Permission("adminlog.show", false, false);
 
 	public static final Permission ALWAYS_ALLOWED = new Permission("always.allowed", false, false);
 	public static final Permission ALWAYS_DISALLOWED = new Permission("always.disallowed", false, false);
@@ -78,6 +60,7 @@ public class Permission {
 	public static final Permission CAMPAIGN_CHANGE = new Permission("campaign.change", true, false);
 	public static final Permission CAMPAIGN_DELETE = new Permission("campaign.delete", true, false);
 	public static final Permission CAMPAIGN_SHOW = new Permission("campaign.show", true, false);
+	public static final Permission CAMPAIGN_AUTOOPT = new Permission("campaign.autoopt", true, false);
 
 	public static final Permission CHARSET_USE_ISO_8859_15 = new Permission("charset.use.iso_8859_15", true, false);
 	public static final Permission CHARSET_USE_UTF_8 = new Permission("charset.use.utf_8", true, false);
@@ -93,7 +76,7 @@ public class Permission {
 	public static final Permission IMPORT_MODE_ADD_UPDATE = new Permission("import.mode.add_update", true, false);
 	public static final Permission IMPORT_MODE_BLACKLIST = new Permission("import.mode.blacklist", true, false);
 	public static final Permission IMPORT_MODE_BOUNCE = new Permission("import.mode.bounce", true, false);
-	public static final Permission IMPORT_MODE_BOUNCEREACTIVATE = new Permission("import.mode.bouncereactivate", true, true);
+	public static final Permission IMPORT_MODE_BOUNCEREACTIVATE = new Permission("import.mode.bouncereactivate", false, true);
 	public static final Permission IMPORT_MODE_DOUBLECHECKING = new Permission("import.mode.doublechecking", true, false);
 	public static final Permission IMPORT_MODE_ONLY_UPDATE = new Permission("import.mode.only_update", true, false);
 
@@ -101,15 +84,15 @@ public class Permission {
 	public static final Permission IMPORT_MODE_UNSUBSCRIBE = new Permission("import.mode.unsubscribe", true, false);
 	public static final Permission IMPORT_MODE_DUPLICATES = new Permission("import.mode.duplicates", true, false);
 	/** Import customer data without subscribing it to a mailinglist **/
-	public static final Permission IMPORT_WITHOUT_MAILINGLIST = new Permission("import.mailinglist.without", true, true);
+	public static final Permission IMPORT_WITHOUT_MAILINGLIST = new Permission("import.mailinglist.without", false, true);
 
 	public static final Permission MAILING_ATTACHMENTS_SHOW = new Permission("mailing.attachments.show", true, false);
 	public static final Permission MAILING_CAN_SEND_ALWAYS = new Permission("mailing.can_send_always", true, false);
 	public static final Permission MAILING_CHANGE = new Permission("mailing.change", true, false);
 	public static final Permission MAILING_COMPONENTS_CHANGE = new Permission("mailing.components.change", true, false);
 	public static final Permission MAILING_COMPONENTS_SHOW = new Permission("mailing.components.show", true, false);
-	public static final Permission MAILING_CONTENT_CHANGE_ALWAYS = new Permission("mailing.content.change.always", true, true);
-	public static final Permission MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS = new Permission("mailing.content.showExcludedTargetgroups", true, true);
+	public static final Permission MAILING_CONTENT_CHANGE_ALWAYS = new Permission("mailing.content.change.always", false, true);
+	public static final Permission MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS = new Permission("mailing.content.showExcludedTargetgroups", true, false);
 	/** Negative right **/
 	public static final Permission MAILING_CONTENT_SHOW = new Permission("mailing.content.show", true, false);
 
@@ -148,12 +131,13 @@ public class Permission {
 	public static final Permission RECIPIENT_CHANGEBULK = new Permission("recipient.change.bulk", true, false);
 	public static final Permission RECIPIENT_CREATE = new Permission("recipient.create", true, false);
 	public static final Permission RECIPIENT_DELETE = new Permission("recipient.delete", true, false);
-	public static final Permission RECIPIENT_GENDER_EXTENDED = new Permission("recipient.gender.extended", true, true);
+	public static final Permission RECIPIENT_GENDER_EXTENDED = new Permission("recipient.gender.extended", true, false);
 	public static final Permission RECIPIENT_HISTORY = new Permission("recipient.history", true, false);
 
 	public static final Permission RECIPIENT_PROFILEFIELD_HTML_ALLOWED = new Permission("recipient.profileField.html.allowed", true, true);
 	public static final Permission RECIPIENT_SHOW = new Permission("recipient.show", true, false);
 	public static final Permission RECIPIENT_TRACKING_VETO = new Permission("recipient.tracking.veto", true, false);
+	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, false);
 
 	public static final Permission ROLE_CHANGE = new Permission("role.change", true, false);
 	public static final Permission ROLE_DELETE = new Permission("role.delete", true, false);
@@ -171,23 +155,22 @@ public class Permission {
 	public static final Permission STATS_DOMAINS = new Permission("stats.domains", true, false);
 	public static final Permission STATS_ECS = new Permission("stats.ecs", true, false);
 	public static final Permission STATS_MAILING = new Permission("stats.mailing", true, false);
-	public static final Permission STATS_MAILING_MIGRATION = new Permission("stats.mailing.migration");
 	public static final Permission STATS_MONTH = new Permission("stats.month", true, false);
 	public static final Permission STATS_SHOW = new Permission("stats.show", true, false);
 	public static final Permission STATS_USERFORM = new Permission("stats.userform", true, false);
+	public static final Permission STATS_REVENUE = new Permission("stats.revenue", false, false);
 
 	public static final Permission TARGETS_CHANGE = new Permission("targets.change", true, false);
 	public static final Permission TARGETS_CREATEML = new Permission("targets.createml", true, false);
 	public static final Permission TARGETS_DELETE = new Permission("targets.delete", true, false);
-	public static final Permission TARGETS_LOCK = new Permission("targets.lock", true, true);
+	public static final Permission TARGETS_LOCK = new Permission("targets.lock", true, false);
 	public static final Permission TARGETS_SHOW = new Permission("targets.show", true, false);
-
 
 	public static final Permission TEMPLATE_CHANGE = new Permission("template.change", true, false);
 	public static final Permission TEMPLATE_DELETE = new Permission("template.delete", true, false);
 	public static final Permission TEMPLATE_SHOW = new Permission("template.show", true, false);
 
-	public static final Permission UPDATE_SHOW = new Permission("update.show", true, true);
+	public static final Permission UPDATE_SHOW = new Permission("update.show", false, true);
 
 	public static final Permission WEBSERVICE_USER_CHANGE = new Permission("webservice.user.change", true, true);
 	public static final Permission WEBSERVICE_USER_CREATE = new Permission("webservice.user.create", true, true);
@@ -219,9 +202,9 @@ public class Permission {
 	public static final Permission MAILING_CAN_ALLOW = new Permission("mailing.can_allow", false, false);
 	public static final Permission MAILING_COMPONENTS_SFTP = new Permission("mailing.components.sftp", false, true);
 	public static final Permission MAILING_CONTENT_DISABLE_LINKEXTENSION = new Permission("mailing.content.disableLinkExtension", false, true);
-	public static final Permission MAILING_CONTENTSOURCE_DATE_LIMIT = new Permission("mailing.contentsource.date.limit", false, true);
+	public static final Permission MAILING_CONTENTSOURCE_DATE_LIMIT = new Permission("mailing.contentsource.date.limit", false, false);
 	public static final Permission MAILING_DELETE = new Permission("mailing.delete", false, false);
-	public static final Permission MAILING_ENVELOPE_ADDRESS = new Permission("mailing.envelope_address", false, true);
+	public static final Permission MAILING_ENVELOPE_ADDRESS = new Permission("mailing.envelope_address", false, false);
 	public static final Permission MAILING_EXPIRE = new Permission("mailing.expire", false, true);
 
 	/** Allow link extension change **/
@@ -248,42 +231,33 @@ public class Permission {
 	public static final Permission MASTER_SHOW = new Permission("master.show", false, true);
 	public static final Permission MEDIATYPE_FAX = new Permission("mediatype.fax", false, true);
 	public static final Permission MEDIATYPE_MMS = new Permission("mediatype.mms", false, true);
-	public static final Permission MEDIATYPE_PRINT = new Permission("mediatype.print", false, true);
+	public static final Permission MEDIATYPE_POST = new Permission("mediatype.post", false, true);
 	public static final Permission MEDIATYPE_SMS = new Permission("mediatype.sms", false, true);
 	public static final Permission MEDIATYPE_WHATSAPP = new Permission("mediatype.whatsapp", false, true);
 
-	//temporary content tab migration permission (GWUA-3758)
-	public static final Permission CONTENT_TAB_MIGRATION = new Permission("content_tab_migration", true, true);
+	public static final Permission FORMS_MIGRATION = new Permission("forms.migration", false, false);
 
-	// temporary MVC migration permissions
-	public static final Permission RECIPIENTS_REPORT_MIGRATION = new Permission("recipientsreport.migration", false, true);
-	public static final Permission STATS_RECIPIENT_MIGRATION = new Permission("stats.recipient.migration",  false, true);
-
+	public static final Permission MAILING_RESUME_WORLD = new Permission("mailing.resume.world", false, false);
 
 	private String category = null;
 	private String subCategory = null;
+	private String featurePackage;
 	private final String tokenString;
 	private final boolean visible;
 	private final boolean premium;
-
-	Permission(String token) throws RuntimeException {
-		this(token, true, true);
-	}
-
-	Permission(String tokenString, final boolean visible) throws RuntimeException {
-		this(tokenString, true, true);
-	}
-	Permission(String tokenString, final boolean visible, final boolean premium) throws RuntimeException {
+	private int sortOrder;
+	
+	protected Permission(String tokenString, final boolean visible, final boolean premium) throws RuntimeException {
 		this.tokenString = tokenString;
 		this.visible = visible;
 		this.premium = premium;
 
-		Permission existing = SYSTEM_PERMISSIONS.get(tokenString);
+		Permission existing = ALL_PERMISSIONS.get(tokenString);
 		if (existing != null) {
 			throw new RuntimeException("Duplicate creation of permission: " + tokenString);
 		}
 
-		SYSTEM_PERMISSIONS.put(tokenString, this);
+		ALL_PERMISSIONS.put(tokenString, this);
 	}
 
 	@Override
@@ -294,7 +268,7 @@ public class Permission {
 	/**
 	 * "setCategory" method may only be used during EMM initialization process
 	 */
-	protected void setCategory(String category) {
+	public void setCategory(String category) {
 		this.category = category;
 	}
 
@@ -305,7 +279,7 @@ public class Permission {
 	/**
 	 * "setSubCategory" method may only be used during EMM initialization process
 	 */
-	protected void setSubCategory(String subCategory) {
+	public void setSubCategory(String subCategory) {
 		this.subCategory = subCategory;
 	}
 
@@ -324,17 +298,33 @@ public class Permission {
 	public final boolean isPremium() {
 		return premium;
 	}
+	
+	public int getSortOrder() {
+		return sortOrder;
+	}
 
+	public void setSortOrder(int sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+	
+	public String getFeaturePackage() {
+		return featurePackage;
+	}
+
+	public void setFeaturePackage(String featurePackage) {
+		this.featurePackage = featurePackage;
+	}
+	
 	/**
 	 * Get a list of all known permissions. The list of permissions cannot be
 	 * changed this way.
 	 */
 	public static List<Permission> getAllSystemPermissions() {
-		return new ArrayList<>(SYSTEM_PERMISSIONS.values());
+		return new ArrayList<>(ALL_PERMISSIONS.values());
 	}
 
 	public static Permission getPermissionByToken(String token) {
-		return SYSTEM_PERMISSIONS.get(token);
+		return ALL_PERMISSIONS.get(token);
 	}
 
 	public static Set<Permission> fromTokens(Collection<String> tokens) {
@@ -362,7 +352,7 @@ public class Permission {
 		}
 		return permissionList.toArray(new Permission[permissionList.size()]);
 	}
-
+	
 	/**
 	 * Read all permissions available on the current system and their category from
 	 * the messages
@@ -414,6 +404,7 @@ public class Permission {
 								// into others-category
 								categoryBySystemPermissions.put(currentPermission, category);
 							}
+							//ASO???
 							subCategoryBySystemPermissions.put(currentPermission, subCategory);
 						}
 					}
@@ -422,7 +413,7 @@ public class Permission {
 
 			// Add rights to category "others", which have no message key category and
 			// therefore cannot be found in messages
-			for (Permission permission : SYSTEM_PERMISSIONS.values()) {
+			for (Permission permission : ALL_PERMISSIONS.values()) {
 				if (!categoryBySystemPermissions.containsKey(permission) &&
 						Permission.ALWAYS_ALLOWED != permission && Permission.ALWAYS_DISALLOWED != permission) {
 					categoryBySystemPermissions.put(permission, CATEGORY_KEY_OTHERS);
@@ -440,20 +431,34 @@ public class Permission {
 	 * @return Returns true if grantedPermissions contains any of
 	 *         checkedPermissions.
 	 */
-	public static boolean permissionAllowed(Collection<Permission> grantedPermissions,
-			Collection<Permission> allowedPremiumPermissions, Permission... checkedPermissions) {
-		for (Permission permission : checkedPermissions) {
-			if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
-				return false;
-			} else if (permission == Permission.ALWAYS_ALLOWED) {
-				return true;
-			} else if (grantedPermissions.contains(permission)) {
-				if (!Permission.PREMIUM_RIGHT_CATEGORIES_LIST.contains(permission.getCategory())
-						|| (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
+	public static boolean permissionAllowed(int companyID, Collection<Permission> grantedPermissions, Collection<Permission> allowedPremiumPermissions, Permission... checkedPermissions) {
+		if ("new".equalsIgnoreCase(ConfigService.getInstance().getValue(ConfigValue.PermissionSystem, companyID))) {
+			for (Permission permission : checkedPermissions) {
+				if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
+					return false;
+				} else if (permission == Permission.ALWAYS_ALLOWED) {
 					return true;
+				} else if (grantedPermissions.contains(permission)) {
+					if (!permission.isPremium() || (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
+						return true;
+					}
 				}
 			}
+			return false;
+		} else {
+			for (Permission permission : checkedPermissions) {
+				if (permission == null || permission == Permission.ALWAYS_DISALLOWED) {
+					return false;
+				} else if (permission == Permission.ALWAYS_ALLOWED) {
+					return true;
+				} else if (grantedPermissions.contains(permission)) {
+					if (!Permission.PREMIUM_RIGHT_CATEGORIES_LIST.contains(permission.getCategory())
+							|| (allowedPremiumPermissions != null && allowedPremiumPermissions.contains(permission))) {
+						return true;
+					}
+				}
+			}
+			return false;
 		}
-		return false;
 	}
 }

@@ -97,7 +97,7 @@
                     generateCommonStatisticChart(data['common']);
                     generateProgressChart(data['viewsclicks']);
 
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }

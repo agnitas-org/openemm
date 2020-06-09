@@ -1,51 +1,68 @@
 AGN.Lib.Controller.new('mailing-preview', function() {
-  var self = this;
-  
-  this.addInitializer('MailingPreview', function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
+  this.addDomInitializer('mailing-preview', function($frame) {
     restoreFields();
-
-    $("[data-stored-field]").change(function () {
-      AGN.Lib.Storage.saveChosenFields($(this));
-    });
+    var form = AGN.Lib.Form.get($('#container-preview'));
+    if (form.getValue('reloadPreview') == 'false') {
+      form.setValue('reloadPreview', true);
+      form.submit().done(function(){
+          $('[data-stored-field]').on('change', function() {
+            var $field = $(this);
+            AGN.Lib.Storage.saveChosenFields($field);
+          });
+      });
+    }
   });
+
+  this.addAction({'click' : 'refresh-preview'}, function() {
+    updatePreview();
+  });
+
+  this.addAction({'change': 'change-header-data'}, function() {
+    updatePreview();
+  });
+
+  function updatePreview() {
+    var form = AGN.Lib.Form.get($('#preview'));
+    form.setValue('reloadPreview', false);
+    form.setResourceSelectorOnce('#preview');
+    form.submit();
+  }
 
   function restoreFields() {
     var needReload = false;
-    
+
     //restore all fields without emails
-    $("[data-stored-field]").each(function () {
-      if ($(this).attr("name") !== "previewCustomerATID" && $(this).attr("name") !== "previewCustomerEmail"){
-        if (AGN.Lib.Storage.restoreChosenFields($(this))){
+    $("[data-stored-field]").each(function() {
+      var $e = $(this),
+        name = $e.prop('name');
+
+      if (name != 'previewCustomerATID' && name != 'previewCustomerEmail') {
+        if (AGN.Lib.Storage.restoreChosenFields($e)) {
           needReload = true;
         }
       }
     });
-    
+
     //Reload if ATID chosen and ATID email changed or if Email chosen and text email changed
     // also restore emails fields
-    if (needReload){
+    if (needReload) {
       AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerATID']"));
       AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerEmail']"));
     } else {
-      if ($("#preview_customer_Email").prop("checked") == true){
-        if (AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerEmail']"))){
+      if ($("#preview_customer_Email").prop("checked") == true) {
+        if (AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerEmail']"))) {
           needReload = true;
         }
         AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerATID']"));
-      } else if ($("#preview_customer_ATID").prop("checked") == true){
-        if (AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerATID']"))){
+      } else if ($("#preview_customer_ATID").prop("checked") == true) {
+        if (AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerATID']"))) {
           needReload = true;
         }
         AGN.Lib.Storage.restoreChosenFields($("[name='previewCustomerEmail']"));
       }
     }
-    if (needReload){
-      $("#preview").submit();
-    }
+
+    return needReload;
   }
 
 });

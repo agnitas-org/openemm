@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core;
 
+import org.springframework.web.context.WebApplicationContext;
+
 public interface ConfigurationValidityCheck  {
-    public void checkValidity();
+    public void checkValidity(WebApplicationContext webApplicationContext);
 }

@@ -15,6 +15,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'adminlog.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'blacklist' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'calendar.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'campaign.autoopt' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'campaign.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'campaign.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'campaign.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -25,12 +26,10 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.import' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'forms.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mailinglist.without' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.add' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.add_update' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.blacklist' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.bounce' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.bouncereactivate' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.doublechecking' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.duplicates' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'import.mode.only_update' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -40,12 +39,10 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.components.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.components.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.content.change.always' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.content.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.content.showExcludedTargetgroups' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.envelope_address' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.expire' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.extend_trackable_links' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.import' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'mailing.send.admin.options' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -99,7 +96,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'template.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'template.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'template.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'update.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'user.xpress' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'webservice.user.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, security_token) (SELECT admin_group_id, 'webservice.user.create' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -126,6 +122,7 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'admin.sh
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'adminlog.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'blacklist');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'calendar.show');
+INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign.autoopt');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'campaign.show');
@@ -136,12 +133,10 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.ch
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.import');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'forms.show');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mailinglist.without');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.add');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.add_update');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.blacklist');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.bounce');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.bouncereactivate');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.doublechecking');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.duplicates');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'import.mode.only_update');
@@ -151,12 +146,10 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.components.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.components.show');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.content.change.always');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.content.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.content.showExcludedTargetgroups');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.envelope_address');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.expire');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.extend_trackable_links');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.import');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'mailing.send.admin.options');
@@ -210,7 +203,6 @@ INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'targets.
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'template.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'template.delete');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'template.show');
-INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'update.show');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'user.xpress');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'webservice.user.change');
 INSERT INTO admin_permission_tbl (admin_id, security_token) VALUES (1, 'webservice.user.create');

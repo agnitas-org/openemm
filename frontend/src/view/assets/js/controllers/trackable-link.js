@@ -50,13 +50,7 @@ AGN.Lib.Controller.new('trackable-link', function() {
 
   this.addInitializer('trackableAction', function($scope) {
     var $trigger = $('[data-action="link-details-trackable"] :selected');
-
-    if ( $trigger.val() == 0 ) {
-      $('#linkAction').prop('disabled', true);
-    } else {
-      $('#linkAction').prop('disabled', false);
-    }
-
+    $('#linkAction').prop('disabled', $trigger.val() == 0);
   })
 
 

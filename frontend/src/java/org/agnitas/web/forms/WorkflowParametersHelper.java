@@ -12,12 +12,13 @@ package org.agnitas.web.forms;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 public class WorkflowParametersHelper {
@@ -72,7 +73,8 @@ public class WorkflowParametersHelper {
                 () -> NumberUtils.toInt((String) value));
     }
     
-    private static <T> T convertOrNull(Object value, Class<T> type, Callable<T> handleStringValue) {
+    @SuppressWarnings("unchecked")
+	private static <T> T convertOrNull(Object value, Class<T> type, Callable<T> handleStringValue) {
         if (value == null) {
             return null;
         }
@@ -102,30 +104,28 @@ public class WorkflowParametersHelper {
         
         HttpSession session = request.getSession(false);
         
-        boolean checkSessionScope = session != null;
-        
         Boolean keepForward = (Boolean) request.getAttribute(WORKFLOW_KEEP_FORWARD);
-        if (keepForward == null && checkSessionScope) {
+        if (keepForward == null && session != null) {
             keepForward = (Boolean) session.getAttribute(WORKFLOW_KEEP_FORWARD);
         }
         
         Integer workflowId = (Integer) request.getAttribute(WORKFLOW_ID);
-        if (workflowId == null && checkSessionScope) {
+        if (workflowId == null && session != null) {
             workflowId = (Integer) session.getAttribute(WORKFLOW_ID);
         }
         
         String params = (String) request.getAttribute(WORKFLOW_FORWARD_PARAMS);
-        if (StringUtils.isEmpty(params) && checkSessionScope) {
+        if (StringUtils.isEmpty(params) && session != null) {
             params = (String) session.getAttribute(WORKFLOW_FORWARD_PARAMS);
         }
         
         Integer targetItem = (Integer) request.getAttribute(WORKFLOW_FORWARD_TARGET_ITEM_ID);
-        if (targetItem == null && checkSessionScope) {
+        if (targetItem == null && session != null) {
             targetItem = (Integer) session.getAttribute(WORKFLOW_FORWARD_TARGET_ITEM_ID);
         }
         
         Integer nodeId = (Integer) request.getAttribute(WORKFLOW_NODE_ID);
-        if (nodeId == null && checkSessionScope) {
+        if (nodeId == null && session != null) {
             nodeId = (Integer) session.getAttribute(WORKFLOW_NODE_ID);
         }
     

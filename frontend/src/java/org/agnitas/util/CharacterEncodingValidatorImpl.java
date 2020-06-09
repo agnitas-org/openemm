@@ -40,7 +40,7 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 
 	/**
 	 * Validates text and HTML template of the given form and the content blocks of the given Mailing object. This method is called directly <b>before modifying</b>
-	 * the MailingBaseForm object. 
+	 * the MailingBaseForm object.
 	 * 
 	 * @param form form to validate text and HTML template
 	 * @param mailing mailing to validate content blocks
@@ -349,12 +349,13 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 		return unencodeableDynamicTags;
 	}
 
-    public Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder) {
+    @Override
+	public Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder) {
     	/*
     	 * We lost information about column of un-encodable character.
     	 * The old implementation did not respect codepoints (and therefore unicode characters with more then 2 bytes length).
     	 * For example the character U+1f382 leads to reports about *two* characters, that are not
-    	 * encodable. (0x1f382 is splitted to characters 0x0001 and 0xf382). 
+    	 * encodable. (0x1f382 is splitted to characters 0x0001 and 0xf382).
     	 */
     	
         String[] stringLines = string.split("\n");

@@ -21,7 +21,7 @@
 <c:set var="agnHighlightKey" 		value="default.Overview" 	scope="request"/>
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request"/>
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 			scope="request"/>
-<c:set var="agnHelpKey" 			value="archiveView" 		scope="request"/>
+<c:set var="agnHelpKey" 			value="mailingArchive" 		scope="request"/>
 
 <emm:ShowByPermission token="campaign.change">
     <c:set var="createNewItemUrl" scope="request">

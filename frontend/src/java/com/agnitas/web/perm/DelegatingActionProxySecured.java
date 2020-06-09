@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.StrutsActionBase;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -30,32 +30,20 @@ import org.springframework.web.struts.DelegatingActionProxy;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 
 public class DelegatingActionProxySecured extends DelegatingActionProxy {
 	private static final transient Logger logger = Logger.getLogger(DelegatingActionProxySecured.class);
-	
+
 	private static ApplicationContext ctx =  null;
 	private static ActionsTokenResolver tokenResolver = null;
+	private static AdminService adminService = null;
 
-	private static ApplicationContext getContext(HttpServletRequest request) {
-		if (ctx == null) {
-			ctx = WebApplicationContextUtils.getWebApplicationContext(request.getSession().getServletContext());
-		}
-		return ctx;
-	}
-	private static ActionsTokenResolver getTokenResolver(HttpServletRequest request) {
-		if (tokenResolver == null) {
-			ApplicationContext ctx =  getContext(request);
-			tokenResolver = (ActionsTokenResolver) ctx.getBean("actionsTokenResolver");
-		}
-		return tokenResolver;
-	}
-	
 	@Override
-	public ActionForward execute(ActionMapping mapping, ActionForm form, 
+	public ActionForward execute(ActionMapping mapping, ActionForm form,
 			HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-		if (!AgnUtils.isUserLoggedIn(request)) {
+		if (!checkAuthorized(request)) {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			return mapping.findForward("logon");
 		}
@@ -85,13 +73,11 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		} else {
 		    method = "unspecified";
 		}
-
-		ActionsTokenResolver tokenResolver = getTokenResolver(request);
 		
 		boolean isAllowed = false;
 		
 		// Check for any complex auth token matching
-		List<ComplexToken> complexTokens = tokenResolver.getComplex(path);
+		List<ComplexToken> complexTokens = getTokenResolver(request).getComplex(path);
 		if (complexTokens != null && checkComplexTokens(complexTokens, method, request)) {
 			isAllowed = true;
 		}
@@ -100,12 +86,12 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		if (!isAllowed) {
 			// Check for the last simple auth token matching (last, because the xml is imported in a map)
 			String token = path + "." + method;
-			mappedToken = tokenResolver.get(token);
+			mappedToken = getTokenResolver(request).get(token);
 			if (mappedToken == null) {
 				if (complexTokens == null) {
 					// No complex token was found and no simple token was found
 					ComAdmin admin = AgnUtils.getAdmin(request);
-					String errMsg = String.format("Permission denied: for user %s because no mapping configuration found for token: %s", 
+					String errMsg = String.format("Permission denied: for user %s because no mapping configuration found for token: %s",
 							admin.getUsername(), token);
 					logger.error(errMsg);
 					throw new NotAllowedActionException(admin.getUsername(), token);
@@ -120,7 +106,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 			return delegateAction.execute(mapping, form, request, response);
 		} else {
 			ComAdmin admin = AgnUtils.getAdmin(request);
-			String errMsg = String.format("Permission denied: %s does not have sufficient privileges to perform operation: %s", 
+			String errMsg = String.format("Permission denied: %s does not have sufficient privileges to perform operation: %s",
 					admin.getUsername(), path);
 			if (mappedToken != null) {
 				errMsg += " SecurityToken: " + mappedToken;
@@ -129,8 +115,23 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 			throw new NotAllowedActionException(admin.getUsername(), path);
 		}
 	}
-	
-	private boolean checkComplexTokens(List<ComplexToken> complexTokens, 
+
+	private boolean checkAuthorized(HttpServletRequest request) {
+		ComAdmin admin = AgnUtils.getAdmin(request);
+
+		if (admin == null) {
+			return false;
+		}
+
+		if (getAdminService(request).isEnabled(admin)) {
+			return true;
+		} else {
+			request.getSession().invalidate();
+			return false;
+		}
+	}
+
+	private boolean checkComplexTokens(List<ComplexToken> complexTokens,
 			String method, HttpServletRequest request) throws Exception {
 		for (ComplexToken complexToken : complexTokens) {
 			if ("*".equals(complexToken.getSubaction()) || method.equals(complexToken.getSubaction())) {
@@ -166,4 +167,24 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		return true;
 	}
 
+	private static ApplicationContext getContext(HttpServletRequest request) {
+		if (ctx == null) {
+			ctx = WebApplicationContextUtils.getWebApplicationContext(request.getSession().getServletContext());
+		}
+		return ctx;
+	}
+
+	private static ActionsTokenResolver getTokenResolver(HttpServletRequest request) {
+		if (tokenResolver == null) {
+			tokenResolver = getContext(request).getBean("actionsTokenResolver", ActionsTokenResolver.class);
+		}
+		return tokenResolver;
+	}
+
+	private static AdminService getAdminService(HttpServletRequest request) {
+		if (adminService == null) {
+			adminService = getContext(request).getBean("AdminService", AdminService.class);
+		}
+		return adminService;
+	}
 }

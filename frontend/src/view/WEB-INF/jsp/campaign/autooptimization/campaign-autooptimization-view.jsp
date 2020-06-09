@@ -18,9 +18,6 @@
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 <%--@elvariable id="adminDateFormatPattern" type="java.lang.String"--%>
 
-<c:set var="DATE_PATTERN" value="<%= Constants.DATE_PATTERN %>"/>
-<c:set var="DATE_TIME_PATTERN" value="<%= Constants.DATE_PATTERN_FULL %>"/>
-
 <c:set var="AO_CRITERIA_CLICKRATE" value="<%= WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE%>"/>
 <c:set var="AO_CRITERIA_OPENRATE" value="<%= WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE%>"/>
 <c:set var="AO_CRITERIA_REVENUE" value="<%= WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE%>"/>
@@ -382,7 +379,7 @@
                 <div class="col-sm-4">
                     <label class="control-label" for="testMailingsSendDate"><bean:message key="mailing.autooptimization.testmailingssenddate"/>:</label>
                 </div>
-                <fmt:parseDate var="sendDateTime" value="${optimizationForm.testMailingsSendDateAsString}" pattern="${DATE_TIME_PATTERN}" timeZone="${adminTimeZone}"/>
+                <fmt:parseDate var="sendDateTime" value="${optimizationForm.testMailingsSendDateAsString}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
                 <input type="hidden" name="testMailingsSendDateAsString" value="${optimizationForm.testMailingsSendDateAsString}"/>
                 <div class="col-sm-4">
                     <div class="input-group">
@@ -417,7 +414,7 @@
                 <div class="col-sm-4">
                     <label class="control-label" for="resultSendDate"><bean:message key="mailing.autooptimization.resultsenddate"/>:</label>
                 </div>
-                <fmt:parseDate var="sendDateTime" value="${optimizationForm.resultSendDateAsString}" pattern="${DATE_TIME_PATTERN}" timeZone="${adminTimeZone}"/>
+                <fmt:parseDate var="sendDateTime" value="${optimizationForm.resultSendDateAsString}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
                 <input type="hidden" name="resultSendDateAsString" value="${optimizationForm.resultSendDateAsString}"/>
                 <div class="col-sm-4">
                     <div class="input-group">
@@ -482,35 +479,8 @@
     </c:if>
 </agn:agnForm>
 
-<script type="text/javascript">
-    $('form#optimizationForm').submit(false);
-
-    AGN.Initializers.InitAutoOptimizationDateTimePickers = function() {
-        var extractDateTimeToResultField = function(dateSelector, timeSelector, resultFieldSelector) {
-            var dateValue = $(dateSelector).pickadate('picker').get('select', '${fn:toLowerCase(DATE_PATTERN)}');
-            var timeValue = $(timeSelector).val();
-            var dateTime = "";
-
-            if (dateValue && timeValue) {
-                dateTime = dateValue + " " + timeValue;
-            }
-
-            $(resultFieldSelector).val(dateTime);
-        };
-
-        var initDateTimeSelectorsGroup = function (dateSelector, timeSelector, resultFieldSelector) {
-            $(dateSelector).pickadate('picker').on({
-                set: function() {
-                    extractDateTimeToResultField(dateSelector, timeSelector, resultFieldSelector);
-                }
-            });
-
-            $(timeSelector).on('change', function() {
-                extractDateTimeToResultField(dateSelector, timeSelector, resultFieldSelector);
-            });
-        };
-
-        initDateTimeSelectorsGroup("#testMailingsSendDate", "#testMailingsSendTime", "input[name='testMailingsSendDateAsString']");
-        initDateTimeSelectorsGroup("#resultSendDate", "#resultSendTime", "input[name='resultSendDateAsString']");
-    };
+<script data-initializer="campaign-autooptimization-view" type="application/json">
+    {
+        "datePattern": "${fn:toLowerCase(adminDateFormat)}"
+    }
 </script>

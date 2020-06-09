@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.WordUtils;
 import org.bouncycastle.util.Strings;
 
 import com.agnitas.emm.core.report.generator.bean.ColumnDefinition;

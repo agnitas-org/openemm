@@ -10,13 +10,19 @@
 
 package org.agnitas.service.impl;
 
+import java.util.List;
 import java.util.Objects;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.RecipientQueryBuilder;
+import org.agnitas.service.RecipientSqlOptions;
 import org.agnitas.target.TargetNode;
 import org.agnitas.target.TargetNodeFactory;
 import org.agnitas.target.TargetRepresentation;
@@ -29,14 +35,9 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.web.RecipientForm;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.eql.EqlFacade;
 
 /**
  * Helper-class for building the sql-query in /recipient/list.jsp
@@ -46,23 +47,22 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 	private static final transient Logger logger = Logger.getLogger(RecipientQueryBuilderImpl.class);
 
 	/** DAO for target groups. */
-	private ComTargetDao targetDao;
-	private ComMailinglistService mailingListService;
+	protected ComTargetDao targetDao;
 
 	/** Service for accessing DB column metadata. */
-	private ColumnInfoService columnInfoService;
-    private MailinglistApprovalService mailinglistApprovalService;
+	protected ColumnInfoService columnInfoService;
+    protected MailinglistApprovalService mailinglistApprovalService;
     
-	private DataSource dataSource;
+	protected DataSource dataSource;
 	
 	/** Facade providing full EQL functionality. */
-    private EqlFacade eqlFacade;
+    protected EqlFacade eqlFacade;
 	
 	/**
 	 * Cache variable for the dataSource vendor, so it must not be recalculated everytime.
 	 * This variable may be uninitialized before the first execution of the isOracleDB method
 	 */
-	private Boolean isOracleDB = null;
+	protected Boolean isOracleDB = null;
 
 	/**
 	 * Set DAO for target groups.
@@ -79,17 +79,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
     }
 
-	/**
-	 * Set Service for mailing lists.
-	 *
-	 * @param mailingListService service for work with mailing lists;
-	 */
-	@Required
-	public void setMailinglistService(ComMailinglistService mailingListService) {
-		this.mailingListService = mailingListService;
-	}
-
-	/**
+    /**
 	 * Set service for DB column meta data.
 	 * 
 	 * @param service ColumnInfoService
@@ -292,6 +282,92 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 
 		return mainStatement;
 	}
+	
+	@Override
+	public SqlPreparedStatementManager getSQLStatement(ComAdmin admin, RecipientSqlOptions options, TargetRepresentationFactory targetRepresentationFactory, TargetNodeFactory targetNodeFactory) throws Exception {
+		final int companyId = admin.getCompanyID();
+		final int adminId = admin.getAdminID();
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating SQL statement for recipients");
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("Oracle DB: " + isOracleDB());
+		}
+
+		if (!options.isCheckParenthesisBalance()) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Parenthesis is unbalanced for recipient search");
+			}
+
+			SqlPreparedStatementManager mainStatement = new SqlPreparedStatementManager("SELECT * FROM customer_" + companyId + "_tbl cust ");
+			mainStatement.addWhereClause("1 = 0");
+			
+			return mainStatement;
+		}
+
+		SqlPreparedStatementManager mainStatement = new SqlPreparedStatementManager("SELECT * FROM customer_" + companyId + "_tbl cust");
+
+		final int mailingListId = options.getListId();
+		final String userType = options.getUserType();
+		final int userStatus = options.getUserStatus();
+
+		if (options.getTargetId() > 0) {
+			mainStatement.addWhereClause(targetDao.getTarget(options.getTargetId(), companyId).getTargetSQL());
+		}
+		
+		if (options.isUseAdvancedSearch()) {
+			TargetRepresentation targetRep = createTargetRepresentationFromForm(options.getForm(), Objects.requireNonNull(targetRepresentationFactory), Objects.requireNonNull(targetNodeFactory), companyId);
+			if (targetRep.checkBracketBalance() && CollectionUtils.isNotEmpty(targetRep.getAllNodes())) {
+				String targetSql = eqlFacade.convertEqlToSql(eqlFacade.convertTargetRepresentationToEql(targetRep, companyId), companyId).getSql();
+				if (StringUtils.isNotBlank(targetSql)) {
+					mainStatement.addWhereClause(targetSql);
+				}
+			}
+		}
+
+		boolean checkDisabledMailingLists = mailinglistApprovalService.hasAnyDisabledMailingListsForAdmin(companyId, adminId);
+
+
+		if (isBindingCheckRequired(mailingListId, userStatus, userType, checkDisabledMailingLists)) {
+            addBindingCheck(companyId, adminId, mailingListId, userStatus, userType, checkDisabledMailingLists, options, mainStatement);
+		}
+
+		return mainStatement;
+	}
+
+    @Override
+    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientSqlOptions options, boolean includeBounceLoad) throws Exception {
+	    logger.warn("getDuplicateAnalysisSQLStatement is unsupported!");
+        return null;
+    }
+    
+    @Override
+    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad) throws Exception {
+        logger.warn("getDuplicateAnalysisSQLStatement is unsupported!");
+        return null;
+    }
+
+    protected void addBindingCheck(final int companyId, final int adminId, final int mailingListId, final int userStatus,
+                                   final String userType, final boolean checkDisabledMailingLists, final RecipientSqlOptions options,
+                                   final SqlPreparedStatementManager mainStatement) throws Exception {
+        SqlPreparedStatementManager sqlCheckBinding = createBindingCheckQuery(companyId, adminId, mailingListId, userStatus, userType, checkDisabledMailingLists);
+        // The mailingListId == -1 means "No binding", but ignored ("All" option used instead) in restricted mode (when checkDisabledMailingLists == true).
+        if (mailingListId >= 0 || checkDisabledMailingLists) {
+            // Binding must be present for customer to pass filters.
+            String whereClause = asExistsClause(sqlCheckBinding, true);
+
+            if (options.isUserTypeEmpty()) {
+                SqlPreparedStatementManager checkIfUserStatusNotExists = createBindingCheckQuery(companyId, adminId, 0, 0, "", false);
+                whereClause += " OR " + asExistsClause(checkIfUserStatusNotExists, false);
+            }
+            mainStatement.addWhereClause(whereClause, sqlCheckBinding.getPreparedSqlParameters());
+        } else {
+            // Binding must be absent for customer to pass.
+            mainStatement.addWhereClause(asExistsClause(sqlCheckBinding, false), sqlCheckBinding.getPreparedSqlParameters());
+        }
+    }
 
 	private String asExistsClause(SqlPreparedStatementManager statement, boolean isPositive) {
 		return String.format((isPositive ? "EXISTS (%s)" : "NOT EXISTS (%s)"), statement.getPreparedSqlString());
@@ -315,6 +391,9 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 		// The mailingListId < 0 means "No binding", but this option is ignored in restricted mode (when disabled mailing lists to be checked).
 		if (mailingListId >= 0 || checkDisabledMailingLists) {
 			if (userStatus != 0) {
+				// Check for valid UserStatus code
+				UserStatus.getUserStatusByID(userStatus);
+				
 				sqlCheckBinding.addWhereClause("bind.user_status = ?", userStatus);
 			}
 
@@ -327,7 +406,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
 	}
 
 	// Checks if a customer binding check (its presence or its absence) to pass a filter (otherwise all unbound customers will be excluded).
-	private boolean isBindingCheckRequired(int mailingListId, int userStatus, String userType, boolean checkDisabledMailingLists) {
+    protected boolean isBindingCheckRequired(int mailingListId, int userStatus, String userType, boolean checkDisabledMailingLists) {
 		// Binding check is required in restricted mode to filter by enabled/disabled mailing lists.
 		if (checkDisabledMailingLists) {
 			return true;

@@ -10,13 +10,15 @@
 
 package org.agnitas.util;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class AgnTagUtils {
 	private static final Pattern AGN_TAG_PATTERN = Pattern.compile("\\[agn[^]]+]");
@@ -32,11 +34,15 @@ public class AgnTagUtils {
 		Matcher matcher = AGN_TAG_PATTERN.matcher(text);
 
 		while (matcher.find()) {
-			matcher.appendReplacement(sb, StringEscapeUtils.escapeHtml(matcher.group()));
+			matcher.appendReplacement(sb, StringEscapeUtils.escapeHtml4(matcher.group()));
 		}
 		matcher.appendTail(sb);
 
 		return sb.toString();
+	}
+
+	public static List<String> getParametersForTag(final String tagName) {
+		return ListUtils.union(getMandatoryParametersForTag(tagName), getOptionalParametersForTag(tagName));
 	}
 
 	public static List<String> getMandatoryParametersForTag(String tagName) {
@@ -54,10 +60,27 @@ public class AgnTagUtils {
 				case "agnFORM":
 				case "agnDYN":
 					return Collections.singletonList("name");
-			}
-		}
 
-		return Collections.emptyList();
+				case "agnVOUCHER":
+					return Arrays.asList("name");
+
+				default:
+					return Collections.emptyList();
+			}
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+	public static List<String> getOptionalParametersForTag(final String tagName) {
+		final String safeTagName = StringUtils.defaultIfEmpty(tagName, "");
+		switch (safeTagName) {
+			case "agnVOUCHER":
+				return Collections.singletonList("default");
+
+			default:
+				return Collections.emptyList();
+		}
 	}
 
 	public static String unescapeAgnTags(String text) {
@@ -69,7 +92,7 @@ public class AgnTagUtils {
 		Matcher matcher = ESCAPED_AGN_TAG_PATTERN.matcher(text);
 
 		while (matcher.find()) {
-			matcher.appendReplacement(sb, StringEscapeUtils.unescapeHtml(matcher.group()));
+			matcher.appendReplacement(sb, StringEscapeUtils.unescapeHtml4(matcher.group()));
 		}
 		matcher.appendTail(sb);
 

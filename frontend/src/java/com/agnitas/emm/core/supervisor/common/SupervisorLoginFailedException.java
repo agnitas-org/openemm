@@ -14,6 +14,6 @@ public final class SupervisorLoginFailedException extends SupervisorException {
 	private static final long serialVersionUID = -4887596968391851901L;
 
 	public SupervisorLoginFailedException(final String username, final String supervisorName) {
-		super(String.format("Supervisor login failed (user: %s, supervisor %s)", username, supervisorName));
+		super(String.format("Supervisor login failed (user: %s, supervisor: %s)", username, supervisorName));
 	}
 }

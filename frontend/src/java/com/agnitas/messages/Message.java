@@ -88,4 +88,5 @@ public class Message {
     public int hashCode() {
         return code.hashCode();
     }
+
 }

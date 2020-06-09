@@ -19,13 +19,6 @@ public interface ComGridTemplate {
     int ORIENTATION_ALIGN_LEFT = 1;
     int ORIENTATION_ALIGN_CENTER = 2;
 
-    String REPEAT_XY = "xy";
-    String REPEAT_X = "x";
-    String REPEAT_Y = "y";
-    String STRETCH_FULL_SIZE = "z";
-    //TODO: remove after successful testing template migration
-    String NO_REPEAT = "no";
-    
     int getId();
     void setId(int id);
 
@@ -60,12 +53,6 @@ public interface ComGridTemplate {
     void setWorkCopyOf(int workCopyOf);
 
     boolean isWorkCopy();
-
-    int getBackgroundImageId();
-    void setBackgroundImageId(int backgroundImageId);
-
-    String getBackgroundRepeat();
-    void setBackgroundRepeat(String backgroundRepeat);
 
     int getOrientation();
     void setOrientation(int orientation);

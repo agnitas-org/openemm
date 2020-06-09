@@ -15,12 +15,13 @@ import java.util.Map;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.util.GuiConstants;
+import org.apache.commons.lang.StringUtils;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
 public class ComMailingContentChecker {
     public static void checkHtmlWarningConditions(String htmlContentString, ActionMessages messages) {
-		if (htmlContentString.toLowerCase().contains("background=\"#")) {
+		if (StringUtils.containsIgnoreCase(htmlContentString, "background=\"#")) {
 			// the attribute background causes ActionForms to load twice or multiple, because background.value should be an image and not a color-code
             messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.problematical_htmlcontent", "background=\"# ..."));
 		}
@@ -28,7 +29,7 @@ public class ComMailingContentChecker {
     
     public static void checkHtmlWarningConditions(Mailing aMailing, ActionMessages messages) {
     	for (Map.Entry<String, MailingComponent> componentEntry : aMailing.getComponents().entrySet()) {
-    		if ("text/html".equalsIgnoreCase(componentEntry.getValue().getMimeType())) {
+    		if (StringUtils.equalsIgnoreCase("text/html", componentEntry.getValue().getMimeType())) {
     			checkHtmlWarningConditions(componentEntry.getValue().getEmmBlock(), messages);
     		}
     	}

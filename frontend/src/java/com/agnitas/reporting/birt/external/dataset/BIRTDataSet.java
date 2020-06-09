@@ -23,37 +23,36 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import java.util.stream.Collectors;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailing;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
-
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.LightTargetDao;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
 import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
 import com.agnitas.util.LongRunningSelectResultCacheDao;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	private static final transient Logger logger = Logger.getLogger(BIRTDataSet.class);
@@ -69,6 +68,14 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
  
 	public Connection getConnection() throws SQLException {
 		return getDataSource().getConnection();
+	}
+	
+	public static String getOnePixelLogDeviceTableName(int companyID) {
+		return "onepixellog_device_" + companyID + "_tbl";
+	}
+	
+	public static String getRdirLogTableName(int companyID) {
+		return "rdirlog_" + companyID + "_tbl";
 	}
 	
 	protected static LightTarget getDefaultTarget(LightTarget target) {
@@ -359,7 +366,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	
 	public boolean isTrackingExists(int mailingID, @VelocityCheck int companyID) {
 		StringBuilder queryBuilder = new StringBuilder();
-		if (getMailingType(mailingID) == Mailing.TYPE_INTERVAL) {
+		if (getMailingType(mailingID) == MailingTypes.INTERVAL.getCode()) {
 			queryBuilder
 					.append("SELECT COUNT(*)")
 					.append(" FROM interval_track_").append(companyID).append("_tbl mt")
@@ -373,6 +380,16 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return select(logger, queryBuilder.toString(), Integer.class, mailingID) > 0;
 	}
 	
+	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, @VelocityCheck int companyID) {
+		List<Integer> mailings = getAutoOptimizationMailings(optimizationId, companyID).stream().filter(id -> id != 0).collect(Collectors.toList());
+		for (int mailingId: mailings) {
+			if (!isTrackingExists(mailingId, companyID)) {
+				return false;
+			}
+		}
+		return !CollectionUtils.isEmpty(mailings);
+	}
+	
 	public boolean isMailingBouncesExpire(@VelocityCheck int companyId, int mailingId) {
 		Map<Integer, Boolean> expireMap = getMailingBouncesExpire(companyId, mailingId + "");
 		return expireMap.get(mailingId);
@@ -383,7 +400,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		String query = "SELECT expire_bounce FROM company_tbl WHERE company_id = ?";
 		int bounceExpire =  selectInt(logger, query, companyId);
 		if (bounceExpire == 0) {
-			bounceExpire = getConfigService().getIntegerValue(ConfigValue.BounceCleanupAgeInDays, companyId);
+			bounceExpire = getConfigService().getIntegerValue(ConfigValue.ExpireBounce, companyId);
 		}
 		String sql;
 		if (isOracleDB()) {
@@ -436,6 +453,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         return result;
     }
 	
+    public int getAutoOptimizationWinnerId(int optimizationID, int companyID) {
+		String query = "SELECT result_mailing_id FROM auto_optimization_tbl WHERE optimization_id=? and company_id=?";
+        return selectInt(logger, query, optimizationID, companyID);
+    }
+    
     protected List<LightMailingList> getMailingLists(List<Integer> mailingListIds, @VelocityCheck Integer companyID) {
     	if (mailingListIds != null && mailingListIds.size() > 0) {
 			return new LightMailingListDaoImpl(getDataSource()).getMailingLists(mailingListIds, companyID);
@@ -459,7 +481,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     }
 	
     protected int getMailingType(int mailingId) {
-        return select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId);
+    	if (mailingId <= 0) {
+    		throw new RuntimeException("Invalid mailing id");
+    	} else {
+    		return select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId);
+    	}
     }
 	
     protected int getNumberSentMailings(@VelocityCheck int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -471,7 +497,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
         
         int mailingType = getMailingType(mailingID);
-        if (mailingType == Mailing.TYPE_INTERVAL) {
+        if (mailingType == MailingTypes.INTERVAL.getCode()) {
             StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) FROM");
     		List<Object> parameters = new ArrayList<>();
             
@@ -526,13 +552,13 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
                 
         		int numberSentMailingsByMailTrack = selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         		
-        		if (numberSentMailingsByMailTrack == 0 && targetSql == null || StringUtils.isBlank(targetSql) || targetSql.replace(" ", "").equals("1=1")) {
+        		if (numberSentMailingsByMailTrack == 0 || targetSql == null || StringUtils.isBlank(targetSql) || targetSql.replace(" ", "").equals("1=1")) {
         			// Fallback for newly activated automationpackage with newly created and therefor empty mailtrack table
         			StringBuilder queryBuilderMailingAccount = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
             		List<Object> parametersMailingAccount = new ArrayList<>();
             		parametersMailingAccount.add(mailingID);
                     
-                    if (mailingType == Mailing.TYPE_INTERVAL) {
+                    if (mailingType == MailingTypes.INTERVAL.getCode()) {
                     	queryBuilderMailingAccount.append(" AND status_field = 'D'");
                     } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
                     	queryBuilderMailingAccount.append(" AND status_field IN ('A', 'T')");
@@ -556,7 +582,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		List<Object> parameters = new ArrayList<>();
         		parameters.add(mailingID);
                 
-                if (mailingType == Mailing.TYPE_INTERVAL) {
+                if (mailingType == MailingTypes.INTERVAL.getCode()) {
                     queryBuilder.append(" AND status_field = 'D'");
                 } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
                     queryBuilder.append(" AND status_field IN ('A', 'T')");
@@ -609,7 +635,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			parameters.add(parseStatisticEndDate(endDateString));
 		}
 		
-		if (StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+		if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
 			queryBuilder.append(" AND (").append(targetSql).append(")");
 		}
 
@@ -645,12 +671,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	}
 	
 	@Override
-	protected void logSqlError(Exception e, Logger logger, String statement, Object... parameter) {
+	protected void logSqlError(Exception e, Logger childClassLogger, String statement, Object... parameter) {
 		getJavaMailService().sendExceptionMail("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
     	if (parameter != null && parameter.length > 0) {
-    		logger.error("Error: " + e.getMessage() + "\nSQL:" + statement + "\nParameter: " + getParameterStringList(parameter), e);
+    		childClassLogger.error("Error: " + e.getMessage() + "\nSQL:" + statement + "\nParameter: " + getParameterStringList(parameter), e);
     	} else {
-    		logger.error("Error: " + e.getMessage() + "\nSQL:" + statement, e);
+    		childClassLogger.error("Error: " + e.getMessage() + "\nSQL:" + statement, e);
     	}
 	}
 	
@@ -658,21 +684,21 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @param parameter
 	 * @return List of db entries represented as caseinsensitive maps
 	 * @throws Exception
 	 */
-	protected List<Map<String, Object>> selectEmbedded(Logger logger, String statement, Object... parameter) throws Exception {
+	protected List<Map<String, Object>> selectEmbedded(Logger childClassLogger, String statement, Object... parameter) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement, parameter);
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, parameter);
 			return getEmbeddedJdbcTemplate().queryForList(statement, parameter);
 		} catch (DataAccessException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		}
 	}
@@ -681,22 +707,22 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @param rowMapper
 	 * @param parameter
 	 * @return List of db entries represented as objects
 	 * @throws Exception
 	 */
-	protected <T> List<T> selectEmbedded(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) throws Exception {
+	protected <T> List<T> selectEmbedded(Logger childClassLogger, String statement, RowMapper<T> rowMapper, Object... parameter) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement, parameter);
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, parameter);
 			return getEmbeddedJdbcTemplate().query(statement, rowMapper, parameter);
 		} catch (DataAccessException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		}
 	}
@@ -705,49 +731,83 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @param requiredType
 	 * @param parameter
 	 * @return single db entry as object
 	 * @throws Exception
 	 */
-	protected <T> T selectEmbedded(Logger logger, String statement, Class<T> requiredType, Object... parameter) throws Exception {
+	protected <T> T selectEmbedded(Logger childClassLogger, String statement, Class<T> requiredType, Object... parameter) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement, parameter);
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, parameter);
 			return getEmbeddedJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (DataAccessException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		}
+	}
+	
+	/**
+	 * Gets data from embedded derby database.
+	 * Logs the statement and parameter in debug-level, executes select and logs error.
+	 *
+	 * @param childClassLogger
+	 * @param statement
+	 * @param defaultValue
+	 * @param parameter
+	 * @return single db entry as object
+	 * @throws Exception
+	 */
+	protected int selectEmbeddedIntWithDefault(Logger childClassLogger, String statement, int defaultValue, Object... parameter) throws Exception {
+		try {
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, parameter);
+			Integer value = getEmbeddedJdbcTemplate().queryForObject(statement, Integer.class, parameter);
+			return value != null ? value : defaultValue;
+		} catch (EmptyResultDataAccessException e) {
+			if (childClassLogger.isDebugEnabled()) {
+				childClassLogger.debug("Empty result, using default value: " + defaultValue);
+			}
+			return defaultValue;
+		} catch (DataAccessException e) {
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
+			throw e;
+		} catch (RuntimeException e) {
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
+			throw e;
+		}
+	}
+	
+	protected int selectEmbeddedInt(Logger childClassLogger, String statement, Object... parameter) throws Exception {
+		return selectEmbeddedIntWithDefault(childClassLogger, statement, 0, parameter);
 	}
 	
 	/**
 	 * Updates data in embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes update and logs error.
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @param parameter
 	 * @return number of touched lines in db
 	 * @throws Exception
 	 */
-	protected int updateEmbedded(Logger logger, String statement, Object... parameter) throws Exception {
+	protected int updateEmbedded(Logger childClassLogger, String statement, Object... parameter) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement, parameter);
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, parameter);
 			int touchedLines = getEmbeddedJdbcTemplate().update(statement, parameter);
-			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + touchedLines);
+			if (childClassLogger.isDebugEnabled()) {
+				childClassLogger.debug("lines changed by update: " + touchedLines);
 			}
 			return touchedLines;
 		} catch (DataAccessException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, parameter);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, parameter);
 			throw e;
 		}
 	}
@@ -756,20 +816,20 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Execute ddl-statement in embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes a DDL SQL Statement.
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @return number of touched lines in db
 	 * @throws Exception
 	 */
-	protected void executeEmbedded(Logger logger, String statement) throws Exception {
+	protected void executeEmbedded(Logger childClassLogger, String statement) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement);
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement);
 			getEmbeddedJdbcTemplate().execute(statement);
 		} catch (DataAccessException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement);
 			throw e;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement);
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement);
 			throw e;
 		}
 	}
@@ -779,22 +839,22 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Logs the statement and parameter in debug-level, executes update and logs error.<br />
 	 * Watch out: Oracle returns value -2 (= Statement.SUCCESS_NO_INFO) per line for success with no "lines touched" info<br />
 	 * 
-	 * @param logger
+	 * @param childClassLogger
 	 * @param statement
 	 * @param values
 	 * @return
 	 * @throws Exception
 	 */
-	public int[] batchupdateEmbedded(Logger logger, String statement, List<Object[]> values) throws Exception {
+	public int[] batchupdateEmbedded(Logger childClassLogger, String statement, List<Object[]> values) throws Exception {
 		try {
-			logSqlStatement(logger, "EMBEDDED: " + statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
+			logSqlStatement(childClassLogger, "EMBEDDED: " + statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			int[] touchedLines = getEmbeddedJdbcTemplate().batchUpdate(statement, values);
-			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + Arrays.toString(touchedLines));
+			if (childClassLogger.isDebugEnabled()) {
+				childClassLogger.debug("lines changed by update: " + Arrays.toString(touchedLines));
 			}
 			return touchedLines;
 		} catch (RuntimeException e) {
-			logSqlError(e, logger, "EMBEDDED: " + statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
+			logSqlError(e, childClassLogger, "EMBEDDED: " + statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			throw e;
 		}
 	}

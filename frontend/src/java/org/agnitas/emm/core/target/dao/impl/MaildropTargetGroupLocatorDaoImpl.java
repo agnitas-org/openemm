@@ -15,7 +15,7 @@ import org.agnitas.emm.core.target.dao.MaildropTargetGroupLocatorDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.log4j.Logger;
 
-import com.agnitas.beans.MaildropEntry;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 
 /**
  * Implementation of {@link MaildropTargetGroupLocatorDao}.
@@ -26,7 +26,7 @@ public class MaildropTargetGroupLocatorDaoImpl extends BaseDaoImpl implements Ma
 	
 	@Override
 	public boolean hasMaildropEntriesForTargetGroup(@VelocityCheck int companyID, int targetGroupID) {
-		int count = selectInt(logger, "SELECT count(*) FROM maildrop_status_tbl WHERE company_id=? AND genstatus<>? AND admin_test_target_id=?", companyID, MaildropEntry.GEN_FINISHED, targetGroupID);
+		int count = selectInt(logger, "SELECT count(*) FROM maildrop_status_tbl WHERE company_id=? AND genstatus<>? AND admin_test_target_id=?", companyID, MaildropGenerationStatus.FINISHED.getCode(), targetGroupID);
 
 		return count > 0;
 	}

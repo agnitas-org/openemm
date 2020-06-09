@@ -163,7 +163,7 @@ Sometimes it's useful to just extend the content of one tab when showing another
     Storage.set('toggle_tab' + group, {hidden: false});
 
     // Load lazy data if any
-    AGN.Initializers.Load($target);
+    AGN.Lib.CoreInitializer.run('load', $target);
   };
 
   hide = function($trigger) {

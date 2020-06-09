@@ -17,6 +17,7 @@
 		webservice.user.change
 		webservice.user.create
 		webservice.user.show
+		server.status
 	</allowedPremiumFeatures>
 	<maximumNumberOfReferenceTables>-1</maximumNumberOfReferenceTables>
 	<allowMailingSendForMasterCompany>true</allowMailingSendForMasterCompany>

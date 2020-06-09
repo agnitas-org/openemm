@@ -30,8 +30,8 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -46,10 +46,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/recipientsreport")
-@PermissionMapping("recipientsreport_new")
+@PermissionMapping("recipientsreport")
 public class RecipientsReportController {
-
-    @SuppressWarnings("unused")
     private static final transient Logger logger = Logger.getLogger(RecipientsReportController.class);
 
     private static final String DATE_FORMAT = DateUtilities.YYYY_MM_DD;
@@ -83,10 +81,11 @@ public class RecipientsReportController {
 
         model.addAttribute("reportsList", reports);
         model.addAttribute("dateFormatPattern", DATE_FORMAT);
+        model.addAttribute("adminDateTimeFormatPattern", admin.getDateTimeFormat().toPattern());
         
         writeUserActivityLog(admin, "Import/Export logs", "active tab - overview");
 
-        return "recipient_reports_new";
+        return "recipient_reports";
     }
 
     @GetMapping("/{reportId:\\d+}/view.action")
@@ -103,11 +102,11 @@ public class RecipientsReportController {
     
         model.addAttribute("reportId", reportId);
         // Escape all text, even html, so it can be viewed in an iframe as docsource
-        model.addAttribute("reportContentEscaped", StringEscapeUtils.escapeHtml(reportContent));
+        model.addAttribute("reportContentEscaped", StringEscapeUtils.escapeHtml4(reportContent));
         
         writeUserActivityLog(admin, "Import/Export logs view", "Report ID: " + reportId);
     
-        return "recipient_report_view_new";
+        return "recipient_report_view";
     }
 
     @GetMapping("/{reportId:\\d+}/download.action")

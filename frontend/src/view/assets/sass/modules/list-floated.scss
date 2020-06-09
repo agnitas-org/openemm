@@ -11,6 +11,12 @@
   }
 }
 
+.list-padding-top {
+  > li {
+    padding-top: 5px;
+  }
+}
+
 .list-inline {
   text-align: center;
 

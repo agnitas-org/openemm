@@ -22,13 +22,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
 import cz.vutbr.web.css.RuleFontFace;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xerces.parsers.DOMParser;
 import org.cyberneko.html.HTMLConfiguration;
@@ -487,8 +488,14 @@ public class HtmlUtils {
                 break;
 
             case Node.TEXT_NODE:
-                if (StringUtils.isNotBlank(node.getNodeValue())) {
-                    builder.append(node.getNodeValue());
+                if (options.isPrettyPrint()) {
+                    if(StringUtils.isNotBlank(node.getNodeValue())) {
+                        builder.append(node.getNodeValue());
+                    }
+                } else {
+                    if(StringUtils.isNotEmpty(node.getNodeValue())) {
+                        builder.append(node.getNodeValue());
+                    }
                 }
                 break;
 
@@ -710,23 +717,23 @@ public class HtmlUtils {
         }
     }
 
-    public static List<ParsingException> validate(String content) {
+    public static Optional<ParsingException> validate(String content) {
         return validate(content, Locale.getDefault());
     }
 
-    public static List<ParsingException> validate(String content, Locale locale) {
+    public static Optional<ParsingException> validate(String content, Locale locale) {
         if (StringUtils.isEmpty(content)) {
-            return Collections.emptyList();
+            return Optional.empty();
         }
 
         try {
             SaxParser tokenizer = new SaxParser(new HtmlParsingHandler(locale), locale);
             tokenizer.parse(content);
         } catch (ParsingException e) {
-            return Collections.singletonList(e);
+            return Optional.of(e);
         }
 
-        return Collections.emptyList();
+        return Optional.empty();
     }
 
     public static StylesEmbeddingOptionsBuilder stylesEmbeddingOptionsBuilder() {

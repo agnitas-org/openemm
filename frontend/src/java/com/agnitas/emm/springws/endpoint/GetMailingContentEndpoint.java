@@ -21,19 +21,16 @@ import com.agnitas.emm.springws.jaxb.GetMailingContentResponse;
 import com.agnitas.emm.springws.jaxb.MailingContent;
 import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-@SuppressWarnings("deprecation")
 public class GetMailingContentEndpoint extends AbstractMarshallingPayloadEndpoint {
-	
-	@SuppressWarnings("hiding")
-	private static final Logger logger = Logger.getLogger(GetMailingContentEndpoint.class);
+	private static final Logger classLogger = Logger.getLogger(GetMailingContentEndpoint.class);
 
-	private ObjectFactory comObjectFactory; 
+	private ObjectFactory comObjectFactory;
 	private MailingService mailingService;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {
-		if( logger.isInfoEnabled()) {
-			logger.info( "Entered MailingTemplatesContentEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Entered MailingTemplatesContentEndpoint.invokeInternal()");
 		}
 		
 		GetMailingContentRequest request = (GetMailingContentRequest) arg0;
@@ -42,9 +39,9 @@ public class GetMailingContentEndpoint extends AbstractMarshallingPayloadEndpoin
 		int mailingId = request.getMailingId();
 		int companyId = Utils.getUserCompany();
 
-		com.agnitas.emm.springws.jaxb.GetMailingContentResponse.Items items 
+		com.agnitas.emm.springws.jaxb.GetMailingContentResponse.Items items
 			= comObjectFactory.createGetMailingContentResponseItems();
-		for (MailingComponent component 
+		for (MailingComponent component
 				: mailingService.getMailingComponents(mailingId, companyId)) {
 			MailingContent mailingContent = new MailingContent();
 			mailingContent.setName(component.getComponentName());
@@ -53,8 +50,8 @@ public class GetMailingContentEndpoint extends AbstractMarshallingPayloadEndpoin
 		}
 		response.setItems(items);
 		
-		if( logger.isInfoEnabled()) {
-			logger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
+		if( classLogger.isInfoEnabled()) {
+			classLogger.info( "Leaving GetMailingContentEndpoint.invokeInternal()");
 		}
 		
 		return response;

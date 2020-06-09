@@ -31,7 +31,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -41,18 +42,22 @@ import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
 
 public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDao {
 	private static final transient Logger logger = Logger.getLogger(BlacklistDaoImplBasic.class);
-	
+
+	private static final String[] SUPPORTED_COLUMNS = new String[]{"email", "reason", "timestamp"};
+
 	protected static String getCustomerBanTableName(int companyId) {
 		return "cust" + companyId + "_ban_tbl";
 	}
-	
+
+	private static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
+
 	/**
 	 * Inserts a new entry in the blacklist table. returns false, if something
 	 * went wrong.
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean insert(@VelocityCheck int companyID, String email) {
+	public boolean insert(@VelocityCheck int companyID, String email, String reason) {
 		if (StringUtils.isBlank(email)) {
 			return false;
 		} else {
@@ -61,9 +66,24 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 			if (exist(companyID, email)) {
 				return true;
 			} else {
-				String sql = "INSERT INTO " + getCustomerBanTableName(companyID) + " (email) VALUES (?)";
-				return update(logger, sql, email) == 1;
+				String sql = "INSERT INTO " + getCustomerBanTableName(companyID) + " (email, reason) VALUES (?, ?)";
+				return update(logger, sql, email, reason) == 1;
 			}
+		}
+	}
+
+	/**
+	 * Update an entry in the blacklist table. returns false, if something went wrong.
+	 */
+	@Override
+	@DaoUpdateReturnValueCheck
+	public boolean update(@VelocityCheck int companyID, String email, String reason) {
+		if (StringUtils.isBlank(email)) {
+			return false;
+		} else {
+			email = AgnUtils.normalizeEmail(email);
+			String sql = "UPDATE " + getCustomerBanTableName(companyID) + " SET reason = ? WHERE email = ?";
+			return update(logger, sql, reason, email) == 1;
 		}
 	}
 	
@@ -105,13 +125,8 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID, String sort, String direction, int page, int rownums, String likePattern) {
 		String wildcardLikePattern = replaceWildCardCharacters(StringUtils.defaultString(likePattern));
 
-		if (StringUtils.isBlank(sort)) {
-			sort = "email";
-		} else if ("date".equalsIgnoreCase(sort)) {
-			// BUG-FIX: sortName in display-tag has no effect
-			sort = "timestamp";
-		}
-		
+		sort = getSortableColumn(sort);
+
 		// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
 		String sortClause;
 		try {
@@ -165,13 +180,13 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 		String blackListQuery;
 		if (isOracleDB()) {
 			blackListQuery = "SELECT * FROM (SELECT selection.*, rownum AS r FROM ("
-					+ "SELECT email, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
+					+ "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
 					+ whereClause
 					+ sortClause
 				+ ") selection)"
 				+ " WHERE r BETWEEN ? AND ?";
 		} else {
-			blackListQuery = "SELECT email, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
+			blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
 					+ whereClause 
 					+ sortClause
 					+ " LIMIT ?, ?";
@@ -242,7 +257,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
     @Override
     public List<BlackListEntry> getBlacklistedRecipients( @VelocityCheck int companyID) {
-        String blackListQuery = "SELECT email, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " ORDER BY email";
+        String blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " ORDER BY email";
         return select(logger, blackListQuery, new BlackListEntry_RowMapper());
     }
 
@@ -251,9 +266,8 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 		String query = "SELECT DISTINCT m.mailinglist_id, m.company_id, m.shortname, m.description FROM mailinglist_tbl m, customer_" + companyId + "_tbl c, customer_" + companyId + "_binding_tbl b" +
 			" WHERE c.email = ? AND b.customer_id = c.customer_id AND b.user_status = ? AND b.mailinglist_id = m.mailinglist_id AND m.deleted = 0 AND m.company_id = ?";
 
-		MailinglistRowMapper rm = new MailinglistRowMapper();
-		
-		List<Mailinglist> list = select(logger, query, rm, email, UserStatus.Blacklisted.getStatusCode(), companyId);
+
+		List<Mailinglist> list = select(logger, query, MAILINGLIST_ROW_MAPPER, email, UserStatus.Blacklisted.getStatusCode(), companyId);
 		
 		return list;
 	}
@@ -303,14 +317,28 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	public boolean blacklistCheck(String email, int companyID) {
 		return blacklistCheckCompanyOnly(email, companyID);
 	}
-	
-	public class BlackListEntry_RowMapper implements RowMapper<BlackListEntry> {	
+
+	private String getSortableColumn(String column) {
+		if (StringUtils.isBlank(column)) {
+			return "email";
+		}
+
+		column = column.toLowerCase();
+
+		if (ArrayUtils.contains(SUPPORTED_COLUMNS, column)) {
+			return column;
+		} else {
+			return "email";
+		}
+	}
+
+	public static class BlackListEntry_RowMapper implements RowMapper<BlackListEntry> {
 		@Override
-		public BlackListEntry mapRow(ResultSet resultSet, int row) throws SQLException {
-			String email = resultSet.getString("email");
-			Date creationDate = resultSet.getTimestamp("creation_date");
-			BlackListEntry entry = new BlackListEntryImpl(email, creationDate);
-			return entry;
+		public BlackListEntry mapRow(ResultSet rs, int row) throws SQLException {
+			String email = rs.getString("email");
+			String reason = rs.getString("reason");
+			Date creationDate = rs.getTimestamp("creation_date");
+			return new BlackListEntryImpl(email, reason, creationDate);
 		}
 	}
 }

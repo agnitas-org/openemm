@@ -23,9 +23,9 @@ import org.agnitas.beans.impl.MediatypeImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ParameterParser;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 

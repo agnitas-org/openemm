@@ -11,6 +11,10 @@
 package com.agnitas.emm.core.commons.uid.daocache.impl;
 
 import org.agnitas.emm.core.commons.daocache.AbstractDaoCache;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.TimeoutLRUMap;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.dao.ComMailingDao;
@@ -18,14 +22,27 @@ import com.agnitas.dao.ComMailingDao;
 public class ComRdirMailingDataDaoCache extends AbstractDaoCache<ComRdirMailingData> {
 
 	private ComMailingDao mailingDao;
-	
+
+	private ConfigService configService;
+
+	@Required
 	public void setMailingDao( ComMailingDao mailingDao) {
 		this.mailingDao = mailingDao;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 	
 	@Override
 	protected ComRdirMailingData getItemFromDao( int mailingId) {
-		return this.mailingDao.getRdirMailingData( mailingId);
+		if (!isCacheInitialized()) {
+			setCache(new TimeoutLRUMap<Integer, ComRdirMailingData>(
+				configService.getIntegerValue(ConfigValue.RdirMailingIdsMaxCache),
+				configService.getIntegerValue(ConfigValue.RdirMailingIdsMaxCacheTimeMillis)));
+		}
+		return this.mailingDao.getRdirMailingData(mailingId);
 	}
 
 }

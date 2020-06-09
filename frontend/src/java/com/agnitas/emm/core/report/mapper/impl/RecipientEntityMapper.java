@@ -13,8 +13,8 @@ package com.agnitas.emm.core.report.mapper.impl;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.report.bean.RecipientEntity;

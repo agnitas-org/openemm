@@ -84,12 +84,14 @@ public class Decrypt {
 		//
 		byte[]	raw = null;
 		switch (version) {
-		case 0:
-			raw = Hex.decodeHex (input);
-			break;
-		case 1:
-			raw = Base64.decodeBase64 (input);
-			break;
+			case 0:
+				raw = Hex.decodeHex (input);
+				break;
+			case 1:
+				raw = Base64.decodeBase64 (input);
+				break;
+			default:
+				break;
 		}
 		if (raw == null) {
 			throw new Exception ("Failed to decode input string " + input + " for version " + version);

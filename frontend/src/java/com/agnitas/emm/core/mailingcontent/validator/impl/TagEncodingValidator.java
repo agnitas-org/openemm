@@ -12,6 +12,10 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 
 import java.util.Objects;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
 import org.agnitas.exceptions.EncodingError;
@@ -20,14 +24,9 @@ import org.agnitas.util.CharacterEncodingValidator;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
-import com.agnitas.web.mvc.Popups;
-
 @Component
 @Order(1)
 public class TagEncodingValidator implements DynTagValidator {
-
     private CharacterEncodingValidator characterEncodingValidator;
     private MailingDao mailingDao;
 
@@ -37,7 +36,7 @@ public class TagEncodingValidator implements DynTagValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
         try {
             String parameters = mailingDao.getEmailParameter(dynTagDto.getMailingId());
             if (Objects.nonNull(parameters)) {
@@ -46,7 +45,7 @@ public class TagEncodingValidator implements DynTagValidator {
                 return true;
             }
         } catch (CharacterEncodingValidationExceptionMod e) {
-            for (EncodingError ignored : e.getSubjectErrors()) {
+            if (!e.getSubjectErrors().isEmpty()) {
                 popups.alert("error.charset.subject");
             }
             for (EncodingError mailingComponent : e.getFailedMailingComponents()) {

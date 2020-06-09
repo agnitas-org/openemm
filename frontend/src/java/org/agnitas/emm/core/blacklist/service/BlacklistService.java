@@ -40,9 +40,11 @@ public interface BlacklistService {
 
     boolean isAlreadyExist(@VelocityCheck int companyId, String email);
 
-    boolean add(@VelocityCheck int companyId, int adminId, String email);
+    boolean add(@VelocityCheck int companyId, int adminId, String email, String reason) throws Exception;
 
     void add(GlobalBlacklistDto globalBlacklistDto);
+
+    boolean update(@VelocityCheck int companyId, String email, String reason);
 
     PaginatedListImpl<BlacklistDto> getAll(@VelocityCheck int companyId, String sort, String direction, int page, int rowNumber, String likePattern);
 

@@ -14,6 +14,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -28,8 +29,8 @@ import com.agnitas.beans.ComAdmin;
  * Helper class to save login data in HTTP request.
  */
 public class LoginTrackServiceRequestHelper {
-	
 	/** The logger. */
+	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger( LoginTrackServiceRequestHelper.class);
 		
 	/** Default value for minimum period of days for login data. */
@@ -56,28 +57,27 @@ public class LoginTrackServiceRequestHelper {
 		before14DaysCal.add(Calendar.DAY_OF_YEAR, -minPeriodDays);
 		Date before14Days = before14DaysCal.getTime();
 		
-		LoginData lastLogin = this.loginTrackService.getLastSuccessfulLogin( admin.getUsername(), true);
+		final Optional<LoginData> lastLoginOptional = this.loginTrackService.findLastSuccessfulLogin(admin.getUsername(), true);
 		
-		try {
-			List<LoginData> list;
+		List<LoginData> list;
+		
+		if (lastLoginOptional.isPresent()) {
+			final LoginData lastLogin = lastLoginOptional.get();
 			
-			if (lastLogin == null) {
-				list = this.loginTrackService.getLoginData( admin.getUsername(), before14Days);
+			if(before14Days.before( lastLogin.getLoginTime())) {
+				list = this.loginTrackService.listLoginAttemptsSince(admin.getUsername(), before14Days);
 			} else {
-				if( before14Days.before( lastLogin.getLoginTime()))
-					list = this.loginTrackService.getLoginData( admin.getUsername(), before14Days);
-				else
-					list = this.loginTrackService.getLoginData( admin.getUsername(), lastLogin.getLoginTime());
+				list = this.loginTrackService.listLoginAttemptsSince(admin.getUsername(), lastLogin.getLoginTime());
 			}
-			
-			request.setAttribute( LOGIN_DATA_ATTRIBUTE_NAME, list);
-		} catch( LoginTrackServiceException e) {
-			logger.warn( "Cannot access login tracking data", e);
+		} else {
+			list = this.loginTrackService.listLoginAttemptsSince(admin.getUsername(), before14Days);
 		}
+		
+		request.setAttribute( LOGIN_DATA_ATTRIBUTE_NAME, list);
 	}
 	
 	/**
-	 * Removes data about failed logins from request. 
+	 * Removes data about failed logins from request.
 	 * 
 	 * @param request HTTP request
 	 */
@@ -90,7 +90,7 @@ public class LoginTrackServiceRequestHelper {
 	private LoginTrackService loginTrackService;
 	
 	/**
-	 * Set the service for accessing login tracking data. 
+	 * Set the service for accessing login tracking data.
 	 * 
 	 * @param service service for accessing login tracking data
 	 */

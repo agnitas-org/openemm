@@ -73,7 +73,7 @@
                     }
 
                     c3.generate(GLobalNotificationStatusStatService.data.statusChartData.build(titles, values));
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }

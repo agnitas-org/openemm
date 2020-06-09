@@ -13,6 +13,8 @@ package com.agnitas.emm.core.serverstatus.service;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+
 import org.agnitas.service.JobDto;
 
 import com.agnitas.beans.ComAdmin;
@@ -32,13 +34,13 @@ public interface ServerStatusService {
     
     List<VersionStatus> getLatestDBVersionsAndErrors();
     
-    Map<String, Object> getStatusProperties() throws Exception;
+    Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception;
     
-    ServerStatus getServerStatus(ComAdmin admin);
+    ServerStatus getServerStatus(ServletContext servletContext, ComAdmin admin);
     
     SimpleServiceResult sendTestMail(ComAdmin admin, String testMailAddress);
     
-    SimpleServiceResult sendDiagnosisInfo(ComAdmin admin, String sendDiagnosisEmail);
+    SimpleServiceResult sendDiagnosisInfo(ServletContext context, ComAdmin admin, String sendDiagnosisEmail);
     
     boolean saveServerConfig(int companyId, String configName, String configValue, String description);
     
@@ -56,5 +58,9 @@ public interface ServerStatusService {
 
 	List<String> killRunningImports();
 
+	boolean checkActiveNode();
+
 	Version getAvailableUpdateVersion() throws Exception;
+
+	boolean isReportStatusOK();
 }

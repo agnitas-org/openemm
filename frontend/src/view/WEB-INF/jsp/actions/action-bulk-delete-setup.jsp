@@ -7,7 +7,7 @@
 <c:set var="agnNavigationKey" 		value="Action" 						scope="request" />
 <c:set var="agnTitleKey" 			value="Actions"						scope="request" />
 <c:set var="agnSubtitleKey" 		value="Actions" 					scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 				scope="request" />
+<c:set var="sidemenu_active" 		value="TriggerManagement"			scope="request" />
 <c:set var="sidemenu_sub_active"	value="Actions" 					scope="request" />
 <c:set var="agnHighlightKey" 		value="default.Overview" 			scope="request" />
 <c:set var="agnHelpKey" 			value="actionList" 					scope="request" />

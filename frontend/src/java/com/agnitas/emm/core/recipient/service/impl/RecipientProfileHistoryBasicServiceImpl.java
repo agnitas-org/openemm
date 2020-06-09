@@ -88,7 +88,7 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	
 	@Override
 	public List<ComRecipientHistory> listProfileFieldHistory(int recipientID, @VelocityCheck int companyId) throws RecipientProfileHistoryException {
-		if(!isProfileFieldHistoryEnabled(companyId)) {
+		if (!isProfileFieldHistoryEnabled(companyId)) {
 			logger.error(String.format("Profile field history not enabled for company %d", companyId));
 			
 			throw new ProfileFieldHistoryFeatureNotEnabledException(companyId);

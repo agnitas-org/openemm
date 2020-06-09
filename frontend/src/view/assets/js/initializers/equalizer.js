@@ -2,13 +2,16 @@
 	
   var Equalizer = AGN.Lib.Equalizer;
 
-  AGN.Initializers.Equalizer = function($scope) {
+  AGN.Lib.CoreInitializer.new('equalizer', function($scope) {
+    if (!$scope) {
+      $scope = $(document);
+    }
 
     window.setTimeout(function() {
-      _.each($('[data-equalizer]'), function(el) {
-        Equalizer($(el));
+      $scope.find('[data-equalizer]').each(function() {
+        Equalizer($(this));
       });
     }, 1);
-  }
+  });
 
 })();

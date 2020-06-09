@@ -24,7 +24,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 

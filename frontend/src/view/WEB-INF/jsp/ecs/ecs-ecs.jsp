@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="com.agnitas.emm.core.mobile.bean.DeviceClass" %>
 <%@ page import="org.agnitas.ecs.EcsGlobals" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -7,11 +8,18 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 
+<%--@elvariable id="ecsForm" type="com.agnitas.ecs.web.forms.EcsForm"--%>
+<%--@elvariable id="previewWidth" type="java.lang.Integer"--%>
+
 <c:set var="isMailingGrid" value="${ecsForm.isMailingGrid}" scope="request"/>
 <c:set var="GROSS_CLICKS" value="<%= EcsGlobals.MODE_GROSS_CLICKS %>"/>
 <c:set var="NET_CLICKS" value="<%= EcsGlobals.MODE_NET_CLICKS %>"/>
 <c:set var="PURE_MAILING" value="<%= EcsGlobals.MODE_PURE_MAILING %>"/>
 
+<c:set var="DESKTOP_DEVICE" value="<%= DeviceClass.DESKTOP.getId() %>"/>
+<c:set var="MOBILE_DEVICE" value="<%= DeviceClass.MOBILE.getId() %>"/>
+<c:set var="TABLET_DEVICE" value="<%= DeviceClass.TABLET.getId() %>"/>
+<c:set var="SMARTTV_DEVICE" value="<%= DeviceClass.SMARTTV.getId() %>"/>
 
 <agn:agnForm action="/ecs_stat">
     <html:hidden property="method" value="view"/>
@@ -20,9 +28,9 @@
     <c:set var="tileHeaderActions" scope="page">
         <c:if test="${ecsForm.selectedRecipient > 0}">
             <li>
-                <a href="#" class="link" data-tooltip="<bean:message key='export.message.pdf'/>" data-prevent-load data-form-set="method: export" data-form-submit-static>
-                    <i class="icon icon-cloud-download"></i>
-                    <bean:message key="Export"/>
+                <a href="#" class="link" data-tooltip="<bean:message key='export.message.pdf'/>"
+                   data-prevent-load data-form-set="method: export" data-form-submit-static>
+                    <i class="icon icon-cloud-download"></i> <bean:message key="Export"/>
                 </a>
             </li>
         </c:if>
@@ -55,35 +63,35 @@
                 </li>
                 <li class="divider"></li>
 
-                <li class="dropdown-header"><bean:message key="default.Size"/></li>
+                <li class="dropdown-header"><bean:message key="recipient.deviceType"/></li>
                 <li>
                     <label class="label">
-                        <agn:agnRadio property="previewSize" value="1"/>
+                        <agn:agnRadio property="deviceType" value="0"/>
+                        <span class="label-text"><bean:message key="report.total"/></span>
+                    </label>
+                </li>
+                <li>
+                    <label class="label">
+                        <agn:agnRadio property="deviceType" value="${DESKTOP_DEVICE}"/>
                         <span class="label-text"><bean:message key="predelivery.desktop"/></span>
                     </label>
                 </li>
                 <li>
                     <label class="label">
-                        <agn:agnRadio property="previewSize" value="2"/>
-                        <span class="label-text"><bean:message key="mailing.PreviewSize.MobilePortrait"/></span>
+                        <agn:agnRadio property="deviceType" value="${MOBILE_DEVICE}"/>
+                        <span class="label-text"><bean:message key="Mobile"/></span>
                     </label>
                 </li>
                 <li>
                     <label class="label">
-                        <agn:agnRadio property="previewSize" value="3"/>
-                        <span class="label-text"><bean:message key="mailing.PreviewSize.MobileLandscape"/></span>
+                        <agn:agnRadio property="deviceType" value="${TABLET_DEVICE}"/>
+                        <span class="label-text"><bean:message key="report.device.tablet"/></span>
                     </label>
                 </li>
                 <li>
                     <label class="label">
-                        <agn:agnRadio property="previewSize" value="4"/>
-                        <span class="label-text"><bean:message key="mailing.PreviewSize.TabletPortrait"/></span>
-                    </label>
-                </li>
-                <li>
-                    <label class="label">
-                        <agn:agnRadio property="previewSize" value="5"/>
-                        <span class="label-text"><bean:message key="mailing.PreviewSize.TabletLandscape"/></span>
+                        <agn:agnRadio property="deviceType" value="${SMARTTV_DEVICE}"/>
+                        <span class="label-text"><bean:message key="report.device.smarttv"/></span>
                     </label>
                 </li>
 
@@ -128,14 +136,12 @@
                     <div class="mailing-preview-header">
                         <div class="form-group">
                             <div class="col-sm-3 col-xs-12">
-                                <label for="select" class="control-label"><bean:message key="Recipient"/></label>
+                                <label for="selectedRecipient" class="control-label"><bean:message key="Recipient"/></label>
                             </div>
                             <div class="col-sm-9 col-xs-12">
-                                <agn:agnSelect property="selectedRecipient" styleClass="form-control" data-form-submit="">
+                                <agn:agnSelect property="selectedRecipient" styleClass="form-control" styleId="selectedRecipient" data-form-submit="">
                                     <c:forEach var="recipient" items="${ecsForm.testRecipients}">
-                                        <agn:agnOption value="${recipient.key}">
-                                            ${recipient.value}
-                                        </agn:agnOption>
+                                        <agn:agnOption value="${recipient.key}">${recipient.value}</agn:agnOption>
                                     </c:forEach>
                                 </agn:agnSelect>
                             </div>
@@ -167,9 +173,13 @@
                                     <c:param name="mailingID" value="${ecsForm.mailingID}"/>
                                     <c:param name="recipientId" value="${ecsForm.selectedRecipient}" />
                                     <c:param name="viewMode" value="${ecsForm.viewMode}" />
+                                    <c:param name="deviceType" value="${ecsForm.deviceType}" />
                                 </c:url>
                                 <div class="mailing-preview-scroller center-block">
-                                    <iframe src="${heatmapURL}" id="ecs_frame" class="mailing-preview-frame js-simple-iframe" data-height-extra="20" data-max-width="${ecsForm.previewWidth}" style="width: ${ecsForm.previewWidth}px" ></iframe>
+                                    <iframe src="${heatmapURL}" id="ecs_frame" class="mailing-preview-frame js-simple-iframe"
+                                            data-height-extra="20"
+                                            data-max-width="${previewWidth}"
+                                            style="width: ${previewWidth}px" ></iframe>
                                 </div>
                             </div>
                         </div>

@@ -16,7 +16,7 @@
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" />
-<c:set var="ACTION_PREVIEW_SELECT" value="<%= ComMailingSendAction.ACTION_PREVIEW_SELECT %>"/>
+<c:set var="ACTION_PREVIEW_SELECT" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_SELECT%>"/>
 <c:set var="ACTION_RECIPIENTS_CALCULATE" value="<%= ComMailingBaseAction.ACTION_RECIPIENTS_CALCULATE %>"/>
 
 <c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>"/>
@@ -208,12 +208,14 @@
 	                                <div class="col-sm-8">
 		                				<html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
 		  								<label class="toggle">
-		  									<html:checkbox property="mailingContentTypeAdvertising" />
+		  									<html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
 		                          			<div class="toggle-control"></div>
 		  								</label>
 	                                </div>
 	                            </div>
                             </c:if>
+
+                            <%@include file="./mailing-frequency-toggle.jspf" %>
 
                             <c:if test="${isMailingGrid}">
                                 <jsp:include page="/WEB-INF/jsp/mailing/grid/mailing-grid-notes.jsp"/>
@@ -234,6 +236,8 @@
                     <emm:ShowByPermission token="mailing.parameter.show">
                         <jsp:include page="/WEB-INF/jsp/mailing/parameter/parameter.jsp"/>
                     </emm:ShowByPermission>
+
+                    <%@include file="mailing-reference-content-tile.jspf" %>
 
                     <jsp:include page="/WEB-INF/jsp/mailing/interval.jsp"/>
                 </agn:agnForm>

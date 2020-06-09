@@ -26,7 +26,7 @@ import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddMailingImageRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingImageResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Base64Utils;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
@@ -34,7 +34,6 @@ import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.service.MimeTypeService;
 
-@SuppressWarnings("deprecation")
 public class AddMailingImageEndpoint extends AbstractMarshallingPayloadEndpoint {
     @Resource
     private ComComponentService componentService;

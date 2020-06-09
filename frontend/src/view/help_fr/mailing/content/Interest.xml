@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Int&eacute;r&ecirc;t]]></title>
+    <content><![CDATA[Vous pouvez utiliser les zones de profil bas&eacute;es sur les int&eacute;r&ecirc;ts pour influencer la s&eacute;quence du contenu de votre mailing. Si, par exemple, une newsletter contient les cat&eacute;gories Voyages &agrave; forfait, Voyages en ville et Derni&egrave;re minute, vous pouvez utiliser des champs bas&eacute;s sur les int&eacute;r&ecirc;ts pour enregistrer la fr&eacute;quence des clics sur le profil du destinataire. Lorsque vous remplissez le module, vous sp&eacute;cifiez la zone de profil bas&eacute; sur les int&eacute;r&ecirc;ts à laquelle le contenu appartient dans la zone S&eacute;lection d'int&eacute;r&ecirc;ts. Lors de la g&eacute;n&eacute;ration du courrier, l'EMM trie ensuite les modules en packages tours, city trips et last minute en fonction de la fr&eacute;quence de clic de chaque destinataire.]]></content>
+</HelpBalloon>

@@ -19,7 +19,6 @@ import org.agnitas.emm.springws.jaxb.FindSubscriberResponse;
 import org.agnitas.emm.springws.jaxb.ObjectFactory;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
-@SuppressWarnings("deprecation")
 public class FindSubscriberEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource

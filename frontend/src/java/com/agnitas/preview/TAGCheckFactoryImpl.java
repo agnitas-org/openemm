@@ -10,15 +10,19 @@
 
 package com.agnitas.preview;
 
+import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.TAGCheck;
 import org.agnitas.preview.TAGCheckFactory;
 import org.agnitas.preview.TAGCheckImpl;
 
 public class TAGCheckFactoryImpl implements TAGCheckFactory {
-
 	@Override
-	public TAGCheck createTAGCheck(long mailingID) throws Exception {
-		return new TAGCheckImpl(mailingID);
+	public TAGCheck createTAGCheck(int mailingId) throws Exception {
+		return new TAGCheckImpl(mailingId);
 	}
 
+	@Override
+	public TAGCheck createTAGCheck(@VelocityCheck int companyId, int mailinglistId) throws Exception {
+		return new TAGCheckImpl(companyId, mailinglistId);
+	}
 }

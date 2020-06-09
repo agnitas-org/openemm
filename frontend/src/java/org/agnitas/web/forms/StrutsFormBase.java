@@ -21,8 +21,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -53,9 +53,6 @@ public class StrutsFormBase extends ActionForm {
 	/** Serial version UID: */
 	private static final long serialVersionUID = -517998059502119608L;
 	
-	/** Class to check strings for possible XSS code. */
-	private static final transient HtmlXSSPreventer xssPreventer = new HtmlXSSPreventer();
-	
 	public static final int DEFAULT_NUMBER_OF_ROWS = 50;
 	
     public static final int DEFAULT_REFRESH_MILLIS = 250;
@@ -72,7 +69,7 @@ public class StrutsFormBase extends ActionForm {
     /**
      * flag which show's that the number of rows a user wants to see has been changed
      */
-    private boolean numberOfRowsChanged = false; 
+    private boolean numberOfRowsChanged = false;
     
  // keep sort, order , page , columnwidth
 	private String sort = "";
@@ -237,7 +234,7 @@ public class StrutsFormBase extends ActionForm {
 
 	/**
 	 * Original validate() called by Struts.
-	 * This method is made "final" to force calling method checkForUnsafeHtmlTags(). 
+	 * This method is made "final" to force calling method checkForUnsafeHtmlTags().
 	 * If you want to implement your own validate() use formSpecificValidate()!
 	 * 
 	 * @see #formSpecificValidate(ActionMapping, HttpServletRequest)
@@ -289,7 +286,7 @@ public class StrutsFormBase extends ActionForm {
 
 		if(!htmlErrors.isEmpty()) {
 			final ActionMessages errors = htmlErrors.stream()
-					.map(htmlError -> mapHtmlErrorToActionMessage(htmlError))
+					.map(this::mapHtmlErrorToActionMessage)
 					.collect(new ActionMessageCollector(ActionMessages.GLOBAL_MESSAGE));
 			
 			return errors;
@@ -298,18 +295,18 @@ public class StrutsFormBase extends ActionForm {
 		}
 	}
 	
-	protected ActionMessage mapHtmlErrorToActionMessage(final HtmlCheckError error) {
-		if(error instanceof AbstractTagError) {
-			if(error instanceof ForbiddenTagError) {
-				return new ActionMessage("error.html.forbiddenTag", ((ForbiddenTagError) error).getTagName());
-			} else if(error instanceof UnopenedTagError) {
-				return new ActionMessage("error.html.missingStartTag", ((UnopenedTagError) error).getTagName());
-			} else if(error instanceof UnclosedTagError) {
-				return new ActionMessage("error.html.missingEndTag", ((UnclosedTagError) error).getTagName());
-			} else if(error instanceof ForbiddenTagAttributeError) {
-				return new ActionMessage("error.html.forbiddenAttribute", ((ForbiddenTagAttributeError) error).getTagName(), ((ForbiddenTagAttributeError) error).getAttributeName());
+	protected ActionMessage mapHtmlErrorToActionMessage(final HtmlCheckError htmlCheckError) {
+		if (htmlCheckError instanceof AbstractTagError) {
+			if(htmlCheckError instanceof ForbiddenTagError) {
+				return new ActionMessage("error.html.forbiddenTag", ((ForbiddenTagError) htmlCheckError).getTagName());
+			} else if(htmlCheckError instanceof UnopenedTagError) {
+				return new ActionMessage("error.html.missingStartTag", ((UnopenedTagError) htmlCheckError).getTagName());
+			} else if(htmlCheckError instanceof UnclosedTagError) {
+				return new ActionMessage("error.html.missingEndTag", ((UnclosedTagError) htmlCheckError).getTagName());
+			} else if(htmlCheckError instanceof ForbiddenTagAttributeError) {
+				return new ActionMessage("error.html.forbiddenAttribute", ((ForbiddenTagAttributeError) htmlCheckError).getTagName(), ((ForbiddenTagAttributeError) htmlCheckError).getAttributeName());
 			} else {
-				return new ActionMessage("error.html.genericTagError", ((ForbiddenTagAttributeError) error).getTagName(), ((ForbiddenTagAttributeError) error).getAttributeName());
+				return new ActionMessage("error.html.genericTagError", ((ForbiddenTagAttributeError) htmlCheckError).getTagName(), ((ForbiddenTagAttributeError) htmlCheckError).getAttributeName());
 			}
 		} else {
 			return new ActionMessage("error.html.genericError");
@@ -360,7 +357,7 @@ public class StrutsFormBase extends ActionForm {
 	 */
 	@Deprecated
 	protected void getHtmlCheckErrors(final String paramName, final String[] textArray, final Set<HtmlCheckError> errors) {
-		for(final String text : textArray) { 
+		for(final String text : textArray) {
 			getHtmlCheckErrors(paramName, text, errors);
 		}
 	}
@@ -372,7 +369,8 @@ public class StrutsFormBase extends ActionForm {
 	@Deprecated
 	protected void getHtmlCheckErrors(final String paramName, final String text, final Set<HtmlCheckError> errors) {
 		try {
-			xssPreventer.checkString(text);
+			/** Class to check strings for possible XSS code. */
+			HtmlXSSPreventer.checkString(text);
 		} catch(final XSSHtmlException e) {
 			errors.addAll(e.getErrors());
 		}

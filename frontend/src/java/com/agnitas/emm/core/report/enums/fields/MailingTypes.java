@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.report.enums.fields;
 
-
 import org.agnitas.beans.Mailing;
 import org.antlr.v4.runtime.misc.Nullable;
 

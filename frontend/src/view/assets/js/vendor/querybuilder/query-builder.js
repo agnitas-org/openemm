@@ -6164,8 +6164,8 @@
             "is_not_empty": t("querybuilder.operators.is_not_empty"),
             "is_null": t("querybuilder.operators.is_null"),
             "is_not_null": t("querybuilder.operators.is_not_null"),
-            "before": t("target.operator.before"),
-            "after": t("target.operator.after"),
+            "before": t("querybuilder.operators.before"),
+            "after": t("querybuilder.operators.after"),
             "like": "Like",
             "not_like": "Not like"
         },

@@ -32,7 +32,16 @@ public interface Preview {
         Size(int value) {
             this.value = value;
         }
-
+    
+        public static Size getSizeById(int previewSize) {
+            for (Size size: values()) {
+                if (size.getValue() == previewSize) {
+                    return size;
+                }
+            }
+            return DESKTOP;
+        }
+    
         /**
          * @return associated integer constant
          */
@@ -80,13 +89,16 @@ public interface Preview {
      * @param ecsUIDs if set we should use ecs (extended click statistics) style UIDs
      * @param createAll if set create all displayable parts of the mailing
      * @param cachable if the result should be cached
+     * @param each targetID is considered as true during text block creation for previewing
      * @return the preview
      */
+    Page makePreview (long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs);
     Page makePreview (long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable);
     Page makePreview (long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean cachable);
     Page makePreview (long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable);
     Page makePreview (long mailingID, long customerID, String selector, boolean anon, boolean cachable);
     Page makePreview (long mailingID, long customerID, boolean cachable);
+    Page makePreview (long mailingID, long customerID, long targetID);
     /* Wrapper for heatmap generation
      * @param mailingID the mailing to generate the heatmap for
      * @param customerID the customerID to generate the heatmap for

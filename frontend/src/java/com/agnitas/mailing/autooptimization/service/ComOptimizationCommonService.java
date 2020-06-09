@@ -16,11 +16,9 @@ import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public interface ComOptimizationCommonService {
 	
-	public int save(ComOptimization optimization);
+	int save(ComOptimization optimization);
 	
-	public void unscheduleOptimization(ComOptimization optimization)
-	throws MaildropDeleteException ;
+	void unscheduleOptimization(ComOptimization optimization) throws MaildropDeleteException;
 
-    public void unscheduleOptimization(ComOptimization optimization, boolean testComplete)
-    throws MaildropDeleteException;
+    void unscheduleOptimization(ComOptimization optimization, boolean testComplete) throws MaildropDeleteException;
 }

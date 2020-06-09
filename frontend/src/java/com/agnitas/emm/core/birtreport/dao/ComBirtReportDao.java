@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.birtreport.dao;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -20,14 +19,13 @@ import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 
 public interface ComBirtReportDao {
+    boolean insert(ComBirtReport report) throws Exception;
 
-    boolean insert(ComBirtReport report);
-
-    boolean update(ComBirtReport report);
+    boolean update(ComBirtReport report) throws Exception;
+    
+    boolean update(ComBirtReport report, List<Integer> justDeactivateSettingTypes) throws Exception;
 
     List<ComLightweightBirtReport> getLightweightBirtReportList(@VelocityCheck int companyID);
-
-    List<ComBirtReport> getAllReportToSend(final Date date);
 
     void insertSentMailings(Integer reportId, Integer companyID, List<Integer> sentMailings);
 
@@ -35,4 +33,17 @@ public interface ComBirtReportDao {
 
     List<ComLightweightBirtReport> getLightweightBirtReportsBySelectedTarget(@VelocityCheck int companyID, int targetGroupID);
 
+	int resetBirtReportsForCurrentHost();
+
+	boolean announceStart(ComBirtReport birtReport);
+
+	void announceEnd(ComBirtReport birtReport);
+
+	int getRunningReportsByHost(String hostName);
+
+	List<ComBirtReport> getReportsToSend(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
+
+	void deactivateBirtReport(int reportID);
+
+	List<ComBirtReport> selectErrorneousReports();
 }

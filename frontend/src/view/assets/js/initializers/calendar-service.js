@@ -615,7 +615,7 @@
       $comment.find('.comment-badge').append($removeButton);
 
       $removeButton.attr('title', t("calendar.title.delete_comment"));
-      $removeButton.click(function () {
+      $removeButton.on("click", function () {
         $('#deadline-' + commentId).remove();
         $('#popup-' + commentId).remove();
         $comment.remove();
@@ -931,7 +931,7 @@
           startDate: startDate,
           endDate: endDate
         }
-      }).success(function (data) {
+      }).done(function (data) {
         $.each(data, function (index, d) {
           setMailings(d)
         });
@@ -972,7 +972,7 @@
         musData.mailsSent = d.mailsSent;
         musData.previewImage = getPreviewImage(d.preview_component);
         musData.popupClass = d.preview_component ? "" : "calendar-mail-popup-preview-missing";
-        musData.emptyWorkstatus = d.workstatus.trim() ? false : true;
+        musData.emptyWorkstatus = !d.workstatus.trim();
         musData.openers = d.openers;
         musData.clickers = d.clickers;
         musData.workstatusIn = d.workstatusIn;
@@ -1121,8 +1121,7 @@
         success: function (data) {
           $(".calendar-sidebar-content").html(data);
           adjustSidebarHeight();
-          AGN.Initializers.Tooltip($('.calendar-wrapper'));
-          AGN.Initializers.Scrollable($('.calendar-wrapper'));
+          AGN.Lib.CoreInitializer.run(['tooltip', 'scrollable'], $('.calendar-wrapper'));
         }
       });
     }
@@ -1134,8 +1133,7 @@
         success: function (data) {
           $(".calendar-sidebar-content").html(data);
           adjustSidebarHeight();
-          AGN.Initializers.Tooltip($('.calendar-wrapper'));
-          AGN.Initializers.Scrollable($('.calendar-wrapper'));
+          AGN.Lib.CoreInitializer.run(['tooltip', 'scrollable'], $('.calendar-wrapper'));
         }
       });
     }

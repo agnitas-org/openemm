@@ -10,13 +10,10 @@
 
 package com.agnitas.emm.core.company.form;
 
-import javax.validation.Valid;
-
 import com.agnitas.emm.core.company.dto.CompanyAdminDto;
 
 public class CompanyCreateForm extends CompanyViewForm {
 
-    @Valid
     private CompanyAdminDto companyAdminDto;
 
     public CompanyAdminDto getCompanyAdminDto() {

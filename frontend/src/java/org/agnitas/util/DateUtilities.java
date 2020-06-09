@@ -15,6 +15,7 @@ import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -22,8 +23,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -33,8 +36,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 public class DateUtilities {
@@ -57,6 +60,9 @@ public class DateUtilities {
 	public static final String HH_MM = "HH:mm";
 	public static final String RFC822FORMAT = "E, d MMM yyyy HH:mm:ss Z";
 	public static final Locale RFC822FORMAT_LOCALE = Locale.US;
+	public static final Locale DUTCH = new Locale("nl", "NL");
+	public static final Locale PORTUGAL = new Locale("pt", "PT");
+	public static final Locale SPAIN = new Locale("es", "ES");
 
 	/** Date format for SOAP Webservices (ISO 8601) */
 	private static final String ISO_8601_DATE_FORMAT_NO_TIMEZONE = "yyyy-MM-dd";
@@ -67,7 +73,7 @@ public class DateUtilities {
 	/** DateTime format for SOAP Webservices (ISO 8601) */
 	public static final String ISO_8601_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
 
-	public static final TimeZone UTC = DateUtils.UTC_TIME_ZONE;
+	public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 	public static final ZoneId UTC_ZONE = UTC.toZoneId();
 
 	private static final Pattern MONTH_RULE_PATTERN = Pattern.compile("\\d{0,2}M\\d{2}:\\d{4}");
@@ -78,6 +84,9 @@ public class DateUtilities {
 	private final static Pattern MONTH_REGEX = Pattern.compile("m+",  Pattern.CASE_INSENSITIVE);
 	private final static Pattern DAY_REGEX = Pattern.compile("d+",  Pattern.CASE_INSENSITIVE);
 	private final static Pattern YEAR_REGEX = Pattern.compile("y+",  Pattern.CASE_INSENSITIVE);
+	
+	private final static List<Locale> SUPPORTED_LOCALES = Arrays.asList(
+			Locale.ENGLISH, Locale.GERMAN, Locale.FRENCH, SPAIN, PORTUGAL, DUTCH, Locale.ITALIAN);
 
 	public enum TimespanID {
 		previous_week,
@@ -563,6 +572,9 @@ public class DateUtilities {
 						weekdayIndexes.add(weekdayIndex);
 					}
 				}
+				if (weekdayIndexes.isEmpty()) {
+					throw new RuntimeException("Invalid timing data: " + timingString);
+				}
 				nextStartByThisParameter.set(GregorianCalendar.HOUR_OF_DAY, Integer.parseInt(time.substring(0, 2)));
 				nextStartByThisParameter.set(GregorianCalendar.MINUTE, Integer.parseInt(time.substring(2)));
 				nextStartByThisParameter.set(GregorianCalendar.SECOND, 0);
@@ -623,55 +635,90 @@ public class DateUtilities {
 		}
 	}
 	
+	public static boolean isWeekDayActive(String intervalPattern, int weekDay) {
+		return isWeekDayActive(intervalPattern, weekDay, null);
+	}
+	
+	public static boolean isWeekDayActive(String intervalPattern, int weekDay, Locale locale) {
+		if (StringUtils.isNotEmpty(intervalPattern)) {
+			String pattern = intervalPattern.toLowerCase();
+			
+			if (locale == null) {
+				locale = Locale.getDefault();
+			}
+			
+			if (SUPPORTED_LOCALES.contains(locale)) {
+				String localizedWeekDayName = getWeekdayShortname(weekDay, locale).toLowerCase();
+				if (pattern.contains(localizedWeekDayName)) {
+					return true;
+				}
+			}
+			
+			String weekDayUS = getWeekdayShortname(weekDay, Locale.ENGLISH).toLowerCase();
+			String weekDayDE = getWeekdayShortname(weekDay, Locale.GERMAN).toLowerCase();
+			return pattern.contains(weekDayUS) || pattern.contains(weekDayDE);
+		}
+		
+		return false;
+	}
+	
 	public static boolean checkTimeMatchesPattern(String pattern, Date time) {
 		Pattern timePattern = Pattern.compile(pattern.replace("*", "."));
 		String timeString = new SimpleDateFormat(HHMM).format(time);
 		return timePattern.matcher(timeString).matches();
 	}
 	
-	public static String getWeekdayShortnameByID(int weekdayID) {
-		if (Locale.getDefault().getLanguage().equals("de")) {
-			switch (weekdayID) {
-				case Calendar.SUNDAY:
-					return "So";
-				case Calendar.MONDAY:
-					return "Mo";
-				case Calendar.TUESDAY:
-					return "Di";
-				case Calendar.WEDNESDAY:
-					return "Mi";
-				case Calendar.THURSDAY:
-					return "Do";
-				case Calendar.FRIDAY:
-					return "Fr";
-				case Calendar.SATURDAY:
-					return "Sa";
+	/**
+	 * Get week day shortname according to default locale
+	 * Support only {@link Locale#GERMAN} and {@link Locale#ENGLISH}
+	 * @param weekdayId
+	 * @return two first letter of week day name
+	 */
+	public static String getWeekdayShortnameIgnoreOtherLocale(int weekdayId) {
+		Locale defaultLocale = Locale.getDefault();
+		Locale locale = defaultLocale.getLanguage().equals("de") ? defaultLocale : Locale.ENGLISH;
+		return getWeekdayShortname(weekdayId, locale);
+	}
+	
+	/**
+	 * Get week day shortname according to passed locale
+	 * @param weekdayId week day identifier from 1 (Sunday) to 7 (Saturday)
+	 * @return two first letter of week day name
+	 */
+	public static String getWeekdayShortname(int weekdayId) {
+		return getWeekdayShortname(weekdayId, Locale.ENGLISH);
+	}
+	
+	public static String getWeekdayShortname(int weekdayId, Locale locale) {
+		if (weekdayId > 0 && weekdayId < 8) {
+			if (weekdayId == 1) {
+				weekdayId = 8;
 			}
-		} else {
-			switch (weekdayID) {
-				case Calendar.SUNDAY:
-					return "Su";
-				case Calendar.MONDAY:
-					return "Mo";
-				case Calendar.TUESDAY:
-					return "Tu";
-				case Calendar.WEDNESDAY:
-					return "We";
-				case Calendar.THURSDAY:
-					return "Th";
-				case Calendar.FRIDAY:
-					return "Fr";
-				case Calendar.SATURDAY:
-					return "Sa";
+			
+			if (locale == null) {
+				locale = Locale.getDefault();
 			}
+			return getWeekdayShortname(DayOfWeek.of(weekdayId - 1), locale);
 		}
-		return null;
+		return "";
+	}
+	
+	private static String getWeekdayShortname(DayOfWeek weekday, Locale locale) {
+		String displayName = weekday.getDisplayName(TextStyle.FULL, locale);
+		return StringUtils.substring(displayName, 0, 2);
 	}
 
-    public static Date addDaysToDate(Date initDate, int daysToAdd) {
+	public static Date addDaysToDate(Date initDate, int daysToAdd) {
 		GregorianCalendar returnDate = new GregorianCalendar();
 		returnDate.setTime(initDate);
 		returnDate.add(Calendar.DAY_OF_MONTH, daysToAdd);
+		return returnDate.getTime();
+    }
+
+	public static Date addMinutesToDate(Date initDate, int minutesToAdd) {
+		GregorianCalendar returnDate = new GregorianCalendar();
+		returnDate.setTime(initDate);
+		returnDate.add(Calendar.MINUTE, minutesToAdd);
 		return returnDate.getTime();
     }
 
@@ -717,22 +764,6 @@ public class DateUtilities {
     
     public static Date getDateOfMillisAgo(int millisAgo) {
     	return getDateOfMillisAgo(new Date(), millisAgo);
-    }
-    
-    public static String getLocalizedDatePattern(Locale locale) {
-    	if ("en".equalsIgnoreCase(locale.getLanguage())) {
-    		return "MM/dd/yyyy";
-    	} else if ("de".equalsIgnoreCase(locale.getLanguage())) {
-    		return "dd.MM.yyyy";
-    	} else {
-    		DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
-    		return ((SimpleDateFormat) formatter).toPattern();
-    	}
-    }
-    
-    public static String formatLocalized(Date date, Locale locale) {
-    	DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
-	    return formatter.format(date);
     }
     
     public static Date parseUnknownDateFormat(String value) throws Exception {
@@ -805,16 +836,24 @@ public class DateUtilities {
     	if (dateValue.contains("T")) {
     		// Date with time
     		if (hasTimezone) {
-    			return new SimpleDateFormat(ISO_8601_DATETIME_FORMAT).parse(dateValue);
+    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT);
+    			dateFormat.setLenient(false);
+    			return dateFormat.parse(dateValue);
     		} else {
-    			return new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_NO_TIMEZONE).parse(dateValue);
+    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATETIME_FORMAT_NO_TIMEZONE);
+    			dateFormat.setLenient(false);
+    			return dateFormat.parse(dateValue);
     		}
     	} else {
     		// Date only
     		if (hasTimezone) {
-    			return new SimpleDateFormat(ISO_8601_DATE_FORMAT).parse(dateValue);
+    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATE_FORMAT);
+    			dateFormat.setLenient(false);
+    			return dateFormat.parse(dateValue);
     		} else {
-    			return new SimpleDateFormat(ISO_8601_DATE_FORMAT_NO_TIMEZONE).parse(dateValue);
+    			SimpleDateFormat dateFormat = new SimpleDateFormat(ISO_8601_DATE_FORMAT_NO_TIMEZONE);
+    			dateFormat.setLenient(false);
+    			return dateFormat.parse(dateValue);
     		}
     	}
     }
@@ -905,16 +944,6 @@ public class DateUtilities {
 			}
 		}
 		return defaultValue;
-	}
-
-	public static String formatDatePickerStringToDateString(final String inputString, final  DateTimeFormatter outputFormatter, final Locale locale){
-		final LocalDate localDate = parseDate(inputString, DateTimeFormatter.ofPattern(getDatePickerFormatPattern(locale)));
-		return format(localDate, outputFormatter);
-	}
-
-	public static String formatDateStringToDatePickerString(final String inputString, final  DateTimeFormatter inputFormatter, final Locale locale){
-		final LocalDate localDate = parseDate(inputString, inputFormatter);
-		return format(localDate, DateTimeFormatter.ofPattern(getDatePickerFormatPattern(locale)));
 	}
 
 	public static LocalTime parseTime(String timeAsString, DateTimeFormatter formatter) {
@@ -1146,33 +1175,6 @@ public class DateUtilities {
 	}
 
 	/**
-	 * Get locale-dependent date format pattern to be used for date picker controls.
-	 *
-	 * @param locale a locale to select localized date format.
-	 * @return date format pattern.
-	 */
-	public static String getDatePickerFormatPattern(Locale locale) {
-		if (Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) {
-			return "MM/dd/yyyy";
-		} else {
-			return "dd.MM.yyyy";
-		}
-	}
-
-	/**
-	 * Get locale-dependent date format to be used for date picker controls.
-	 *
-	 * @param locale a locale to select localized date format.
-	 * @param timezone a timezone to be assigned to date format object.
-	 * @return a locale-dependent timezone-aware date format object.
-	 */
-	public static SimpleDateFormat getDatePickerFormat(Locale locale, TimeZone timezone) {
-		SimpleDateFormat format = new SimpleDateFormat(getDatePickerFormatPattern(locale));
-		format.setTimeZone(timezone);
-		return format;
-	}
-
-	/**
 	 * Get locale-dependent timezone-aware date/time format using predefined notations (see {@link DateFormat#FULL},
 	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
 	 *
@@ -1184,6 +1186,7 @@ public class DateUtilities {
 	 */
 	public static SimpleDateFormat getDateTimeFormat(int dateStyle, int timeStyle, Locale locale, TimeZone timezone) {
 		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(dateStyle, timeStyle, locale);
+		format.applyPattern(format.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
 		format.setTimeZone(timezone);
 		return format;
 	}
@@ -1215,19 +1218,6 @@ public class DateUtilities {
 		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateInstance(style, locale);
 		format.setTimeZone(timezone);
 		return format;
-	}
-
-	/**
-	 * Get locale-dependent date (without time) format pattern using predefined notations (see {@link DateFormat#FULL},
-	 * {@link DateFormat#LONG}, {@link DateFormat#MEDIUM}, {@link DateFormat#SHORT} and {@link DateFormat#DEFAULT}).
-	 *
-	 * @param style the given date formatting style.
-	 * @param locale a locale to be used to produce locale-dependent date format.
-	 * @return a locale-dependent date format pattern string.
-	 */
-	public static String getDateFormatPattern(int style, Locale locale) {
-		SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateInstance(style, locale);
-		return format.toPattern();
 	}
 
 	/**

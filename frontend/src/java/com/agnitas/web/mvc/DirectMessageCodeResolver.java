@@ -10,7 +10,7 @@
 
 package com.agnitas.web.mvc;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.validation.MessageCodesResolver;
 
 public class DirectMessageCodeResolver implements MessageCodesResolver {

@@ -17,7 +17,7 @@ import javax.servlet.jsp.JspException;
 import com.agnitas.beans.ComAdmin;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class JspUtilities {
     public static final String JS_TABLE_COLUMN_TYPE_COMMON = "";

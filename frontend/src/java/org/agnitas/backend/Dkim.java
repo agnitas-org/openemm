@@ -107,21 +107,21 @@ public class Dkim {
 		return true;
 	}
 
-	private boolean dkimReport (Data data, String domain) {
+	private boolean dkimReport (Data dataParam, String domain) {
 		boolean	rc = false;
 		
 		synchronized (domain) {
 			Boolean	use = dkimReportCache.get (domain);
 			
 			if (use == null) {
-				DNS	dns = new DNS (2, data.getLogger ());
+				DNS	dns = new DNS (2, dataParam.getLogger ());
 				String	check = "_report._domainkey." + domain;
 				String	content = dns.queryText (check);
 				
 				if (content == null) {
-					data.logging (Log.DEBUG, "dkim", "No report for dkim domain " + domain + " found");
+					dataParam.logging (Log.DEBUG, "dkim", "No report for dkim domain " + domain + " found");
 				} else {
-					data.logging (Log.DEBUG, "dkim", "For dkim domain " + domain + " we found in " + check + " this content: \"" + content + "\"");
+					dataParam.logging (Log.DEBUG, "dkim", "For dkim domain " + domain + " we found in " + check + " this content: \"" + content + "\"");
 				}
 				use = content != null;
 				dkimReportCache.put (domain, use);

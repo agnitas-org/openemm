@@ -12,8 +12,8 @@ package com.agnitas.emm.core.company.converter;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -53,16 +53,14 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
     private CompanySettingsDto convertSettings(ComCompany comCompany) {
         CompanySettingsDto settingsDto = new CompanySettingsDto();
         settingsDto.setHasMailTracking(BooleanUtils.toBoolean(comCompany.getMailtracking()));
-        settingsDto.setStatisticsExpireDays(comCompany.getExpireStat());
-        settingsDto.setRecipientExpireDays(comCompany.getExpireRecipient());
+        settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
+        settingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
         settingsDto.setBusiness(comCompany.getBusiness());
         settingsDto.setHasActivatedAccessAuthorization(configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, comCompany.getId()));
         settingsDto.setHasExtendedSalutation(BooleanUtils.toBoolean(comCompany.getSalutationExtended()));
         settingsDto.setExecutiveAdministrator(comCompany.getStatAdmin());
         settingsDto.setTechnicalContacts(comCompany.getContactTech());
         settingsDto.setHasDataExportNotify(BooleanUtils.toBoolean(comCompany.getExportNotifyAdmin()));
-        settingsDto.setMaxFailedLoginAttempts(comCompany.getMaxLoginFails());
-        settingsDto.setBlockIpTime(comCompany.getLoginBlockTime());
 
         // todo: check is it necessary. the reason is: comCompany.getLocaleLanguage()
         String localeLanguage = configService.getValue(ConfigValue.LocaleLanguage, comCompany.getId());
@@ -81,6 +79,11 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         settingsDto.setSector(comCompany.getSector());
         settingsDto.setBusiness(comCompany.getBusiness());
         settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, comCompany.getId()));
+        
+        // Settings for login tracking
+        settingsDto.setMaxFailedLoginAttempts(configService.getIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, comCompany.getId()));
+        settingsDto.setBlockIpTime(configService.getIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, comCompany.getId()));
+        
         return settingsDto;
     }
 }

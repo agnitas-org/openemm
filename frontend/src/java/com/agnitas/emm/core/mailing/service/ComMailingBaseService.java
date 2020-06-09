@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +21,8 @@ import java.util.concurrent.Future;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingBase;
+import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
@@ -33,15 +36,18 @@ import org.springframework.context.ApplicationContext;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 
 
 public interface ComMailingBaseService {
     boolean isMailingExists(int mailingId, @VelocityCheck int companyId);
     boolean isMailingExists(int mailingId, @VelocityCheck int companyId, boolean isTemplate);
     boolean checkUndoAvailable(int mailingId);
+    boolean isTextTemplateExists(ComAdmin admin, int mailingId);
 
     void bulkDelete(Set<Integer> mailingsIds, @VelocityCheck int companyId);
 
@@ -83,9 +89,12 @@ public interface ComMailingBaseService {
      * @param sortCriterion column name to sort by
      * @param sortAscending sort direction
      * @return a filled {@link org.agnitas.beans.impl.PaginatedListImpl} instance
+     * @throws Exception
      */
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns);
+    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
 
+    PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(ComAdmin admin, MailingsListProperties props);
+    
     /**
      * An asynchronous version of {@link #getMailingRecipients(int, int, int, int, int, String, boolean, java.util.List)} method.
      *
@@ -102,8 +111,6 @@ public interface ComMailingBaseService {
      * @return a future object to access a result of long running query.
      */
     Future<PaginatedListImpl<DynaBean>> getMailingRecipientsLongRunning(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns, DateFormat dateFormat);
-
-    List<LightweightMailing> getMailingsDependentOnTargetGroup(int companyID, int targetGroupID);
 
     /**
      * A shortcut for {@link #getDynamicTags(int, int, boolean)} passing {@code false} as {@code resetIds} argument.
@@ -127,7 +134,8 @@ public interface ComMailingBaseService {
      * @return a list of dyn tag names
      */
     List<String> getDynamicTagNames(Mailing mailing);
-    
+
+    DynamicTag getDynamicTag(@VelocityCheck int companyId, int dynNameId);
 
     /**
      * Get distinct number of recipients for referenced mailinglist and other settings.
@@ -218,4 +226,26 @@ public interface ComMailingBaseService {
     void doTextTemplateFilling(Mailing mailing, ComAdmin admin, ActionMessages messages);
     
     ComMailing getMailing(@VelocityCheck int companyId, int mailingId);
+    
+    /**
+     * Loads list of non-deleted mailing have been sent by certain company
+     *
+     * @param admin
+     *                  Id of the company that sent the mailings
+     * @return  List of MailingBase bean objects
+     */
+    List<MailingBase> getMailingsForComparison(ComAdmin admin);
+    
+    Map<Integer, String> getMailingNames(List<Integer> mailingIds, @VelocityCheck int companyId);
+
+	List<LightweightMailing> getMailingsByType(MailingTypes type, @VelocityCheck int companyId);
+	List<LightweightMailing> getMailingsByType(MailingTypes type, @VelocityCheck int companyId, boolean includeInactive);
+    
+    MailingSendStatus getMailingSendStatus(int mailingId, @VelocityCheck int companyId);
+    
+    int getMailingType(int mailingId);
+
+    String toViewUri(int mailingId);
+
+    Timestamp getMailingLastSendDate(int mailingId);
 }

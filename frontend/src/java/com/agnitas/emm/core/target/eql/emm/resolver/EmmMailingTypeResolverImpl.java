@@ -10,9 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.emm.resolver;
 
-import org.agnitas.beans.Mailing;
-
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingResolverException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;
@@ -33,7 +32,7 @@ public class EmmMailingTypeResolverImpl implements MailingTypeResolver {
 			throw new MailingResolverException("Unknown mailing ID: " + mailingId + " (company " + companyId + ")");
 		}
 
-		if(mailingType == Mailing.TYPE_INTERVAL)
+		if(mailingType == MailingTypes.INTERVAL.getCode())
 			return MailingType.INTERVAL;
 		else
 			return MailingType.NORMAL;

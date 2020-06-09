@@ -10,7 +10,6 @@
 
 package org.agnitas.web;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -50,8 +48,8 @@ import org.agnitas.util.HtmlUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.web.forms.MailingBaseForm;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionErrors;
@@ -169,25 +167,20 @@ public class MailingBaseAction extends StrutsActionBase {
      * <br><br>
      * If destination is null and there are errors found - forwards to "list"
      * @param form  ActionForm object
-     * @param req   request
-     * @param res   response
+     * @param request   request
+     * @param response   response
      * @param mapping The ActionMapping used to select this instance
-     * @exception IOException if an input/output error occurs
-     * @exception ServletException if a servlet exception occurs
      * @return destination
+     * @throws Exception
      */
     @Override
-    public ActionForward execute(ActionMapping mapping,
-            ActionForm form,
-            HttpServletRequest req,
-            HttpServletResponse res)
-            throws IOException, ServletException {
-
+    public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
         // Validate the request parameters specified by the user
         MailingBaseForm aForm = null;
         ActionMessages errors = new ActionMessages();
     	ActionMessages messages = new ActionMessages();
     	ActionForward destination = null;
+        int companyId = AgnUtils.getCompanyID(request);
 
         aForm = (MailingBaseForm)form;
 
@@ -198,22 +191,22 @@ public class MailingBaseAction extends StrutsActionBase {
         boolean hasAnyPermission = true;
 
         if (aForm.isIsTemplate()) {
-            if (!AgnUtils.allowed(req, Permission.TEMPLATE_SHOW)) {
+            if (!AgnUtils.allowed(request, Permission.TEMPLATE_SHOW)) {
                 errors.add(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
-                saveErrors(req, errors);
+                saveErrors(request, errors);
                 hasAnyPermission = false;
                 //return null;
             }
         } else {
-            if (!AgnUtils.allowed(req, Permission.MAILING_SHOW)) {
+            if (!AgnUtils.allowed(request, Permission.MAILING_SHOW)) {
                 errors.add(ActionErrors.GLOBAL_MESSAGE, new ActionMessage("error.permissionDenied"));
-                saveErrors(req, errors);
+                saveErrors(request, errors);
                 hasAnyPermission = false;
                 //return null;
             }
         }
 
-        req.setAttribute("hasPermission", hasAnyPermission);
+        request.setAttribute("hasPermission", hasAnyPermission);
 
         if (hasAnyPermission) {
             try {
@@ -222,30 +215,33 @@ public class MailingBaseAction extends StrutsActionBase {
                         if (aForm.getColumnwidthsList() == null) {
                             aForm.setColumnwidthsList(getInitializedColumnWidthList(5));
                         }
+                		AgnUtils.setAdminDateTimeFormatPatterns(request);
                         destination=mapping.findForward("list");
                         break;
 
                     case MailingBaseAction.ACTION_REMOVE_TARGET:
-                        removeTarget(aForm, req);
+                        removeTarget(aForm, request);
                         aForm.setAction(MailingBaseAction.ACTION_SAVE);
                         destination=mapping.findForward("view");
                         break;
 
                     case MailingBaseAction.ACTION_DELETE:
                         aForm.setAction(MailingBaseAction.ACTION_LIST);
-                        processDependantMailings(aForm.getMailingID(), req);
-                        deleteMailing(aForm, req);
+                        processDependantMailings(aForm.getMailingID(), request);
+                        deleteMailing(aForm, request);
+                		AgnUtils.setAdminDateTimeFormatPatterns(request);
                         destination=mapping.findForward("list");
                         messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.selection.deleted"));
                         aForm.setMessages(messages);
                         break;
 
                     case MailingBaseAction.ACTION_USED_ACTIONS:
-                        loadActions(aForm, req);
+                        loadActions(aForm, request);
                         destination = mapping.findForward("action");
                         break;
 
                     default:
+                		AgnUtils.setAdminDateTimeFormatPatterns(request);
                         aForm.setAction(MailingBaseAction.ACTION_LIST);
                         destination=mapping.findForward("list");
                 }
@@ -257,18 +253,18 @@ public class MailingBaseAction extends StrutsActionBase {
 
             if (destination != null && "list".equals(destination.getName())) {
                 try {
-                    req.setAttribute("fieldsMap",  MailingAdditionalColumn.values());
+                    request.setAttribute("fieldsMap",  MailingAdditionalColumn.values());
 
                     destination = mapping.findForward("loading");
-                    String key =  FUTURE_TASK+"@"+ req.getSession(false).getId();
+                    String key =  FUTURE_TASK+"@"+ request.getSession(false).getId();
 
                     if( !futureHolder.containsKey(key) ) {
-                        Future<PaginatedListImpl<Map<String, Object>>> mailingListFuture = getMailingListFuture(errors, req, aForm.isIsTemplate(), aForm);
+                        Future<PaginatedListImpl<Map<String, Object>>> mailingListFuture = getMailingListFuture(errors, request, aForm.isIsTemplate(), aForm);
                         futureHolder.put(key, mailingListFuture);
                     }
 
                     //if we perform AJAX request (load next/previous page) we have to wait for preparing data
-                    if (HttpUtils.isAjax(req)) {
+                    if (HttpUtils.isAjax(request)) {
                         while (!futureHolder.containsKey(key) || !futureHolder.get(key).isDone()) {
                             if (aForm.getRefreshMillis() < 1000) { // raise the refresh time
                                 aForm.setRefreshMillis( aForm.getRefreshMillis() + 50 );
@@ -279,11 +275,11 @@ public class MailingBaseAction extends StrutsActionBase {
 
                     if (futureHolder.containsKey(key) && futureHolder.get(key).isDone()) {
                         // Method Future.get() could throw an exception so at first we have to remove one from a holder
-                        req.setAttribute("mailinglist", futureHolder.remove(key).get());
+                        request.setAttribute("mailinglist", futureHolder.remove(key).get());
                         destination = mapping.findForward("list");
                         aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
-                        saveMessages(req, aForm.getMessages());
-                        saveErrors(req, aForm.getErrors());
+                        saveMessages(request, aForm.getMessages());
+                        saveErrors(request, aForm.getErrors());
                         aForm.setMessages(null);
                         aForm.setErrors(null);
                     }
@@ -301,31 +297,31 @@ public class MailingBaseAction extends StrutsActionBase {
                 }
             }
 
-            checkShowDynamicTemplateCheckbox(aForm, req);
+            checkShowDynamicTemplateCheckbox(aForm, request);
 
             if (destination != null && "view".equals(destination.getName())) {
                 if (aForm.getMediaEmail() != null) {
                     aForm.setOldMailFormat(aForm.getMediaEmail().getMailFormat());
                 }
-                aForm.setTemplateMailingBases(mailingDao.getTemplateMailingsByCompanyID(AgnUtils.getCompanyID(req)));
-                if(aForm.getTemplateID() != 0) {
-                   MailingBase mb = mailingDao.getMailingForTemplateID(aForm.getTemplateID(),AgnUtils.getCompanyID(req));
-                   aForm.setTemplateShortname(mb.getShortname().compareTo("") != 0 ? mb.getShortname() : SafeString.getLocaleString("mailing.No_Template", (Locale) req.getSession().getAttribute(Globals.LOCALE_KEY)));
-                }
-                else {
-                	aForm.setTemplateShortname(SafeString.getLocaleString("mailing.No_Template", (Locale) req.getSession().getAttribute(Globals.LOCALE_KEY)));
+                aForm.setTemplateMailingBases(mailingDao.getTemplateMailingsByCompanyID(companyId));
+                if (aForm.getTemplateID() != 0) {
+                   MailingBase mb = mailingDao.getMailingForTemplateID(aForm.getTemplateID(), companyId);
+                   aForm.setTemplateShortname(mb.getShortname().compareTo("") != 0 ? mb.getShortname() : SafeString.getLocaleString("mailing.No_Template", (Locale) request.getSession().getAttribute(Globals.LOCALE_KEY)));
+                } else {
+                	aForm.setTemplateShortname(SafeString.getLocaleString("mailing.No_Template", (Locale) request.getSession().getAttribute(Globals.LOCALE_KEY)));
                 }
 
-                prepareMailinglists(aForm, AgnUtils.getAdmin(req));
-                aForm.setCampaigns(campaignDao.getCampaignList(AgnUtils.getCompanyID(req),"lower(shortname)",1));
-                aForm.setTargetGroupsList(targetService.getTargetLights(AgnUtils.getCompanyID(req), aForm.getTargetGroups(), true));
-                aForm.setTargets(targetService.getTargetLights(AgnUtils.getCompanyID(req)));
+                prepareMailinglists(aForm, AgnUtils.getAdmin(request));
+                aForm.setCampaigns(campaignDao.getCampaignList(companyId,"lower(shortname)",1));
+                aForm.setTargetGroupsList(targetService.getTargetLights(companyId, aForm.getTargetGroups(), true));
+                aForm.setTargets(targetService.getTargetLights(companyId));
+                aForm.setTargetComplexities(targetService.getTargetComplexities(companyId));
             }
         }
 
         // Report any errors we have discovered back to the original form
         if (!errors.isEmpty()) {
-            saveErrors(req, errors);
+            saveErrors(request, errors);
             if(destination == null) {
                 destination=mapping.findForward("list");
             }
@@ -333,7 +329,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
         // Report any message (non-errors) we have discovered
         if (!messages.isEmpty()) {
-        	saveMessages(req, messages);
+        	saveMessages(request, messages);
         }
 
         if (destination != null && "list".equals(destination.getName()) && !aForm.isIsTemplate()) {
@@ -594,7 +590,9 @@ public class MailingBaseAction extends StrutsActionBase {
      	int page = form.getPageNumber();
      	int rownums = form.getNumberOfRows();
 
-        MailingsQueryWorker mailingsQueryWorker = createMailingsQueryWorker(errors, form, req, AgnUtils.getCompanyID(req), form.getTypes(), isTemplate, sort, direction, page, rownums, true);
+     	final ComAdmin admin = AgnUtils.getAdmin(req);
+
+        MailingsQueryWorker mailingsQueryWorker = createMailingsQueryWorker(errors, form, req, admin.getCompanyID(), admin.getAdminID(), form.getTypes(), isTemplate, sort, direction, page, rownums, true);
         return workerExecutorService.submit(mailingsQueryWorker);
     }
 
@@ -620,7 +618,7 @@ public class MailingBaseAction extends StrutsActionBase {
         });
     }
 
-    protected MailingsQueryWorker createMailingsQueryWorker(ActionMessages errors, MailingBaseForm mailingBaseForm, HttpServletRequest req, int companyId, String types, boolean isTemplate, String sort, String direction, int page, int rownums, final boolean includeTargetGroups) throws Exception {
+    protected MailingsQueryWorker createMailingsQueryWorker(ActionMessages errors, MailingBaseForm mailingBaseForm, HttpServletRequest req, int companyId, int adminId, String types, boolean isTemplate, String sort, String direction, int page, int rownums, final boolean includeTargetGroups) throws Exception {
         MailingsListProperties props = new MailingsListProperties();
         props.setTypes(types);
         props.setTemplate(isTemplate);
@@ -631,7 +629,7 @@ public class MailingBaseAction extends StrutsActionBase {
         props.setIncludeTargetGroups(includeTargetGroups);
         props.setAdditionalColumns(getAdditionalColumns(mailingBaseForm));
 
-        return new MailingsQueryWorker(mailingDao, companyId, props);
+        return new MailingsQueryWorker(mailingDao, companyId, adminId, props);
     }
 
     protected Set<String> getAdditionalColumns(MailingBaseForm form) {
@@ -703,17 +701,31 @@ public class MailingBaseAction extends StrutsActionBase {
      */
 	protected void prepareMailinglists(MailingBaseForm form, ComAdmin admin){
         List<Mailinglist> enabledMailinglists = mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin);
-        if(form.getMailinglistID() > 0
+        boolean exists = mailinglistService.exist(form.getMailinglistID(), admin.getCompanyID());
+
+        if (exists
                 && !form.isCopiedMailing()
                 && !form.isCreatedAsFollowUp()
-                && enabledMailinglists.stream()
-                .noneMatch(mailinglist -> mailinglist.getId() == form.getMailinglistID())){
+                && !contains(enabledMailinglists, form.getMailinglistID())) {
             form.setMailingLists(Collections.singletonList(mailinglistService.getMailinglist(form.getMailinglistID(), admin.getCompanyID())));
             form.setCanChangeMailinglist(false);
         } else {
+            if (!exists) {
+                form.setMailinglistID(0);
+            }
             form.setMailingLists(enabledMailinglists);
             form.setCanChangeMailinglist(true);
         }
+    }
+
+    private boolean contains(List<Mailinglist> mailingLists, int mailingListId) {
+	    for (Mailinglist mailinglist : mailingLists) {
+	        if (mailinglist.getId() == mailingListId) {
+	            return true;
+            }
+        }
+
+	    return false;
     }
 
     public MailingDao getMailingDao() {
@@ -736,7 +748,7 @@ public class MailingBaseAction extends StrutsActionBase {
         return mailingFactory;
     }
 
-	protected void checkShowDynamicTemplateCheckbox( MailingBaseForm mailingBaseForm, HttpServletRequest request) {
+	protected void checkShowDynamicTemplateCheckbox(MailingBaseForm mailingBaseForm, HttpServletRequest request) throws Exception {
 		boolean showCheckbox = false;
 
 		if (mailingBaseForm.isIsTemplate()) {

@@ -22,7 +22,7 @@ import com.agnitas.json.JsonWriter;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import org.agnitas.service.UserFormExporter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class UserFormExporterImpl extends ActionExporter implements UserFormExporter {

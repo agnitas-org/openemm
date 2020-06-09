@@ -11,19 +11,20 @@
 package com.agnitas.emm.core.birtreport.bean.impl;
 
 
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.DATE_RANGE_WEEK;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.PERIOD_TYPE_KEY;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import org.agnitas.util.Const;
-import org.apache.commons.lang.StringUtils;
-
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.DATE_RANGE_WEEK;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.PERIOD_TYPE_KEY;
 
 public class ComBirtReportComparisonSettings extends ComBirtReportSettings {
 
@@ -33,12 +34,17 @@ public class ComBirtReportComparisonSettings extends ComBirtReportSettings {
         settingsMap.put(MAILING_TYPE_KEY, MAILINGS_PREDEFINED);
         settingsMap.put(SORT_MAILINGS_KEY, SORT_NAME);
         settingsMap.put(PERIOD_TYPE_KEY, DATE_RANGE_WEEK);
-        settingsMap.put("archiveId", 0);
+        settingsMap.put(ARCHIVED_ID, 0);
     }
 
     @Override
     public ReportSettingsType getReportSettingsType() {
         return ReportSettingsType.COMPARISON;
+    }
+    
+    @Override
+    public int getTypeId() {
+        return getReportSettingsType().getKey();
     }
 
     @Override
@@ -61,7 +67,7 @@ public class ComBirtReportComparisonSettings extends ComBirtReportSettings {
 		parameters.put(TARGET_GROUPS_KEY, generateExpression(getTargetGroups()));
 		parameters.put(MAILINGS_KEY, generateExpression(getMailings()));
 		parameters.put(FIGURES_KEY, BirtReporUtils.packFigures(getSettingsMap()));
-		if (Const.Mailing.TYPE_ACTIONBASED == getReportSettingAsInt(MAILING_TYPE_KEY)) {
+		if (MailingType.ACTION_BASED.getCode() == getReportSettingAsInt(MAILING_TYPE_KEY)) {
             parameters.put(SORT_BY_KEY, "date");
         } else {
             parameters.put(SORT_BY_KEY, getSortBy());

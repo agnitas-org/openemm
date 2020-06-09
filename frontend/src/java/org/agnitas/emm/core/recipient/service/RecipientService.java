@@ -10,13 +10,10 @@
 
 package org.agnitas.emm.core.recipient.service;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
-
-import org.agnitas.beans.Recipient;
-import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import java.util.Set;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComProfileField;
@@ -25,6 +22,13 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.service.ServiceResult;
+import org.agnitas.beans.Recipient;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
+import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.beanutils.DynaBean;
 
 public interface RecipientService {
 
@@ -46,13 +50,21 @@ public interface RecipientService {
 
 	boolean updateSubscriber(RecipientModel model, String username) throws Exception;
 	
-    ServiceResult<FieldsSaveResults> saveBulkRecipientFields(ComAdmin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
+	List<RecipientLightDto> getDuplicateRecipients(ComAdmin admin, String email) throws Exception;
+	
+	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(ComAdmin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
+	
+	File getDuplicateAnalysisCsv(ComAdmin admin, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
+	
+	RecipientLightDto getRecipientDto(@VelocityCheck int companyId, int recipientId);
     
     List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyId, int mailinglistId);
     
     void supplySourceID(Recipient recipient, int defaultId);
 
 	int getSubscribersSize(RecipientsModel model);
+
+	int getNumberOfRecipients(int companyId);
 
 	List<Map<String, Object>> getSubscriberMailings(RecipientModel model);
 
@@ -65,4 +77,10 @@ public interface RecipientService {
 	List<ComProfileField> getRecipientBulkFields(@VelocityCheck int companyId);
     
     int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId);
+	
+	boolean deleteRecipients(ComAdmin admin, Set<Integer> bulkIds);
+	
+	boolean deleteDuplicateRecipients(ComAdmin admin, Set<Integer> bulkIds, String email);
+	
+	PaginatedListImpl<DynaBean> getPaginatedDuplicateList(ComAdmin admin, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 }

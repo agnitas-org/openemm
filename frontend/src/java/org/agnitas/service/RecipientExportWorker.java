@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ExportPredef;
@@ -27,16 +26,13 @@ import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 
 public class RecipientExportWorker extends GenericExportWorker {
 	@SuppressWarnings("unused")
@@ -49,8 +45,6 @@ public class RecipientExportWorker extends GenericExportWorker {
 	
 	private ExportPredef exportProfile;
 	private ComAdmin admin;
-	private ComMailinglistService mailinglistService;
-    private MailinglistApprovalService mailinglistApprovalService;
     
 	/**
 	 * Descriptive username for manually executed exports (non-AutoExport)
@@ -149,7 +143,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 							} else {
 								customerTableSql.append(", ");
 							}
-							customerTableSql.append("bounce.mailing_id mailing_id, bounce.mailinglist_id mailinglist_id, bounce.detail bounce_detail");
+							customerTableSql.append("bounce.exit_mailing_id AS ExitMailingID, bounce.mailinglist_id AS Mailinglist, bounce.detail AS BounceDetail");
 						}
 					}
 				} else {
@@ -163,19 +157,19 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 
 			for (int selectedMailinglistID : mailingListIds) {
-				customerTableSql.append(", m" + selectedMailinglistID + ".user_status Userstate_Mailinglist_" + selectedMailinglistID);
-				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp Mailinglist_" + selectedMailinglistID + "_Timestamp");
-				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark Mailinglist_" + selectedMailinglistID + "_UserRemark");
+				customerTableSql.append(", m" + selectedMailinglistID + ".user_status AS Userstate_Mailinglist_" + selectedMailinglistID);
+				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp AS Mailinglist_" + selectedMailinglistID + "_Timestamp");
+				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
 				if (selectBounces) {
-					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id Mailinglist_" + selectedMailinglistID + "_ExitMailingID");
-					customerTableSql.append(", 510 Mailinglist_" + selectedMailinglistID + "_Detail");
+					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id AS Mailinglist_" + selectedMailinglistID + "_ExitMailID");
+					customerTableSql.append(", 510 AS Mailinglist_" + selectedMailinglistID + "_Detail");
 				}
 			}
 
 			customerTableSql.append(" FROM customer_").append(companyID).append("_tbl cust");
 			if (selectBounces && mailingListIds.size() == 0) {
 				customerTableSql.append(" LEFT OUTER JOIN ("
-					+ "SELECT customer_id, mailinglist_id AS Mailinglist, exit_mailing_id AS ExitMailingID, 510 AS detail"
+					+ "SELECT customer_id, mailinglist_id, exit_mailing_id, 510 AS detail"
 					+ " FROM customer_" + companyID + "_binding_tbl"
 					+ " WHERE user_status = " + UserStatus.Bounce.getStatusCode()
 					+ ") bounce ON cust.customer_id = bounce.customer_id");
@@ -323,14 +317,5 @@ public class RecipientExportWorker extends GenericExportWorker {
 		}
 
 		return Collections.emptyList();
-	}
-
-	@Required
-    public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
-    	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
-    }
-
-	public void setMailinglistService(ComMailinglistService mailinglistService) {
-		this.mailinglistService = mailinglistService;
 	}
 }

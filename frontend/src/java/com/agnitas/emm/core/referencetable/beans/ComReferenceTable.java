@@ -84,4 +84,8 @@ public interface ComReferenceTable {
 	Date getVoucherLimitLastCheckDate();
 
 	void setVoucherLimitLastCheckDate(Date voucherLimitLastCheckDate);
+
+	boolean isVoucherRenew();
+
+	void setVoucherRenew(boolean voucherRenew);
 }

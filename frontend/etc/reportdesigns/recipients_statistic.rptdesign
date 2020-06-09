@@ -139,6 +139,16 @@ function dateFormat(dateString) {
 }
 reportContext.setGlobalVariable("dateFormat", dateFormat);
 
+function formatDateByLocale(date) {
+	importPackage(Packages.java.text);
+	if (reportContext.getLocale().getLanguage() == "de") {
+		return new SimpleDateFormat("dd.MM.yyyy").format(date);	
+	} else {
+		return new SimpleDateFormat("yyyy-MM-dd").format(date);
+	}
+}
+reportContext.setGlobalVariable("formatDateByLocale", formatDateByLocale);
+
 figures = BirtReporUtils.unpackFigures(params["figures"]);
 reportContext.setGlobalVariable("figures", figures);
 
@@ -2842,6 +2852,24 @@ return true;]]></method>
                                 <expression name="expression" type="javascript">row["blacklisted_count_asOf"]</expression>
                                 <property name="dataType">integer</property>
                             </structure>
+                            <structure>
+                                <property name="name">html_title_</property>
+                                <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("message_html")</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">text_title_</property>
+                                <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("message_text")</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">html_offline_title_</property>
+                                <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("message_html_offline")</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
                         </list-property>
                         <method name="onPrepare"><![CDATA[rowCount = 1;]]></method>
                         <method name="onCreate"><![CDATA[tableRowCount=0;
@@ -2873,6 +2901,15 @@ itemGroupNumber = 0;	]]></method>
                             <property name="textAlign">right</property>
                         </column>
                         <column id="495">
+                            <property name="textAlign">right</property>
+                        </column>
+                        <column id="5084">
+                            <property name="textAlign">right</property>
+                        </column>
+                        <column id="5092">
+                            <property name="textAlign">right</property>
+                        </column>
+                        <column id="5099">
                             <property name="textAlign">right</property>
                         </column>
                         <column id="4958">
@@ -2949,6 +2986,63 @@ itemGroupNumber = 0;	]]></method>
                                     <data id="4244">
                                         <property name="textAlign">left</property>
                                         <property name="resultSetColumn">active_title_</property>
+                                    </data>
+                                </cell>
+                                <cell id="5078">
+                                    <property name="borderBottomColor">#727272</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#727272</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <data id="5103">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">html_title_</property>
+                                    </data>
+                                </cell>
+                                <cell id="5086">
+                                    <property name="borderBottomColor">#727272</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#727272</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <data id="5104">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">text_title_</property>
+                                    </data>
+                                </cell>
+                                <cell id="5093">
+                                    <property name="borderBottomColor">#727272</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderTopColor">#727272</property>
+                                    <property name="borderTopStyle">solid</property>
+                                    <property name="borderTopWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <data id="5105">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">html_offline_title_</property>
                                     </data>
                                 </cell>
                                 <cell id="4952">
@@ -3062,7 +3156,7 @@ itemGroupNumber = 0;	]]></method>
                                         </structure>
                                     </list-property>
                                     <cell id="4653">
-                                        <property name="colSpan">7</property>
+                                        <property name="colSpan">10</property>
                                         <property name="rowSpan">1</property>
                                     </cell>
                                 </row>
@@ -3158,6 +3252,75 @@ itemGroupNumber = 0;	]]></method>
                                             <property name="pattern">###,###.###</property>
                                         </structure>
                                         <property name="resultSetColumn">active_count_asOf_</property>
+                                    </data>
+                                </cell>
+                                <cell id="5079">
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="fontWeight">bold</property>
+                                            <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">1</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <data id="5085">
+                                        <property name="resultSetColumn">ACTIVE_HTML</property>
+                                    </data>
+                                </cell>
+                                <cell id="5087">
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="fontWeight">bold</property>
+                                            <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">1</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <data id="5101">
+                                        <property name="resultSetColumn">ACTIVE_TXT</property>
+                                    </data>
+                                </cell>
+                                <cell id="5094">
+                                    <property name="borderLeftColor">#727272</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderRightColor">#727272</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="paddingRight">3pt</property>
+                                    <property name="verticalAlign">middle</property>
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <property name="fontWeight">bold</property>
+                                            <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">1</value>
+                                            </simple-property-list>
+                                        </structure>
+                                    </list-property>
+                                    <data id="5102">
+                                        <property name="resultSetColumn">ACTIVE_OFFLINE_HTML</property>
                                     </data>
                                 </cell>
                                 <cell id="4953">
@@ -3281,6 +3444,15 @@ itemGroupNumber = 0;	]]></method>
                                 <cell id="4684">
                                     <property name="textAlign">left</property>
                                 </cell>
+                                <cell id="5081">
+                                    <property name="textAlign">left</property>
+                                </cell>
+                                <cell id="5089">
+                                    <property name="textAlign">left</property>
+                                </cell>
+                                <cell id="5096">
+                                    <property name="textAlign">left</property>
+                                </cell>
                                 <cell id="4955">
                                     <property name="textAlign">left</property>
                                 </cell>
@@ -3296,7 +3468,7 @@ itemGroupNumber = 0;	]]></method>
                             </row>
                             <row id="4254">
                                 <cell id="4255">
-                                    <property name="colSpan">7</property>
+                                    <property name="colSpan">10</property>
                                     <property name="rowSpan">1</property>
                                     <property name="textAlign">left</property>
                                     <data id="4269">
@@ -3306,7 +3478,7 @@ itemGroupNumber = 0;	]]></method>
                             </row>
                             <row id="4261">
                                 <cell id="4262">
-                                    <property name="colSpan">7</property>
+                                    <property name="colSpan">10</property>
                                     <property name="rowSpan">1</property>
                                     <property name="textAlign">left</property>
                                     <data id="4270">
@@ -3589,7 +3761,7 @@ currentMailingListNumber = 1;
                                                                                                 <property name="verticalAlign">middle</property>
                                                                                                 <extended-item extensionName="Chart" name="byStatusChart" id="1722">
                                                                                                     <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -3886,7 +4058,7 @@ currentMailingListNumber = 1;
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before rendering the label for each datapoint.
  * 
@@ -4160,7 +4332,7 @@ function beforeGeneration( chart, icsc ) {
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -4763,7 +4935,7 @@ currentMailingListNumber++;]]></method>
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before rendering the label for each datapoint.
  * 
@@ -5451,6 +5623,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
     <Blue>254</Blue>
   </FloorFill>
   <Orientation>Vertical</Orientation>
+  <UnitSpacing>50.0</UnitSpacing>
   <Rotation/>
 </model:ChartWithAxes>
 ]]></xml-property>
@@ -7195,6 +7368,12 @@ function beforeGeneration(chart, icsc) {
             <Visible>true</Visible>
           </LineAttributes>
           <PaletteLineColor>true</PaletteLineColor>
+          <ShadowColor>
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </ShadowColor>
         </Series>
       </SeriesDefinitions>
       <SeriesDefinitions ZOrder="1">
@@ -8637,380 +8816,297 @@ function beforeGeneration(chart, icsc) {
                             </cell>
                         </row>
                     </grid>
-                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="Recipients total"
- id="4100">
-                        <property name="cube">RecipientsStatistics</property>
-                        <property name="measures">
-                            <extended-item extensionName="MeasureView" id="4101">
-                                <property name="measure">value1</property>
-                                <property name="detail">
-                                    <extended-item extensionName="AggregationCell" id="4102">
-                                        <property name="aggregationOnRow">targetGroup/targetGroup</property>
-                                        <property name="aggregationOnColumn">category/category</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderRightColor">#7E7E7E</property>
-                                        <property name="content">
-                                            <data id="4103">
-                                                <structure name="numberFormat">
-                                                    <property name="category">Custom</property>
-                                                    <property name="pattern">###,###.###</property>
-                                                </structure>
-                                                <structure name="stringFormat">
-                                                    <property name="category">Unformatted</property>
-                                                </structure>
-                                                <property name="textAlign">right</property>
-                                                <list-property name="highlightRules">
-                                                    <structure>
-                                                        <property name="operator">eq</property>
-                                                        <property name="fontWeight">bold</property>
-                                                        <expression name="testExpr" type="javascript">data["targetGroupId"]</expression>
-                                                        <simple-property-list name="value1">
-                                                            <value type="javascript">1</value>
-                                                        </simple-property-list>
-                                                    </structure>
-                                                </list-property>
-                                                <property name="resultSetColumn">value1_targetGroup/targetGroup_category/category</property>
-                                            </data>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                                <property name="filter">
-                                    <filter-condition-element>
-                                        <expression name="expr" type="javascript">data["category"]</expression>
-                                        <property name="operator">in</property>
-                                        <simple-property-list name="value1">
-                                            <value type="javascript">RecipientsStatisticDataSet.ACTIVE_START_DATE_INDEX</value>
-                                            <value type="javascript">RecipientsStatisticDataSet.ACTIVE_END_DATE_INDEX</value>
-                                        </simple-property-list>
-                                    </filter-condition-element>
-                                </property>
-                                <property name="header">
-                                    <extended-item extensionName="CrosstabCell" id="4104">
-                                        <property name="backgroundColor">#0071B9</property>
-                                        <property name="borderBottomStyle">solid</property>
-                                        <property name="borderBottomWidth">thin</property>
-                                        <property name="borderBottomColor">#7E7E7E</property>
-                                        <property name="borderRightStyle">solid</property>
-                                        <property name="borderRightWidth">thin</property>
-                                        <property name="borderRightColor">#7E7E7E</property>
-                                        <property name="paddingTop">0pt</property>
-                                        <property name="paddingLeft">0pt</property>
-                                        <property name="paddingBottom">0pt</property>
-                                        <property name="paddingRight">0pt</property>
-                                        <property name="height">0px</property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                        </property>
-                        <property name="rows">
-                            <extended-item extensionName="CrosstabView" id="4109">
-                                <property name="views">
-                                    <extended-item extensionName="DimensionView" id="4110">
-                                        <property name="dimension">mailingList</property>
-                                        <property name="levels">
-                                            <extended-item extensionName="LevelView" name="NewLevel View31111" id="4111">
-                                                <property name="level">mailingList/mailingList</property>
-                                                <property name="sort">
-                                                    <sort-element>
-                                                        <expression name="key" type="javascript">dimension["mailingList"]["mailingList"]["DisplayName"]</expression>
-                                                        <property name="direction">asc</property>
-                                                        <property name="strength">-1</property>
-                                                    </sort-element>
-                                                </property>
-                                                <property name="member">
-                                                    <extended-item extensionName="CrosstabCell" id="4112">
-                                                        <property name="content">
-                                                            <data name="mailingList1111" id="4113">
-                                                                <property name="fontWeight">normal</property>
-                                                                <property name="textAlign">left</property>
-                                                                <property name="resultSetColumn">mailingList</property>
-                                                            </data>
-                                                        </property>
-                                                        <property name="borderRightStyle">solid</property>
-                                                        <property name="borderRightWidth">thin</property>
-                                                        <property name="borderRightColor">#7E7E7E</property>
-                                                        <property name="paddingTop">1pt</property>
-                                                        <property name="paddingLeft">1pt</property>
-                                                        <property name="paddingBottom">1pt</property>
-                                                        <property name="paddingRight">1pt</property>
-                                                        <property name="width">40mm</property>
-                                                    </extended-item>
-                                                </property>
-                                            </extended-item>
-                                        </property>
-                                    </extended-item>
-                                    <extended-item extensionName="DimensionView" id="4114">
-                                        <property name="dimension">targetGroup</property>
-                                        <property name="levels">
-                                            <extended-item extensionName="LevelView" name="NewLevel View41111" id="4115">
-                                                <property name="level">targetGroup/targetGroup</property>
-                                                <property name="sort">
-                                                    <sort-element>
-                                                        <expression name="key" type="javascript">dimension["targetGroup"]["targetGroup"]["target_order"]</expression>
-                                                        <property name="direction">asc</property>
-                                                        <property name="strength">-1</property>
-                                                    </sort-element>
-                                                    <sort-element>
-                                                        <expression name="key" type="javascript">dimension["targetGroup"]["targetGroup"]</expression>
-                                                        <property name="direction">asc</property>
-                                                        <property name="strength">-1</property>
-                                                    </sort-element>
-                                                </property>
-                                                <property name="member">
-                                                    <extended-item extensionName="CrosstabCell" id="4116">
-                                                        <property name="content">
-                                                            <data name="targetGroup1111" id="4117">
-                                                                <property name="textAlign">left</property>
-                                                                <list-property name="highlightRules">
-                                                                    <structure>
-                                                                        <property name="operator">eq</property>
-                                                                        <property name="fontWeight">bold</property>
-                                                                        <expression name="testExpr" type="javascript">data["targetGroupId"]</expression>
-                                                                        <simple-property-list name="value1">
-                                                                            <value type="javascript">1</value>
-                                                                        </simple-property-list>
-                                                                    </structure>
-                                                                </list-property>
-                                                                <property name="resultSetColumn">targetGroup</property>
-                                                            </data>
-                                                        </property>
-                                                        <property name="fontWeight">normal</property>
-                                                        <property name="borderRightStyle">solid</property>
-                                                        <property name="borderRightWidth">thin</property>
-                                                        <property name="borderRightColor">#7E7E7E</property>
-                                                        <property name="width">40mm</property>
-                                                    </extended-item>
-                                                </property>
-                                            </extended-item>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                        </property>
-                        <property name="columns">
-                            <extended-item extensionName="CrosstabView" id="4118">
-                                <property name="views">
-                                    <extended-item extensionName="DimensionView" id="4119">
-                                        <property name="dimension">category</property>
-                                        <property name="levels">
-                                            <extended-item extensionName="LevelView" name="NewLevel View91" id="4120">
-                                                <property name="level">category/category</property>
-                                                <property name="member">
-                                                    <extended-item extensionName="CrosstabCell" id="4121">
-                                                        <property name="content">
-                                                            <data name="category21" id="4122">
-                                                                <property name="fontWeight">bold</property>
-                                                                <property name="color">#FFFFFF</property>
-                                                                <property name="textAlign">left</property>
-                                                                <structure name="toc"/>
-                                                                <property name="resultSetColumn">category_1</property>
-                                                            </data>
-                                                        </property>
-                                                        <property name="backgroundColor">#0071B9</property>
-                                                        <property name="borderRightStyle">solid</property>
-                                                        <property name="borderRightWidth">thin</property>
-                                                        <property name="borderRightColor">#7E7E7E</property>
-                                                        <property name="height">100%</property>
-                                                    </extended-item>
-                                                </property>
-                                            </extended-item>
-                                        </property>
-                                    </extended-item>
-                                </property>
-                            </extended-item>
-                        </property>
-                        <property name="header">
-                            <extended-item extensionName="CrosstabCell" id="4123">
-                                <property name="content">
-                                    <grid id="4124">
-                                        <property name="height">100%</property>
-                                        <property name="width">100%</property>
-                                        <column id="4125">
-                                            <property name="width">40mm</property>
-                                        </column>
-                                        <column id="4126">
-                                            <property name="width">40mm</property>
-                                        </column>
-                                        <row id="4127">
-                                            <property name="style">recipientStatistics-table-hedlines</property>
-                                            <cell id="4128">
-                                                <property name="borderRightColor">#7E7E7E</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingLeft">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="paddingRight">1pt</property>
-                                                <data id="4283">
-                                                    <property name="paddingTop">1pt</property>
-                                                    <property name="paddingLeft">1pt</property>
-                                                    <property name="paddingBottom">1pt</property>
-                                                    <property name="paddingRight">1pt</property>
-                                                    <property name="textAlign">left</property>
-                                                    <property name="resultSetColumn">mailinglist_title_</property>
-                                                </data>
-                                            </cell>
-                                            <cell id="4130">
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingLeft">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="paddingRight">0pt</property>
-                                                <data id="4286">
-                                                    <property name="paddingTop">1pt</property>
-                                                    <property name="paddingLeft">1pt</property>
-                                                    <property name="paddingBottom">1pt</property>
-                                                    <property name="paddingRight">1pt</property>
-                                                    <property name="textAlign">left</property>
-                                                    <property name="resultSetColumn">targetgroups_title_</property>
-                                                </data>
-                                            </cell>
-                                        </row>
-                                        <row id="4694">
-                                            <property name="style">recipientStatistics-table-hedlines</property>
-                                            <cell id="4695">
-                                                <property name="borderRightColor">#7E7E7E</property>
-                                                <property name="borderRightStyle">solid</property>
-                                                <property name="borderRightWidth">thin</property>
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingLeft">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="paddingRight">1pt</property>
-                                            </cell>
-                                            <cell id="4696">
-                                                <property name="paddingTop">1pt</property>
-                                                <property name="paddingLeft">1pt</property>
-                                                <property name="paddingBottom">1pt</property>
-                                                <property name="paddingRight">1pt</property>
-                                            </cell>
-                                        </row>
-                                    </grid>
-                                </property>
-                                <property name="backgroundColor">#0071B9</property>
-                                <property name="borderBottomStyle">solid</property>
-                                <property name="borderBottomWidth">thin</property>
-                                <property name="borderBottomColor">#7E7E7E</property>
-                                <property name="borderRightStyle">solid</property>
-                                <property name="borderRightWidth">thin</property>
-                                <property name="borderRightColor">#7E7E7E</property>
-                                <property name="paddingTop">0pt</property>
-                                <property name="paddingLeft">0pt</property>
-                                <property name="paddingBottom">0pt</property>
-                                <property name="paddingRight">0pt</property>
-                            </extended-item>
-                        </property>
-                        <method name="onPrepare"><![CDATA[function onPrepareCrosstab( crosstab, reportContext )
-{
-   reportContext.setGlobalVariable("totalCount", parseInt(0));
-}
-]]></method>
-                        <method name="onCreate"><![CDATA[function onCreateCell( cellInst, reportContext )
-{
-	var totalCount = parseInt(reportContext.getGlobalVariable("totalCount"));
-
-	if (cellInst.getCellID() == 4112) {
-		totalCount++;
-		reportContext.setGlobalVariable("totalCount", totalCount);		
-	}
-
-	if ((cellInst.getCellID() == 4112) ||  (cellInst.getCellID() == 4116) || (cellInst.getCellID() == 4102)) {
-		if ((totalCount%2) == 0 ) {
-			cellInst.getStyle().setBackgroundColor("#B8B8B8");
-		}
-	}
-}
-]]></method>
-                        <property name="borderTopStyle">solid</property>
-                        <property name="borderTopWidth">thin</property>
-                        <property name="borderTopColor">#7E7E7E</property>
-                        <property name="borderLeftStyle">solid</property>
-                        <property name="borderLeftWidth">thin</property>
-                        <property name="borderLeftColor">#7E7E7E</property>
+                    <table id="5020">
+                        <property name="borderBottomColor">#7E7E7E</property>
                         <property name="borderBottomStyle">solid</property>
                         <property name="borderBottomWidth">thin</property>
-                        <property name="borderBottomColor">#7E7E7E</property>
+                        <property name="borderLeftColor">#7E7E7E</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightColor">#7E7E7E</property>
                         <property name="borderRightStyle">solid</property>
                         <property name="borderRightWidth">thin</property>
-                        <property name="borderRightColor">#7E7E7E</property>
-                        <property name="marginBottom">5mm</property>
+                        <property name="borderTopColor">#7E7E7E</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="dataSet">RecipientsDetailedDynamicOverallDistribution</property>
                         <list-property name="boundDataColumns">
                             <structure>
-                                <property name="name">mailingList</property>
-                                <expression name="expression" type="javascript">wrap(dimension["mailingList"]["mailingList"]["DisplayName"],24)</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
-                                <property name="name">targetGroup</property>
-                                <expression name="expression">dimension["targetGroup"]["targetGroup"]</expression>
-                                <property name="dataType">string</property>
-                            </structure>
-                            <structure>
-                                <property name="name">mailingListGroupId</property>
-                                <expression name="expression" type="javascript">dimension["mailingList"]["mailingList"]["mailingListGroupId"]</expression>
+                                <property name="name">mailingListId</property>
+                                <expression name="expression" type="javascript">dataSetRow["mailingListId"]</expression>
                                 <property name="dataType">integer</property>
-                            </structure>
-                            <structure>
-                                <property name="name">targetGroup_targetGroup_targetGroupId</property>
-                                <expression name="expression" type="javascript">dimension["targetGroup"]["targetGroup"]["targetGroupId"]</expression>
-                                <property name="dataType">integer</property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
                                 <property name="name">targetGroupId</property>
-                                <expression name="expression">dimension["targetGroup"]["targetGroup"]["targetGroupId"]</expression>
+                                <expression name="expression" type="javascript">dataSetRow["targetGroupId"]</expression>
                                 <property name="dataType">integer</property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">category</property>
-                                <expression name="expression">dimension["category"]["category"]</expression>
+                                <property name="name">day</property>
+                                <expression name="expression" type="javascript">dataSetRow["date"]</expression>
+                                <property name="dataType">date</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">countActive</property>
+                                <expression name="expression" type="javascript">dataSetRow["ACTIVE"]</expression>
                                 <property name="dataType">integer</property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">category_1</property>
-                                <expression name="expression">dimension["category"]["category"]["category"]</expression>
-                                <property name="dataType">string</property>
+                                <property name="name">minAggregatedDay</property>
+                                <property name="dataType">date</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>groupTargetGroupId</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">MIN</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">row["day"]</expression>
+                                    </structure>
+                                </list-property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">value1_targetGroup/targetGroup_category/category</property>
+                                <property name="name">maxAggregatedDay</property>
+                                <property name="dataType">date</property>
+                                <simple-property-list name="aggregateOn">
+                                    <value>groupTargetGroupId</value>
+                                </simple-property-list>
+                                <property name="aggregateFunction">MAX</property>
+                                <list-property name="arguments">
+                                    <structure>
+                                        <property name="name">Expression</property>
+                                        <expression name="value" type="javascript">row["day"]</expression>
+                                    </structure>
+                                </list-property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">activeForStartDateByTargetGroup</property>
                                 <property name="dataType">integer</property>
                                 <simple-property-list name="aggregateOn">
-                                    <value>targetGroup/targetGroup</value>
-                                    <value>category/category</value>
+                                    <value>groupTargetGroupId</value>
                                 </simple-property-list>
                                 <property name="aggregateFunction">SUM</property>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["value1"]</expression>
+                                        <expression name="value" type="javascript">row["countActive"]</expression>
                                     </structure>
                                 </list-property>
+                                <expression name="filterExpr" type="javascript">BirtComp.equalTo(row["day"], row["minAggregatedDay"])</expression>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">percent1_targetGroup/targetGroup_category/category</property>
-                                <property name="dataType">float</property>
+                                <property name="name">activeForEndDateByTargetGroup</property>
+                                <property name="dataType">integer</property>
                                 <simple-property-list name="aggregateOn">
-                                    <value>targetGroup/targetGroup</value>
-                                    <value>category/category</value>
+                                    <value>groupTargetGroupId</value>
                                 </simple-property-list>
                                 <property name="aggregateFunction">SUM</property>
                                 <list-property name="arguments">
                                     <structure>
                                         <property name="name">Expression</property>
-                                        <expression name="value" type="javascript">measure["percent1"]</expression>
+                                        <expression name="value" type="javascript">row["countActive"]</expression>
                                     </structure>
                                 </list-property>
+                                <expression name="filterExpr" type="javascript">BirtComp.equalTo(row["day"], row["maxAggregatedDay"])</expression>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">mailinglist_title_</property>
+                                <property name="name">mailingListTitle</property>
                                 <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("message_Mailinglist");</expression>
                                 <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
                             </structure>
                             <structure>
-                                <property name="name">targetgroups_title_</property>
+                                <property name="name">targetGroupTitle</property>
                                 <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("message_Target-Groups");</expression>
                                 <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">mailingListName</property>
+                                <expression name="expression" type="javascript">dataSetRow["MAILINGLIST"]</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                            <structure>
+                                <property name="name">targetGroupName</property>
+                                <expression name="expression" type="javascript">dataSetRow["TARGETGROUP"]</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
                             </structure>
                         </list-property>
-                    </extended-item>
+                        <method name="onPrepare"><![CDATA[mailingListNumber = 0;]]></method>
+                        <column id="5029"/>
+                        <column id="5033"/>
+                        <column id="5056"/>
+                        <column id="5062"/>
+                        <header>
+                            <row id="5021">
+                                <property name="style">recipientStatistics-table-hedlines</property>
+                                <cell id="5022">
+                                    <property name="borderRightColor">#7E7E7E</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <data id="5074">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">mailingListTitle</property>
+                                    </data>
+                                </cell>
+                                <cell id="5030">
+                                    <property name="borderRightColor">#7E7E7E</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <data id="5075">
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">targetGroupTitle</property>
+                                    </data>
+                                </cell>
+                                <cell id="5053">
+                                    <property name="borderRightColor">#7E7E7E</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <text-data id="5072">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">formatDateByLocale(row["minAggregatedDay"])</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                                <cell id="5059">
+                                    <text-data id="5073">
+                                        <property name="textAlign">left</property>
+                                        <expression name="valueExpr">formatDateByLocale(row["maxAggregatedDay"])</expression>
+                                        <property name="contentType">html</property>
+                                    </text-data>
+                                </cell>
+                            </row>
+                        </header>
+                        <group id="5037">
+                            <property name="groupName">groupMailingListId</property>
+                            <expression name="keyExpr" type="javascript">row["mailingListId"]</expression>
+                            <structure name="toc">
+                                <expression name="expressionValue" type="javascript">row["mailingListId"]</expression>
+                            </structure>
+                            <property name="hideDetail">false</property>
+                            <method name="onCreate"><![CDATA[mailingListNumber++;
+targetGroupNumber = 0;]]></method>
+                            <list-property name="sort">
+                                <structure>
+                                    <expression name="key" type="javascript">row["mailingListName"]</expression>
+                                    <property name="direction">asc</property>
+                                    <property name="strength">-1</property>
+                                </structure>
+                            </list-property>
+                        </group>
+                        <group id="5045">
+                            <property name="groupName">groupTargetGroupId</property>
+                            <expression name="keyExpr" type="javascript">row["targetGroupId"]</expression>
+                            <structure name="toc">
+                                <expression name="expressionValue" type="javascript">row["targetGroupId"]</expression>
+                            </structure>
+                            <property name="hideDetail">false</property>
+                            <list-property name="sort">
+                                <structure>
+                                    <expression name="key" type="javascript">row["targetGroupId"]</expression>
+                                    <property name="direction">asc</property>
+                                    <property name="strength">-1</property>
+                                </structure>
+                            </list-property>
+                            <header>
+                                <row id="5046">
+                                    <list-property name="highlightRules">
+                                        <structure>
+                                            <property name="operator">eq</property>
+                                            <expression name="testExpr" type="javascript">mailingListNumber % 2</expression>
+                                            <simple-property-list name="value1">
+                                                <value type="javascript">0</value>
+                                            </simple-property-list>
+                                            <property name="style">odd</property>
+                                        </structure>
+                                    </list-property>
+                                    <cell id="5047">
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <data id="5044">
+                                            <list-property name="visibility">
+                                                <structure>
+                                                    <property name="format">all</property>
+                                                    <expression name="valueExpr" type="javascript">row["targetGroupId"]>1</expression>
+                                                </structure>
+                                            </list-property>
+                                            <property name="resultSetColumn">mailingListName</property>
+                                        </data>
+                                    </cell>
+                                    <cell id="5048">
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <data id="5052">
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
+                                            <property name="resultSetColumn">targetGroupName</property>
+                                        </data>
+                                    </cell>
+                                    <cell id="5054">
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <data id="5076">
+                                            <structure name="numberFormat">
+                                                <property name="category">Custom</property>
+                                                <property name="pattern">###,###.###</property>
+                                            </structure>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
+                                            <property name="resultSetColumn">activeForStartDateByTargetGroup</property>
+                                        </data>
+                                    </cell>
+                                    <cell id="5060">
+                                        <data id="5077">
+                                            <structure name="numberFormat">
+                                                <property name="category">Custom</property>
+                                                <property name="pattern">###,###.###</property>
+                                            </structure>
+                                            <list-property name="highlightRules">
+                                                <structure>
+                                                    <property name="operator">eq</property>
+                                                    <property name="fontWeight">bold</property>
+                                                    <expression name="testExpr" type="javascript">row["targetGroupId"]</expression>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">1</value>
+                                                    </simple-property-list>
+                                                </structure>
+                                            </list-property>
+                                            <property name="resultSetColumn">activeForEndDateByTargetGroup</property>
+                                        </data>
+                                    </cell>
+                                </row>
+                            </header>
+                        </group>
+                    </table>
                     <table id="2181">
                         <property name="marginBottom">0pt</property>
                         <property name="width">197mm</property>
@@ -11866,7 +11962,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                                         <property name="textAlign">center</property>
                                         <extended-item extensionName="Chart" id="3897">
                                             <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -12137,8 +12233,11 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
       <Blue>255</Blue>
     </Background>
     <Visible>true</Visible>
+    <Cursor>
+      <Type>Auto</Type>
+    </Cursor>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before rendering the label for each datapoint.
  * 
@@ -12188,7 +12287,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 function afterDrawLegendItem(lerh, bounds, icsc) {
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
-	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL_WITH_DEPTH));
+	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL));
 	var nb = bounds.getLeft() - 7;
     bounds.setLeft(nb);		
 }
@@ -12365,6 +12464,8 @@ function beforeGeneration( chart, icsc )
           <Caption>
             <Value></Value>
             <Font>
+              <Size>16.0</Size>
+              <Bold>true</Bold>
               <Alignment/>
             </Font>
           </Caption>
@@ -12406,7 +12507,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -12527,7 +12628,7 @@ function beforeGeneration( chart, icsc )
                                         <property name="textAlign">center</property>
                                         <extended-item extensionName="Chart" id="3901">
                                             <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -12799,7 +12900,7 @@ function beforeGeneration( chart, icsc )
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
  * Called before rendering the label for each datapoint.
  * 
@@ -12849,7 +12950,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 function afterDrawLegendItem(lerh, bounds, icsc) {
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
-	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL_WITH_DEPTH));
+	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL));
 	var nb = bounds.getLeft() - 7;
     bounds.setLeft(nb);	
 }
@@ -13069,7 +13170,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -13936,7 +14037,7 @@ currentMailingListNumber = 1;
                                                                                                             <property name="textAlign">center</property>
                                                                                                             <extended-item extensionName="Chart" id="3221">
                                                                                                                 <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -14210,7 +14311,7 @@ currentMailingListNumber = 1;
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/*
 function afterDataSetFilled(series, dataSet, icsc) {
 	points = 72;
@@ -14276,7 +14377,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
  
 function afterDrawLegendItem(lerh, bounds, icsc) {
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
-	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL_WITH_DEPTH));
+	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL));
 	var nb = bounds.getLeft() - 7;
     bounds.setLeft(nb);	
 }
@@ -14555,7 +14656,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -15496,7 +15597,7 @@ currentMailingListNumber = 1;
                                                                                                             <method name="onCreate"><![CDATA[reportContext.setPersistentGlobalVariable("mainTitle8", this.getRowData().getExpressionValue("row[mailingList]"));]]></method>
                                                                                                             <extended-item extensionName="Chart" id="3004">
                                                                                                                 <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -15770,7 +15871,7 @@ currentMailingListNumber = 1;
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
 function afterDataSetFilled(series, dataSet, icsc) {
 	points = 72;
@@ -15838,7 +15939,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
 
 function afterDrawLegendItem(lerh, bounds, icsc) {
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
-	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL_WITH_DEPTH));
+	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL));
 	var nb = bounds.getLeft() - 7;
     bounds.setLeft(nb);	
 }
@@ -16116,7 +16217,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>
@@ -17144,7 +17245,7 @@ currentMailingListNumber = 1;]]></method>
                                                                                                             <property name="paddingRight">0pt</property>
                                                                                                             <extended-item extensionName="Chart" id="3520">
                                                                                                                 <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithoutAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
-  <Version>2.5.1</Version>
+  <Version>2.6.1</Version>
   <Type>Pie Chart</Type>
   <SubType>Standard</SubType>
   <Description>
@@ -17428,7 +17529,7 @@ currentMailingListNumber = 1;]]></method>
     </Background>
     <Visible>true</Visible>
   </Block>
-  <Dimension>Two_Dimensional_With_Depth</Dimension>
+  <Dimension>Two_Dimensional</Dimension>
   <Script>/**
 function afterDataSetFilled(series, dataSet, icsc) {
 	points = 72;
@@ -17495,7 +17596,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
  
 function afterDrawLegendItem(lerh, bounds, icsc) {
 	importPackage(Packages.org.eclipse.birt.chart.model.attribute);
-	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL_WITH_DEPTH));
+	icsc.getChartInstance().setDimension(ChartDimension.get(ChartDimension.TWO_DIMENSIONAL));
 	var nb = bounds.getLeft() - 7;
     bounds.setLeft(nb);	
 }
@@ -17763,7 +17864,7 @@ function beforeGeneration( chart, icsc )
         </LeaderLineAttributes>
         <LeaderLineStyle>Fixed_Length</LeaderLineStyle>
         <LeaderLineLength>10.0</LeaderLineLength>
-        <Ratio>0.5</Ratio>
+        <Ratio>1.0</Ratio>
         <Rotation>0.0</Rotation>
       </Series>
       <Grouping>

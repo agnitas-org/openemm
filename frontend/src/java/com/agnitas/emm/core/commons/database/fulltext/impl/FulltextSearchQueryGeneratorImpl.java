@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.agnitas.util.FulltextSearchQueryException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;

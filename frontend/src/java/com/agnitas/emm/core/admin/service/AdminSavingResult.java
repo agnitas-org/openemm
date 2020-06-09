@@ -10,42 +10,31 @@
 
 package com.agnitas.emm.core.admin.service;
 
-import java.util.Objects;
-
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.messages.Message;
 
 public class AdminSavingResult {
     private final ComAdmin result;
     private final boolean success;
     private final boolean isPasswordChanged;
-    private final ActionMessages errors;
+    private final Message error;
 
-    private AdminSavingResult(ComAdmin result, boolean success, boolean isPasswordChanged, ActionMessages errors) {
+    private AdminSavingResult(ComAdmin result, boolean success, boolean isPasswordChanged, Message error) {
         this.result = result;
         this.success = success;
         this.isPasswordChanged = isPasswordChanged;
-        this.errors = errors;
+        this.error = error;
     }
 
     private AdminSavingResult(ComAdmin result, boolean isPasswordChanged) {
         this(result, true, isPasswordChanged, null);
     }
 
-    private AdminSavingResult(ActionMessages errors) {
-        Objects.requireNonNull(errors);
-
+    private AdminSavingResult(Message error) {
         this.result = null;
         this.success = false;
         this.isPasswordChanged = false;
-        this.errors = errors;
-    }
-
-    private AdminSavingResult(String errorProperty, ActionMessage error) {
-        this(new ActionMessages());
-        this.errors.add(errorProperty, error);
+        this.error = error;
     }
 
     public ComAdmin getResult() {
@@ -60,15 +49,15 @@ public class AdminSavingResult {
         return isPasswordChanged;
     }
 
-    public ActionMessages getErrors() {
-        return errors;
+    public Message getError() {
+        return error;
     }
 
     public static AdminSavingResult success(ComAdmin admin, boolean isPasswordChanged) {
         return new AdminSavingResult(admin, isPasswordChanged);
     }
 
-    public static AdminSavingResult error(ActionMessage error) {
-        return new AdminSavingResult(ActionMessages.GLOBAL_MESSAGE, error);
+    public static AdminSavingResult error(Message error) {
+        return new AdminSavingResult(error);
     }
 }

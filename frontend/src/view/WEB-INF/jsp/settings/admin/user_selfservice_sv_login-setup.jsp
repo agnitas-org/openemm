@@ -24,5 +24,5 @@
 <c:set var="agnHelpKey" 			value="supervisor-permissions" 	scope="request" />
 
 <c:set var="agnSubtitleValue" scope="request">
-    <i class="icon icon-cog"></i> ${sessionScope['fullName']}
+    <i class="icon-fa5 icon-fa5-cog"></i> ${sessionScope['fullName']}
 </c:set>

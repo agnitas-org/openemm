@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.logon.forms;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class LogonResetPasswordForm {
     private String username;

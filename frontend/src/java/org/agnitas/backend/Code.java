@@ -170,8 +170,9 @@ public class Code {
 					break;
 				}
 				code = code.substring (m.end ());
-			} else
+			} else {
 				break;
+			}
 		}
 	}
 	private void parseDatabaseRequirements (String param) {
@@ -402,8 +403,14 @@ public class Code {
 							match = ! match;
 						}
 						switch (state) {
-						case 0:	isAdminLink = match;	break;
-						case 1:	useLink = match;	break;
+							case 0:
+								isAdminLink = match;
+								break;
+							case 1:
+								useLink = match;
+								break;
+							default:
+								break;
 						}
 					}
 				}
@@ -414,13 +421,15 @@ public class Code {
 						String	parm = link.substring (1).trim ();
 					
 						link = parameter.get (parm);
-						if (link == null)
+						if (link == null) {
 							throw new Exception ("Missing parameter \"" + parm + "\" (expected URL)");
+						}
 						link = data.substituteString (link, urlparameter, missing);
 						showMissing ("indirect link", link);
 					}
-					if (data.requestURL (link, data.substituteString (comment, parameter), isAdminLink) == null)
+					if (data.requestURL (link, data.substituteString (comment, parameter), isAdminLink) == null) {
 						throw new Exception ("Required link \"" + link + "\" cannot be used");
+					}
 				}
 			}
 		}

@@ -46,11 +46,13 @@ public class AdminLocaleResolver extends SessionLocaleResolver {
     @Override
     public LocaleContext resolveLocaleContext(final HttpServletRequest request) {
         return new TimeZoneAwareLocaleContext() {
-            public Locale getLocale() {
+            @Override
+			public Locale getLocale() {
                 return AdminLocaleResolver.getLocale(request);
             }
 
-            public TimeZone getTimeZone() {
+            @Override
+			public TimeZone getTimeZone() {
                 return AgnUtils.getTimeZone(request);
             }
         };

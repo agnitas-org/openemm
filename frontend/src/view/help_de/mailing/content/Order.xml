@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[Reihenfolge]]></title>
+    <content><![CDATA[Sie k&ouml;nnen f&uuml;r verschiedene Zielgruppen unterschiedliche Inhalte in den Baustein einf&uuml;gen. Die Zielgruppe w&auml;hlen Sie &uuml;ber das Auswahlfeld unterhalb der Spalte. Mit dem Pluszeichen k&ouml;nnen Sie weitere zielgruppenspezifische Inhalte hinzuf&uuml;gen. Die Reihenfolge definiert die Priorit&auml;t, mit der die Zielgruppen-Inhalte in Mailings eingef&uuml;gt werden und kann durch Drag &amp; Drop ver&auml;ndert werden. Der oberste Eintrag hat immer die h&ouml;chste Priorit&auml;t. Die Priorit&auml;t spielt nur dann eine Rolle, wenn die Zielgruppen nicht &uuml;berschneidungsfrei sind (Beispiel: "M&auml;nner unter 35" und "alle M&auml;nner"). Die kleinste Gruppe muss dabei immer an erster Stelle stehen, da ansonsten alle die Inhalte der gr&ouml;ßeren Gruppe zu sehen bekommen.]]></content>
+</HelpBalloon>

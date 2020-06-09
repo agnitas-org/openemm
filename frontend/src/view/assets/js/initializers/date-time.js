@@ -127,7 +127,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 
     var Helpers = AGN.Lib.Helpers;
 
-    AGN.Initializers.PickADate = function ($scope) {
+    AGN.Lib.CoreInitializer.new('pickadate', function ($scope) {
         if (!$scope) {
             $scope = $(document);
         }
@@ -138,6 +138,7 @@ A documentation of the underlying jquery plugin can be found under <a href="http
                 options,
                 baseOptions = {
                     editable: true,
+                    min: new Date(0, 0, 0),
                     max: new Date(9999, 11, 31),
                     maxFor: undefined,
                     minFor: undefined,
@@ -222,6 +223,6 @@ A documentation of the underlying jquery plugin can be found under <a href="http
 
         });
 
-    }
+    });
 
 })();

@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailinglistForm" type="com.agnitas.emm.core.mailinglist.form.MailinglistForm"--%>
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
@@ -35,6 +36,9 @@
                     <mvc:text path="shortname" cssClass="form-control" id="shortname" placeholder="${namePlaceholder}"/>
                 </div>
             </div>
+
+            <%@include file="./mailing-frequency-toggle.jspf"%>
+
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="description" class="control-label">
@@ -48,6 +52,16 @@
                     <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" placeholder="${descriptionPlaceholder}"/>
                 </div>
             </div>
+
+            <c:if test="${not isNew}">
+                <div class="form-group">
+                    <div class="col-sm-offset-4 col-sm-8">
+                        <c:url var="enableMailinglistUrl" value="/mailinglist/${mailinglistForm.id}/users.action"/>
+                        <a href="#" class="btn btn-primary btn-regular"
+                           data-form-url="${enableMailinglistUrl}" data-form-confirm=""><mvc:message code="button.Enabling" /></a>
+                    </div>
+                </div>
+            </c:if>
         </div>
     </div>
     <c:if test="${not isNew or not empty mailinglistForm.statistic}">

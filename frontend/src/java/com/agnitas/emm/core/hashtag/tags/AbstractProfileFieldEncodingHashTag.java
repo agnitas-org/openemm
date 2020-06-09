@@ -30,6 +30,10 @@ import com.agnitas.emm.core.hashtag.AbstractColonHashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
+/**
+ * MD5-Encoding of profile field values is legacy code and may still use MD5-Encoder
+ */
+@SuppressWarnings("deprecation")
 public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonHashTag {
 	
 	/** The logger. */
@@ -106,8 +110,9 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 	private final ByteArrayEncoder getByteArrayEncoder(final String name) throws UnknownEncodingException {
 		final ByteArrayEncoder encoder = this.encoderMap.get(name.toLowerCase());
 		
-		if(encoder == null)
+		if(encoder == null) {
 			throw new UnknownEncodingException(name);
+		}
 		
 		return encoder;
 	}

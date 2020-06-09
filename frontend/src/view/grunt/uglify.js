@@ -1,8 +1,7 @@
-var applicationFiles = [
-  '<%= config.assets %>/js/vendor/jquery-1.11.1.js',
-  '<%= config.assets %>/js/vendor/jquery-ui.min.1.11.1.js',
+var applicationCommonFiles = [
+  '<%= config.assets %>/js/vendor/jquery-3.4.1.js',
+  '<%= config.assets %>/js/vendor/jquery-ui.min.1.12.1.js',
   '<%= config.assets %>/js/vendor/lodash-4.17.15.js',
-  '<%= config.assets %>/js/vendor/jquery-migrate-1.2.1.js',
   '<%= config.assets %>/js/vendor/jquery-i18n-1.1.1.js',
   '<%= config.assets %>/js/vendor/jquery-select2-3.5.2.js',
   '<%= config.assets %>/js/vendor/jquery-endless-scroll-1.6.0.js',
@@ -49,6 +48,8 @@ var applicationFiles = [
   '<%= config.assets %>/js/controllers/*.js',
   '<%= config.assets %>/js/vendor/interact.js'
 ],
+applicationDevFiles = applicationCommonFiles.concat(['<%= config.assets %>/js/vendor/jquery-migrate-3.1.0.js']),
+applicationMinFiles = applicationCommonFiles.concat(['<%= config.assets %>/js/vendor/jquery-migrate-3.1.0.min.js']),//migrate min file does not have logs about deprecated functions
 birtFiles = [
   '<%= config.assets %>/js/vendor/iframe-resizer-content-window-2.7.1.js',
   '<%= config.assets %>/js/birt/*.js'
@@ -57,7 +58,7 @@ birtFiles = [
 module.exports = {
   build_js: {
     files: {
-      '<%= config.assets %>/application.js': applicationFiles
+      '<%= config.assets %>/application.js': applicationDevFiles
     },
     options: {
       mangle: false,
@@ -79,7 +80,7 @@ module.exports = {
   },
   compile_js: {
     files: {
-      '<%= config.assets %>/application.min.js': applicationFiles
+      '<%= config.assets %>/application.min.js': applicationMinFiles
     },
     options: {
       mangle: true,

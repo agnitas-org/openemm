@@ -18,7 +18,6 @@ import	java.util.List;
 import	java.util.Map;
 
 import	org.agnitas.backend.dao.MailingDAO;
-import	org.agnitas.util.Config;
 import	org.agnitas.util.Log;
 
 /**
@@ -33,6 +32,7 @@ public class Mailing {
 	/** database representtion for mailing				*/
 	private MailingDAO		mailing;
 	/** the name of the mailing					*/
+	@SuppressWarnings("unused")
 	private String			name;
 	/** default encoding for all blocks				*/
 	private String			defaultEncoding;
@@ -87,13 +87,13 @@ public class Mailing {
 		stepping = 0;
 		blocksPerStep = 1;
 		startBlockForStep = 1;
-		domain = "agnitas.de";
+		domain = Data.fqdn;
 		boundary = "AGNITAS";
 		mailer = "Agnitas AG";
 		outputDirectories = new HashMap <> ();
-		accountLogfile = "log/account.log";
-		bounceLogfile = "log/extbounce.log";
-		messageIDLogfile = "log/messageid.log";
+		accountLogfile = StringOps.makePath ("$home", "log", "account.log");
+		bounceLogfile = StringOps.makePath ("$home", "log", "extbounce.log");
+		messageIDLogfile = StringOps.makePath ("$home", "log", "messageid.log");
 	}
 	
 	public Mailing done () {
@@ -149,8 +149,25 @@ public class Mailing {
 	public boolean workStatus (String newWorkStatus) throws SQLException {
 		return exists () ? mailing.workStatus (data.dbase, newWorkStatus) : false;
 	}
+	public void setWorkStatus (String newWorkStatus) {
+		if (data.maildropStatus.isWorldMailing ()) {
+			String	oldWorkStatus = workStatus ();
+			try {
+				if (data.mailing.workStatus (newWorkStatus)) {
+					data.logging (Log.INFO, "workstatus", "Updated working status from " + oldWorkStatus + " to " + newWorkStatus);
+				} else {
+					data.logging (Log.WARNING, "workstatus", "Failed to update working status from " + oldWorkStatus + " to " + newWorkStatus);
+				}
+			} catch (Exception e) {
+				data.logging (Log.ERROR, "workstatus", "Failed to update working status from " + oldWorkStatus + " to " + newWorkStatus + " due to " + e.toString (), e);
+			}
+		}
+	}
 	public int priority () {
 		return exists () ? mailing.priority () : -1;
+	}
+	public boolean frequencyCounterDisabled () {
+		return exists () ? mailing.frequencyCounterDisabled () : false;
 	}
 	public boolean isWorkflowMailing () {
 		return exists () ? mailing.isWorkflowMailing () : false;
@@ -160,6 +177,9 @@ public class Mailing {
 	}
 	public Map <String, String> info () {
 		return exists () ? mailing.info () : null;
+	}
+	public Map <String, String> item () {
+		return exists () ? mailing.item () : null;
 	}
 	public long sourceTemplateID () {
 		return exists () ? mailing.sourceTemplateID () : 0L;
@@ -418,22 +438,22 @@ public class Mailing {
 	/**
 	 * returns an output directory for a given name
 	 * 
-	 * @param name the name to lookup
+	 * @param lookupName the name to lookup
 	 * @return the path to the output directory or null
 	 */
-	public String outputDirectory (String name) {
-		return outputDirectories.get (name);
+	public String outputDirectory (String lookupName) {
+		return outputDirectories.get (lookupName);
 	}
 	
 	/**
 	 * return an output directory for company specific
 	 * output writing
 	 * 
-	 * @param name the name to lookup
+	 * @param lookupName the name to lookup
 	 * @return the path to the output directory or null
 	 */
-	public String outputDirectoryForCompany (String name) {
-		String	path = outputDirectory (name);
+	public String outputDirectoryForCompany (String lookupName) {
+		String	path = outputDirectory (lookupName);
 		
 		if (path != null) {
 			String	companyPath = path + data.company.id ();
@@ -468,6 +488,7 @@ public class Mailing {
 			data.logging (Log.DEBUG, "init", "\tmailing.mailingType = " + mailing.mailingType ());
 			data.logging (Log.DEBUG, "init", "\tmailing.workStatus = " + mailing.workStatus ());
 			data.logging (Log.DEBUG, "init", "\tmailing.priority = " + mailing.priority ());
+			data.logging (Log.DEBUG, "init", "\tmailing.frequencyCounterDisabled = " + mailing.frequencyCounterDisabled ());
 			data.logging (Log.DEBUG, "init", "\tmailing.isWorkflowMailing = " + mailing.isWorkflowMailing ());
 			data.logging (Log.DEBUG, "init", "\tmailing.sourceTemplateID = " + mailing.sourceTemplateID ());
 			data.logging (Log.DEBUG, "init", "\tmailing.sourceTemplatePriority = " + mailing.sourceTemplatePriority ());
@@ -521,6 +542,6 @@ public class Mailing {
 		accountLogfile = cfg.cget ("ACCOUNT_LOGFILE", accountLogfile);
 		bounceLogfile = cfg.cget ("BOUNCE_LOGFILE", bounceLogfile);
 		messageIDLogfile = cfg.cget ("MESSAGEID_LOGFILE", messageIDLogfile);
-		messageTransferAgent = cfg.cget ("MESSAGE_TRANSFER_AGENT", System.getenv ("MTA"));
+		messageTransferAgent = cfg.cget ("MESSAGE_TRANSFER_AGENT", cfg.cget ("MTA", System.getenv ("MTA")));
 	}
 }

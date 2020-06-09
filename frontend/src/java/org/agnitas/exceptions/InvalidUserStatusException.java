@@ -12,6 +12,7 @@
 package org.agnitas.exceptions;
 
 public final class InvalidUserStatusException extends RuntimeException {
+	private static final long serialVersionUID = -8129545585519149385L;
 
 	public InvalidUserStatusException(final int userStatus) {
 		super(String.format("Invalid user status %d", userStatus));

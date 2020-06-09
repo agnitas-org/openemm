@@ -5,26 +5,8 @@ name: js-dom-initializers
 category: Javascripts - Initializers
 ---
 
-Here is an deprecated way to attach some initializer to a particular DOM element:
-
-```js_example
-AGN.Initializers.MyNewInitializer = function($scope) {
-  if (!$scope) {
-    $scope = $(document);
-  }
-
-  var $initializer = $scope.find('[data-initializer="my-new-initializer-name"]')
-        .add($scope.filter('[data-initializer="my-new-initializer-name"]'));
-
-  if ($initializer.length > 0) {
-    // Do some important stuff here.
-  }
-};
-```
-
-A major disadvantage of the old approach (beside its verbosity) is that you may need some `AGN.Initializers.*` to be called first but an order is not guaranteed at all.
-
-An `AGN.Lib.DomInitializer` provides more concise (and a little more efficient) way to achieve the same result:
+An `AGN.Lib.DomInitializer` provides `new` function to register a named initializer triggered automatically if there's
+an HTML-element having `data-initializer` attribute whose value matches an initializer name:
 
 ```js_example
 AGN.Lib.DomInitializer.new('my-new-initializer-name', function($elem, $scope) {
@@ -53,15 +35,8 @@ name: js-dom-initializers-01
 parent: js-dom-initializers
 ---
 
-Sometimes you would require to enforce the initializer to run. Using old style initializer you would simply call it:
-
-```js
-AGN.Initializers.MyNewInitializer();
-// or
-AGN.Initializers.MyNewInitializer($scope);
-```
-
-Using a new style you would do as follows:
+Sometimes you would require to enforce the initializer to run (but keep in mind it's going to be actually called only
+if there's an appropriate `data-initializer` definition on the page):
 
 ```js
 AGN.Lib.DomInitializer.try('my-new-initializer-name');
@@ -86,7 +61,7 @@ name: js-dom-initializers-02
 parent: js-dom-initializers
 ---
 
-All the DOM initializers are triggered by `AGN.runAll()` call after all the basic initializers `AGN.Initializers.*`.
+All the DOM initializers are triggered by `AGN.runAll()` call after all the core initializers (`AGN.Lib.CoreInitializer`).
 
 Note that once registered initializer (callback) will be triggered for each DOM element having proper `data-initializer` attribute.
 So the following DOM structure:
@@ -287,6 +262,9 @@ This approach is typical for controllers that are using `data-initializer` to re
       if (result === false) {
         map["key#" + name] = undefined;
       }
+      return true;
+    } else {
+      return false;
     }
   }
 

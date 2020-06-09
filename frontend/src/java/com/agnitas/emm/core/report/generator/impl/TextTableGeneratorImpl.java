@@ -13,34 +13,24 @@ package com.agnitas.emm.core.report.generator.impl;
 import java.util.Collection;
 import java.util.Locale;
 
-import javax.annotation.PostConstruct;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.generator.bean.Table;
-import com.agnitas.emm.core.report.generator.factory.TableGeneratorFactory;
 import com.agnitas.emm.core.report.generator.parser.GenericTableParser;
 import com.agnitas.emm.core.report.generator.printer.GenericTablePrinter;
 
-@Component("textTableGenerator")
+@Component("txtTableGenerator")
 public class TextTableGeneratorImpl implements TableGenerator {
-
-    private final TableGeneratorFactory tableGeneratorFactory;
     private final GenericTableParser<Table> parser;
     private final GenericTablePrinter<Table> printer;
 
-    public TextTableGeneratorImpl(TableGeneratorFactory tableGeneratorFactory, GenericTableParser<Table> parser,
-                                  @Qualifier("txtTablePrinter") GenericTablePrinter<Table> printer) {
-        this.tableGeneratorFactory = tableGeneratorFactory;
+    @Autowired
+    public TextTableGeneratorImpl(GenericTableParser<Table> parser, @Qualifier("txtTablePrinter") GenericTablePrinter<Table> printer) {
         this.parser = parser;
         this.printer = printer;
-    }
-
-    @PostConstruct
-    public void postConstruct() {
-        tableGeneratorFactory.register(TableGenerator.TXT_GENERATOR, this);
     }
 
     @Override

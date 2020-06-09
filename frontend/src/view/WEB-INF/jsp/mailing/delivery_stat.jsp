@@ -151,9 +151,45 @@
         <c:set var="ACTION_CANCEL_MAILING_REQUEST" value="<%= MailingSendAction.ACTION_CANCEL_MAILING_REQUEST %>"/>
         <agn:agnLink styleClass="btn btn-regular btn-warning vspace-top-10" data-confirm="" page="/mailingsend.do?action=${ACTION_CANCEL_MAILING_REQUEST}&mailingID=${mailingSendForm.mailingID}" target="_parent">
             <i class="icon icon-ban"></i>
-            <span class="text"><bean:message key="mailing.CancelGeneration"/></span>
+            <c:choose>
+            	<c:when test="${mailingSendForm.deliveryStat.deliveryStatus == 3 or mailingSendForm.deliveryStat.deliveryStatus == 4}">
+            		<span class="text"><bean:message key="mailing.PauseDelivery"/></span>
+                </c:when>
+                <c:otherwise>
+            		<span class="text"><bean:message key="mailing.CancelGeneration"/></span>
+            	</c:otherwise>
+            </c:choose>
         </agn:agnLink>
     </c:if>
+    
+    <emm:ShowByPermission token="mailing.resume.world">
+	    <c:if test="${mailingSendForm.deliveryStat ne null && mailingSendForm.deliveryStat.resumable}">
+	        <c:set var="ACTION_RESUME_MAILING_REQUEST" value="<%= MailingSendAction.ACTION_RESUME_MAILING_REQUEST %>"/>
+	        <agn:agnLink styleClass="btn btn-regular btn-primary vspace-top-10" data-confirm="" page="/mailingsend.do?action=${ACTION_RESUME_MAILING_REQUEST}&mailingID=${mailingSendForm.mailingID}" target="_parent">
+	            <i class="icon icon-paper-plane"></i>
+             	<c:choose>
+            		<c:when test="${mailingSendForm.deliveryStat.deliveryStatus == 3 or mailingSendForm.deliveryStat.deliveryStatus == 4}">
+	            		<span class="text"><bean:message key="mailing.ResumeDelivery"/></span>
+    	            </c:when>
+        	        <c:otherwise>
+		    	        <span class="text"><bean:message key="mailing.ResumeGeneration"/></span>
+            		</c:otherwise>
+            	</c:choose>
+	        </agn:agnLink>
+	        <c:set var="ACTION_RESUME_MAILING_BY_COPY_REQUEST" value="<%= MailingSendAction.ACTION_RESUME_MAILING_BY_COPY_REQUEST %>"/>
+	        <agn:agnLink styleClass="btn btn-regular btn-warning vspace-top-10" data-confirm="" page="/mailingsend.do?action=${ACTION_RESUME_MAILING_BY_COPY_REQUEST}&mailingID=${mailingSendForm.mailingID}" target="_parent">
+	            <i class="icon icon-copy"></i>
+	            <c:choose>
+            		<c:when test="${mailingSendForm.deliveryStat.deliveryStatus == 3 or mailingSendForm.deliveryStat.deliveryStatus == 4}">
+	            		<span class="text"><bean:message key="mailing.ResumeDeliveryByCopy"/></span>
+    	            </c:when>
+        	        <c:otherwise>
+		    	        <span class="text"><bean:message key="mailing.ResumeGenerationByCopy"/></span>
+            		</c:otherwise>
+            	</c:choose>
+	        </agn:agnLink>
+	   </c:if>
+   </emm:ShowByPermission>
 
     <script id="config:transmission-status" type="application/json">
         {

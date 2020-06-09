@@ -44,13 +44,13 @@ public class BaseDispatchAction extends DispatchAction {
     }
     
     protected void showSavedMessage(HttpServletRequest request, String message) {
-        ActionMessages messages = new ActionMessages();
+        ActionMessages newMessages = new ActionMessages();
         if (message.isEmpty()) {
-        messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
+        newMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
         } else {
-        	messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(message));
+        	newMessages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(message));
         }
-        saveMessages(request, messages);
+        saveMessages(request, newMessages);
     }
 
     protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {

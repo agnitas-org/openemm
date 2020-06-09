@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
@@ -20,7 +20,6 @@
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
-<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <emm:instantiate var="mailingLists" type="java.util.LinkedHashMap">
     <c:forEach var="mailingList" items="${allMailinglists}">
@@ -151,44 +150,57 @@
         }
     </script>
 
-        <script type="application/json" data-initializer="workflow-pdf-initialize">
-            {
-                "sessionId": "${pageContext.session.id}",
-                "imageUrl": "${absoluteImagePath}",
-                "locale": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
-                "icons": ${workflowForm.workflowSchema},
-                "editorPositionLeft": "${workflowForm.editorPositionLeft}",
-                "editorPositionTop": "${workflowForm.editorPositionTop}",
-                "localeDateNTimePattern": "${localeDateNTimePattern}",
-                "noContextMenu": true,
-                "workflowId": "${workflowForm.workflowId}",
-                "allMailings":${emm:toJson(mailings)},
-                "allMailingLists":${emm:toJson(mailingLists)},
-                "allTargets":${emm:toJson(targets)},
-                "allReports":${emm:toJson(reports)},
-                "allUserForms":${emm:toJson(allForms)},
-                "allAutoExports" :${emm:toJson(autoExports)},
-                "allAutoImports" :${emm:toJson(allImports)},
-                "allCampaigns":${emm:toJson(allCampaigns)}
-            }
-        </script>
-        <div id="viewPort"></div>
-        <footer id="footnotes-container">
-            <table id="comment-footnotes-list"></table>
-        </footer>
+    <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
-        <script type="application/javascript">
-            // tell the PDF generator that WM loading is finished
-            $(window).load(function () {
-                window.status = 'wmLoadFinished';
-            });
-        </script>
+    <script type="application/json" data-initializer="workflow-pdf-initialize">
+        {
+            "sessionId": "${pageContext.session.id}",
+            "imageUrl": "${absoluteImagePath}",
+            "locale": "<bean:write name="emm.admin" property="adminLang" scope="session"/>",
+            "icons": ${workflowForm.workflowSchema},
+            "editorPositionLeft": "${workflowForm.editorPositionLeft}",
+            "editorPositionTop": "${workflowForm.editorPositionTop}",
+            "localeDateNTimePattern": "${localeDateNTimePattern}",
+            "noContextMenu": true,
+            "workflowId": "${workflowForm.workflowId}",
+            "allMailings":${emm:toJson(mailings)},
+            "allMailingLists":${emm:toJson(mailingLists)},
+            "allTargets":${emm:toJson(targets)},
+            "allReports":${emm:toJson(reports)},
+            "allUserForms":${emm:toJson(allForms)},
+            "allAutoExports" :${emm:toJson(autoExports)},
+            "allAutoImports" :${emm:toJson(allImports)},
+            "allCampaigns":${emm:toJson(allCampaigns)}
+        }
+    </script>
+    <div id="viewPort"></div>
+    <footer id="footnotes-container">
+        <table id="comment-footnotes-list"></table>
+    </footer>
+    <script type="application/javascript">
+        jQuery(window).on('load', function() {
+         function loading() {
+           if (window.status == 'initializerFinished') {
+             jQuery(".iconNode .node-image")
+               .imagesLoaded()
+               .always(function(){window.status = "wmLoadFinished";});
+           } else {
+             window.setTimeout(loading, 100);
+           }
+         }
+         loading();
+        }).on('error', function (e) {
+          window.status = "wmLoadFinished";
+          return false;
+        });
+    </script>
 
-
-        <div id="invisible">
-            <div id="connectRapidButton">
-                <img src="${absoluteImagePath}/campaignManager/icon_arrow_rapid.png" alt="arrow">
-            </div>
+    <div id="invisible">
+        <div id="connectRapidButton">
+            <c:url var="icon_arrow_rapid" value="/assets/core/images/campaignManager/icon_arrow_rapid.png"/>
+            <img src="${icon_arrow_rapid}" alt="arrow">
+        </div>
+        <c:if test="${not isWkhtmltopdfUsage}">
             <jsp:include page="editors/workflow-start-editor.jsp"/>
             <jsp:include page="editors/workflow-decision-editor.jsp"/>
             <jsp:include page="editors/workflow-deadline-editor.jsp"/>
@@ -207,7 +219,9 @@
                 <jsp:param name="workflowId" value="${workflowForm.workflowId}"/>
             </jsp:include>
             <jsp:include page="workflow-undoHistoryIsEmpty-dialog.jsp"/>
-        </div>
+        </c:if>
     </div>
+</div>
+
 </body>
 </html>

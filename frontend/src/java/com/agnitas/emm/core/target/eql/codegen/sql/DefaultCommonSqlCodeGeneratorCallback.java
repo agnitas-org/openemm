@@ -15,9 +15,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
-import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
-import com.agnitas.emm.core.target.eql.codegen.EqlDateValueFormatException;
 import org.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.target.eql.ast.AbstractAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
@@ -47,7 +46,9 @@ import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorImplementationException;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
+import com.agnitas.emm.core.target.eql.codegen.DateValueFormatFaultyCodeException;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
+import com.agnitas.emm.core.target.eql.codegen.EqlDateValueFormatException;
 import com.agnitas.emm.core.target.eql.codegen.InvalidTypeException;
 import com.agnitas.emm.core.target.eql.codegen.UnhandledDataTypeException;
 import com.agnitas.emm.core.target.eql.codegen.UnhandledOperatorException;
@@ -72,7 +73,6 @@ import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidationExceptio
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidator;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidationException;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Code generator callback for generation of SQL code.
@@ -130,9 +130,9 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	public DefaultCommonSqlCodeGeneratorCallback(final int companyId,
 			final ProfileFieldNameResolver profileFieldNameResolver,
 			final ProfileFieldTypeResolver profileFieldTypeResolver,
-			final MailingIdValidator mailingIdValidator, 
+			final MailingIdValidator mailingIdValidator,
 			final MailingTypeResolver mailingTypeResolver,
-			final LinkIdValidator linkIdValidator, 
+			final LinkIdValidator linkIdValidator,
 			final SqlDialect sqlDialect) {
 		this.codeStack = new Stack<>();
 
@@ -173,7 +173,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	 * 
 	 * @throws InvalidTypeException
 	 *             if code fragment does not evaluate to one of the listed types
-	 *             
+	 * 
 	 *             @see DataTypeUtils#requireDataType(CodeFragment, CodeLocation, DataType...)
 	 */
 	@Deprecated // Replace by DataTypeUtils.requireDataType();
@@ -385,7 +385,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 		} else {
 			try {
 				// Reference table access using "tab.col" is  not allowed inside a REFERENCES-HAVING-statement
-				assert (referenceTableNameForReferencesHaving == null); 
+				assert (referenceTableNameForReferencesHaving == null);
 				
 				codeStack.push(new CodeFragment(makeReferenceTableFrame(buffer.toString(), child.getUnusedReferenceTables()), DataType.BOOLEAN, null));
 			} catch (UnknownReferenceTableException e) {
@@ -590,7 +590,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	public void postOrderOpenedMailingRelationalEqlNode(final OpenedMailingRelationalEqlNode node) throws CodeGeneratorException {
 		final CodeFragment deviceQueryFragment = node.hasDeviceQuery() ? codeStack.pop() : null;
 
-		final String tableName = node.hasDeviceQuery() 
+		final String tableName = node.hasDeviceQuery()
 				? String.format("onepixellog_device_%d_tbl", companyId)
 				: String.format("onepixellog_%d_tbl", companyId);
 
@@ -610,7 +610,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 			buffer.append(" WHERE t.customer_id=cust.customer_id AND t.mailing_id=");
 			buffer.append(node.getMailingId());
 
-			if (node.hasDeviceQuery()) {
+			if (node.hasDeviceQuery() && deviceQueryFragment != null) {
 				assert deviceQueryFragment != null;
 				buffer.append(" AND (").append(deviceQueryFragment.getCode()).append(")");
 			}
@@ -736,7 +736,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 				buffer.append(node.getLinkId());
 			}
 
-			if (node.hasDeviceQuery()) {
+			if (node.hasDeviceQuery() && deviceQueryFragment != null) {
 				assert deviceQueryFragment != null;
 				buffer.append(" AND (").append(deviceQueryFragment.getCode()).append(")");
 			}

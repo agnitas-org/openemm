@@ -86,7 +86,7 @@ public class StringUtil {
 				case '%':
 				case '_':
 					// Symbols have special meaning in SQL (-> wildcards), so we need to escape them.
-					buffer.append(likeEscapeChar);
+					// buffer.append(likeEscapeChar); -> GWUA-4324 -> do not escape them
 					buffer.append(symbol);
 					break;
 					
@@ -96,6 +96,8 @@ public class StringUtil {
 					
 				case '?':
 					buffer.append('_');
+					break;
+				default:
 					break;
 				}
 			}
@@ -135,12 +137,12 @@ public class StringUtil {
 
 	/**
 	 * Returns the index of first occurrence of one of the given characters in a given String.
-	 * -1 is returned, if the String contains none of the given characters 
+	 * -1 is returned, if the String contains none of the given characters
 	 * 
 	 * @param haystack String
 	 * @param needles list of characters to search in given String
 	 * 
-	 * @return index of the first occurrence of one of the given characters or -1 of none was found 
+	 * @return index of the first occurrence of one of the given characters or -1 of none was found
 	 */
 	private static int findFirstOf(String haystack, char...needles) {
 		int minIndex = -1;

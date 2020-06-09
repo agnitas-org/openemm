@@ -13,7 +13,6 @@ package com.agnitas.util;
 import java.util.Date;
 
 import org.displaytag.decorator.TableDecorator;
-import org.displaytag.model.TableModel;
 
 import com.agnitas.beans.ComRecipientHistory;
 
@@ -22,11 +21,10 @@ public class RecipientsTableDecorator extends TableDecorator {
     private static final String ODD_STYLE = "recipientsTable-odd";
 
     private Date lastDate;
-    private boolean odd = true;
 
     @Override
     public String addRowClass() {
-        TableModel tableModel = this.tableModel;
+        boolean odd = true;
         int sortedColumn = tableModel.getSortedColumnNumber();
         ComRecipientHistory currentItem = (ComRecipientHistory) getCurrentRowObject();
         if (sortedColumn <= 0) {

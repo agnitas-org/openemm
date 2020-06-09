@@ -13,6 +13,7 @@ package com.agnitas.emm.core.workflow.service.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -41,15 +42,16 @@ import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCampaignDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
@@ -110,6 +112,7 @@ import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowStartStopReminderDao.ReminderType;
 import com.agnitas.emm.core.workflow.graph.WorkflowGraph;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
+import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
 import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
@@ -144,12 +147,11 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.EmmCalendar;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
-
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
@@ -172,7 +174,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 	protected ComWorkflowDao workflowDao;
 	private ComMailingDao mailingDao;
 	private ComTrackableLinkDao linkDao;
-	private ComAdminDao adminDao;
     private ComBirtReportDao birtReportDao;
 	private ComTargetDao targetDao;
     private ComTargetService targetService;
@@ -187,6 +188,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private ComWorkflowDataParser workflowDataParser;
     private ComCampaignDao campaignDao;
     private EqlFacade eqlFacade;
+    private AdminService adminService;
 
 
     @Override
@@ -237,7 +239,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         Set<Integer> mailingIds = new HashSet<>();
 
         for (WorkflowDependency dependency : dependencies) {
-            if (WorkflowDependencyType.MAILING_DELIVERY == dependency.getType()) {
+            if (MAILING_DELIVERY == dependency.getType()) {
                 mailingIds.add(dependency.getEntityId());
             }
         }
@@ -303,6 +305,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         ids.add(mailingId);
                     }
                     break;
+				default:
+					break;
             }
         }
 
@@ -322,6 +326,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 case WorkflowIconType.Constants.STOP_ID:
                     ((WorkflowStartStop) icon).setSenderAdminId(adminId);
                     break;
+				default:
+					break;
             }
         }
     }
@@ -481,6 +487,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         }
                     }
                     break;
+                    
+				default:
+					break;
             }
         }
 
@@ -492,7 +501,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public Workflow getWorkflow(int workflowId, int companyId) {
+    public Workflow getWorkflow(int workflowId, @VelocityCheck int companyId) {
         Workflow workflow = workflowDao.getWorkflow(workflowId, companyId);
 
         if (workflow != null) {
@@ -559,29 +568,30 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
     
     @Override
-    public List<Workflow> getWorkflowsOverview(int companyId) {
-        return workflowDao.getWorkflowsOverview(companyId);
+    public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
+        return workflowDao.getWorkflowsOverview(admin.getCompanyID(), admin.getAdminID());
     }
 
     @Override
-	public List<LightweightMailing> getAllMailings(int companyId) {
-		return mailingDao.getMailingsDateSorted(companyId);
+	public List<LightweightMailing> getAllMailings(ComAdmin admin) {
+        return mailingDao.getMailingsDateSorted(admin.getCompanyID(), admin.getAdminID());
 	}
 
     @Override
-    public List<LightweightMailing> getAllMailingsSorted(int companyId, String sortFiled, String sortDirection) {
-        return mailingDao.getAllMailingsSorted(companyId, sortFiled, sortDirection);
+    public List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection) {
+        return mailingDao.getAllMailingsSorted(admin.getCompanyID(), admin.getAdminID(), sortFiled, sortDirection);
     }
 
     @Override
-	public List<Map<String, Object>> getAllMailings(int companyId, List<Integer> mailingTypes, String status,
+	public List<Map<String, Object>> getAllMailings(ComAdmin admin, List<Integer> mailingTypes, String status,
                                                     String mailingStatus, boolean takeMailsForPeriod, String sort,
                                                     String order
     ) {
         if(StringUtils.equals(status, "all")){
             status = null;
         }
-		return mailingDao.getMailingsNamesByStatus(companyId, mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order);
+        
+        return mailingDao.getMailingsNamesByStatus(admin.getCompanyID(), admin.getAdminID(), mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order);
 	}
 
     @Override
@@ -635,7 +645,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     @Override
 	public List<AdminEntry> getAdmins(int companyId) {
-		return adminDao.getAllAdminsByCompanyIdOnly(companyId);
+		return adminService.listAdminsByCompanyID(companyId);
 	}
 
 	@Override
@@ -711,6 +721,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         }
                     }
                     break;
+                    
+				default:
+					break;
             }
         }
     }
@@ -793,9 +806,10 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
             case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
                 return MailingTypes.ACTION_BASED.getCode();
+                
+			default:
+		        return defaultType;
         }
-
-        return defaultType;
     }
 
     private void collectChains(Map<WorkflowIcon, List<Chain>> chainMap, WorkflowNode node) {
@@ -842,6 +856,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 case WorkflowIconType.Constants.STOP_ID:
                     // It's the end.
                     return;
+                    
+				default:
+					break;
             }
 
             if (nextNodes.size() == 1) {
@@ -990,6 +1007,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                                 mailing.setPlanDate(aCalendar.getTime());
                             }
                             break;
+                            
+						default:
+							break;
                     }
                     isOwnIconProcessed = true;
                     break;
@@ -1108,6 +1128,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 decision.setIconTitle("");
                 break;
             }
+            
+			default:
+				break;
         }
     }
 
@@ -1276,31 +1299,38 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public void bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception {
+    public Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception {
+        final Map<Integer, ChangingWorkflowStatusResult> results = new HashMap<>();
         for (int workflowId : workflowIds) {
             Workflow workflow = getWorkflow(workflowId, companyId);
 
+            final ChangingWorkflowStatusResult changingResult;
             switch (workflow.getStatus()) {
                 case STATUS_ACTIVE:
-                    changeWorkflowStatus(workflow, WorkflowStatus.STATUS_INACTIVE);
+                    changingResult = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_INACTIVE);
                     break;
 
                 case STATUS_TESTING:
-                    changeWorkflowStatus(workflow, WorkflowStatus.STATUS_OPEN);
+                    changingResult = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_OPEN);
                     break;
 
-                default: break;
+                default:
+                    changingResult = ChangingWorkflowStatusResult.notChanged();
+                    break;
             }
+
+            results.put(workflowId, changingResult);
         }
+        return results;
     }
 
 	@Override
-	public void changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception {
+	public ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception {
         Workflow workflow = getWorkflow(workflowId, companyId);
-        changeWorkflowStatus(workflow, newStatus);
+        return changeWorkflowStatus(workflow, newStatus);
 	}
 
-    private void changeWorkflowStatus(Workflow workflow, WorkflowStatus newStatus) throws Exception {
+    private ChangingWorkflowStatusResult changeWorkflowStatus(Workflow workflow, WorkflowStatus newStatus) throws Exception {
         int workflowId = workflow.getWorkflowId();
         int companyId = workflow.getCompanyId();
 
@@ -1308,14 +1338,14 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
         WorkflowGraph workflowGraph = new WorkflowGraph();
         if (!workflowGraph.build(workflowIcons)) {
-            return;
+            return ChangingWorkflowStatusResult.notChanged();
         }
 
         // Retrieve active (scheduled/working/finished) auto-optimizations
         final List<ComOptimization> optimizations = optimizationService.listWorkflowManaged(workflowId, companyId)
                 .stream()
                 .filter(optimization -> optimization.getStatus() != ComOptimization.STATUS_NOT_STARTED)
-                .collect(Collectors.toList());
+                .collect(toList());
 
         switch (newStatus) {
             case STATUS_COMPLETE:
@@ -1329,7 +1359,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                                 || type == WorkflowIconType.IMPORT.getId()
                                 || type == WorkflowIconType.EXPORT.getId()
                                 ) {
-                            return;
+                            return ChangingWorkflowStatusResult.notChanged();
                         }
 
                         List<Integer> mailingsToCheck = new ArrayList<>();
@@ -1338,7 +1368,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                             if (optimization.getStatus() == ComOptimization.STATUS_FINISHED) {
                                 mailingsToCheck.add(optimization.getFinalMailingId());
                             } else {
-                                return;
+                                return ChangingWorkflowStatusResult.notChanged();
                             }
                         }
 
@@ -1366,7 +1396,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                             if (!("mailing.status.sent".equals(mailingData.get("work_status"))
                                     || "mailing.status.norecipients".equals(mailingData.get("work_status"))
                                     || (sendDate != null && nowCal.after(sendCalendar)))) {
-                                return;
+                                return ChangingWorkflowStatusResult.notChanged();
                             }
                         }
                     }
@@ -1429,7 +1459,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                             }
                         }
 
-                        if (maildropEntry != null && maildropEntry.getGenStatus() == MaildropEntry.GEN_FINISHED) {
+                        if (maildropEntry != null && maildropEntry.getGenStatus() == MaildropGenerationStatus.FINISHED.getCode()) {
                             sent = true;
                         } else if (maxSendDate != null) {
                             TimeZone timezone = TimeZone.getDefault();
@@ -1452,15 +1482,16 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 List<WorkflowNode> startNodes = workflowGraph.getAllNodesByType(WorkflowIconType.START.getId());
                 // The campaign should have exactly one start icon
                 if (startNodes.size() != 1) {
-                    return;
+                    return ChangingWorkflowStatusResult.notChanged();
                 }
                 if (!isCampaignTestFinished(workflowGraph, mailingTypes, mailingIcons, mailings, sentMailings, companyId)) {
-                    return;
+                    return ChangingWorkflowStatusResult.notChanged();
                 }
                 break;
             default:break;
         }
 
+        boolean anyMailingDeactivated = false;
         if (isDeactivationOrCompletion(workflow.getStatus(), newStatus)) {
             boolean isTestRun = newStatus == WorkflowStatus.STATUS_TESTED;
 
@@ -1483,7 +1514,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID:
                     case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
                     case WorkflowIconType.Constants.DATE_BASED_MAILING_ID:
-                        deactivateMailing((WorkflowMailingAware) icon, isTestRun, companyId);
+                        anyMailingDeactivated |= deactivateMailing((WorkflowMailingAware) icon, isTestRun, companyId);
                         break;
 
                     case WorkflowIconType.Constants.IMPORT_ID:
@@ -1493,6 +1524,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     case WorkflowIconType.Constants.EXPORT_ID:
                         deactivateAutoExport((WorkflowExport) icon, companyId);
                         break;
+                        
+					default:
+						break;
                 }
             }
 
@@ -1524,6 +1558,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
         // set workflow to new state
         workflowDao.changeWorkflowStatus(workflowId, companyId, newStatus);
+
+        return new ChangingWorkflowStatusResult(true, anyMailingDeactivated);
     }
 
     private boolean isDeactivationOrCompletion(WorkflowStatus oldStatus, WorkflowStatus newStatus) {
@@ -1861,6 +1897,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                             
                             
                             break;
+                            
+						default:
+							break;
                     }
                 } else if (icon.getType() == WorkflowIconType.DECISION.getId()) {
                     WorkflowDecision decision = (WorkflowDecision) icon;
@@ -2155,10 +2194,17 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public JSONArray getWorkflowListJson(int companyId) {
+    public List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId) {
+        final Collection<WorkflowDependency> dependencies =
+                Arrays.asList(MAILING_DELIVERY.forId(mailingId), MAILING_LINK.forId(mailingId), MAILING_REFERENCE.forId(mailingId));
+        return workflowDao.getDependentWorkflows(companyId, dependencies, false);
+    }
+
+    @Override
+    public JSONArray getWorkflowListJson(ComAdmin admin) {
         JSONArray mailingListsJson = new JSONArray();
 
-        for (Workflow workflow: workflowDao.getWorkflowsOverview(companyId)) {
+        for (Workflow workflow: getWorkflowsOverview(admin)) {
             JSONObject entry = new JSONObject();
             JSONObject statusJson = new JSONObject();
             JSONObject startDateJson = new JSONObject();
@@ -2338,8 +2384,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private void deactivateMailing(WorkflowMailingAware icon, boolean testing, @VelocityCheck int companyId) {
+    private boolean deactivateMailing(WorkflowMailingAware icon, boolean testing, @VelocityCheck int companyId) {
         int mailingId = WorkflowUtils.getMailingId(icon);
+        boolean deactivated = false;
 
         if (mailingId > 0) {
             switch (WorkflowIconType.fromId(icon.getType(), false)) {
@@ -2349,7 +2396,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
-                        mailingDao.updateStatus(mailingId, "canceled");
+                        deactivated = mailingDao.updateStatus(mailingId, "canceled");
                     }
                     break;
 
@@ -2359,7 +2406,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
-                        mailingDao.updateStatus(mailingId, "disable");
+                        deactivated = mailingDao.updateStatus(mailingId, "disable");
                     }
                     break;
 				case ARCHIVE:
@@ -2388,6 +2435,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 					break;
             }
         }
+        return deactivated;
     }
 
     private void deactivateAutoImport(WorkflowImport icon, @VelocityCheck int companyId) throws Exception {
@@ -2420,8 +2468,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 	}
 
     @Required
-	public void setAdminDao(ComAdminDao adminDao) {
-		this.adminDao = adminDao;
+	public void setAdminService(AdminService service) {
+		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 
     @Required
@@ -2585,8 +2633,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             this.archive = chain.archive;
         }
 
-        public void append(WorkflowStart start) {
-            this.start = start.isFilled() ? start : null;
+        public void append(WorkflowStart startToAdd) {
+            this.start = startToAdd.isFilled() ? startToAdd : null;
             this.recipients.clear();
             this.deadlines.clear();
             this.parameters.clear();
@@ -2611,9 +2659,9 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             }
         }
 
-        public void append(WorkflowArchive archive) {
-            if (archive.isFilled()) {
-                this.archive = archive;
+        public void append(WorkflowArchive archiveToAdd) {
+            if (archiveToAdd.isFilled()) {
+                this.archive = archiveToAdd;
             }
         }
 
@@ -2716,7 +2764,8 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         @Override
         public TimeZone getTimezone(int adminId) {
             return timezoneMap.computeIfAbsent(adminId, id -> {
-                String timezone = adminDao.getAdminTimezone(id, companyId);
+            	final ComAdmin admin = adminService.getAdmin(adminId, companyId);
+                final String timezone = admin != null ? admin.getAdminTimezone() : null;
                 return TimeZone.getTimeZone(timezone);
             });
         }

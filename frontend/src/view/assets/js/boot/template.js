@@ -48,9 +48,63 @@ AGN.Opt.Templates['modal-yes-no-cancel'] = '\
   </div> \
 </div>';
 
+AGN.Opt.Templates['modal-yes-no-cancel-save-choice'] = '\
+<div class="modal"> \
+  <div class="modal-dialog {{= modalClass }}"> \
+    <div class="modal-content"> \
+      <div class="modal-header"> \
+        <button type="button" class="close-icon close" data-dismiss="modal"> \
+          <i aria-hidden="true" class="icon icon-times-circle"></i> \
+        </button> \
+        <h4 class="modal-title">{{= title }}</h4> \
+      </div> \
+      <div class="modal-body"> \
+        <div class="form-group"> \
+          <div class="col-sm-12"> \
+          {{= content }} \
+          </div> \
+        </div> \
+        <div class="form-group"> \
+          <div class="col-sm-8"> \
+            <label class="control-label-left"> \
+              {{ if(!choiceContent) { }} \
+                {{= t(\'defaults.remember.choice\') }} \
+              {{ } else { }} \
+                {{= choiceContent }} \
+              {{ } }} \
+            </label> \
+          </div> \
+          <div class="col-sm-4"> \
+            <label class="toggle"> \
+              <input type="checkbox" name="confirm-save-choice"> \
+              <div class="toggle-control"></div> \
+            </label> \
+          </div> \
+        </div> \
+      </div> \
+      <div class="modal-footer"> \
+        <div class="btn-group"> \
+          <button type="button" class="btn btn-default btn-large pull-left" data-confirm-negative="cancel" data-dismiss="modal"> \
+            <i class="icon icon-times"></i> \
+            <span class="text">{{= t(\'defaults.cancel\') }}</span> \
+          </button> \
+          <button type="button" class="btn btn-default btn-large" data-confirm-negative="no" data-dismiss="modal"> \
+            <i class="icon icon-times"></i> \
+            <span class="text">{{= t(\'defaults.no\') }}</span> \
+          </button> \
+          <button type="button" class="btn btn-primary btn-large" data-confirm-positive="yes" data-dismiss="modal"> \
+            <i class="icon icon-check"></i> \
+            <span class="text">{{= t(\'defaults.yes\') }}</span> \
+          </button> \
+        </div> \
+      </div> \
+    </div> \
+  </div> \
+</div>';
+
 AGN.Opt.Templates['error'] = '\
-<div class="backdrop backdrop-error js-close-error" style="position: fixed; top: 0; left: 0; bottom: 0; right:0; z-index: 1100; background-color: rgba(0,0,0,0.5)"> \
-    <div class="notification notification-alert" style="position: fixed; top: 50%; left: 50%; width: 420px; margin: -80px 0 0 -210px; z-index: 1101;"> \
+<div class="backdrop backdrop-error js-close-error overlay-box"> \
+    <div class="notification notification-alert overlay-content"> \
         <div class="notification-header"> \
             <p class="headline"> \
                 <i class="icon icon-state-alert"></i> \
@@ -69,8 +123,8 @@ AGN.Opt.Templates['error'] = '\
 </div>';
 
 AGN.Opt.Templates['permission-denied'] = '\
-<div class="backdrop backdrop-error js-close-error" style="position: fixed; top: 0; left: 0; bottom: 0; right:0; z-index: 1100; background-color: rgba(0,0,0,0.5)"> \
-    <div class="notification notification-alert" style="position: fixed; top: 50%; left: 50%; width: 420px; margin: -80px 0 0 -210px; z-index: 1101;"> \
+<div class="backdrop backdrop-error js-close-error overlay-box"> \
+    <div class="notification notification-alert overlay-content"> \
         <div class="notification-header"> \
             <p class="headline"> \
                 <i class="icon icon-state-alert"></i> \
@@ -189,4 +243,26 @@ AGN.Opt.Templates['table-controls-bottom'] = '\
     </ul> \
   </div> \
   {{ } }} \
+</div>';
+
+AGN.Opt.Templates['session-expired'] = '\
+<div class="backdrop backdrop-warning overlay-box" id="session-expired-overlay"> \
+    <div class="notification notification-warning overlay-content"> \
+        <div class="notification-header"> \
+            <p class="headline"> \
+                <i class="icon icon-state-alert"></i> \
+                <span class="text">{{= t(\'logon.session.expired\') }}</span> \
+            </p> \
+        </div> \
+        <div class="notification-content"> \
+            <div class="form-group"> \
+              {{= t(\'logon.session.notification\') }} \
+            </div>\
+            <div class="form-group"> \
+              <a href="{{= AGN.url("/logon.action", true) }}"> \
+                {{= t(\'defaults.relogin\') }} \
+              </a> \
+            </div>\
+        </div> \
+    </div> \
 </div>';

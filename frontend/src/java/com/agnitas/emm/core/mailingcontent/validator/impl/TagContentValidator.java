@@ -13,17 +13,17 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 import java.util.List;
 import java.util.Vector;
 
-import org.agnitas.preview.TAGCheck;
-import org.agnitas.preview.TAGCheckFactory;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
+import org.agnitas.preview.TAGCheck;
+import org.agnitas.preview.TAGCheckFactory;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.log4j.Logger;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 @Component
 @Order(4)
@@ -37,7 +37,7 @@ public class TagContentValidator implements DynTagValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
         boolean hasNoErrors = true;
 
         try {
@@ -47,7 +47,7 @@ public class TagContentValidator implements DynTagValidator {
             TAGCheck tagCheck = tagCheckFactory.createTAGCheck(dynTagDto.getMailingId());
             for (DynContentDto contentBlock : contentBlocks) {
                 if (!tagCheck.checkContent(contentBlock.getContent(), tagErrorReport, new Vector<>())) {
-                    String description = StringEscapeUtils.escapeHtml(tagErrorReport.toString());
+                    String description = StringEscapeUtils.escapeHtml4(tagErrorReport.toString());
                     popups.alert("error.html.validation", description);
                     hasNoErrors = false;
                 }

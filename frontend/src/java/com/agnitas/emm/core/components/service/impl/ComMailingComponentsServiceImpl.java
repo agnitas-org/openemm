@@ -12,7 +12,9 @@ package com.agnitas.emm.core.components.service.impl;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +26,8 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.Const;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.upload.FormFile;
@@ -45,7 +49,12 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	private MimeTypeService mimeTypeService;
 	private ComSftpService sftpService;
 
-	@Override
+    @Override
+    public MailingComponent getMailingTextTemplate(int mailingId, int companyID) {
+        return mailingComponentDao.getMailingComponentByName(mailingId, companyID, Const.Component.NAME_TEXT);
+    }
+
+    @Override
 	public UploadStatistics uploadZipArchive(Mailing mailing, FormFile zipFile) throws Exception {
 		UploadStatisticsImpl statistics = new UploadStatisticsImpl();
 
@@ -169,6 +178,47 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 				.forEach((componentId, timestamp) -> map.put(componentId, format.format(timestamp)));
 
 		return map;
+	}
+	
+	@Override
+    public List<MailingComponent> getComponents(@VelocityCheck int companyID, int mailingId, Set<Integer> componentIds) {
+        if (companyID <= 0 || mailingId <= 0 || CollectionUtils.isEmpty(componentIds)) {
+        	return new ArrayList<>();
+		}
+  
+		return mailingComponentDao.getMailingComponents(companyID, mailingId, componentIds);
+    }
+    
+    @Override
+    public MailingComponent getComponent(int componentId, @VelocityCheck int companyID) {
+		return mailingComponentDao.getMailingComponent(componentId, companyID);
+    }
+    
+    @Override
+    public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<Integer> types) {
+		if (CollectionUtils.isEmpty(types)) {
+			return mailingComponentDao.getMailingComponents(mailingId, companyID);
+		}
+		
+		return mailingComponentDao.getMailingComponentsByType(companyID, mailingId, types);
+    }
+	
+	@Override
+	public void deleteComponent(MailingComponent component) {
+		if (component != null) {
+			mailingComponentDao.deleteMailingComponent(component);
+		}
+	}
+	
+	@Override
+	public void deleteComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> bulkIds) {
+		List<MailingComponent> components = mailingComponentDao.getMailingComponents(companyID, mailingID, bulkIds);
+		mailingComponentDao.deleteMailingComponents(components);
+	}
+	
+	@Override
+	public void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes) {
+		mailingComponentDao.updateHostImage(mailingID, companyID, componentID, imageBytes);
 	}
 
 	@Required

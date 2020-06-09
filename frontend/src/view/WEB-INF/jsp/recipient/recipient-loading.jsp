@@ -2,16 +2,19 @@
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 
 <%--@elvariable id="recipientForm" type="com.agnitas.web.ComRecipientForm"--%>
 
-<c:set var="refreshMillis">${recipientForm.refreshMillis}</c:set>
-<agn:agnForm id="recipientForm" action="/recipient" data-form="polling" data-polling-interval="${refreshMillis}">
-    <html:hidden property="action"/>
-    <html:hidden property="error"/>
-    <html:hidden property="numberOfRows"/>
+<logic:equal value="false" name="recipientForm" property="error">
+    <c:set var="refreshMillis">${recipientForm.refreshMillis}</c:set>
+    <agn:agnForm id="recipientForm" action="/recipient" data-form="polling" data-polling-interval="${refreshMillis}">
+        <html:hidden property="action"/>
+        <html:hidden property="error"/>
+        <html:hidden property="numberOfRows"/>
 
-    <c:forEach var="field" items="${recipientForm.selectedFields}">
-        <html:hidden property="selectedFields" value="${field}"/>
-    </c:forEach>
-</agn:agnForm>
+        <c:forEach var="field" items="${recipientForm.selectedFields}">
+            <html:hidden property="selectedFields" value="${field}"/>
+        </c:forEach>
+    </agn:agnForm>
+</logic:equal>

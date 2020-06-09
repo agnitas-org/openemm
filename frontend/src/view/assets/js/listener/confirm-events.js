@@ -101,6 +101,7 @@ Request-Response Cycle:
         $form = Form.getWrapper($this);
 
     if (confirm) {
+      var $saveChoice = confirm.$modal.find('[name="confirm-save-choice"]');
       if ($form.exists()) {
         // get the ajax handle for the confirmation form
         Form.get($form)
@@ -110,7 +111,11 @@ Request-Response Cycle:
             confirm.positive(resp);
           });
       } else {
-        confirm.positive($this.data('confirm-positive'));
+        if ($saveChoice.exists()) {
+          confirm.positive({code: $this.data('confirm-positive'), saveChoice: $saveChoice[0].checked});
+        } else {
+          confirm.positive($this.data('confirm-positive'));
+        }
       }
     }
   });
@@ -120,7 +125,12 @@ Request-Response Cycle:
       confirm = Confirm.get($this);
 
     if (confirm) {
-      confirm.negative($this.data('confirm-negative'));
+      var $saveChoice = confirm.$modal.find('[name="confirm-save-choice"]');
+      if ($saveChoice.exists()) {
+        confirm.negative({code: $this.data('confirm-negative'), saveChoice: $saveChoice[0].checked});
+      } else {
+        confirm.negative($this.data('confirm-negative'));
+      }
     }
   });
 

@@ -15,10 +15,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComProfileField;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
+import com.agnitas.emm.core.recipient.forms.RecipientBulkForm;
+import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
+import com.agnitas.emm.core.recipient.service.RecipientLogService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import net.sf.json.JSONObject;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,27 +40,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComProfileField;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
-import com.agnitas.emm.core.recipient.forms.RecipientBulkForm;
-import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
-import com.agnitas.emm.core.recipient.service.RecipientLogService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import net.sf.json.JSONObject;
-
 @Controller
 @RequestMapping("/recipient")
 @PermissionMapping("recipient")
 public class RecipientController {
-	
-	@SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(RecipientController.class);
     
     private final RecipientService recipientService;
@@ -112,9 +107,8 @@ public class RecipientController {
 					popups.success("default.changes_saved");
 				}
 			} else {
-				for (Message message: saveResult.getMessages()) {
-					popups.alert(message);
-				}
+
+				popups.addPopups(saveResult);
 			}
 		} else {
 			popups.warning("warning.mailinglist.disabled");

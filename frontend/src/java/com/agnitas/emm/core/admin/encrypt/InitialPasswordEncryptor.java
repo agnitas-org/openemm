@@ -32,35 +32,66 @@ public class InitialPasswordEncryptor {
 	private static SecureRandom secureRandom = new SecureRandom();
 	
 	public static void main(String[] args) throws Exception {
-		if (args == null || args.length != 2) {
-			System.err.println("Invalid parameters.\nUsage: InitialPasswordEncryptor <SaltFilePath> <SqlOutFilePath>");
+		if (args == null || (args.length != 2 && args.length != 3)) {
+			System.err.println("Invalid parameters.\nUsage:\n"
+				+ "\tInitialPasswordEncryptor <SaltFilePath> <SqlOutFilePath>\n"
+				+ "or\n"
+				+ "\tInitialPasswordEncryptor <SaltFilePath> -p <password>");
 			System.exit(1);
-		} else if (!new File(replaceHomeVariables(args[0])).exists()) {
-			System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' does not exist.");
-			System.exit(1);
-		} else if (!new File(replaceHomeVariables(args[0])).isFile()) {
-			System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' is not a file.");
-			System.exit(1);
-		} else if (new File(replaceHomeVariables(args[1])).exists()) {
-			System.err.println("Invalid parameters.\nSqlOutFilePath '" + args[1] + "' already exists.");
-			System.exit(1);
-		} else {
-			String generatedPassword = new String(generatePassword(10));
-			
-			int adminID = 1;
-			File saltFile = new File(replaceHomeVariables(args[0]));
-			File sqlFile = new File(replaceHomeVariables(args[1]));
-	
-			InitialPasswordEncryptor passwordEncryptor = new InitialPasswordEncryptor(saltFile);
-			String emmPasswordHash = passwordEncryptor.encrypt(generatedPassword, adminID, "UTF-8");
-			
-			try (FileOutputStream outputStream = new FileOutputStream(sqlFile)) {
-				outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP, is_one_time_pass = 1 WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
+		} else if (args.length == 2) {
+			if (!new File(replaceHomeVariables(args[0])).exists()) {
+				System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' does not exist.");
+				System.exit(1);
+			} else if (!new File(replaceHomeVariables(args[0])).isFile()) {
+				System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' is not a file.");
+				System.exit(1);
+			} else if (new File(replaceHomeVariables(args[1])).exists()) {
+				System.err.println("Invalid parameters.\nSqlOutFilePath '" + args[1] + "' already exists.");
+				System.exit(1);
+			} else {
+				String generatedPassword = new String(generatePassword(10));
+				
+				int adminID = 1;
+				File saltFile = new File(replaceHomeVariables(args[0]));
+				File sqlFile = new File(replaceHomeVariables(args[1]));
+		
+				InitialPasswordEncryptor passwordEncryptor = new InitialPasswordEncryptor(saltFile);
+				String emmPasswordHash = passwordEncryptor.encrypt(generatedPassword, adminID, "UTF-8");
+				
+				try (FileOutputStream outputStream = new FileOutputStream(sqlFile)) {
+					outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP, is_one_time_pass = 1 WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
+				}
+				
+				System.out.println("Generated EMM password: " + generatedPassword);
+				System.out.println("Hashed EMM password: " + emmPasswordHash);
+				System.out.println("Created SQL file: '" + sqlFile.getAbsolutePath() + "'");
 			}
-			
-			System.out.println("Generated EMM password: " + generatedPassword);
-			System.out.println("Hashed EMM password: " + emmPasswordHash);
-			System.out.println("Created SQL file: '" + sqlFile.getAbsolutePath() + "'");
+		} else if (args.length == 3) {
+			if (!new File(replaceHomeVariables(args[0])).exists()) {
+				System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' does not exist.");
+				System.exit(1);
+			} else if (!new File(replaceHomeVariables(args[0])).isFile()) {
+				System.err.println("Invalid parameters.\nSaltFilePath '" + args[0] + "' is not a file.");
+				System.exit(1);
+			} else if (!"-p".equals(args[1])) {
+				System.err.println("Invalid parameters.\nSecond of three must be '-p'.");
+				System.exit(1);
+			} else {
+				String password = args[2];
+				
+				int adminID = 1;
+				File saltFile = new File(replaceHomeVariables(args[0]));
+				File sqlFile = new File(replaceHomeVariables(args[1]));
+		
+				InitialPasswordEncryptor passwordEncryptor = new InitialPasswordEncryptor(saltFile);
+				String emmPasswordHash = passwordEncryptor.encrypt(password, adminID, "UTF-8");
+				
+				try (FileOutputStream outputStream = new FileOutputStream(sqlFile)) {
+					outputStream.write(("UPDATE admin_tbl SET secure_password_hash = '" + emmPasswordHash + "', pwdchange_date = CURRENT_TIMESTAMP, is_one_time_pass = 1 WHERE admin_id = " + adminID + ";").getBytes("UTF-8"));
+				}
+
+				System.out.println(emmPasswordHash);
+			}
 		}
 	}
 	
@@ -117,14 +148,14 @@ public class InitialPasswordEncryptor {
 	}
 	
 	/**
-	 * Encrypts a password using salt and obfuscation value. The obfuscation value is 
+	 * Encrypts a password using salt and obfuscation value. The obfuscation value is
 	 * a known value. The value should be different for different users.
 	 * 
 	 * @param password the password to encrypt
 	 * @param obfuscatingValue a value used for obfuscation
 	 * 
 	 * @return encrypted password
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public String encrypt(String password, int obfuscatingValue, String encoding) throws Exception {
 		try {
@@ -146,7 +177,7 @@ public class InitialPasswordEncryptor {
 	 * @param obfuscatingValue obfuscation value
 	 * 
 	 * @return encrypted salt
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	private byte[] encryptSalt(int obfuscatingValue, String encoding) throws Exception {
 		byte[] hexSaltBytes;
@@ -169,10 +200,12 @@ public class InitialPasswordEncryptor {
 	private byte[] plus( byte[] b0, byte[] b1) {
 		byte[] b = new byte[b0.length + b1.length];
 		
-		for( int i = 0; i < b0.length; i++)
+		for( int i = 0; i < b0.length; i++) {
 			b[i] = b0[i];
-		for( int i = 0; i < b1.length; i++)
+		}
+		for( int i = 0; i < b1.length; i++) {
 			b[b0.length + i] = b1[i];
+		}
 		
 		return b;
 	}
@@ -204,7 +237,9 @@ public class InitialPasswordEncryptor {
 		
 		for( int i = 0; i < bytes.length; i++) {
 			int k = bytes[i];
-			if (k < 0) k += 128;
+			if (k < 0) {
+				k += 128;
+			}
 			
 			String s = ("00" + Integer.toString(k, 16));
 
@@ -222,6 +257,7 @@ public class InitialPasswordEncryptor {
 			if (homeDir != null && homeDir.endsWith(File.separator)) {
 				homeDir = homeDir.substring(0, homeDir.length() - 1);
 			}
+			
 			return value.replace("~", homeDir).replace("$HOME", homeDir).replace("${HOME}", homeDir);
 		} else {
 			return value;

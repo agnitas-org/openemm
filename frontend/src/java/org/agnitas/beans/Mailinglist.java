@@ -28,6 +28,8 @@ public interface Mailinglist {
 
 	void setCreationDate(Date creationDate);
 
+	void setFrequencyCounterEnabled(boolean isFrequencyCounterEnabled);
+
 	boolean isRemoved();
 
 	int getCompanyID();
@@ -41,6 +43,8 @@ public interface Mailinglist {
 	Date getChangeDate();
 
 	Date getCreationDate();
+
+	boolean isFrequencyCounterEnabled();
 
 	void setRemoved(boolean removed);
 }

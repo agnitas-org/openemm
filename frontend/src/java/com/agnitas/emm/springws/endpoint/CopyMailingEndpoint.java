@@ -14,7 +14,7 @@ import javax.annotation.Resource;
 
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.springws.endpoint.Utils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint;
 
@@ -23,7 +23,6 @@ import com.agnitas.emm.springws.jaxb.CopyMailingRequest;
 import com.agnitas.emm.springws.jaxb.CopyMailingResponse;
 import com.agnitas.emm.springws.jaxb.ObjectFactory;
 
-@SuppressWarnings("deprecation")
 public class CopyMailingEndpoint extends AbstractMarshallingPayloadEndpoint {
 
     private ObjectFactory objectFactory;

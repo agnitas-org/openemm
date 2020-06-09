@@ -8,7 +8,7 @@
 <emm:CheckLogon/>
 <emm:Permission token="recipient.show"/>
 
-<c:set var="ACTION_LIST" 				value="<%= RecipientAction.ACTION_LIST %>" 						scope="request" />
+<c:set var="ACTION_RECIPIENT_LIST" value="<%= RecipientAction.ACTION_LIST %>" scope="request" />
 <c:set var="ACTION_CONFIRM_DELETE" 		value="<%= RecipientAction.ACTION_CONFIRM_DELETE %>" 			scope="request" />
 <c:set var="ACTION_VIEW" 				value="<%= RecipientAction.ACTION_VIEW %>" 						scope="request" />
 <c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= ComRecipientAction.ACTION_BULK_CONFIRM_DELETE %>"	scope="request" />

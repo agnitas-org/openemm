@@ -17,13 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.Campaign;
 import org.agnitas.beans.MailingBase;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.SafeString;
-import org.agnitas.web.EmmActionAction;
-import org.apache.commons.lang.StringUtils;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
@@ -45,53 +38,6 @@ public class EmmActionForm extends StrutsFormBase {
     private boolean isActive = true;
 
 	public EmmActionForm() {
-    }
-
-    /**
-     * Validate the properties that have been set from this HTTP request,
-     * and return an <code>ActionErrors</code> object that encapsulates any
-     * validation errors that have been found.  If no errors are found, return
-     * <code>null</code> or an <code>ActionErrors</code> object with no
-     * recorded error messages.
-     *
-     * @param mapping The mapping used to select this instance
-     * @param request The servlet request we are processing
-     * @return errors
-     */
-    @Override
-	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
-        ActionErrors errors = new ActionErrors();
-
-        switch (action) {
-            case EmmActionAction.ACTION_NEW:
-                action = EmmActionAction.ACTION_VIEW;
-                shortname = SafeString.getLocaleString("default.Name", AgnUtils.getLocale(request));
-                description = SafeString.getLocaleString("default.description", AgnUtils.getLocale(request));
-                actionID = 0;
-                actions = null;
-                deleteModule = 0;
-                type = 0;
-                break;
-
-            case EmmActionAction.ACTION_SAVE:
-                if (StringUtils.isEmpty(shortname) || shortname.length() < 3) {
-                    errors.add("shortname", new ActionMessage("error.name.too.short"));
-                } else if (shortname.length() > 50) {
-                    errors.add("shortname", new ActionMessage("error.action.nameTooLong"));
-                }
-
-                if (actions != null) {
-                    for (AbstractActionOperationParameters operation : actions) {
-                        if (operation.getCompanyId() == 0) {
-                            operation.setCompanyId(AgnUtils.getCompanyID(request));
-                        }
-                        operation.validate(errors, getWebApplicationContext());
-                    }
-                }
-                break;
-        }
-
-        return errors;
     }
 
     /**

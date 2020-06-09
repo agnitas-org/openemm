@@ -149,12 +149,12 @@ public class ClickStatRow {
 	    	+ " DeviceClass: " + deviceClass;
     }
 	
-	public void addClicks_gross(int clicks_gross) {
-		this.clicks_gross += clicks_gross;
+	public void addClicks_gross(int clicksGrossValue) {
+		this.clicks_gross += clicksGrossValue;
 	}
 	
-	public void addClicks_net(int clicks_net) {
-		this.clicks_net += clicks_net;
+	public void addClicks_net(int clicksNetValue) {
+		this.clicks_net += clicksNetValue;
 	}
 	
 	public void addClicks_anonymous(int clicksAnonymous) {

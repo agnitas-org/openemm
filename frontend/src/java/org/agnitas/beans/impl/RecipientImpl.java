@@ -10,6 +10,7 @@
 
 package org.agnitas.beans.impl;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -32,12 +33,13 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * Manually executed test
@@ -177,6 +179,10 @@ public class RecipientImpl implements Recipient {
 
 	@Override
 	public int getCustomerID() {
+		if (customerID == 0) {
+			customerID = NumberUtils.toInt((String) custParameters.get("customer_id"));
+		}
+		
 		return customerID;
 	}
 
@@ -278,7 +284,11 @@ public class RecipientImpl implements Recipient {
 	public String getLastname() {
 		return (String) custParameters.get("lastname");
 	}
-
+	
+	@Override
+	public Timestamp getTimestamp() {
+		return ((Timestamp) custParameters.get("timestamp"));
+	}
 	
 	
 	/**
@@ -642,6 +652,8 @@ public class RecipientImpl implements Recipient {
 						}
 					}
 					break;
+				default:
+					throw new Exception("Invalid subscribeStatus");
 				}
 				bindingEntryDao.updateStatus(aEntry, companyID);
 			}

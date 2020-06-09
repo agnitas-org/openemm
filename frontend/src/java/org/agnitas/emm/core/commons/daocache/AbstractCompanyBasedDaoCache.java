@@ -66,22 +66,15 @@ public abstract class AbstractCompanyBasedDaoCache<T> implements CompanyBasedDao
 		final IdWithCompanyID idOBj = new IdWithCompanyID(id, companyID);
 		
 		if (cache == null) {
-			// When no cache is set, access DAO directly 
+			// When no cache is set, access DAO directly
 			return getItemFromDao(id, companyID);
+		} else if (cache.containsKey(idOBj)) {
+			return cache.get(idOBj);
 		} else {
-			// First, try to get the requested item from the cache map
-			T item = cache.get(idOBj);
-	
-			if (item == null) {
-				// If no item was returned, get the item from the DAO
-				item = getItemFromDao(id, companyID);
-				
-				if (item != null) {
-					// and put it into the cache
-					cache.put(idOBj, item);
-				}
-			}
-	
+			// Get the item from the DAO
+			T item = getItemFromDao(id, companyID);
+			// and put it into the cache, even if it was null
+			cache.put(idOBj, item);
 			return item;
 		}
 	}

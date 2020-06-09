@@ -21,7 +21,7 @@ import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.dao.EmmActionType;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;

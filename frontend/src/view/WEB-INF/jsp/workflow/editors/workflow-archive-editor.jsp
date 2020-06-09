@@ -57,7 +57,7 @@
                         <span><bean:message key="button.Cancel"/></span>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="editor-save-current">
-                        <span><bean:message key="button.Save"/></span>
+                        <span><bean:message key="button.Apply"/></span>
                     </a>
                 </div>
             </div>

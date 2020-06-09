@@ -128,7 +128,7 @@ public class BC {
 				}
 			}
 			partFrom = partExtend (customerTable + " cust INNER JOIN " + table + " bind ON (cust.customer_id = bind.customer_id)");
-		} else if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isPreviewMailing ()) {
+		} else if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing () || data.maildropStatus.isPreviewMailing ()) {
 			String	receiverQuery;
 
 			if (data.campaignForceSending || data.maildropStatus.isPreviewMailing ()) {
@@ -137,6 +137,9 @@ public class BC {
 				partFrom = partFromPrepare;
 			}
 			if (data.maildropStatus.isCampaignMailing ()) {
+				if (data.campaignEnableTargetGroups) {
+					partSubselect = data.targetExpression.subselect ();
+				}
 				if ((data.campaignUserStatus != null) && (data.campaignUserStatus.length > 0)) {
 					if (data.campaignUserStatus.length == 1) {
 						partUserstatus = "bind.user_status = " + data.campaignUserStatus[0];
@@ -151,11 +154,11 @@ public class BC {
 					}
 				}
 			}
-			partCounter = partCustomer ("cust");
+			partCounter = partCustomer (true);
 			
 			long	customerID;
 			
-			if (data.maildropStatus.isCampaignMailing ()) {
+			if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 				customerID = data.campaignCustomerID;
 			} else if (data.maildropStatus.isPreviewMailing ()) {
 				customerID = data.previewCustomerID;
@@ -254,8 +257,8 @@ public class BC {
 			rc.add (partClause ("bind.user_type = 'W'", order));
 		} else if (data.maildropStatus.isAdminMailing () || data.maildropStatus.isTestMailing ()) {
 			rc.add (partClause (null));
-		} else if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isPreviewMailing ()) {
-			rc.add (partClause (partCustomer ("cust")));
+		} else if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing () || data.maildropStatus.isPreviewMailing ()) {
+			rc.add (partClause (partCustomer (true)));
 		}
 		return rc;
 	}
@@ -285,9 +288,9 @@ public class BC {
 	 * @return              the SQL WHERE claus to be used for the final query
 	 */
 	public String createSimpleClause (String tableSelector, String reduction) {
-		if (data.maildropStatus.isCampaignMailing ()) {
+		if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 			if (receiverCount > 0) {
-				return tableSelector + ".customer_id = " + data.campaignCustomerID;
+				return tableSelector + ".customer_id = " + data.campaignCustomerID + (partSubselect != null ? " AND (" + partSubselect + ")" : "");
 			}
 		} else {
 			return "EXISTS (SELECT 1 FROM " + table + " bind WHERE " + tableSelector + ".customer_id = bind.customer_id" + (reduction != null ? " AND (" + reduction + ")" : "") + ")";
@@ -305,7 +308,7 @@ public class BC {
 		if (! data.maildropStatus.isVerificationMailing ()) {
 			String	prefix = "INSERT INTO " + destination + " (maildrop_status_id, mailing_id, customer_id, timestamp) ";
 			
-			if (data.maildropStatus.isCampaignMailing ()) {
+			if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 				if (receiverCount > 0) {
 					return prefix + "VALUES (" + data.maildropStatus.id () + ", " + data.mailing.id () + ", " + data.campaignCustomerID + ", CURRENT_TIMESTAMP)";
 				}
@@ -339,7 +342,7 @@ public class BC {
 		if (tableCreated) {
 			query = "SELECT customer_id, mediatype FROM " + table;
 		} else {
-			query = "SELECT customer_id, mediatype FROM customer_" + data.company.id () + "_binding_tbl bind WHERE " + partCustomer (null);
+			query = "SELECT customer_id, mediatype FROM customer_" + data.company.id () + "_binding_tbl bind WHERE " + partCustomer (false);
 		}
 		return query;
 	}
@@ -402,7 +405,10 @@ public class BC {
 
 				if (add != null) {
 					try {
-						data.dbase.execute (add);
+						int	count = data.dbase.update (add);
+						
+						receiverCount += count;
+						data.logging (Log.DEBUG, "bc", "Added " + count + " receiver using: " + add);
 					} catch (Exception e) {
 						data.logging (Log.ERROR, "bc", "Failed to add \"" + add + "\": " + e.toString (), e);
 						rc = false;
@@ -444,7 +450,7 @@ public class BC {
 			collect.add (data.getMediaSubselect ());
 		}
 		if (data.maildropStatus.isWorldMailing () || data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing ()) {
-			collect.add (data.getReferenceSubselect ());
+			collect.add (data.getFollowupSubselect ());
 		}
 	}
 
@@ -670,31 +676,31 @@ public class BC {
 		public Object extractData (ResultSet rset) throws SQLException, DataAccessException {
 			try (Connection conn = DBase.DATASOURCE.getConnection ()) {
 				boolean			autoCommit = conn.getAutoCommit ();
-				PreparedStatement	prep = conn.prepareStatement (fquery);
-									
+				
 				try {
 					conn.setAutoCommit (false);
-
-					HashSet	<String> 		seen = new HashSet<>();
+					try (PreparedStatement prep = conn.prepareStatement (fquery)) {
+						HashSet	<String> 		seen = new HashSet<>();
 			
-					count = 0;
-					while (rset.next ()) {
-						long	customerID = rset.getLong (1);
-						String	email = rset.getString (2);
+						count = 0;
+						while (rset.next ()) {
+							long	customerID = rset.getLong (1);
+							String	email = rset.getString (2);
 
-						if (email != null) {
-							if (seen.contains (email)) {
-								prep.setLong (1, customerID);
-								count += prep.executeUpdate ();
-								if (count % 1000 == 0) {
-									conn.commit ();
+							if (email != null) {
+								if (seen.contains (email)) {
+									prep.setLong (1, customerID);
+									count += prep.executeUpdate ();
+									if (count % 1000 == 0) {
+										conn.commit ();
+									}
+								} else {
+									seen.add (email);
 								}
-							} else {
-								seen.add (email);
 							}
 						}
+						conn.commit ();
 					}
-					conn.commit ();
 				} finally {
 					conn.setAutoCommit (autoCommit);
 				}
@@ -862,6 +868,8 @@ public class BC {
 								       " AND senddate = " + timestamp +
 								") > " + limit;
 							break;
+						default:
+							throw new Exception("Unexpected state");
 						}
 						upd += ")";
 						count += data.dbase.update (upd);
@@ -935,11 +943,19 @@ public class BC {
 		
 		if (data.isPriorityMailing) {
 			long	cnt, remain;
-			String	stmt =
-				"DELETE FROM " + table + " recv " +
-				"WHERE user_type = 'W' AND NOT EXISTS (" +
-				"	SELECT 1 FROM " + data.priorityTable + " prio WHERE prio.customer_id = recv.customer_id AND prio.mailing_id = :mailingID AND prio.status_id = :statusID AND time_id = :timeID" +
-				")";
+			String	stmt;
+			
+			if (data.dbase.isOracle ()) {
+				stmt =	"DELETE FROM " + table + " recv " +
+					"WHERE user_type = 'W' AND NOT EXISTS (" +
+					"	SELECT 1 FROM " + data.priorityTable + " prio WHERE prio.customer_id = recv.customer_id AND prio.mailing_id = :mailingID AND prio.status_id = :statusID AND time_id = :timeID" +
+					")";
+			} else {
+				stmt =	"DELETE FROM " + table + " " +
+					"WHERE user_type = 'W' AND customer_id NOT IN (" +
+					"      SELECT customer_id FROM " + data.priorityTable + " WHERE mailing_id = :mailingID AND status_id = :statusID AND time_id = :timeID" +
+					")";
+			}
 			data.logging (Log.DEBUG, "bc", "Deleting recipient due to priority");
 			try {
 				cnt = data.dbase.update (stmt, "mailingID", data.mailing.id (), "statusID", data.maildropStatus.id (), "timeID", data.priorityTimeID);
@@ -989,15 +1005,24 @@ public class BC {
 	
 	static class Voucher implements ResultSetExtractor <Object> {
 		private Data	data;
-		private String	vquery;
+		private String	retrieveQuery;
+		private String	assignQuery;
+		private String	currentQuery;
+		private String	cleanupQuery;
 		private String	name;
 		private long	count;
 		
-		public Voucher (Data nData, String nName, String nVquery) {
+		public Voucher (Data nData, String nName, String nRetrieveQuery, String nAssignQuery, String nCurrentQuery, String nCleanupQuery) {
 			data = nData;
 			name = nName;
-			vquery = nVquery;
+			retrieveQuery = nRetrieveQuery;
+			assignQuery = nAssignQuery;
+			currentQuery = nCurrentQuery;
+			cleanupQuery = nCleanupQuery;
 			count = 0;
+		}
+		public String query () {
+			return retrieveQuery;
 		}
 		public long getCount () {
 			return count;
@@ -1007,20 +1032,40 @@ public class BC {
 		public Object extractData (ResultSet rset) throws SQLException, DataAccessException {
 			try (Connection conn = DBase.DATASOURCE.getConnection ()) {
 				boolean			autoCommit = conn.getAutoCommit ();
-				PreparedStatement	prep = conn.prepareStatement (vquery);
-									
+				
 				try {
 					conn.setAutoCommit (false);
-					while (rset.next ()) {
-						prep.setLong (1, rset.getLong (1));
-						count += prep.executeUpdate ();
-						if (count % 1000 == 0) {
-							data.logging (Log.INFO, "bc", "Assigned " + count + " vouchers for " + name);
-							conn.commit ();
+					try (PreparedStatement assignPrep = conn.prepareStatement (assignQuery);
+					     PreparedStatement currentPrep = currentQuery != null ? conn.prepareStatement (currentQuery) : null;
+					     PreparedStatement cleanupPrep = cleanupQuery != null ? conn.prepareStatement (cleanupQuery) : null) {
+						while (rset.next ()) {
+							long	customerID = rset.getLong (1);
+							String	current = null;
+
+							if (currentPrep != null) {
+								currentPrep.setLong (1, customerID);
+								try (ResultSet	temp = currentPrep.executeQuery ()) {
+									while (temp.next ()) {
+										current = temp.getString (1);
+									}
+								}
+							}
+							assignPrep.setLong (1, customerID);
+							long	lcount = assignPrep.executeUpdate ();
+						
+							if ((lcount > 0) && (cleanupPrep != null) && (current != null)) {
+								cleanupPrep.setString (1, current);
+								cleanupPrep.executeUpdate ();
+							}
+							count += lcount;
+							if (count % 1000 == 0) {
+								data.logging (Log.INFO, "bc", "Assigned " + count + " vouchers for " + name);
+								conn.commit ();
+							}
 						}
+						data.logging (Log.INFO, "bc", "Finally assigned " + count + " vouchers for " + name);
+						conn.commit ();
 					}
-					data.logging (Log.INFO, "bc", "Finally assigned " + count + " vouchers for " + name);
-					conn.commit ();
 				} finally {
 					conn.setAutoCommit (autoCommit);
 				}
@@ -1036,23 +1081,33 @@ public class BC {
 			try {
 				for (Reference r : getReferences ()) {
 					if (r.isFullfilled () && r.isVoucher ()) {
-						long	cnt;
-						String	vquery = "UPDATE " + r.table () + " SET customer_id = ?, assign_date = CURRENT_TIMESTAMP, mailing_id = " + data.mailing.id () + " WHERE customer_id IS NULL";
+						Voucher	voucher;
+						String	assignQuery =
+							"UPDATE " + r.table () + " " +
+							"SET customer_id = ?, assign_date = CURRENT_TIMESTAMP, mailing_id = " + data.mailing.id () + " " +
+							"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? "AND rownum = 1" : "LIMIT 1");
 						
-						if (data.dbase.isOracle ()) {
-							vquery += " AND rownum = 1";
+						if (voucherRenew (r)) {
+							voucher = new Voucher (data, r.name (),
+									       "SELECT customer_id FROM " + table,
+									       assignQuery,
+									       "SELECT voucher_code FROM " + r.table () + " WHERE customer_id = ?",
+									       "DELETE FROM " + r.table () + " WHERE voucher_code = ?");
 						} else {
-							vquery += " LIMIT 1";
+							voucher = new Voucher (data, r.name (),
+									       "SELECT bind.customer_id " +
+									       "FROM " + table + " bind " +
+									       "WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)",
+									       assignQuery,
+									       null,
+									       null);
 						}
-						String	query =
-							"SELECT bind.customer_id " +
-							"FROM " + table + " bind " +
-							"WHERE NOT EXISTS (SELECT 1 FROM " + r.table () + " vc WHERE vc.customer_id = bind.customer_id)";
-						Voucher	voucher = new Voucher (data, r.name (), vquery);
-						DBase.Retry <Long>	rt = data.dbase.new Retry <Long> ("voucher", data.dbase, data.dbase.jdbc (query)) {
+									       
+						long	cnt;
+						DBase.Retry <Long>	rt = data.dbase.new Retry <Long> ("voucher", data.dbase, data.dbase.jdbc (voucher.query ())) {
 							@Override
 							public void execute () throws SQLException {
-								jdbc.query (query, voucher);
+								jdbc.query (voucher.query (), voucher);
 								priv = voucher.getCount ();
 							}
 						};
@@ -1085,21 +1140,37 @@ public class BC {
 				for (Reference r : getReferences ()) {
 					if (r.isFullfilled () && r.isVoucher ()) {
 						long	cnt;
+						boolean	assign;
+						String	current = null;
 						
-						stmt = "SELECT count(*) FROM " + r.table () + " WHERE customer_id = :customerID";
-						cnt = data.dbase.queryLong (stmt, "customerID", customerID);
-						if (cnt == 0) {
-							stmt = "UPDATE " + r.table () + " SET customer_id = :customerID, assign_date = CURRENT_TIMESTAMP, mailing_id = :mailingID WHERE customer_id IS NULL";
-							if (data.dbase.isOracle ()) {
-								stmt += " AND rownum = 1";
-							} else {
-								stmt += " LIMIT 1";
-							}
+						if (voucherRenew (r)) {
+							stmt = "SELECT voucher_code FROM " + r.table () + " WHERE customer_id = :customerID";
+							current = data.dbase.queryString (stmt, "customerID", customerID);
+							assign = true;
+						} else {
+							stmt = "SELECT count(*) FROM " + r.table () + " WHERE customer_id = :customerID";
+							cnt = data.dbase.queryLong (stmt, "customerID", customerID);
+							assign = cnt == 0;
+						}
+						if (assign) {
+							stmt =
+								"UPDATE " + r.table () + " " +
+								"SET customer_id = :customerID, assign_date = CURRENT_TIMESTAMP, mailing_id = :mailingID " +
+								"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? " AND rownum = 1" : "LIMIT 1");
 							cnt = data.dbase.update (stmt, "customerID", customerID, "mailingID", data.mailing.id ());
 							if (cnt != 1) {
 								data.logging (Log.WARNING, "bc", r.name () + ": no new voucher found (" + cnt + ") for " + r.table ());
 							} else {
 								data.logging (Log.DEBUG, "bc", r.name () + ": new voucher assigned");
+								if (current != null) {
+									stmt = "DELETE FROM " + r.table () + " WHERE voucher_code = :voucherCode";
+									cnt = data.dbase.update (stmt, "voucherCode", current);
+									if (cnt != 1) {
+										data.logging (Log.WARNING, "bc", r.name () + ": expected to remove one entry for voucher \"" + current + "\" but removed " + cnt + " entries");
+									} else {
+										data.logging (Log.DEBUG, "bc", r.name () + ": removed previous voucher \"" + current + "\"");
+									}
+								}
 							}
 						} else {
 							data.logging (Log.DEBUG, "bc", r.name () + ": voucher already assigned");
@@ -1112,6 +1183,10 @@ public class BC {
 			}
 		}
 		return ok;
+	}
+
+	private boolean voucherRenew (Reference r) {
+		return r.voucherRenew () && (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing () || data.maildropStatus.isWorldMailing ());
 	}
 
 	private boolean hasReactivationCandidates () {
@@ -1180,7 +1255,7 @@ public class BC {
 								double	dvalue;
 								long	subscriber;
 
-								if (data.maildropStatus.isCampaignMailing ()) {
+								if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 									subscriber = 1;
 								} else {
 									subscriber = data.dbase.queryLong ("SELECT count(distinct cust.customer_id) FROM " + partFromPrepare + " WHERE " + partCounter);
@@ -1268,16 +1343,15 @@ public class BC {
 		}
 	}
 	
-	private String partCustomer (String prefix) {
+	private String partCustomer (boolean complexQuery) {
 		String	rc = null;
+		String	prefix = complexQuery ? "cust." : "";
 
-		if (prefix == null) {
-			prefix = "";
-		} else {
-			prefix += ".";
-		}
-		if (data.maildropStatus.isCampaignMailing ()) {
+		if (data.maildropStatus.isCampaignMailing () || data.maildropStatus.isVerificationMailing ()) {
 			rc = prefix + "customer_id = " + data.campaignCustomerID;
+			if (complexQuery && data.maildropStatus.isCampaignMailing () && (partSubselect != null)) {
+				rc += " AND (" + partSubselect + ")";
+			}
 		} else if (data.maildropStatus.isPreviewMailing ()) {
 			rc = prefix + "customer_id = " + data.previewCustomerID;
 		}

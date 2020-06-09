@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ComRecipientAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>

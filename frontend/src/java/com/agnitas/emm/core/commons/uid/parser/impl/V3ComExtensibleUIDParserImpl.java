@@ -12,7 +12,6 @@ package com.agnitas.emm.core.commons.uid.parser.impl;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.uid.parser.exception.MailingNotFoundParseException;
@@ -113,10 +112,5 @@ public class V3ComExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
     @Required
     public final void setRdirMailingDataDaoCache(final ComRdirMailingDataDaoCache mailingDataDaoCache) {
         this.mailingDataDaoCache = Objects.requireNonNull(mailingDataDaoCache, "Mailing cache cannot be null");
-    }
-
-    @Required
-    public final void setCompanyDaoCache(final CompanyDaoCache companyDaoCache) {
-        this.companyDaoCache = Objects.requireNonNull(companyDaoCache, "Company cache cannot be null");
     }
 }

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import com.agnitas.beans.ComUndoDynContent;
 import com.agnitas.beans.ComUndoMailing;
 import com.agnitas.beans.ComUndoMailingComponent;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComUndoDynContentDao;
@@ -52,6 +54,7 @@ import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
@@ -60,7 +63,9 @@ import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.util.Span;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.DynamicTagContentDao;
@@ -73,15 +78,18 @@ import org.agnitas.util.DynTagException;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.Tuple;
+import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 	private static final Logger logger = Logger.getLogger(ComMailingBaseServiceImpl.class);
@@ -126,6 +134,20 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         return undoMailingDao.getLastUndoData(mailingId) != null;
     }
 
+    @Override
+    public boolean isTextTemplateExists(ComAdmin admin, int mailingId) {
+        MailingComponent mailingTextTemplate = mailingComponentsService.getMailingTextTemplate(mailingId, admin.getCompanyID());
+        if (mailingTextTemplate != null) {
+            String emmBlock = mailingTextTemplate.getEmmBlock();
+            if (StringUtils.isNotBlank(emmBlock)) {
+                // check if text template doesn't contain default value that is set by ComMailingBaseService::doTextTemplateFilling
+                String placeholder = SafeString.getLocaleString("mailing.textversion.default", admin.getLocale());
+                return !StringUtils.equals(emmBlock, placeholder);
+            }
+        }
+        return false;
+    }
+    
     @Override
     public void bulkDelete(Set<Integer> mailingsIds, @VelocityCheck int companyId) {
         for (int mailingId : mailingsIds) {
@@ -242,22 +264,25 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 
     @Override
     public String getMailingName(int mailingId, @VelocityCheck int companyId) {
-        return mailingDao.getMailingName(mailingId, companyId);
+        return StringUtils.defaultString(mailingDao.getMailingName(mailingId, companyId));
     }
 
+    @Override
+    public PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(ComAdmin admin, MailingsListProperties props) {
+        if (admin == null || Objects.isNull(props)) {
+			return new PaginatedListImpl<>();
+		}
+		return mailingDao.getMailingList(admin.getCompanyID(), admin.getAdminID(), props);
+    }
+    
     @Override
     public Future<PaginatedListImpl<DynaBean>> getMailingRecipientsLongRunning(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns, DateFormat dateFormat) {
         throw new UnsupportedOperationException("Get mailing recipients is unsupported.");
     }
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) {
+    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception {
         throw new UnsupportedOperationException("Get mailing recipients is unsupported.");
-    }
-
-    @Override
-    public List<LightweightMailing> getMailingsDependentOnTargetGroup(int companyID, int targetGroupID){
-        return mailingDao.getMailingsDependentOnTargetGroup(companyID, targetGroupID);
     }
 
     @Override
@@ -291,6 +316,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
         
         return Collections.emptyList();
+    }
+
+    @Override
+    public DynamicTag getDynamicTag(@VelocityCheck int companyId, int dynNameId) {
+        return mailingDao.getDynamicTag(dynNameId, companyId);
     }
 
     private void resetIds(DynamicTag tag, int companyId) {
@@ -336,7 +366,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
 		
 		boolean isSentStatus;
 		
-		if (mailing.getMailingType() == Mailing.TYPE_INTERVAL) {
+		if (mailing.getMailingType() == MailingTypes.INTERVAL.getCode()) {
 			String workStatus = mailingDao.getWorkStatus(companyId, mailingId);
             isSentStatus = StringUtils.equals(workStatus, ACTIVE_MAILING_STATUS);
 		} else {
@@ -473,6 +503,24 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
         
         return null;
+    }
+    
+    @Override
+    public List<MailingBase> getMailingsForComparison(ComAdmin admin) {
+        if (admin == null) {
+            return new ArrayList<>();
+        }
+        
+        return mailingDao.getMailingsForComparation(admin.getCompanyID(), admin.getAdminID());
+    }
+    
+    @Override
+    public Map<Integer, String> getMailingNames(List<Integer> mailingIds, int companyId) {
+        if (companyId <= 0 || CollectionUtils.isEmpty(mailingIds)) {
+            return new HashMap<>();
+        }
+        
+        return mailingDao.getMailingNames(mailingIds, companyId);
     }
     
     private boolean isContentBlank(String content, Map<String, DynamicTag> contentMap, Deque<String> visitedDynBlocks) {
@@ -689,7 +737,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         this.gridServiceWrapper = gridServiceWrapper;
     }
     
-    private static class Block {
+    public static class Block {
         private String name;
         private String content;
         private Markup markup;
@@ -716,14 +764,45 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Block) {
-                Block rhs = (Block) obj;
-                return StringUtils.equals(name, rhs.name) && StringUtils.equals(content, rhs.content);
-            }
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((content == null) ? 0 : content.hashCode());
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			return result;
+		}
 
-            return false;
-        }
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			}
+			Block other = (Block) obj;
+			
+			if (content == null) {
+				if (other.content != null) {
+					return false;
+				}
+			} else if (!content.equals(other.content)) {
+				return false;
+			}
+			
+			if (name == null) {
+				if (other.name != null) {
+					return false;
+				}
+			} else if (!name.equals(other.name)) {
+				return false;
+			}
+			
+			return true;
+		}
     }
 
     private static class Markup {
@@ -985,7 +1064,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
 
         private Map<String, List<Block>> getBlockMap(Collection<DynamicTag> tags) {
-            Map<String, List<Block>> blockMap = new HashMap<>();
+            Map<String, List<Block>> newBlockMap = new HashMap<>();
 
             for (DynamicTag tag : tags) {
                 List<DynamicTagContent> contents = new ArrayList<>(tag.getDynContent().values());
@@ -1004,11 +1083,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                         }
                     }
 
-                    blockMap.put(tag.getDynName(), blocks);
+                    newBlockMap.put(tag.getDynName(), blocks);
                 }
             }
 
-            return blockMap;
+            return newBlockMap;
         }
 
         private List<Span> collectExcludedSpans(List<DynamicTag> dynamicTags) {
@@ -1074,5 +1153,48 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                 }
             }
         }
+    }
+    
+	@Override
+    public List<LightweightMailing> getMailingsByType(MailingTypes type, @VelocityCheck int companyId) {
+        return getMailingsByType(type, companyId, true);
+    }
+    
+    @Override
+    public List<LightweightMailing> getMailingsByType(MailingTypes type, int companyId, boolean includeInactive) {
+        List<LightweightMailing> mailingLists = null;
+        if(type != null) {
+            mailingLists = mailingDao.getMailingsByType(type.getCode(), companyId, includeInactive);
+        }
+        
+        if (mailingLists == null) {
+            mailingLists = Collections.emptyList();
+        }
+
+        return mailingLists;
+    }
+    
+    @Override
+    public MailingSendStatus getMailingSendStatus(int mailingId, int companyId) {
+        return mailingDao.getMailingSendStatus(mailingId, companyId);
+    }
+    
+    @Override
+    public int getMailingType(int mailingId) {
+        return mailingDao.getMailingType(mailingId);
+    }
+
+    @Override
+    public String toViewUri(int mailingId) {
+        return UriComponentsBuilder.fromPath("/mailingbase.do")
+                .queryParam("action", StrutsActionBase.ACTION_VIEW)
+                .queryParam("mailingID", mailingId)
+                .queryParam("init", true)
+                .toUriString();
+    }
+    
+    @Override
+    public Timestamp getMailingLastSendDate(int mailingId) {
+        return mailingDao.getLastSendDate(mailingId);
     }
 }

@@ -12,7 +12,7 @@ package org.agnitas.emm.core.autoexport.bean;
 
 import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class AutoExport {
 	public static final String INTERVALPATTERN_ONCE = "ONCE";

@@ -13,7 +13,7 @@ package org.agnitas.util;
 import java.text.DateFormat;
 import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class UserActivityUtil {
 

@@ -22,17 +22,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+
 public abstract class ComBirtReportSettings {
-	
+	@SuppressWarnings("unused")
 	private static final Logger logger = Logger.getLogger(ComBirtReportSettings.class);
 	
     public static final String DUMMY_LIST_FIELD = "00000";
@@ -69,11 +71,11 @@ public abstract class ComBirtReportSettings {
     public static final String SORT_DATE = "date";
     public static final String SORT_MAILINGS_KEY = "sortMailing";
     
+    public static final String ARCHIVED_ID = "archiveId";
+    
     public static final int MAILINGS_PREDEFINED = 1;
     
     protected Map<String, Object> settingsMap = new HashMap<>();
-    
-
 
     public ComBirtReportSettings() {
         loadDefaults();
@@ -176,15 +178,19 @@ public abstract class ComBirtReportSettings {
     public Map<String, Object> getSettingsMap() {
         return settingsMap;
     }
-
+    
     public void setSettingsMap(Map<String, Object> settingsMap) {
         this.settingsMap = settingsMap;
     }
-
+    
+    public int getTypeId() {
+        return getReportSettingsType().getKey();
+    }
+    
     public abstract ReportSettingsType getReportSettingsType();
-
+    
     public abstract String getReportName(String reportFormat);
-
+    
     public abstract Map<String, String> getReportUrlParameters();
 
     /**
@@ -214,5 +220,17 @@ public abstract class ComBirtReportSettings {
 
     public List<String> getMailings() {
         return parseExpression(getReportSettingAsString(MAILINGS_KEY));
+    }
+    
+    public List<Integer> getTargetGroupsAsInt() {
+        return BirtReportSettingsUtils.convertStringToIntList((String) settingsMap.get(TARGETS_KEY));
+    }
+    
+    public List<Integer> getMailingsAsInt() {
+        return BirtReportSettingsUtils.convertStringToIntList((String) settingsMap.get(MAILINGS_KEY));
+    }
+    
+    public List<Integer> getMailinglistsAsInt() {
+        return BirtReportSettingsUtils.convertStringToIntList((String) settingsMap.get(MAILINGLISTS_KEY));
     }
 }

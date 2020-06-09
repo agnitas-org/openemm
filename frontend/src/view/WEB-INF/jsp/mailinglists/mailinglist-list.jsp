@@ -67,6 +67,8 @@
     <div class="tile-content" data-sizing="scroll">
         <div class="js-data-table-body" data-web-storage="mailinglist-overview" style="height: 100%;"></div>
     </div>
+    <c:set value="true" var="hideFrequencyCounterInfo"/>
+    <%@include file="diactivate-hide-frequency-counter-property.jspf" %>
 
     <c:forEach var="entry" items="${mailingListsJson}">
         <c:url var="viewLink" value="/mailinglist/${entry['id']}/view.action"/>
@@ -80,16 +82,8 @@
         {
             "columns": [
                 {
-                    "headerName": "",
-                    "editable": false,
                     "field": "select",
-                    "checkboxSelection": true,
-                    "headerCheckboxSelection": true,
-                    "suppressResize": true,
-                    "suppressMenu": true,
-                    "suppressSorting": true,
-                    "width": 30,
-                    "cellAction": "select"
+                    "type": "bulkSelectColumn"
                 },
                 {
                     "headerName": "<mvc:message code='MailinglistID'/>",
@@ -129,18 +123,30 @@
                     "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(dateFormatPattern)}" }
                 },
                 {
-                    "headerName": "",
+                    "headerName": "<mvc:message code='mailinglist.frequency.counter'/>",
                     "editable": false,
-                    "field": "delete",
-                    "suppressResize": true,
                     "suppressMenu": true,
-                    "suppressSorting": true,
-                    "width": 36,
-                    "cellAction": null,
-                    "cellRenderer": "DeleteCellRenderer"
+                    "cellAction": "goTo",
+                    "field": "isFrequencyCounterEnabled",
+                    "hide": ${hideFrequencyCounterInfo},
+                    "cellStyle": {"textAlign": "center"},
+                    "cellRenderer": "MustacheTemplateCellRender",
+                    "cellRendererParams": {"templateName": "frequency-counter-badge"}
+                },
+                {
+                    "field": "delete",
+                    "type": "deleteColumn"
                 }
             ],
             "data": ${mailingListsJson}
         }
     </script>
 </div>
+
+<script id="frequency-counter-badge" type="text/x-mustache-template">
+   {{ if (value === true) { }}
+     <div class="form-badge complexity-green" style="margin: 0;"><mvc:message code="default.Yes"/></div>
+   {{ } else { }}
+     <div class="form-badge complexity-red" style="margin: 0;"><mvc:message code="default.No"/></div>
+   {{ } }}
+</script>

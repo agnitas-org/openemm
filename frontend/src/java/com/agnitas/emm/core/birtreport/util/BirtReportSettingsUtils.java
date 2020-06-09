@@ -10,54 +10,24 @@
 
 package com.agnitas.emm.core.birtreport.util;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtreport.dto.PeriodType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.messages.I18nString;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_MONTH;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_ACTION_BASED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_DATE_BASED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_GENERAL_TYPES_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_NORMAL;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.PERIOD_TYPE_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_MONTH;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_WEEK;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings.MAILING_LISTS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.ENABLED_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.EXPRESSION_SEPARATOR;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_FILTER_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_TYPE_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_ID_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_MAILINGS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGETS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGET_GROUPS_KEY;
@@ -78,18 +48,54 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Prope
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.HTML;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OFFLINE_HTML;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERES_TOTAL;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_AFTER_DEVICE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_INVISIBLE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENERS_MEASURED;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.OPENING_ANONYM;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.RECIPIENT_STATUS;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SENT_MAILS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SIGNED_OFF;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.SOFT_BOUNCES;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.TEXT;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
+import com.agnitas.emm.core.birtreport.dto.PeriodType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.messages.I18nString;
+
 public class BirtReportSettingsUtils {
-    
-    private static final Logger logger = Logger.getLogger(BirtReportSettingsUtils.class);
+    @SuppressWarnings("unused")
+	private static final Logger logger = Logger.getLogger(BirtReportSettingsUtils.class);
     
     public static final String WITHOUT_GROUP = "";
     public static final String GENERAL_GROUP = "General";
@@ -112,9 +118,6 @@ public class BirtReportSettingsUtils {
     private static final int MAX_TARGET_GROUPS_FOR_RECIPIENTS = 10;
     private static final int MAX_TARGET_GROUPS = 5;
     
-    public static final int MAX_MAILINGS_PER_REPORT = 60;
-    public static final int MAX_MAILINGLISTS_PER_REPORT = 60;
-    
     public static final int FILTER_NO_FILTER_VALUE = FilterType.FILTER_NO_FILTER.getKey();
     public static final int FILTER_ARCHIVE_VALUE = FilterType.FILTER_ARCHIVE.getKey();
     public static final int FILTER_MAILINGLIST_VALUE = FilterType.FILTER_MAILINGLIST.getKey();
@@ -135,6 +138,8 @@ public class BirtReportSettingsUtils {
     
     public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP = Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS);
     public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_ANALYSIS_GROUP = Arrays.asList(OPENERS_MEASURED, CLICKING_RECIPIENT, CLICKERS_AFTER_DEVICE);
+    
+    public static final List<BirtReportSettingsUtils.Properties> TOP_DOMAIN_WITHOUT_GROUP = Arrays.asList(SENT_MAILS, HARD_BOUNCES, SOFT_BOUNCES, OPENERS, CLICKING_RECIPIENT);
     
     @SuppressWarnings("unchecked")
     public static List<String> getSettingsPropertyList(Map<String, Object> properties, String propertyName) {
@@ -157,8 +162,23 @@ public class BirtReportSettingsUtils {
         return result;
     }
     
+    public static boolean isDateRangedType(ReportSettingsType type, boolean isMailTrackingEnabled) {
+        if (type.isDateRanged()) {
+            if (type.isMailTrackingRequired()) {
+                return isMailTrackingEnabled;
+            }
+            return true;
+        } else {
+        	return false;
+        }
+    }
+    
     public static String getSettingsProperty(Map<String, Object> properties, String propertyName) {
         return Optional.ofNullable(properties.get(propertyName)).map(Object::toString).orElse("");
+    }
+    
+    public static int getIntProperty(Map<String, Object> properties, String propertyName) {
+        return NumberUtils.toInt(getSettingsProperty(properties, propertyName), 0);
     }
     
     public static boolean getBooleanProperty(Map<String, Object> properties, String propertyName) {
@@ -217,16 +237,22 @@ public class BirtReportSettingsUtils {
         }
     }
     
-    public static Set<String> getMissingProperties(ReportSettingsType type, Map<String, Object> settings) {
+    public static Set<String> getMissingProperties(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
         Set<String> missedProperties = new HashSet<>();
-        if(type != ReportSettingsType.RECIPIENT && getSettingsPropertyList(settings, MAILINGS_KEY).isEmpty()) {
+        if (settingsRequireMailings(admin, type, settings)
+                && getSettingsPropertyList(settings, MAILINGS_KEY).isEmpty()) {
             missedProperties.add(MAILINGS_KEY);
         }
         
-        if(type == ReportSettingsType.RECIPIENT && getSettingsPropertyList(settings, MAILINGLISTS_KEY).isEmpty()) {
-            missedProperties.add(MAILING_LISTS_KEY);
+        if (settingsRequireMailinglists(admin, type, settings)
+                && getSettingsPropertyList(settings, MAILINGLISTS_KEY).isEmpty()) {
+            missedProperties.add(MAILINGLISTS_KEY);
         }
         
+        if (settingsRequirePredefinedValue(type, settings) && getIntProperty(settings, PREDEFINED_ID_KEY) == 0) {
+            missedProperties.add(PREDEFINED_ID_KEY);
+        }
+
         if(type == ReportSettingsType.COMPARISON) {
             int mailingTypeValue = NumberUtils.toInt(getSettingsProperty(settings, MAILING_TYPE_KEY));
         
@@ -243,7 +269,8 @@ public class BirtReportSettingsUtils {
         }
         
         if(type == ReportSettingsType.MAILING
-                && !StringUtils.equals(String.valueOf(MAILING_NORMAL), BirtReportSettingsUtils.getSettingsProperty(settings, MAILING_GENERAL_TYPES_KEY))) {
+                && !StringUtils.equals(String.valueOf(MAILING_NORMAL),
+                BirtReportSettingsUtils.getSettingsProperty(settings, MAILING_GENERAL_TYPES_KEY))) {
             if(settings.get(START_DATE) == null) {
                 missedProperties.add(START_DATE);
             }
@@ -254,6 +281,29 @@ public class BirtReportSettingsUtils {
         }
         
         return missedProperties;
+    }
+    
+    private static boolean settingsRequirePredefinedValue(ReportSettingsType type, Map<String, Object> settings) {
+        if (type == ReportSettingsType.COMPARISON || type == ReportSettingsType.MAILING) {
+            if (getIntProperty(settings, MAILING_FILTER_KEY) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private static boolean settingsRequireMailinglists(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
+        if(isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin))) {
+            return true;
+        }
+        return false;
+    }
+    
+    private static boolean settingsRequireMailings(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
+        if(!isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin))) {
+            return true;
+        }
+        return false;
     }
     
     public static Map<ReportSettingsType, Map<String, Object>> getDefaultSettings() {
@@ -276,6 +326,11 @@ public class BirtReportSettingsUtils {
         settings.put(ENABLED_KEY, false);
         settings.put(DATE_RANGE_KEY, DATE_RANGE_PREDEFINED);
         settingsMap.put(ReportSettingsType.RECIPIENT, settings);
+        
+        settings = new HashMap<>();
+        settings.put(ENABLED_KEY, false);
+        settings.put(DATE_RANGE_KEY, DATE_RANGE_PREDEFINED);
+        settingsMap.put(ReportSettingsType.TOP_DOMAIN, settings);
     
         return settingsMap;
     }
@@ -289,14 +344,6 @@ public class BirtReportSettingsUtils {
         return String.format("%s.%s", I18nString.getLocaleString(type.getTypeMsgKey(), locale), format);
     }
     
-    public static DateFormat getLocalDateFormat(Locale locale) {
-        if (locale != null && Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) {
-			return new SimpleDateFormat("yyyy-MM-dd");
-		} else {
-			return SimpleDateFormat.getDateInstance(DateFormat.MEDIUM, locale);
-		}
-    }
-    
     public static boolean updateDateRestrictions(ReportSettingsType type, Map<String, Object> settings) {
         switch (type) {
             case MAILING:
@@ -305,6 +352,7 @@ public class BirtReportSettingsUtils {
                 return equalParameter(settings, MAILINGS_PREDEFINED, MAILING_TYPE_KEY) &&
                         equalParameter(settings, COMPARISON_PREDEFINED_PERIOD, PREDEFINED_MAILINGS_KEY);
             case RECIPIENT:
+            case TOP_DOMAIN:
                 return true;
             default:
                 return false;
@@ -319,21 +367,89 @@ public class BirtReportSettingsUtils {
         return StringUtils.equals(String.valueOf(paramValue), String.valueOf(expectedValue));
     }
     
-    public static void convertReportDate(String startKey, String stopKey, Locale locale, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
-        final DateTimeFormatter backendFormatter = DateTimeFormatter.ofPattern(REPORT_DATE_FORMAT);
-
-        String startDate = getSettingsProperty(settingsByType, startKey);
-        String stopDate = getSettingsProperty(settingsByType, stopKey);
-
-        if(convertIntoClientFormat) {
-            startDate = DateUtilities.formatDateStringToDatePickerString(startDate, backendFormatter, locale);
-            stopDate = DateUtilities.formatDateStringToDatePickerString(stopDate, backendFormatter, locale);
-        } else {
-            startDate = DateUtilities.formatDatePickerStringToDateString(startDate, backendFormatter, locale);
-            stopDate = DateUtilities.formatDatePickerStringToDateString(stopDate, backendFormatter, locale);
+    public static void convertReportDatesIntoClientFormat(ComAdmin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
+        for (ReportSettingsType type : ReportSettingsType.values()) {
+        	convertReportDateIntoClientFormat(START_DATE, END_DATE, admin, settings.get(type));
         }
-        settingsByType.put(startKey, startDate);
-        settingsByType.put(stopKey, stopDate);
+    }
+    
+    public static void convertReportDatesIntoBackendFormat( ComAdmin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
+        for (ReportSettingsType type : ReportSettingsType.values()) {
+            convertReportDateIntoBackendFormat(START_DATE, END_DATE, admin, settings.get(type));
+        }
+    }
+    
+    public static String getDayOfWeekPattern(Set<Map.Entry<Integer, Boolean>> weekDaysSettings) {
+        StringBuilder pattern = new StringBuilder();
+        for (Map.Entry<Integer, Boolean> entry : weekDaysSettings) {
+            if (entry.getValue() != null && entry.getValue()) {
+                switch (entry.getKey()) {
+                    case Calendar.MONDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.MONDAY)); //Mo
+                        break;
+                    case Calendar.TUESDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.TUESDAY)); //Tu
+                        break;
+                    case Calendar.WEDNESDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.WEDNESDAY)); //We
+                        break;
+                    case Calendar.THURSDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.THURSDAY)); //Th
+                        break;
+                    case Calendar.FRIDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.FRIDAY)); //Fr
+                        break;
+                    case Calendar.SATURDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.SATURDAY)); //Sa
+                        break;
+                    case Calendar.SUNDAY:
+                        pattern.append(DateUtilities.getWeekdayShortname(Calendar.SUNDAY)); //Su
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return pattern.toString();
+    }
+    
+    public static boolean isWeekDayActive(String intervalPattern, int weekDay) {
+        //important for birt report interval pattern to use only english locale
+		return DateUtilities.isWeekDayActive(intervalPattern, weekDay, Locale.ENGLISH);
+	}
+    
+    public static void convertReportDateIntoClientFormat(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType) {
+        convertReportDate(startKey, stopKey, admin, settingsByType, true);
+    }
+    
+    public static void convertReportDateIntoBackendFormat(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType) {
+        convertReportDate(startKey, stopKey, admin, settingsByType, false);
+    }
+    
+    private static void convertReportDate(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
+    	if (settingsByType != null) {
+	        final DateTimeFormatter backendFormatter = DateTimeFormatter.ofPattern(REPORT_DATE_FORMAT);
+	        final DateTimeFormatter userFormatter = admin.getDateFormatter();
+	    
+	        DateTimeFormatter fromFormatter = backendFormatter;
+	        DateTimeFormatter intoFormatter = userFormatter;
+	        if (!convertIntoClientFormat) {
+	            fromFormatter = userFormatter;
+	            intoFormatter = backendFormatter;
+	        }
+	        
+	        String startDate = getSettingsProperty(settingsByType, startKey);
+	        String stopDate = getSettingsProperty(settingsByType, stopKey);
+	    
+	        LocalDate localStartDate = DateUtilities.parseDate(startDate, fromFormatter);
+	        startDate = DateUtilities.format(localStartDate, intoFormatter);
+	
+	        LocalDate localStopDate = DateUtilities.parseDate(stopDate, fromFormatter);
+	        stopDate = DateUtilities.format(localStopDate, intoFormatter);
+	
+	        settingsByType.put(startKey, startDate);
+	        settingsByType.put(stopKey, stopDate);
+    	}
     }
 
     public static boolean validateComparisonDateRange(Map<String, Object> settings) {
@@ -363,7 +479,7 @@ public class BirtReportSettingsUtils {
         return true;
     }
     
-    public static boolean validateRecipientDateRange(Map<String, Object> settings) {
+    public static boolean validateDateRangedSettings(Map<String, Object> settings) {
         int dateRange = NumberUtils.toInt(BirtReportSettingsUtils.getSettingsProperty(settings, DATE_RANGE_KEY));
         
         if (dateRange == DATE_RANGE_PREDEFINED) {
@@ -384,6 +500,36 @@ public class BirtReportSettingsUtils {
 
         return MAX_TARGET_GROUPS;
     }
+    
+     public static List<Integer> convertStringToIntList(String value) {
+        String targets = StringUtils.trimToEmpty(value);
+    
+        return Arrays.stream(targets.split(ComBirtReportSettings.EXPRESSION_SEPARATOR))
+                .map(NumberUtils::toInt)
+                .filter(v -> v != 0)
+                .collect(Collectors.toList());
+    }
+    
+    public static String getParameterTranslation(String parameter, Locale locale) {
+        if (PREDEFINED_ID_KEY.equals(parameter)) {
+            return I18nString.getLocaleString("report.mailing.filter", locale);
+        }
+    
+        if (MAILINGLISTS_KEY.equals(parameter)) {
+            return I18nString.getLocaleString("report.mailinglists", locale);
+        }
+        
+        if (TARGET_GROUPS_KEY.equals(parameter)) {
+            return I18nString.getLocaleString("Target-Groups", locale);
+        }
+        
+        if (START_DATE.equals(parameter) || END_DATE.equals(parameter)) {
+            return I18nString.getLocaleString("report.recipient.period", locale);
+        }
+        
+        return parameter;
+    }
+    
     
     public enum Properties {
         CLICKING_RECIPIENT("clickingRecipients", "statistic.clicker"),
@@ -410,7 +556,10 @@ public class BirtReportSettingsUtils {
         RECIPIENT_STATUS("recipientStatus", "report.recipient.statistics.recipientStatuses.label"),
         DEVELOPMENT_DETAILED("recipientDevelopmentDetailed", "report.recipient.statistics.recipientDevelopmentDetailed.label"),
         DEVELOPMENT_NET("recipientDevelopmentNet", "report.recipient.statistics.recipientDevelopmentNet.label"),
-        ACTIVITY_ANALYSIS("activityAnalysis", "statistic.recipient.activity.analysis");
+        ACTIVITY_ANALYSIS("activityAnalysis", "statistic.recipient.activity.analysis"),
+        
+        SENT_MAILS("sentMails", "statistic.mails.sent"),
+        OPENERS("openers", "birt.report.opens");
     
         private final String propName;
         private final String labelCode;

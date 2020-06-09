@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.ast;
 
+import com.agnitas.emm.core.target.eql.ast.traversal.EqlNodeVisitor;
+import com.agnitas.emm.core.target.eql.ast.traversal.TraversalUtil;
 import com.agnitas.emm.core.target.eql.codegen.CodeLocation;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
@@ -101,6 +103,14 @@ public final class BinaryOperatorExpressionalEqlNode extends AbstractExpressiona
 	@Override
 	public final CodeLocation getStartLocation() {
 		return codeLocationFromEqlNode(left);
+	}
+
+	@Override
+	public final void traverse(final EqlNodeVisitor visitor) {
+		visitor.enteredNode(this);
+		TraversalUtil.traverse(left, visitor);
+		TraversalUtil.traverse(right, visitor);
+		visitor.leavingNode(this);
 	}
 
 }

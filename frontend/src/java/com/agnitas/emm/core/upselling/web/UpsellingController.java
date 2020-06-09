@@ -12,8 +12,8 @@ package com.agnitas.emm.core.upselling.web;
 
 import com.agnitas.emm.core.upselling.form.UpsellingForm;
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

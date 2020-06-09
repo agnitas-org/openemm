@@ -12,67 +12,20 @@ package org.agnitas.emm.core.logintracking.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
-import com.agnitas.emm.core.loginmanager.dto.BlockedAddressDto;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.logintracking.LoginStatus;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
+import org.agnitas.emm.core.logintracking.service.impl.LoginTrackSortCriterion;
+
+import com.agnitas.emm.core.loginmanager.entity.BlockedAddressData;
+import com.agnitas.emm.util.SortDirection;
 
 /**
  * Service for handling login data.
  */
 public interface LoginTrackService {
-	
-	/**
-	 * Returns the number of failed logins since the last successful login.
-	 * Set {@code skipLastSuccess} if the method is called after the record for the current login has been written, otherwise you will
-	 * get 0.
-	 *
-	 * @param username user name to check
-	 * @param skipLastSuccess set to true, if record for current login has already been written
-	 *
-	 * @return number of failed logins since last successful
-	 *
-	 * @throws LoginTrackServiceException on errors accessing login data
-	 */
-	int getNumFailedLoginsSinceLastSuccessful( String username, boolean skipLastSuccess) throws LoginTrackServiceException;
-	
-	/**
-	 * Returns an ordered list of login informations since the given time.
-	 * The list is ordered by login time descending.
-	 *
-	 * @param username user name to get login informations
-	 * @param since get all login data since this time
-	 *
-	 * @return list of login informations to be displayed
-	 *
-	 * @throws LoginTrackServiceException on errors accessing login data
-	 */
-	List<LoginData> getLoginData(String username, Date since) throws LoginTrackServiceException;
-
-	/**
-	 * Returns the  data of the last successful login.
-	 * Set {@code skipLastSuccess} if the method is called after the record for the current login has been written, otherwise you will
-	 * get the current login.
-	 *
-	 * @param username user name
-	 * @param skipLastSuccess set to true, if record for current login has already been written
-	 *
-	 * @return last successful login or null
-	 *
-	 * @throws LoginTrackServiceException on errors accessing login data
-	 */
-	LoginData getLastSuccessfulLogin(String username, boolean skipLastSuccess) throws LoginTrackServiceException;
-
-	/**
-	 * Check if given IP is blocked.
-	 *
-	 * @param hostIpAddress IP address
-	 * @param maxLoginFails maximum number of failed login allowed before an IP gets blocked
-	 * @param loginBlockTime number of seconds an IP is blocked since last failed attempt
-	 *
-	 * @return true if IP is blocked otherwise false
-	 */
-	boolean isIPLogonBlocked(String hostIpAddress, int maxLoginFails, int loginBlockTime);
 
 	/**
 	 * Write tracking record about successful login.
@@ -80,7 +33,7 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	void trackLoginSuccessful(String ipAddress, String username);
+	public void trackLoginSuccessful(final String ipAddress, final String username);
 
 	/**
 	 * Write tracking record about failed login.
@@ -88,7 +41,7 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	void trackLoginFailed(String ipAddress, String username);
+	public void trackLoginFailed(final String ipAddress, final String username);
 
 	/**
 	 * Write tracking record about successful login while IP address is blocked.
@@ -96,17 +49,101 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	void trackLoginSuccessfulButBlocked(String ipAddress, String username);
+	public void trackLoginSuccessfulButBlocked(final String ipAddress, final String username);
 	
-	default boolean unlockBlockedAddress(int blockedAddressId) {
-		throw new UnsupportedOperationException("Not yet supported!");
-	}
+	/**
+	 * Unlock given IP address.
+	 * 
+	 * @param ipAddress IP address to unlock
+	 */
+	public void unlockIpAddress(final String ipAddress);
+
+	/**
+	 * Checks, if given IP address is locked.
+	 * 
+	 * Maximum number of failed logins, observation period and lock duration is determined by given company ID.
+	 * 
+	 * @param ipAddress IP address to check
+	 * @param companyID ID of company (or 0 for fallback)
+	 * 
+	 * @return <code>true</code> if IP address is locked, otherwise <code>false</code>
+	 */
+	public boolean isIpAddressLocked(final String ipAddress, final int companyID);
 	
-	default PaginatedListImpl<BlockedAddressDto> getBlockedIPListAfterSuccessfulLogin(String sort, String order, int pageNumber, int pageSize) {
-		throw new UnsupportedOperationException("Not yet supported!");
-	}
+	/**
+	 * Counts the number of failed logins since last successful login.
+	 * 
+	 * Set {@code skipLastSuccess} if the method is called after the record for the current login has been written, otherwise you will
+	 * get 0.
+	 * 
+	 * @param username user name to check
+	 * @param skipFirstIfSuccess set to <code>true</code>, the first records is skipped, if it represents a successful login
+	 *
+	 * @return number of failed logins since last successful
+	 */
+	public int countFailedLoginsSinceLastSuccess(final String username, final boolean skipFirstIfSuccess);
+
+	/**
+	 * Returns the  data of the last successful login.
+	 * Set {@code skipLastSuccess} if the method is called after the record for the current login has been written, otherwise you will
+	 * get the current login.
+	 *
+	 * @param username user name
+	 * @param skipFirstIfSuccess set to <code>true</code>, the first records is skipped, if it represents a successful login
+	 *
+	 * @return last successful login or null
+	 */
+	public Optional<LoginData> findLastSuccessfulLogin(String username, boolean skipFirstIfSuccess);
 	
-	default BlockedAddressDto getBlockedAddress(int blockedIpAddressId) {
-		throw new UnsupportedOperationException("Not yet supported!");
-	}
+	/**
+	 * Returns an ordered list of login informations since the given time.
+	 * The list is ordered by login time descending.
+	 *
+	 * @param username user name to get login informations
+	 * @param sinceOrNull get all login data since this time or <code>null</code> to get all login data
+	 *
+	 * @return list of login informations to be displayed
+	 */
+	public List<LoginData> listLoginAttemptsSince(final String username, final Date sinceOrNull);
+
+	/**
+	 * Returns the blocked IP address for given tracking ID.
+	 * 
+	 * If tracking ID is unknown or tracking ID references login data with a login state other than {@link LoginStatus#SUCCESS_BUT_BLOCKED}, {@link Optional#empty()} is returned.
+	 * 
+	 * @param trackingId tracking ID
+	 * 
+	 * @return blocked address data or {@link Optional#empty()}
+	 */
+	public Optional<BlockedAddressData> findBlockedAddressByTrackingID(int trackingId);
+	
+	/**
+	 * Unlocks blocked IP address by tracking ID.
+	 * 
+	 * Does nothing, if tracking ID is unknown or tracking ID references login data with a login state other than {@link LoginStatus#SUCCESS_BUT_BLOCKED}.
+	 * 
+	 * @param trackingID tracking ID
+	 * 
+	 * @return <code>true</code> if IP address has been unlocked.
+	 * 
+	 * @see #unlockIpAddress(String)
+	 */
+	@Deprecated // Block by IP using unlockIpAddress()
+	public boolean unlockBlockedAddressByTrackingId(final int trackingID);
+
+	/**
+	 * Lists blocked IP addresses.
+	 * 
+	 * @return List of blocked IP addresses
+	 */
+	public List<BlockedAddressData> listBlockedIpAddresses();
+
+	// -------------------------------------------------------------------------------------------------------------------------------------------- Deprecated methods
+	
+	
+	
+
+	@Deprecated // TODO Remove from service. PaginatedListImpl is part of the presentation layer.
+	public PaginatedListImpl<BlockedAddressData> getBlockedIPListAfterSuccessfulLogin(final LoginTrackSortCriterion criterion, final SortDirection order, int pageNumber, int pageSize);
+
 }

@@ -4,7 +4,7 @@ module.exports = {
   "serve_vagrant": ['build', 'focus:vagrant'],
   "uglify:build": ['uglify:build_js', 'uglify:build_birtjs'],
   "uglify:compile": ['uglify:compile_js', 'uglify:compile_birtjs'],
-  "build": ['sass:build', 'concat:build', 'svg_sprite'],
+  "build": ['sass:build', 'uglify:build_js', 'uglify:build_birtjs', 'svg_sprite'],
   "compile": ['svg_sprite', 'sass:build', 'cssmin:compile', 'uglify:compile', 'usebanner:css', 'usebanner:js', 'usebanner:birtjs'],
   "styleguide": ['svg_sprite', 'uglify:build', 'sass:build', 'clean:styleguide','copy:assets_for_styleguide', 'shell:styleguide', 'clean:styleguide_source_assets'],
   "compile_js": ['uglify:build_js', 'uglify:compile_js', 'usebanner:js'],

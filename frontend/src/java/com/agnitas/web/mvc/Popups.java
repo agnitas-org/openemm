@@ -13,6 +13,7 @@ package com.agnitas.web.mvc;
 import java.io.Serializable;
 
 import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
 
 public interface Popups extends Serializable {
     /**
@@ -89,6 +90,9 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups exactSuccess(String text);
+
+
+    Popups addPopups(ServiceResult<?> serviceResult);
 
     /**
      * Add a new form field error popup.

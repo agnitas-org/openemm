@@ -63,7 +63,7 @@
                     }
 
                     c3.generate(GlobalMessengerTypeStatistics.data.browserChartData.build(titles, values));
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }
@@ -143,7 +143,7 @@
                     }
 
                     c3.generate(GlobalMessengerStatusStatistics.data.statusChartData.build(titles, values));
-                    AGN.Initializers.Equalizer();
+                    AGN.Lib.CoreInitializer.run('equalizer');
                 }
             });
         }
@@ -236,7 +236,7 @@
         }
 
         c3.generate(GLobalMessengerProgressStatistics.data.globalProgressChartData.build(time, data1, data2, data3));
-        AGN.Initializers.Equalizer();
+        AGN.Lib.CoreInitializer.run('equalizer');
     }
 
     function updateVisability($select) {

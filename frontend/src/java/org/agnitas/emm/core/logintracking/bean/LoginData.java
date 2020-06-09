@@ -11,46 +11,65 @@
 package org.agnitas.emm.core.logintracking.bean;
 
 import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.agnitas.emm.core.logintracking.LoginStatus;
 
 /**
- * Interface containing informations of a login attempt.
+ * Login attempt.
  */
-public interface LoginData {
+public final class LoginData {
+
+	/** Tracking ID. */
+	private final int trackId;
+	
+	/** Time of login attempt. */
+	private final Date loginTime;
+	
+	/** IP of login attempt. */
+	private final String loginIP;
+	
+	/** Status of login attempt. */
+	private final LoginStatus loginStatus;
+	
+	/** User name. */
+	private final Optional<String> username;
 	
 	/**
-	 * Returns the ID of the login track record.
-	 * 
-	 * @return ID of tracking record
-	 */
-	public int getLoginTrackId();
-	
-	/** 
-	 * Returns time stamp of login. 
+	 * Instantiates a new login data.
 	 *
-	 * @return time stamp of login 
+	 * @param trackId ID of tracking record
+	 * @param loginTime the login time
+	 * @param loginIP the login IP
+	 * @param loginStatus the login status
+	 * @param usernameOrNull user name or <code>null</code>
 	 */
-	public Date getLoginTime();
+	public LoginData(final int trackId, final Date loginTime, final String loginIP, final LoginStatus loginStatus, final String usernameOrNull) {
+		this.trackId = trackId;
+		this.loginTime = Objects.requireNonNull(loginTime);
+		this.loginIP = Objects.requireNonNull(loginIP);
+		this.loginStatus = Objects.requireNonNull(loginStatus);
+		this.username = Optional.ofNullable(usernameOrNull);
+	}
 
-	/**
-	 * Returns IP of login.
-	 * 
-	 * @return IP of login
-	 */
-	public String getLoginIP();
-
-	/**
-	 * Returns the login status (success, failed, ...).
-	 * 
-	 * @return login status
-	 */
-	public LoginStatus getLoginStatus();
+	public int getLoginTrackId() {
+		return this.trackId;
+	}
 	
-	/**
-	 * Returns the use rname of the login attempt.
-	 * 
-	 * @return user name 
-	 */
-	public String getUsername();
+	public Date getLoginTime() {
+		return this.loginTime;
+	}
+
+	public String getLoginIP() {
+		return this.loginIP;
+	}
+
+	public LoginStatus getLoginStatus() {
+		return this.loginStatus;
+	}
+
+	public Optional<String> getUsername() {
+		return this.username;
+	}
 }

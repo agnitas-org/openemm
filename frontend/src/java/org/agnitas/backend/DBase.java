@@ -116,9 +116,9 @@ public class DBase {
 				lvl = Log.FATAL;
 			}
 			if (lvl != -1) {
-				String	name = e.getLoggerName ();
+				String	loggerName = e.getLoggerName ();
 
-				if ((name == null) || name.startsWith ("org.springframework.jdbc")) {
+				if ((loggerName == null) || loggerName.startsWith ("org.springframework.jdbc")) {
 					log.out (lvl, "jdbc", e.getRenderedMessage ());
 				}
 			}
@@ -154,13 +154,13 @@ public class DBase {
 			return new DriverManagerDataSource (connect, p);
 		}
 		public synchronized DataSource request (String driver, String connect, String login, String password) throws ClassNotFoundException {
-			DataSource		rc;
+			DataSource		rc = null;
 			String			key = driver + ";" + connect + ";" + login + ";*";
 
 			if (cache.containsKey (key)) {
 				rc = cache.get (key);
 				log.out (Log.DEBUG, "rq", "Got exitsing DS for " + key);
-			} else {
+			} else if (driver != null) {
 				if (! seen.contains (driver)) {
 					try {
 						Class.forName (driver);
@@ -314,6 +314,9 @@ public class DBase {
 				throw new Exception ("Failed to determinate database type");
 			}
 		} else {
+			if (data.dbDriver () == null) {
+				throw new Exception ("No configured database driver found");
+			}
 			if ((data.dbDriver ().toLowerCase ().indexOf ("mysql") == -1) && (data.dbDriver ().toLowerCase ().indexOf ("mariadb") == -1)) {
 				dbType = DB_ORACLE;
 			}
@@ -371,16 +374,20 @@ public class DBase {
 		String	query = null;
 			
 		switch (dbType) {
-		case DB_MYSQL:
-			query = "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) and table_schema=(SELECT SCHEMA())";
-			break;
-		case DB_ORACLE:
-			query = "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)";
-			break;
+			case DB_MYSQL:
+				query = "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) and table_schema=(SELECT SCHEMA())";
+				break;
+			case DB_ORACLE:
+				query = "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)";
+				break;
+			default:
+				break;
 		}
 
-		if (query != null) try (With with = with ()) {
-			rc = queryInt (with.jdbc (), query, "tableName", table) > 0;
+		if (query != null) {
+			try (With with = with ()) {
+				rc = queryInt (with.jdbc (), query, "tableName", table) > 0;
+			}
 		}
 		return rc;
 	}
@@ -394,7 +401,7 @@ public class DBase {
 		return jdbcTmpl;
 	}
 	/**
-	 * returns the global jdbc instance 
+	 * returns the global jdbc instance
 	 * for invoking a specific query. This will log
 	 * the query and its parameter (if this is a prepared
 	 * statement with parameter).
@@ -416,15 +423,19 @@ public class DBase {
 		private DBase				dbase;
 		private String				query;
 		private Map <String, Object>		param;
+		
 		protected With (NamedParameterJdbcTemplate nJdbc, DBase nDbase, String nQuery, Map <String, Object> nParam) {
 			jdbc = nJdbc;
 			dbase = nDbase;
 			query = nQuery;
 			param = nParam;
 		}
+		
 		public NamedParameterJdbcTemplate jdbc () {
 			return jdbc;
 		}
+		
+		@Override
 		public void close () {
 			if (query != null) {
 				dbase.release (jdbc, query, param);
@@ -808,10 +819,10 @@ public class DBase {
 						data.logging (Log.INFO, logid, "Execution now succeeded");
 					}
 					rc = true;
-				} catch (SQLException e) {
+				} catch (Exception e) {
 					boolean	recoverable = recoverableErrors (e);
-					
-					r.error = e;
+
+					r.error = e instanceof SQLException ? (SQLException) e : new SQLException (e.toString (), e);
 					r.reset ();
 					if (first) {
 						data.logging (recoverable ? Log.WARNING : Log.ERROR, logid, "Initial failure (" + (recoverable ? "" : "NOT ") + "recoverable): " + e.toString (), e);
@@ -860,15 +871,12 @@ public class DBase {
 	 * @return  true, if all occured exceptions had been recoverable, false otherwise
 	 */
 	private boolean recoverableErrors (Throwable t) {
-		if (! recoverableError (t)) {
-			return false;
-		}
 		for (Throwable s : t.getSuppressed ()) {
-			if (! recoverableError (s)) {
-				return false;
+			if (recoverableError (s)) {
+				return true;
 			}
 		}
-		return true;
+		return recoverableError (t);
 	}
 	
 	/**
@@ -887,6 +895,11 @@ public class DBase {
 		    (cls == org.springframework.dao.EmptyResultDataAccessException.class) ||
 		    (cls == org.springframework.jdbc.UncategorizedSQLException.class)) {
 			return false;
+		}
+		if ((t instanceof org.springframework.dao.DataAccessException) ||
+		    (t instanceof org.springframework.remoting.RemoteAccessException) ||
+		    (t instanceof org.springframework.transaction.TransactionException)) {
+			return true;
 		}
 		if (t instanceof RuntimeException) {
 			return false;

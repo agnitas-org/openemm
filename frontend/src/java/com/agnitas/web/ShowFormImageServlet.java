@@ -18,12 +18,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.catalina.connector.ClientAbortException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -67,6 +69,8 @@ public class ShowFormImageServlet extends HttpServlet {
 
 	/** The form componentService. */
 	protected ComponentService componentService;
+	
+	protected ConfigService configService;
 
 	/**
 	 * Sets the  component service.
@@ -76,14 +80,9 @@ public class ShowFormImageServlet extends HttpServlet {
 	public void setComponentService(ComponentService componentService) {
 		this.componentService = componentService;
 	}
-	
-	/**
-	 * Sets the image cache.
-	 *
-	 * @param imageCache the image cache
-	 */
-	public void setImageCache(TimeoutLRUMap<String, CachedImageData> imageCache) {
-		this.imageCache = imageCache;
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 
 	/**
@@ -93,10 +92,17 @@ public class ShowFormImageServlet extends HttpServlet {
 	 */
 	private ComponentService getComponentService() {
 		if (componentService == null) {
-			componentService = (ComponentService) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("componentService");
+			componentService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("componentService", ComponentService.class);
 		}
 		
 		return componentService;
+	}
+
+    private ConfigService getConfigService() {
+		if (configService == null) {
+			configService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ConfigService", ConfigService.class);
+		}
+		return configService;
 	}
 
 	/**
@@ -106,9 +112,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	 */
 	private TimeoutLRUMap<String, CachedImageData> getImageCache() {
 		if (imageCache == null) {
-			@SuppressWarnings("unchecked")
-			TimeoutLRUMap<String, CachedImageData> newMap = (TimeoutLRUMap<String, CachedImageData>) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("formImageCache");
-			imageCache = newMap;
+			imageCache = new TimeoutLRUMap<>(getConfigService().getIntegerValue(ConfigValue.HostedImageMaxCache), getConfigService().getLongValue(ConfigValue.HostedImageMaxCacheTimeMillis));
 		}
 
 		return imageCache;

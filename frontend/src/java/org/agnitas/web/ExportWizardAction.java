@@ -47,7 +47,7 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.ExportWizardForm;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -240,7 +240,7 @@ public class ExportWizardAction extends StrutsActionBase {
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 
                     aForm.setAction(ACTION_SAVE);
-					aForm.setLocaleDatePattern(AgnUtils.getDatePickerFormatPattern(admin));
+					aForm.setLocaleDatePattern(admin.getDateFormat().toPattern());
                     destination = mapping.findForward("view");
                     break;
 
@@ -292,7 +292,7 @@ public class ExportWizardAction extends StrutsActionBase {
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 
                     aForm.setAction(ACTION_SAVE);
-                    aForm.setLocaleDatePattern(AgnUtils.getDatePickerFormatPattern(admin));
+                    aForm.setLocaleDatePattern(admin.getDateFormat().toPattern());
 					aForm.setAction(ExportWizardAction.ACTION_VIEW);
                     break;
 
@@ -340,7 +340,6 @@ public class ExportWizardAction extends StrutsActionBase {
                     	File exportFile = getTempRecipientExportFile(companyID);
                     	RecipientExportWorker exportWorker = this.recipientExportWorkerFactory.newWorker(getExportProfileFromForm(aForm, req, companyID), admin);
                     	exportWorker.setDataSource(dataSource);
-						exportWorker.setMailinglistService(mailinglistService);
                     	exportWorker.setExportFile(exportFile.getAbsolutePath());
                     	exportWorker.setZipped(true);
                     	exportWorker.setZippedFileName(getExportFileBasename(req) + ".zip");
@@ -445,7 +444,7 @@ public class ExportWizardAction extends StrutsActionBase {
 
                 default:
                     aForm.setAction(ACTION_VIEW);
-					aForm.setLocaleDatePattern(AgnUtils.getDatePickerFormatPattern(admin));
+					aForm.setLocaleDatePattern(admin.getDateFormat().toPattern());
                     destination = mapping.findForward("view");
             }
 
@@ -480,8 +479,8 @@ public class ExportWizardAction extends StrutsActionBase {
      * @return true==success
      *         false==error
      */
-	protected boolean loadPredefExportFromDB(ExportWizardForm aForm, HttpServletRequest req) {
-		ExportPredef exportPredef = exportPredefService.get(aForm.getExportPredefID(), AgnUtils.getCompanyID(req));
+	protected boolean loadPredefExportFromDB(ExportWizardForm aForm, HttpServletRequest request) {
+		ExportPredef exportPredef = exportPredefService.get(aForm.getExportPredefID(), AgnUtils.getCompanyID(request));
 
 		if (exportPredef != null) {
 			aForm.setShortname(exportPredef.getShortname());
@@ -495,7 +494,7 @@ public class ExportWizardAction extends StrutsActionBase {
 			aForm.setUserStatus(exportPredef.getUserStatus());
 			aForm.setUserType(exportPredef.getUserType());
 
-			SimpleDateFormat inputDateFormat = AgnUtils.getDatePickerFormat(AgnUtils.getAdmin(req), true);
+			SimpleDateFormat inputDateFormat = AgnUtils.getAdmin(request).getDateFormat();
 			Date timestampStart = exportPredef.getTimestampStart();
 			if (timestampStart != null) {
 				aForm.setTimestampStart(inputDateFormat.format(timestampStart));
@@ -551,7 +550,7 @@ public class ExportWizardAction extends StrutsActionBase {
 				return false;
 			}
 
-			writeUserActivityLog(AgnUtils.getAdmin(req), "view export", exportPredef.getShortname() + " (" + exportPredef.getId() + ")");
+			writeUserActivityLog(AgnUtils.getAdmin(request), "view export", exportPredef.getShortname() + " (" + exportPredef.getId() + ")");
 		} else {
 			logger.error("loadPredefExportFromDB - no ID given?: " + aForm.getExportPredefID());
 			return false;
@@ -679,8 +678,8 @@ public class ExportWizardAction extends StrutsActionBase {
      * @param exportPredef  ExportPredef bean object (is filling with data from the form inside the method)
      * @throws ParseException
      */
-	protected void loadDateParametersFromFormToBean(ExportWizardForm aForm, HttpServletRequest req, ExportPredef exportPredef) throws ParseException {
-		SimpleDateFormat inputDateFormat = AgnUtils.getDatePickerFormat(AgnUtils.getAdmin(req), true);
+	protected void loadDateParametersFromFormToBean(ExportWizardForm aForm, HttpServletRequest request, ExportPredef exportPredef) throws ParseException {
+		SimpleDateFormat inputDateFormat = AgnUtils.getAdmin(request).getDateFormat();
 
 		String timestampStart = aForm.getTimestampStart();
 		if (StringUtils.isNotEmpty(timestampStart)) {
@@ -738,8 +737,8 @@ public class ExportWizardAction extends StrutsActionBase {
 		}
 	}
 
-    private static ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest req, int companyID) {
-		SimpleDateFormat format = AgnUtils.getDatePickerFormat(AgnUtils.getAdmin(req), true);
+    private static ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
+		SimpleDateFormat format = AgnUtils.getAdmin(request).getDateFormat();
 		
 		ExportPredef exportProfile = new ExportPredefImpl();
 		

@@ -34,6 +34,10 @@ import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache;
 
+/**
+ * This is legacy code and must still use MD5-Encoder
+ */
+@SuppressWarnings("deprecation")
 public class V2ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuilder {
 
 	private static final Logger logger = Logger.getLogger(V2ComExtensibleUIDStringBuilderImpl.class);
@@ -100,14 +104,15 @@ public class V2ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringB
 			final long timestamp = mailingData.getCreationDate().getTime();
 		
 			return makeBaseUID(uid, timestamp) + SEPARATOR + getSignature(uid, company.getSecretKey());
-		} else
+		} else {
 			throw new RequiredInformationMissingException("secret key");
+		}
 	}
 	
 	/**
 	 * Workaround for design flaw in the UID.
 	 * 
-	 * When no mailing ID is present, it is not possible to infer a company ID. 
+	 * When no mailing ID is present, it is not possible to infer a company ID.
 	 * 
 	 * In the case of missing mailing ID (mailing ID is 0 in the UID), this methods creates a copy of the UID,
 	 * reads an arbitrary mailing ID for the company ID from database (or cache) and writes it into the UID.
@@ -215,8 +220,8 @@ public class V2ComExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringB
 		
 		/*
 		 *  Synchronizing on md5Encoder is a must-have. MessageDigest is not thread-safe!
-		 *  
-		 *  We are loosing a bit of throughput here, but it's only around 2% 
+		 * 
+		 *  We are loosing a bit of throughput here, but it's only around 2%
 		 */
 		synchronized(this.hashEncoder) {
 			try {

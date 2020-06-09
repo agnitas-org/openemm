@@ -61,6 +61,7 @@ by default using SI
 * */
 
 (function () {
+    var AGN_TAG_REGEX = /\[agn[^\]]+]/g;
 
     AGN.Lib.Helpers = {
 
@@ -143,7 +144,8 @@ by default using SI
         },
 
         disableCSSAnimations: function () {
-            $('body').append('<style class="disable-animation">* { -webkit-transition: none !important; -o-transition: none !important; transition: none !important; }</style>')
+            var script = $('<style class="disable-animation">* { -webkit-transition: none !important; -o-transition: none !important; transition: none !important; }</style>');
+            $('body').append(script);
         },
 
         enableCSSAnimations: function () {
@@ -227,6 +229,20 @@ by default using SI
                 }
                 return value;
             };
+        },
+
+        escapeAgnTags: function(string) {
+            try {
+                if (string) {
+                    return string.replace(AGN_TAG_REGEX, function(match) {
+                        return _.escape(match);
+                    });
+                }
+            } catch (e) {
+                // Do nothing.
+            }
+
+            return string;
         }
     }
 

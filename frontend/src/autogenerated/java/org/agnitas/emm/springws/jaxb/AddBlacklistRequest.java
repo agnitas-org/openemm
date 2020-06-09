@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;all>
  *         &lt;element name="email" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="reason" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/all>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -47,6 +48,7 @@ public class AddBlacklistRequest {
 
     @XmlElement(required = true)
     protected String email;
+    protected String reason;
 
     /**
      * Gets the value of the email property.
@@ -70,6 +72,30 @@ public class AddBlacklistRequest {
      */
     public void setEmail(String value) {
         this.email = value;
+    }
+
+    /**
+     * Gets the value of the reason property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getReason() {
+        return reason;
+    }
+
+    /**
+     * Sets the value of the reason property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setReason(String value) {
+        this.reason = value;
     }
 
 }

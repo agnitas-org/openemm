@@ -90,10 +90,9 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 			return;
 		}
 		
-		String updateSql = "";
+		String updateSql;
 		if (setDeleted) {
-			String deletionDateValue = isOracleDB() ? "SYSDATE" : "CURRENT_TIMESTAMP";
-			updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, deleted = 1, deletion_date = " + deletionDateValue;
+			updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, deleted = 1, deletion_date = CURRENT_TIMESTAMP";
 		} else {
 			updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, deleted = 0, deletion_date = null";
 		}

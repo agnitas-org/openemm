@@ -102,15 +102,6 @@ function setupScaleAxis(chart, icsc, axisIndex)
 }
 reportContext.setPersistentGlobalVariable("setupScaleAxis", setupScaleAxis);
 
-function wrap(longStr, width) {
-	length = longStr.length();
-	if (length <= width) {
-		return longStr;
-	}
-	return (longStr.substring(0, width) + "\n" + wrap(longStr.substring(width, length), width));
-}
-reportContext.setGlobalVariable("wrap", wrap);
-
 function removeWrap(str) {
 	var s =  String.valueOf(str);
     s = s.replace('\r', '');
@@ -469,31 +460,29 @@ if (currentrow >= compareData.size()) {
 row["mailing_id"] = compareData.get(currentrow).getMailingId();
 row["mailing_name"] = compareData.get(currentrow).getMailingName();
 
-var maxLength = reportContext.getPersistentGlobalVariable("mailingMaxLengthChart");
-row["mailing_name_wrap"] = StringUtils.wordWrap(row["mailing_name"], maxLength, 3, new Locale(reportContext.getLocale().getLanguage()));
-  
 row["send_date"] = compareData.get(currentrow).getSendDate();
 row["scheduled_send_time"] = compareData.get(currentrow).getScheduledSendTime();
 row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString(compareData.get(currentrow).getCategory(), reportContext.getLocale());
 row["category_index"] = compareData.get(currentrow).getCategoryindex();
 row["category_row_index"] = compareData.get(currentrow).getCategoryRowIndex();
 
-if(compareData.get(currentrow).getTargetgroupindex() == 1) {
+if(compareData.get(currentrow).getTargetgroupindex() == 1 ||
+		compareData.get(currentrow).getTargetgroup() == "All_Subscribers") {
 	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
-}
-else {
+} else {
 	row["targetgroup"] = compareData.get(currentrow).getTargetgroup();
 }
-if(row["targetgroup"] == "All_Subscribers") {
-	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+
+if(compareData.get(currentrow).getAssignedTargets() == "All_Subscribers") {
+	row["targets_assigned"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+} else {
+	row["targets_assigned"] = compareData.get(currentrow).getAssignedTargets();
 }
-//row["targetgroup"] = wrap(row["targetgroup"], 10);
 
 row["targetgroup_index"] = compareData.get(currentrow).getTargetgroupindex();
 row["value"] = compareData.get(currentrow).getCount();
 row["rate"] = compareData.get(currentrow).getRate();
 row["targets_assigned"] = compareData.get(currentrow).getAssignedTargets();
-//row["targets_assigned"] = wrap(row["targets_assigned"], 10);
 row["rowNumber"] = compareData.get(currentrow).getRowNum();
 
 row["mailing_name"] = removeWrap(row["mailing_name"]);
@@ -1653,7 +1642,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hard
                         </cell>
                         <cell id="7876">
                             <data id="7882">
-                                 <property name="fontFamily">"Arial"</property>
+                                <property name="fontFamily">"Arial"</property>
                                 <property name="fontSize">medium</property>
                                 <property name="resultSetColumn">delivered_emails_delivered_rate_name_</property>
                             </data>

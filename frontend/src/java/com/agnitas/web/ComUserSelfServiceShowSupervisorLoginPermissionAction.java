@@ -47,7 +47,7 @@ public final class ComUserSelfServiceShowSupervisorLoginPermissionAction extends
         if (admin.getSupervisor() == null && this.configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, admin.getCompanyID())) {
         	request.setAttribute("SHOW_SUPERVISOR_PERMISSION_MANAGEMENT", true);
         	request.setAttribute("DEPARTMENT_LIST", this.departmentService.listAllDepartments());
-        	request.setAttribute("LOCALE_DATE_PATTERN", AgnUtils.getDatePickerFormatPattern(admin));
+        	request.setAttribute("LOCALE_DATE_PATTERN", admin.getDateFormat().toPattern());
         	request.setAttribute("ACTIVE_LOGIN_PERMISSIONS", this.supervisorLoginPermissionService.listActiveSupervisorLoginPermissions(admin));
         	AgnUtils.setAdminDateTimeFormatPatterns(request);
         }

@@ -45,12 +45,7 @@ public class Imagepool {
 	}
 
 	public Image findMediapoolImage (String name) {
-        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore name parameter!");
-		return null;
-	}
-
-	public Image findMediapoolBackground (String name) {
-        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore name parameter!");
+	        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore name parameter!");
 		return null;
 	}
 

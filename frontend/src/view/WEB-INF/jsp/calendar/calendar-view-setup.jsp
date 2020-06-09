@@ -11,6 +11,6 @@
 <c:set var="agnHelpKey" 			value="calendar" 			scope="request" />
 
 <c:set var="agnSubtitleValue" scope="request">
-    <i class="icon icon-desktop"></i>
+    <i class="icon-fa5 icon-fa5-desktop"></i>
     <mvc:message code="calendar.Calendar" />
 </c:set>

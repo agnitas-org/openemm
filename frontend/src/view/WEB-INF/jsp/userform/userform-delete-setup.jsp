@@ -13,7 +13,7 @@
 <c:set var="agnTitleKey" 			value="Form" 							scope="request" />
 <c:set var="agnSubtitleKey" 		value="Form" 							scope="request" />
 <c:set var="agnSubtitleValue" 		value="${userFormEditForm.formName}"	scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 					scope="request" />
-<c:set var="sidemenu_sub_active"	value="workflow.panel.forms" 							scope="request" />
+<c:set var="sidemenu_active" 		value="Forms" 							scope="request" />
+<c:set var="sidemenu_sub_active"	value="workflow.panel.forms" 			scope="request" />
 <c:set var="agnHighlightKey" 		value="settings.form.delete"			scope="request" />
 <c:set var="agnHelpKey" 			value="formView" 						scope="request" />

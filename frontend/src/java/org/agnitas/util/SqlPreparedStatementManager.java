@@ -11,10 +11,11 @@
 package org.agnitas.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class SqlPreparedStatementManager {
 	private static final String SQL_WHERE_SIGN = "WHERE";
@@ -43,9 +44,7 @@ public class SqlPreparedStatementManager {
 		}
 
         if (parameter != null) {
-            for (Object item : parameter) {
-                statementParameters.add(item);
-            }
+			statementParameters.addAll(Arrays.asList(parameter));
         }
 	}
 
@@ -145,9 +144,7 @@ public class SqlPreparedStatementManager {
         statement.append(limitClause.trim());
 
         if (parameter != null) {
-            for (Object item : parameter) {
-                statementParameters.add(item);
-            }
+			statementParameters.addAll(Arrays.asList(parameter));
         }
     }
 

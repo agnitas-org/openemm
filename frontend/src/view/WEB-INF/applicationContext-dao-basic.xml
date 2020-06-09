@@ -15,8 +15,10 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:component-scan base-package="org.agnitas" />
-	<context:component-scan base-package="com.agnitas" />
+	<context:component-scan base-package="org.agnitas, com.agnitas">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
 
 <!-- Base bean for any DAO inheriting BaseDaoImpl -->
 	<bean id="_BaseDao" class="org.agnitas.dao.impl.BaseDaoImpl" abstract="true">
@@ -291,6 +293,17 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
+<!-- ============================================================================================================================== Login Track-->
+	<bean id="GuiLoginTrackDao" class="org.agnitas.emm.core.logintracking.dao.GuiLoginTrackDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+	
+	<bean id="WsLoginTrackDao" class="com.agnitas.emm.springws.logintrack.WsLoginTrackDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
 <!-- ============================================================================================================================== Maildrop status -->
 	<bean id="MaildropStatusDao" class="org.agnitas.dao.impl.MaildropStatusDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -389,6 +402,7 @@
 	<bean id="BirtReportDao" class="com.agnitas.emm.core.birtreport.dao.impl.ComBirtReportDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="birtReportFactory" ref="BirtReportFactory" />
 	</bean>
 
 	<bean id="BirtCompanyDao" class="com.agnitas.reporting.birt.external.dao.impl.ComCompanyDaoImpl">
@@ -516,6 +530,7 @@
 	<bean id="WorkflowReportScheduleDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowReportScheduleDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="birtReportFactory" ref="BirtReportFactory"/>
 	</bean>
 
 	<bean id="comWorkflowStartStopReminderDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowStartStopReminderDaoImpl">
@@ -531,7 +546,6 @@
 	<bean id="FormComponentDao" class="com.agnitas.dao.impl.FormComponentDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="configService" ref="ConfigService" />
 	</bean>
 	
 	<bean id="MailNotificationBufferDao" class="com.agnitas.dao.impl.MailNotificationBufferDaoImpl">
@@ -548,6 +562,8 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+	
+	<bean id="WebserviceUserSettingsDao" class="com.agnitas.emm.wsmanager.dao.impl.WebserviceUserSettingsDaoImpl" parent="_BaseDao" />
 	
 	<bean id="DatabaseInformation" class="com.agnitas.emm.core.commons.database.impl.DatabaseInformationImpl">
 		<constructor-arg index="0"><value>1000</value></constructor-arg>
@@ -566,7 +582,7 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 
-	<bean id="LandingpageDao" class="com.agnitas.dao.impl.LandingpageDaoImpl">
+	<bean id="LandingpageDao" class="com.agnitas.emm.landingpage.dao.LandingpageDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -611,7 +627,19 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
-	
+
+	<bean id="PermissionDao" class="com.agnitas.dao.impl.PermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionDaoImpl" parent="_BaseDao" />
 	<bean id="WebservicePermissionGroupDao" class="com.agnitas.emm.wsmanager.dao.impl.WebservicePermissionGroupDaoImpl" parent="_BaseDao" />
+	
+	<!-- ============================================================================================================================== Start-Up jobs -->
+	<bean id="StartupJobEntryDao" class="com.agnitas.startuplistener.dao.StartupJobEntryDaoImpl" parent="_BaseDao" />
+
+	<!-- ============================================================================================================================== -->
+	<bean id="deliveryDao" class="com.agnitas.emm.core.delivery.dao.impl.DeliveryDaoImpl" parent="_BaseDao" />
+
+	<bean id="LayoutDao" class="com.agnitas.dao.impl.LayoutDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
 </beans>

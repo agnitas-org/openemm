@@ -32,7 +32,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.PunycodeCodec;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -111,7 +111,15 @@ public class RedirectServlet extends HttpServlet {
 		 * 
 		 * For error cases throw an Exception. This will send a redirect to a "404" page
 		 */
-        final String agnUidString = request.getParameter("uid");
+        String agnUidString = request.getParameter("uid");
+        if (StringUtils.isBlank(agnUidString)) {
+        	String[] uriParts = StringUtils.strip(request.getRequestURI(), "/").split("/");
+			if (uriParts.length >= 2 && "r.html".equals(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 2].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 2];
+			} else if (uriParts.length >= 1 && StringUtils.isNotBlank(uriParts[uriParts.length - 1]) && uriParts[uriParts.length - 1].length() > 10) {
+				agnUidString = uriParts[uriParts.length - 1];
+			}
+        }
 
         try {
 			final ComExtensibleUID uid = decodeUid(agnUidString, request);
@@ -156,7 +164,7 @@ public class RedirectServlet extends HttpServlet {
 					
 					case TrackableLink.DEEPTRACKING_ONLY_COOKIE:
 						if (deepTrackingUID != null) {
-							setDeepTrackingCookie(response, company.getExpireCookie(), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
+							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
 						}
 						break;
 
@@ -168,7 +176,7 @@ public class RedirectServlet extends HttpServlet {
 
 					case TrackableLink.DEEPTRACKING_BOTH:
 						if (deepTrackingUID != null) {
-							setDeepTrackingCookie(response, company.getExpireCookie(), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
+							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSession, deepTrackingUID);
 							fullUrl = AgnUtils.addUrlParameter(fullUrl, "agnPar", deepTrackingSession + "_" + deepTrackingUID, "UTF-8");
 						}
 						break;
@@ -213,8 +221,8 @@ public class RedirectServlet extends HttpServlet {
 	            	executeLinkActions(uid, deviceID, deviceClass, trackableLink, request);
 				}
 			}
-        } catch(final RedirectException e) {
-        	if(logger.isInfoEnabled()) {
+		} catch (final RedirectException e) {
+        	if (logger.isInfoEnabled()) {
         		logger.info("Error resolving link: " + agnUidString, e);
         	}
         	
@@ -222,7 +230,7 @@ public class RedirectServlet extends HttpServlet {
 			
 			sendRedirect(response, redirectionUrl, 0);
 		} catch (final DeprecatedUIDVersionException e) {
-        	if(logger.isInfoEnabled()) {
+        	if (logger.isInfoEnabled()) {
         		logger.info("Deprecated UID: " + agnUidString, e);
         	}
         	
@@ -230,7 +238,7 @@ public class RedirectServlet extends HttpServlet {
 			
 			sendRedirect(response, redirectionUrl, e.getUID().getCompanyID());
 		} catch (final Exception e) {
-        	if(logger.isInfoEnabled()) {
+        	if (logger.isInfoEnabled()) {
         		logger.error("Exception in RDIR", e);
         	}
         	
@@ -259,18 +267,8 @@ public class RedirectServlet extends HttpServlet {
 	
 	
 	private final void sendRedirect(final HttpServletResponse response, final String redirectUrl, final int companyID) throws IOException {
-		final int redirectHttpCode = getConfigService().getIntegerValue(ConfigValue.RedirectionStatus, companyID);
-
 		final String punycodeFullUrl = punycodeEncodeDomainInLink(redirectUrl);
-
-		// STandard http redirect code may be replaced by using ConfigValue.RedirectionStatus
-		if (redirectHttpCode == 302) {
-			response.sendRedirect(punycodeFullUrl);
-		} else {
-			response.setStatus(redirectHttpCode);
-			response.setHeader("Location", punycodeFullUrl);
-			response.flushBuffer();
-		}
+		response.sendRedirect(punycodeFullUrl);
 	}
 	
 	private final String punycodeEncodeDomainInLink(final String url) {
@@ -287,26 +285,18 @@ public class RedirectServlet extends HttpServlet {
 		final PushRedirectTokenService service = getPushRedirectTokenService();
 		
 		if (service != null) {
-			final int redirectStatusCode = getConfigService().getIntegerValue(ConfigValue.RedirectionStatus, 302);
-			
-			if (redirectStatusCode == 302 || redirectStatusCode == 307) {
-				try {
-					if (configService.isPushNotificationEnabled(uid.getCompanyID())) {
-						return service.registerRedirectData(targetUrl, uid.getCustomerID(), uid.getCompanyID());
-					} else {
-						if (logger.isInfoEnabled()) {
-							logger.info(String.format("Push notifications not enabled for company ID %d - redirecting to target directly", uid.getCompanyID()));
-						}
-						
-						return targetUrl;
+			try {
+				if (getConfigService().isPushNotificationEnabled(uid.getCompanyID())) {
+					return service.registerRedirectData(targetUrl, uid.getCustomerID(), uid.getCompanyID());
+				} else {
+					if (logger.isInfoEnabled()) {
+						logger.info(String.format("Push notifications not enabled for company ID %d - redirecting to target directly", uid.getCompanyID()));
 					}
-				} catch(final RedirectTokenException e) {
-					logger.error("Error creating redirect URL for push recipient tracking. Skipping recipient tracking and forwarding to target URL");
 					
 					return targetUrl;
 				}
-			} else {
-				logger.info(String.format("Push tracking not supported for Redirect status code %d", redirectStatusCode));
+			} catch(final RedirectTokenException e) {
+				logger.error("Error creating redirect URL for push recipient tracking. Skipping recipient tracking and forwarding to target URL");
 				
 				return targetUrl;
 			}
@@ -586,7 +576,7 @@ public class RedirectServlet extends HttpServlet {
 		try {
 			IntelliAdTrackingData trackingData = IntelliAdTrackingStringParser.parse(settings.getTrackingString());
 
-			LightweightMailing mailing = getSnowflakeMailingCache().getSnowflakeMailing(mailingId);
+			LightweightMailing mailing = getSnowflakeMailingCache().getSnowflakeMailing(companyId, mailingId);
 			String subId = mailingId + "|" + mailing.getShortname();
 
 			StringBuffer buffer = new StringBuffer();

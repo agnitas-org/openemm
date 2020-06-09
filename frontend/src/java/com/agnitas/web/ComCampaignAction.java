@@ -93,8 +93,8 @@ public final class ComCampaignAction extends CampaignAction {
                     break;
 
             	case CampaignAction.ACTION_VIEW:
-            	    WorkflowUtils.updateForwardParameters(req);
-            	    aForm.reset(mapping, req);
+                    updateForwardParameters(req);
+                	aForm.reset(mapping, req);
                     loadCampaign(aForm, req);
                     aForm.setAction(CampaignAction.ACTION_SAVE);
                     destination = mapping.findForward("view");
@@ -129,7 +129,7 @@ public final class ComCampaignAction extends CampaignAction {
                     break;
 
                 case CampaignAction.ACTION_NEW:
-                    WorkflowUtils.updateForwardParameters(req);
+                    updateForwardParameters(req);
                     aForm.reset(mapping, req);
                     aForm.setAction(CampaignAction.ACTION_SAVE);
                     aForm.setCampaignID(0);
@@ -202,6 +202,10 @@ public final class ComCampaignAction extends CampaignAction {
         }
         
         return destination;
+    }
+
+    private void updateForwardParameters(HttpServletRequest req) {
+        WorkflowUtils.updateForwardParameters(req);
     }
 
     public void loadMailing(int mailingID, HttpServletRequest req){

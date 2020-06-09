@@ -16,11 +16,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class BlacklistDeleteForm {
 
-    @NotEmpty(message = "error.email.empty")
     private String email;
 
     private List<Integer> mailingListIds;

@@ -15,6 +15,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import org.springframework.web.util.UriComponentsBuilder;
+
+/**
+ @see {@link UriComponentsBuilder}
+ */
+@Deprecated
 public class URLUtils {
 	
 	/**

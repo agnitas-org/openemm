@@ -13,20 +13,12 @@ package com.agnitas.emm.core.usergroup.form;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
 public class UserGroupForm {
     
     private int id;
     
     private int companyId;
     
-    @NotNull(message = "error.name.is.empty")
-    @Size.List({
-        @Size(min = 3, message = "error.name.too.short"),
-        @Size(max = 100, message = "error.username.tooLong")
-    })
     private String shortname;
     
     private String description;

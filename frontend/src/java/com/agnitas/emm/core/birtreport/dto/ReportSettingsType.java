@@ -12,16 +12,21 @@ package com.agnitas.emm.core.birtreport.dto;
 
 public enum ReportSettingsType {
 
-    COMPARISON(1, "mailing.comparison"),
-    MAILING(2, "mailing.statistics"),
-    RECIPIENT(3, "statistic.Recipient");
+    COMPARISON(1, "mailing.comparison", false, false),
+    MAILING(2, "mailing.statistics", false, false),
+    RECIPIENT(3, "statistic.Recipient", false, true),
+    TOP_DOMAIN(4, "statistic.TopDomains", true, true);
     
     private final int key;
     private final String typeMsgKey;
+    private final boolean mailTrackingRequired;
+    private final boolean dateRanged;
     
-    ReportSettingsType(int key, String typeMsgKey) {
+    ReportSettingsType(int key, String typeMsgKey, boolean mailTrackingRequired, boolean dateRanged) {
         this.key = key;
         this.typeMsgKey = typeMsgKey;
+        this.mailTrackingRequired = mailTrackingRequired;
+        this.dateRanged = dateRanged;
     }
     
     public int getKey() {
@@ -30,6 +35,13 @@ public enum ReportSettingsType {
     
     public String getTypeMsgKey() {
         return typeMsgKey;
+    }
+    public boolean isMailTrackingRequired() {
+        return mailTrackingRequired;
+    }
+    
+    public boolean isDateRanged() {
+        return dateRanged;
     }
     
     public static ReportSettingsType getTypeByCode(int code) {

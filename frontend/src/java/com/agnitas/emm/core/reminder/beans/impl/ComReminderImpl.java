@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.reminder.beans.impl;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.reminder.beans.ComReminder;
 

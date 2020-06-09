@@ -1068,7 +1068,7 @@ return false;]]></method>
                                             <list-property name="action">
                                                 <structure>
                                                     <property name="linkType">hyperlink</property>
-                                                    <expression name="uri" type="javascript">params["targetbaseurl"].value+"/mailing_stat.do;jsessionid="+params["emmsession"].value+"?action=7&amp;mailingID="+row["mailing_id"]+"&amp;mailingId="+row["mailing_id"]+"&amp;init=true"</expression>
+                                                    <expression name="uri" type="javascript">params["targetbaseurl"].value+"/statistics/mailing/" + row["mailing_id"] + "/view.action;jsessionid=" + params["emmsession"].value</expression>
                                                     <property name="targetWindow">_parent</property>
                                                 </structure>
                                             </list-property>
@@ -8609,7 +8609,7 @@ reportContext.setPersistentGlobalVariable("test", c);]]></method>
                                             <list-property name="action">
                                                 <structure>
                                                     <property name="linkType">hyperlink</property>
-                                                    <expression name="uri" type="javascript">params["targetbaseurl"].value+"/mailing_stat.do;jsessionid="+params["emmsession"].value+"?action=7&amp;mailingID="+row["mailing_id"]+"&amp;mailingId="+row["mailing_id"]+"&amp;init=true"</expression>
+                                                    <expression name="uri" type="javascript">params["targetbaseurl"].value+"/statistics/mailing/" + row["mailing_id"] + "/view.action;jsessionid=" + params["emmsession"].value</expression>
                                                     <property name="targetWindow">_parent</property>
                                                 </structure>
                                             </list-property>

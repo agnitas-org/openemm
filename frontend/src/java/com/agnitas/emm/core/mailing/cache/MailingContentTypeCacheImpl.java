@@ -13,30 +13,35 @@ package com.agnitas.emm.core.mailing.cache;
 import java.util.Objects;
 
 import org.agnitas.emm.core.commons.daocache.AbstractCompanyBasedDaoCache;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.TimeoutLRUMap;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComMailing;
 import com.agnitas.beans.ComMailing.MailingContentType;
 import com.agnitas.dao.ComMailingDao;
 
 public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCache<MailingContentType> implements MailingContentTypeCache {
-
 	private ComMailingDao mailingDao;
-	
+	private ConfigService configService;
+
 	@Required
 	public final void setMailingDao(final ComMailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 
-	@Override
-	protected final MailingContentType getItemFromDao(final int mailingId, final int companyId) {
-		final ComMailing mailing = (ComMailing) this.mailingDao.getMailing(mailingId, companyId);
-		
-		if(mailing == null) {
-			return null;
-		} else {
-			return mailing.getMailingContentType();
-		}
+	@Required
+	public final void setConfigService(final ConfigService configService) {
+		this.configService = Objects.requireNonNull(configService, "ConfigService cannot be null");
 	}
 
+	@Override
+	protected final MailingContentType getItemFromDao(final int mailingId, final int companyId) {
+		if (!isCacheInitialized()) {
+			setCache(new TimeoutLRUMap<IdWithCompanyID, MailingContentType>(
+				configService.getIntegerValue(ConfigValue.CompanyMaxCache),
+				configService.getIntegerValue(ConfigValue.CompanyMaxCacheTimeMillis)));
+		}
+		return mailingDao.getMailingContentType(companyId, mailingId);
+	}
 }

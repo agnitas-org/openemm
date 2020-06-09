@@ -14,7 +14,7 @@
             <div class="modal-header">
                 <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><bean:message key="button.Cancel"/></span></button>
                 <h4 class="modal-title">
-                    <bean:message key="bulkAction.delete.recipient"/>
+                    <bean:message key="bulkAction.delete.recipients"/>
                 </h4>
             </div>
 

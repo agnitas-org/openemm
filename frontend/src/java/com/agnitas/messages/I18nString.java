@@ -12,7 +12,7 @@ package com.agnitas.messages;
 
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class I18nString {
 	public static DBMessagesResource MESSAGE_RESOURCES = null;

@@ -15,7 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.ListSplit;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.TargetGroupException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
@@ -23,11 +32,6 @@ import org.agnitas.emm.core.target.service.UserActivityLog;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetRepresentation;
 import org.apache.struts.action.ActionMessages;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.ListSplit;
-import com.agnitas.beans.TargetLight;
 
 /**
  * Service for target groups.
@@ -56,6 +60,7 @@ public interface ComTargetService {
     boolean validateTargetRepresentation(TargetRepresentation representation, ActionMessages errors, @VelocityCheck int companyId);
 
     int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+    public TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
     int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
 
@@ -128,9 +133,7 @@ public interface ComTargetService {
 
     String getTargetName(int targetId, @VelocityCheck int companyId, boolean includeDeleted);
 
-    Map<Integer, String> getTargetNames(int companyId, Collection<Integer> targetIds);
-
-	boolean checkIfTargetNameAlreadyExists(int companyID, String targetName, int targetID);
+	boolean checkIfTargetNameAlreadyExists(@VelocityCheck int companyID, String targetName, int targetID);
 
 	boolean checkIfTargetNameIsValid(String targetShortname);
 	
@@ -166,7 +169,7 @@ public interface ComTargetService {
 	 * 
 	 * @return list of target groups referencing given profile field
 	 */
-	List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, final int companyID);
+	List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, @VelocityCheck final int companyID);
 
 	/**
 	 * Lists all target groups of the given company ID that reference the given reference table. 
@@ -176,7 +179,7 @@ public interface ComTargetService {
 	 * 
 	 * @return list of target groups referencing given reference table
 	 */
-	List<TargetLight> listTargetGroupsUsingReferenceTable(final String tableName, final int companyID);
+	List<TargetLight> listTargetGroupsUsingReferenceTable(final String tableName, @VelocityCheck final int companyID);
 
 	/**
 	 * Lists all target groups of the given company ID that reference the given field of reference table. 
@@ -187,7 +190,7 @@ public interface ComTargetService {
 	 * 
 	 * @return list of target groups referencing given reference table field
 	 */
-	List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, final int companyID);
+	List<TargetLight> listTargetGroupsUsingReferenceTableColumn(final String tableName, final String columnName, @VelocityCheck final int companyID);
 
 	String toViewUri(int targetId);
 	
@@ -200,9 +203,23 @@ public interface ComTargetService {
 	 * @return matcher
 	 * @throws Exception on errors creating the matcher 
 	 */
- 	public RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
+ 	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
 	
 	List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
 	
 	List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String s);
+
+    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
+
+	Map<Integer, TargetComplexityGrade> getTargetComplexities(@VelocityCheck int companyId);
+
+	TargetComplexityGrade getTargetComplexityGrade(@VelocityCheck int companyId, int targetId);
+
+	int calculateComplexityIndex(String eql, @VelocityCheck int companyId);
+
+	int calculateComplexityIndex(String eql, @VelocityCheck int companyId, TargetComplexityEvaluationCache cache);
+
+	void initializeComplexityIndex(@VelocityCheck int companyId);
+
+	List<TargetLight> getLimitingTargetLights(@VelocityCheck int companyId);
 }

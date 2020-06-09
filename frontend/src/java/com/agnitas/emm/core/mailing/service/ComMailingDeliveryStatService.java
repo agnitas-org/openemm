@@ -14,6 +14,4 @@ import com.agnitas.beans.DeliveryStat;
 
 public interface ComMailingDeliveryStatService {
     DeliveryStat getDeliveryStats(int companyID, int mailingID, int mailingType);
-
-    boolean cancelDelivery(int companyID, int mailingID);
 }

@@ -11,17 +11,21 @@
 package com.agnitas.emm.core.mailing.service.impl;
 
 import java.util.Date;
+import java.util.Objects;
+
+import org.agnitas.dao.MailingDao;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MailingBackendLog;
 import com.agnitas.dao.DeliveryStatDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import org.agnitas.dao.MailingDao;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStatService {
 
@@ -29,21 +33,25 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
 
     private DeliveryStatDao deliveryStatDao;
     private MailingDao mailingDao;
+    private MailingStopService mailingStopService;
 
     @Override
     public DeliveryStat getDeliveryStats(int companyID, int mailingID, int mailingType) {
         DeliveryStat deliveryStatistic = new DeliveryStat();
         deliveryStatistic.setTotalMails(deliveryStatDao.getTotalMails(mailingID));
+        deliveryStatistic.setCancelable(mailingStopService.canStopRegularMailing(companyID, mailingID));
+        deliveryStatistic.setResumable(mailingStopService.canResumeRegularMailing(companyID, mailingID));
 
         int statusID = 0;
         // -------------------------------------- last thing backend did for this mailing:
         try {
             MaildropEntry maildropStatus = deliveryStatDao.getLastMaildropStatus(mailingID);
+            
+            
             if (maildropStatus != null) {
                 if (maildropStatus.getGenStatus() > 0) {
                     deliveryStatistic.setLastType(String.valueOf(maildropStatus.getStatus()));
                 } else {
-                    deliveryStatistic.setCancelable(true);
                     deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
                 }
                 statusID = maildropStatus.getId();
@@ -83,28 +91,31 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
                 deliveryStatistic.setOptimizeMailGeneration(maildropGenerationStatus.getMailGenerationOptimization());
                 deliveryStatistic.setScheduledGenerateTime(maildropGenerationStatus.getGenDate());
                 deliveryStatistic.setScheduledSendTime(maildropGenerationStatus.getSendDate());
-                int aktMdropStatus = maildropGenerationStatus.getGenStatus();
+                final MaildropGenerationStatus aktMdropStatusOrNull = MaildropGenerationStatus.fromCodeOrNull(maildropGenerationStatus.getGenStatus());
 
-                switch (aktMdropStatus) {
-                    case MaildropEntry.GEN_SCHEDULED:
-                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
-                        deliveryStatistic.setCancelable(true);
-                        break;
-                    case MaildropEntry.GEN_NOW:
+                if(aktMdropStatusOrNull != null) {
+                	switch(aktMdropStatusOrNull) {
+                    case SCHEDULED:
                         deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
                         break;
-                    case MaildropEntry.GEN_WORKING:
+                    case NOW:
+                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
+                        break;
+                    case WORKING:
                         deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATING);
                         break;
-                    case MaildropEntry.GEN_FINISHED:
+                    case FINISHED:
                         deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATED);
                         break;
                     default:
                     	throw new Exception("Invalid gen status type");
+               	
+                	}
+                } else {
+                	throw new Exception("Invalid gen status type");
                 }
             } else {
                 // mailing not scheduled for sending:
-                deliveryStatistic.setCancelable(false);
                 deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_NOT_SENT);
             }
         } catch (Exception e) {
@@ -165,14 +176,6 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
                 logger.error("Error in getDeliveryStatsForMailingType(" + companyID + ", " + mailingID + ", " + mailingType + "): " + e.getMessage(), e);
                 return deliveryStatistic;
             }
-
-            // cancel only mailings the generation has not yet begun at the
-            // moment:
-            if (deliveryStatistic.getDeliveryStatus() == DeliveryStat.STATUS_SCHEDULED) {
-                deliveryStatistic.setCancelable(true);
-            } else {
-                deliveryStatistic.setCancelable(false);
-            }
         }
 
         return deliveryStatistic;
@@ -198,12 +201,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
         }
         return MaildropStatus.WORLD.getCodeString();
     }
-    
-    @Override
-    public boolean cancelDelivery(int companyID, int mailingID) {
-        return deliveryStatDao.cancelDelivery(companyID, mailingID);
-    }
-
+ 
     @Required
     public void setDeliveryStatDao(DeliveryStatDao deliveryStatDao) {
         this.deliveryStatDao = deliveryStatDao;
@@ -212,5 +210,10 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
     @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
+    }
+    
+    @Required
+    public final void setMailingStopService(final MailingStopService service) {
+    	this.mailingStopService = Objects.requireNonNull(service, "Mailing stop service is null");
     }
 }

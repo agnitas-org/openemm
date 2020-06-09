@@ -23,7 +23,7 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 	@Override
 	public void anonymizeStatistics(final int companyID) throws Exception {
 		// Anonymize table onepixellog_<CID>_tbl
-		update(logger, "UPDATE onepixellog_" + companyID + "_tbl SET customer_id = 0"
+		update(logger, "UPDATE onepixellog_" + companyID + "_tbl SET customer_id = 0, ip_adr = NULL"
 			+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
 			+ " AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
 			MailingContentType.advertising.name());
@@ -35,10 +35,40 @@ public class AnonymizeStatisticsDaoImpl extends BaseDaoImpl implements Anonymize
 			MailingContentType.advertising.name());
 
 		// Anonymize table rdirlog_<CID>_tbl
-		update(logger, "UPDATE rdirlog_" + companyID + "_tbl SET customer_id = 0"
+		update(logger, "UPDATE rdirlog_" + companyID + "_tbl SET customer_id = 0, ip_adr = NULL"
 			+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
 			+ " AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
 			MailingContentType.advertising.name());
+		
+		// Anonymize table rdirlog_userform_<CID>_tbl
+		update(logger, "UPDATE rdirlog_userform_" + companyID + "_tbl SET customer_id = 0, ip_adr = NULL"
+			+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
+			+ " AND (mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?) OR mailing_id IS NULL)",
+			MailingContentType.advertising.name());
+
+		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
+			// Anonymize table rdirlog_<CID>_tbl
+			update(logger, "UPDATE rdirlog_" + companyID + "_val_num_tbl SET customer_id = 0, ip_adr = NULL"
+				+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
+				+ " AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
+				MailingContentType.advertising.name());
+		}
+
+		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
+			// Anonymize table rdirlog_<CID>_tbl
+			update(logger, "UPDATE rdirlog_" + companyID + "_val_alpha_tbl SET customer_id = 0, ip_adr = NULL"
+				+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
+				+ " AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
+				MailingContentType.advertising.name());
+		}
+
+		if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
+			// Anonymize table rdirlog_<CID>_tbl
+			update(logger, "UPDATE rdirlog_" + companyID + "_ext_link_tbl SET customer_id = 0, ip_adr = NULL"
+				+ " WHERE customer_id in (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK + " = 1)"
+				+ " AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE content_type IS NULL OR content_type = ?)",
+				MailingContentType.advertising.name());
+		}
 
 		if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", "lastopen_date", "lastclick_date")) {
 			// Anonymize lastclick_date and lastopen_date in customer_<CID>_tbl

@@ -12,4 +12,6 @@ package com.agnitas.emm.core.pluginmanager.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
-public class PluginListForm extends PaginationForm {}
+public class PluginListForm extends PaginationForm {
+	// nothing to do
+}

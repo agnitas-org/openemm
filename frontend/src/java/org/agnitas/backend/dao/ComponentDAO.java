@@ -92,9 +92,6 @@ public class ComponentDAO {
 					} else if (tmp.cid.equals (Const.Component.NAME_SMS)) {
 						tmp.type = BlockData.SMS;
 						tmp.media = Media.TYPE_SMS;
-					} else if (tmp.cid.equals (Const.Component.NAME_WHATSAPP)) {
-						tmp.type = BlockData.WHATSAPP;
-						tmp.media = Media.TYPE_WHATSAPP;
 					} else {
 						dbase.logging (Log.WARNING, "component", "Invalid compname " + tmp.cid + " for comptype 0 found");
 						tmp = null;

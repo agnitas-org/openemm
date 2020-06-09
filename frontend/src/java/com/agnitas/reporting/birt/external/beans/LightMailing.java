@@ -9,20 +9,8 @@
 */
 
 package com.agnitas.reporting.birt.external.beans;
-import java.io.Serializable;
 
-
-public class LightMailing implements Serializable {
-
-    public static final int TYPE_NORMAL = 0;
-    public static final int TYPE_ACTION_BASED = 1;
-    public static final int TYPE_DATE_BASED = 2;
-
-    /**
-      *
-      */
-	private static final long serialVersionUID = 4582641323077778414L;
-	
+public class LightMailing {
 	private int mailingID;
 	private String shortname;
     private String description;
@@ -34,36 +22,47 @@ public class LightMailing implements Serializable {
 	public int getMailingID() {
 		return mailingID;
 	}
+	
 	public void setMailingID(int mailingID) {
 		this.mailingID = mailingID;
 	}
+	
 	public String getShortname() {
 		return shortname;
 	}
+	
 	public void setShortname(String shortname) {
 		this.shortname = shortname;
 	}
+	
 	public String getTargetExpression() {
 		return targetExpression;
 	}
+	
 	public void setTargetExpression(String targetExpression) {
 		this.targetExpression = targetExpression;
 	}
+	
 	public int getMailinglistId() {
 		return mailinglistId;
 	}
+	
 	public void setMailinglistId(int mailinglistId) {
 		this.mailinglistId = mailinglistId;
 	}
+	
     public String getDescription() {
         return description;
     }
+    
     public void setDescription(String description) {
         this.description = description;
     }
+    
     public int getArchiveId() {
         return archiveId;
     }
+    
     public void setArchiveId(int archiveId) {
         this.archiveId = archiveId;
     }

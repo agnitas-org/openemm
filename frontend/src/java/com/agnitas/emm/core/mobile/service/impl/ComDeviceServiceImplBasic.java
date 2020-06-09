@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.mobile.service.impl;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import org.apache.log4j.Logger;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.mobile.service.ComDeviceService;
+
 public class ComDeviceServiceImplBasic implements ComDeviceService {
-	@SuppressWarnings("unused")
 	private static final transient Logger logger = Logger.getLogger(ComDeviceServiceImplBasic.class);
 
 	@Override

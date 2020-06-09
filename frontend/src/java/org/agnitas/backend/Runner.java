@@ -82,7 +82,7 @@ public class Runner extends Thread {
 			custid = null;
 		}
 			
-		MailgunImpl mailout=null;
+		MailgunImpl mailout = null;
 		try {
 			mailout = new MailgunImpl ();
 			mailout.initialize (status_id);
@@ -90,10 +90,14 @@ public class Runner extends Thread {
 			message (Log.INFO, mailout.fire(custid));
 		} catch (Exception e) {
 			message (Log.ERROR, "Error during starting: " + e.toString (), e);
-			try {
-				mailout.done ();
-			} catch (Exception e2) {
-				message (Log.ERROR, "Failed to cleanup mailout: " + e.toString (), e);
+			if (mailout == null) {
+				message (Log.ERROR, "Failed to cleanup mailout: Nullpointer mailout not successfully initialized", e);
+			} else {
+				try {
+					mailout.done ();
+				} catch (Exception e2) {
+					message (Log.ERROR, "Failed to cleanup mailout: " + e.toString (), e);
+				}
 			}
 		}
 	}
@@ -104,8 +108,9 @@ public class Runner extends Thread {
 	 */
 	private void message (int loglvl, String str, Throwable th) {
 		if (str != null) {
-			if (option != null)
+			if (option != null) {
 				str = "[" + option + "] " + str;
+			}
 			log.out (loglvl, (command != null ? command : "runner"), str, th);
 		}
 	}

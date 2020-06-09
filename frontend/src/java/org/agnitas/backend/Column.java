@@ -12,14 +12,15 @@ package org.agnitas.backend;
 
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Locale;
+
+import net.objecthunter.exp4j.Expression;
 
 /**
  * Representation of a single column
@@ -40,7 +41,6 @@ public class Column {
 	private String		qname;
 	/** Data type of this column */
 	private int		type;
-	private int		typeID;
 	/** True if DB has NULL value */
 	private boolean		isnull;
 	/** True if column is in use */
@@ -55,10 +55,6 @@ public class Column {
 	private String		sval;
 	/** Its date version*/
 	private Date		dval;
-	/**Its time version */
-	private Time		tval;
-	/** Its timestamp version */
-	private Timestamp	tsval;
 	/** an overwritten value */
 	private boolean		isOverwritten;
 	private String		overwritten;
@@ -92,7 +88,8 @@ public class Column {
 		case Types.TIME:
 		case Types.TIMESTAMP:
 			return DATE;
-		default: return UNSET;
+		default:
+			return UNSET;
 		}
 	}
 	/**
@@ -112,7 +109,8 @@ public class Column {
 			return "s";
 		case DATE:
 			return "d";
-		default: return null;
+		default:
+			return null;
 		}
 	}
 	/**
@@ -124,15 +122,12 @@ public class Column {
 		ref = null;
 		qname = null;
 		type = -1;
-		typeID = UNSET;
 		isnull = false;
 		inuse = true;
 		ival = -1;
 		fval = -1.0;
 		sval = null;
 		dval = null;
-		tval = null;
-		tsval = null;
 		isOverwritten = false;
 		overwritten = null;
 	}
@@ -147,28 +142,7 @@ public class Column {
 		setName (cName);
 		qname = name;
 		type = cType;
-		typeID = getTypeID (type);
 	}
-	/**
-	 * Create a copy of the current column
-	 * 
-	 * @return the new instance with the copied data
-	 */
-/*
-	public Column copy () {
-		Column	c = new Column ();
-		
-		c.name = name;
-		c.alias = alias;
-		c.ref = ref;
-		c.qname = qname;
-		c.type = type;
-		c.typeID = typeID;
-		c.isnull = isnull;
-		c.inuse = inuse;
-		return c;
-	}
-*/
 
 	public void setName (String nName) {
 		name = nName != null ? nName.toLowerCase () : null;
@@ -236,6 +210,43 @@ public class Column {
 	}
 
 	/**
+	 * Clear the value (set to an empty or zero value)
+	 */
+	public void clr () {
+		value = null;
+		isnull = true;
+		switch (type) {
+		default:
+			break;
+		case Types.DECIMAL:
+		case Types.NUMERIC:
+		case Types.DOUBLE:
+		case Types.FLOAT:
+		case Types.REAL:
+			ival = 0;
+			fval = 0.0;
+			break;
+		case Types.BIGINT:
+		case Types.INTEGER:
+		case Types.SMALLINT:
+		case Types.TINYINT:
+			ival = 0;
+			break;
+		case Types.CHAR:
+		case Types.VARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
+			sval = null;
+			break;
+		case Types.DATE:
+		case Types.TIME:
+		case Types.TIMESTAMP:
+			dval = null;
+			break;
+		}
+	}
+
+	/**
 	 * Set value from a result set. If the value
 	 * could not be parsed to the desired data
 	 * type an internal default value is used:
@@ -250,7 +261,7 @@ public class Column {
 		value = null;
 		switch (type) {
 		default:
-			return;
+			break;
 		case Types.DECIMAL:
 		case Types.NUMERIC:
 		case Types.DOUBLE:
@@ -301,27 +312,19 @@ public class Column {
 			}
 			break;
 		case Types.DATE:
+		case Types.TIME:
+		case Types.TIMESTAMP:
 			try {
-				dval = rset.getDate (index);
+				if (type == Types.TIME) {
+					dval = rset.getTime (index);
+				} else if (type == Types.TIMESTAMP) {
+					dval = rset.getTimestamp (index);
+				} else {
+					dval = rset.getDate (index);
+				}
 				value = dval;
 			} catch (SQLException e) {
 				dval = null;
-			}
-			break;
-		case Types.TIME:
-			try {
-				tval = rset.getTime (index);
-				value = tval;
-			} catch (SQLException e) {
-				tval = null;
-			}
-			break;
-		case Types.TIMESTAMP:
-			try {
-				tsval = rset.getTimestamp (index);
-				value = tsval;
-			} catch (SQLException e) {
-				tsval = null;
 			}
 			break;
 		}
@@ -341,10 +344,16 @@ public class Column {
 	 * @return string version of column content
 	 */
 	public String get () {
+		return get (null);
+	}
+	public String get (Expression expression) {
 		String	str;
 
 		if (isOverwritten) {
 			return overwritten == null ? "" : overwritten;
+		}
+		if (isnull) {
+			return "";
 		}
 
 		switch (type) {
@@ -353,36 +362,34 @@ public class Column {
 		case Types.DOUBLE:
 		case Types.FLOAT:
 		case Types.REAL:
-			if (ival != fval)
-				return Double.toString (fval);
-			return Long.toString (ival);
+			if (ival != fval) {
+				return Double.toString (calc (expression, fval));
+			}
+			return Long.toString (calc (expression, ival));
 		case Types.BIGINT:
 		case Types.INTEGER:
 		case Types.SMALLINT:
 		case Types.TINYINT:
-			return Long.toString (ival);
+			return Long.toString (calc (expression, ival));
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.BLOB:
 		case Types.CLOB:
-			return sval != null ? sval : "";
+			return sval != null ? calc (expression, sval) : "";
 		case Types.DATE:
 		case Types.TIME:
 		case Types.TIMESTAMP:
 			SimpleDateFormat	fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss", new Locale ("en"));
 
-			if ((type == Types.DATE) && (dval != null)) {
-				str = fmt.format (dval);
-			} else if ((type == Types.TIME) && (tval != null)) {
-				str = fmt.format (tval);
-			} else if ((type == Types.TIMESTAMP) && (tsval != null)) {
-				str = fmt.format (tsval);
+			if (dval != null) {
+				str = fmt.format (calc (expression, dval));
 			} else {
 				str = "0000-00-00 00:00:00";
 			}
 			return str;
 			
-		default: return null;
+		default:
+			return null;
 		}
 	}
 
@@ -393,14 +400,11 @@ public class Column {
 	 * @param format the instance to format the output
 	 * @return       string version of column content
 	 */
-	public String get (Format format) {
+	public String get (Format format, Expression expression) {
 		String	rc = null;
 
-		if (format == null) {
-			return get ();
-		}
 		if (isOverwritten) {
-			rc = format.format (get ());
+			rc = format.format (overwritten == null ? "" : overwritten);
 		} else {
 			switch (type) {
 			case Types.DECIMAL:
@@ -408,33 +412,30 @@ public class Column {
 			case Types.DOUBLE:
 			case Types.FLOAT:
 			case Types.REAL:
-				rc = format.format (fval);
+				rc = format.format (calc (expression, fval));
 				break;
 			case Types.BIGINT:
 			case Types.INTEGER:
 			case Types.SMALLINT:
 			case Types.TINYINT:
-				rc = format.format (ival);
+				rc = format.format (calc (expression, ival));
 				break;
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.BLOB:
 			case Types.CLOB:
-				rc = format.format (sval != null ? sval : "");
+				rc = format.format (sval != null ? calc (expression, sval) : "");
 				break;
 			case Types.DATE:
-				rc = format.format (dval);
-				break;
 			case Types.TIME:
-				rc = format.format (tval);
-				break;
 			case Types.TIMESTAMP:
-				rc = format.format (tsval);
+				rc = format.format (calc (expression, dval));
 				break;
-			default: break;
+			default:
+				break;
 			}
 		}
-		return format.encode (rc != null ? rc : get ());
+		return format.encode (rc != null ? rc : get (expression));
 	}
 
 	/**
@@ -444,7 +445,7 @@ public class Column {
 	 * @return null, if format is usable, otherwise an error text with the reason of the failure
 	 */
 	public String validate (Format format) {
-		get (format);
+		get (format, null);
 		return format.error ();
 	}
 
@@ -458,5 +459,49 @@ public class Column {
 		} else {
 			qname = null;
 		}
+	}
+
+	private double calc (Expression expression, double valueParameter) {
+		try {
+			return expression == null || isnull ? valueParameter : expression.setVariable ("value", valueParameter).setVariable (name, valueParameter).setVariable (qname, valueParameter).evaluate ();
+		} catch (Exception e) {
+			return valueParameter;
+		}
+	}
+
+	private long calc (Expression expression, long valueParameter) {
+		return (long) calc (expression, (double) valueParameter);
+	}
+	
+	private String calc (Expression expression, String valueParameter) {
+		if ((expression != null) && (valueParameter != null) && (! isnull)) {
+			String	tempvalue = valueParameter.trim ();
+			
+			try {
+				valueParameter = (new Long (calc (expression, Long.parseLong (tempvalue)))).toString ();
+			} catch (NumberFormatException e1) {
+				try {
+					valueParameter = (new Double (calc (expression, Double.parseDouble (tempvalue)))).toString ();
+				} catch (NumberFormatException e2) {
+					// do nothing
+				}
+			}
+		}
+		return valueParameter;
+	}
+	
+	private Date calc (Expression expression, Date valueParameter) {
+		if ((expression != null) && (valueParameter != null) && (! isnull)) {
+			Instant	i = valueParameter.toInstant ();
+			double	day = 24 * 60 * 60;
+			double	epoch = i.getEpochSecond () / day;
+			double	result = calc (expression, epoch);
+			
+			if (result != epoch) {
+				i = Instant.ofEpochSecond ((long) (result * day));
+				valueParameter = Date.from (i);
+			}
+		}
+		return valueParameter;
 	}
 }

@@ -39,7 +39,7 @@ public class TarGzUtilities {
 	                    continue;
 	                }
 	                String entryFilePath = entry.getName();
-	                entryFilePath.replace("\\", "/");
+	                entryFilePath = entryFilePath.replace("\\", "/");
 	                if (entryFilePath.startsWith("/") || entryFilePath.startsWith("../") || entryFilePath.endsWith("/..") || entryFilePath.contains("/../")) {
 	                    throw new Exception("Traversal error in tar gz file: " + zipFileToDecompress.getAbsolutePath());
 	                }

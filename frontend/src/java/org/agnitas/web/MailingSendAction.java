@@ -11,6 +11,8 @@
 package org.agnitas.web;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -28,18 +30,45 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.commons.TranslatableMessageException;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingPriorityService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
+import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.util.ClassicTemplateGenerator;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.Mailing;
+import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.MailingFactory;
@@ -52,6 +81,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.preview.AgnTagException;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
@@ -66,9 +96,9 @@ import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.WorkflowParametersHelper;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -81,28 +111,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.DeliveryStat;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.commons.TranslatableMessageException;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
-import com.agnitas.emm.core.mailing.service.MailingPriorityService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.util.ClassicTemplateGenerator;
-
-import net.sf.json.JSONObject;
 
 /**
  * Implementation of <strong>Action</strong> that validates a user logon.
@@ -130,7 +138,12 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 	public static final int ACTION_CONFIRM_SEND_WORLD = ACTION_LAST + 18;
 	public static final int ACTION_CHECK_LINKS = ACTION_LAST + 19;
 	public static final int ACTION_PRIORITIZATION_SWITCHING = ACTION_LAST + 20;
-	public static final int ACTION_SEND_LAST = ACTION_PRIORITIZATION_SWITCHING;
+	public static final int ACTION_RESUME_MAILING_REQUEST = ACTION_LAST + 21;
+	public static final int ACTION_RESUME_MAILING = ACTION_LAST + 22;
+	public static final int ACTION_RESUME_MAILING_BY_COPY_REQUEST = ACTION_LAST + 23;
+	public static final int ACTION_RESUME_MAILING_BY_COPY = ACTION_LAST + 24;
+	public static final int ACTION_SEND_LAST = ACTION_RESUME_MAILING_BY_COPY;
+	public static final int ACTION_PREVIEW_IFRAME = ACTION_RESUME_MAILING_BY_COPY;
 
     public static final int PREVIEW_MODE_HEADER = 1;
     public static final int PREVIEW_MODE_TEXT = 2;
@@ -149,25 +162,29 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     protected BlacklistService blacklistService;
     private MailingComponentDao mailingComponentDao;
     private LinkcheckService linkcheckService;
-    private MailingFactory mailingFactory;
+    protected MailingFactory mailingFactory;
     protected MailinglistDao mailinglistDao;
     private TAGCheckFactory tagCheckFactory;
     private DataSource dataSource;
     protected PreviewFactory previewFactory;
-    private ComTargetService targetService;
+    protected ComTargetService targetService;
     protected MaildropService maildropService;
+    protected ComCompanyDao companyDao;
 
     protected MaildropStatusDao maildropStatusDao;
+    protected BounceFilterService bounceFilterService;
+    
     /** Mailing service. */
     protected MailingService mailingService;
     private ComMailingDeliveryStatService deliveryStatService;
     protected MailingPriorityService mailingPriorityService;
     protected ComMailingBaseService mailingBaseService;
     protected ConfigService configService;
+    protected MediatypeFactory mediatypeFactory;
+    
+    protected MailingStopService mailingStopService;
     
     protected ApplicationContext applicationContext;
-
-    protected int maxAdminMails;
 
     // --------------------------------------------------------- Public Methods
 
@@ -349,6 +366,40 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                         destination=mapping.findForward("send");
                     }
                     break;
+                    
+                case ACTION_RESUME_MAILING_REQUEST:
+                    loadMailing(aForm, req);
+                    aForm.setAction(MailingSendAction.ACTION_RESUME_MAILING);
+                    destination=mapping.findForward("resume_generation_question");
+                	break;
+                	
+                case ACTION_RESUME_MAILING:
+                    if(resumeMailingDelivery(aForm, req)) {
+                        loadDeliveryStats(aForm, req);
+                    }
+                    destination=mapping.findForward("send");
+                	break;
+                	
+                case ACTION_RESUME_MAILING_BY_COPY_REQUEST:
+                    loadMailing(aForm, req);
+                    aForm.setAction(MailingSendAction.ACTION_RESUME_MAILING_BY_COPY);
+                    destination=mapping.findForward("resume_generation_by_copy_question");
+                	break;
+                	
+               case ACTION_RESUME_MAILING_BY_COPY: {
+            	   loadMailing(aForm, req);
+            	   final int newMailingID =  copyMailingToResume(AgnUtils.getCompanyID(req), aForm);
+            	   aForm.setMailingID(newMailingID);
+            	   loadMailing(aForm, req);
+            	   
+                   if (aForm.getColumnwidthsList() == null) {
+                       aForm.setColumnwidthsList(getInitializedColumnWidthList(5));
+                   }
+                   AgnUtils.setAdminDateTimeFormatPatterns(req);
+            	   
+                   destination=mapping.findForward("list");
+            	   break;
+               }
 
                 case MailingSendAction.ACTION_VIEW_SEND2:
                     loadMailing(aForm, req);
@@ -453,6 +504,9 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                             req.setAttribute("errorReport", agnTagException.getReport());
                             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.template.dyntags"));
                             destination = mapping.findForward("preview_errors");
+                        } catch (Exception e) {
+                            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("Error"));
+                            destination = mapping.findForward("preview_errors");
                         }
                     } else {
                         aForm.setHasPreviewRecipient(false);
@@ -479,11 +533,15 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                         HttpUtils.responseJson(res, savePrioritizationState(req));
                     }
                     return null;
+                    
+				default:
+					break;
             }
         } catch (TranslatableMessageException e) {
 			logger.error("execute: " + e, e);
 
 			if ("error.mailing.send.admin.maxMails".equals(e.getErrorMsgKey())) {
+				int maxAdminMails = configService.getIntegerValue(ConfigValue.MaxAdminMails, AgnUtils.getCompanyID(req));
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(e.getErrorMsgKey(), maxAdminMails));
 			} else {
 				errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(e.getErrorMsgKey()));
@@ -499,14 +557,16 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
         // Report any errors we have discovered back to the original form
         if (!errors.isEmpty()) {
-            this.saveErrors(req, errors);
-            if(aForm.getAction()==MailingSendAction.ACTION_SEND_ADMIN || aForm.getAction()==MailingSendAction.ACTION_SEND_TEST || aForm.getAction()==MailingSendAction.ACTION_SEND_WORLD) {
+            saveErrors(req, errors);
+            if(aForm.getAction()==MailingSendAction.ACTION_SEND_ADMIN ||
+                    aForm.getAction()==MailingSendAction.ACTION_SEND_TEST ||
+                    aForm.getAction()==MailingSendAction.ACTION_SEND_WORLD) {
                 return (new ActionForward(mapping.getInput()));
             }
         }
 
         if (!messages.isEmpty()){
-            this.saveMessages(req, messages);
+            saveMessages(req, messages);
         }
 
         return destination;
@@ -625,16 +685,18 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     /**
      * Loads mailing data from db into form; also gets list of target groups from db and stores it in the request.
      * @param aForm MailingSendForm object
-     * @param req HTTP request
+     * @param request HTTP request
+     * @throws GeneralSecurityException
+     * @throws UnsupportedEncodingException
      */
-    protected void loadMailing(MailingSendForm aForm, HttpServletRequest req) {
-        Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
+    protected void loadMailing(MailingSendForm aForm, HttpServletRequest request) throws Exception {
+        Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(request));
 
         if (aMailing == null) {
             aMailing = mailingFactory.newMailing();
-            aMailing.init(AgnUtils.getCompanyID(req), applicationContext);
+            aMailing.init(AgnUtils.getCompanyID(request), applicationContext);
             aMailing.setId(0);
-            aMailing.setCompanyID(AgnUtils.getCompanyID(req));
+            aMailing.setCompanyID(AgnUtils.getCompanyID(request));
             aForm.setMailingID(0);
         }
 
@@ -658,8 +720,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         aForm.setHasDeletedTargetGroups(this.targetService.hasMailingDeletedTargetGroups(aMailing));
         
         loadSteppingBlocksize(aForm, aMailing);
-        req.setAttribute("targetGroups", targetDao.getTargetLights(AgnUtils.getCompanyID(req)));
-        setSendButtonsControlAttributes(req, aMailing);
+        request.setAttribute("targetGroups", targetDao.getTargetLights(AgnUtils.getCompanyID(request)));
+        setSendButtonsControlAttributes(request, aMailing);
     }
 
 	private void loadSteppingBlocksize(MailingSendForm aForm, Mailing aMailing) {
@@ -765,16 +827,18 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
 	protected boolean validateActivation(HttpServletRequest request, MailingSendForm form, ActionMessages errors, ActionMessages messages) {
         if (WorkflowParametersHelper.isWorkflowDriven(request) &&
-                (form.getMailingtype() == Mailing.TYPE_DATEBASED || form.getMailingtype() == Mailing.TYPE_ACTIONBASED)) {
+                (form.getMailingtype() == MailingTypes.DATE_BASED.getCode() ||
+                        form.getMailingtype() == MailingTypes.ACTION_BASED.getCode())) {
             return false;
         } else {
         	Tuple<Long, Long> calculatedMaxMailingSizes = mailingBaseService.calculateMaxSize((ComMailing) form.getMailing());
-        	Long approximateMaxSize = calculatedMaxMailingSizes.getSecond();
+            Long approximateMaxSizeWithoutImages = calculatedMaxMailingSizes.getFirst();
         	long maximumMailingSizeAllowed = configService.getLongValue(ConfigValue.MailingSizeErrorThresholdBytes, AgnUtils.getCompanyID(request));
-        	if (approximateMaxSize > maximumMailingSizeAllowed) {
+        	if (approximateMaxSizeWithoutImages > maximumMailingSizeAllowed) {
         		errors.add("global", new ActionMessage("error.mailing.size.large", maximumMailingSizeAllowed));
 	        	return false;
 	        } else {
+                Long approximateMaxSize = calculatedMaxMailingSizes.getSecond();
 	        	long warningMailingSize = configService.getLongValue(ConfigValue.MailingSizeWarningThresholdBytes, AgnUtils.getCompanyID(request));
 	        	if (approximateMaxSize > warningMailingSize) {
 	        		messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.size.large", warningMailingSize));
@@ -803,7 +867,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     }
     
     protected boolean validateNeedTarget(HttpServletRequest req, MailingSendForm form, ActionMessages errors) {
-        if (form.getTargetGroups() == null && form.getMailingtype() == Mailing.TYPE_DATEBASED) {
+        if (form.getTargetGroups() == null && form.getMailingtype() == MailingTypes.DATE_BASED.getCode()) {
 			errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
 			return false;
 		}
@@ -828,25 +892,19 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         int cachedMailtype = aForm.getMailingtype();
         int mailingID = aForm.getMailingID();
         String shortname = aForm.getShortname();
-        boolean isDeliveryCanceled = cancelMailingDelivery(cachedMailtype, mailingID, shortname, req);
-        if(isDeliveryCanceled) {
-            aForm.setWorldMailingSend(false);
-            aForm.setMailingtype(Mailing.TYPE_NORMAL);
-            cancelDependentMailings(mailingID, req);
-            return true;
-        }
-        return false;
-    }
 
-    /**
-     * Cancel followup mailings.
-     *
-     * This is a stub method which is implemented in ComMailingSendAction where it makes sense.
-     *
-     * @param mailingID - target mailing id.
-     * @param req
-     */
-    protected void cancelDependentMailings(int mailingID, HttpServletRequest req) { /* nothing to do here */ }
+        return  cancelMailingDelivery(cachedMailtype, mailingID, shortname, req);
+    }
+    
+    private final boolean resumeMailingDelivery(final MailingSendForm form, final HttpServletRequest request) {
+    	try {
+    		return this.mailingStopService.resumeRegularMailing(AgnUtils.getCompanyID(request), form.getMailingID());
+    	} catch(final MailingStopServiceException e) {
+    		logger.error(String.format("Error resuming mailing %d", form.getMailingID()), e);
+    		
+    		return false;
+    	}
+    }
 
     /**
      * Cancel mailing delivery routine.
@@ -858,11 +916,18 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      *          false=delivery could not be canceled
      */
     protected boolean cancelMailingDelivery(int cachedMailtype, int mailingID, String shortname, HttpServletRequest req) {
-        boolean isDeliveryCanceled = deliveryStatService.cancelDelivery(AgnUtils.getCompanyID(req), mailingID);
-        if (isDeliveryCanceled) {
-            writeUserActivityLog(AgnUtils.getAdmin(req), "do cancel mailing", "Mailing type: " + mailingTypeToString(cachedMailtype) + ". " + shortname + " (" + mailingID + ")");
-        }
-        return isDeliveryCanceled;
+    	try {
+	        final boolean isDeliveryCancelled = this.mailingStopService.stopRegularMailing(AgnUtils.getCompanyID(req), mailingID, false);
+	        
+	        if (isDeliveryCancelled) {
+	            writeUserActivityLog(AgnUtils.getAdmin(req), "do cancel mailing", "Mailing type: " + mailingTypeToString(cachedMailtype) + ". " + shortname + " (" + mailingID + ")");
+	        }
+	        return isDeliveryCancelled;
+    	} catch(final MailingStopServiceException e) {
+    		logger.error(String.format("Error stopping mailing %d", mailingID), e);
+    		
+    		return false;
+    	}
     }
 
     /**
@@ -912,6 +977,10 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
             case MailingSendAction.ACTION_ACTIVATE_CAMPAIGN:
                 maildropEntry.setStatus(MaildropStatus.ACTION_BASED.getCode());
                 world=true;
+                break;
+                
+			default:
+				break;
         }
 
         if(aForm.getSendDate()!=null) {
@@ -944,7 +1013,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         }
 
         // check syntax of mailing by generating dummy preview
-        preview=aMailing.getPreview(aMailing.getTextTemplate().getEmmBlock(), Mailing.INPUT_TYPE_TEXT, aForm.getPreviewCustomerID(), applicationContext);
+        preview=aMailing.getPreview(aMailing.getTextTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
         if (StringUtils.isBlank(preview)) {
             if (mailingService.isTextVersionRequired(AgnUtils.getCompanyID(req), aForm.getMailingID())) {
                 throw new TranslatableMessageException("error.mailing.no_text_version");
@@ -952,15 +1021,15 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                 messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("error.mailing.no_text_version"));
             }
         }
-        preview=aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), Mailing.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
+        preview=aMailing.getPreview(aMailing.getHtmlTemplate().getEmmBlock(), MailingPreviewHelper.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
         if(aForm.getEmailFormat()>0 && preview.trim().length()==0) {
             throw new TranslatableMessageException("error.mailing.no_html_version");
         }
-        preview=aMailing.getPreview(aMailing.getEmailParam().getSubject(), Mailing.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
+        preview=aMailing.getPreview(aMailing.getEmailParam().getSubject(), MailingPreviewHelper.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
         if (StringUtils.isBlank(aMailing.getEmailParam().getSubject())) {
             throw new TranslatableMessageException("error.mailing.subject.too_short");
         }
-        preview=aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), Mailing.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
+        preview=aMailing.getPreview(aMailing.getEmailParam().getFromAdr(), MailingPreviewHelper.INPUT_TYPE_HTML, aForm.getPreviewCustomerID(), applicationContext);
         if(preview.trim().length()==0) {
             throw new TranslatableMessageException("error.mailing.sender_adress");
         }
@@ -980,7 +1049,9 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
             genDate=tmpGen.getTime();
         }
 
-        if(!DateUtil.isDateForImmediateGeneration(genDate) && ((aMailing.getMailingType() == Mailing.TYPE_NORMAL) || (aMailing.getMailingType() == Mailing.TYPE_FOLLOWUP))) {
+        if(!DateUtil.isDateForImmediateGeneration(genDate) &&
+                ((aMailing.getMailingType() == MailingTypes.NORMAL.getCode()) ||
+                (aMailing.getMailingType() == MailingTypes.FOLLOW_UP.getCode()))) {
             startGen=0;
         }
         
@@ -1085,14 +1156,22 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @throws Exception
      */
     protected void deactivateMailing(MailingSendForm aForm, HttpServletRequest req) throws Exception {
-        Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
+        int companyID = AgnUtils.getCompanyID(req);
+        Mailing mailing = mailingDao.getMailing(aForm.getMailingID(), companyID);
         
         if (mailing != null && WorkflowParametersHelper.isWorkflowDriven(req)) {
-            if (mailing.getMailingType() == Mailing.TYPE_ACTIONBASED || mailing.getMailingType() == Mailing.TYPE_DATEBASED) {
+            if (mailing.getMailingType() == MailingTypes.ACTION_BASED.getCode() ||
+                    mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
                 mailing = null;
             }
         }
     
+        if (mailing != null && mailing.getMailingType() == MailingTypes.ACTION_BASED.getCode() &&
+                bounceFilterService.isMailingUsedInBounceFilter(companyID, mailing.getId())) {
+            mailing = null;
+        }
+    
+       
         if (mailing != null) {
             maildropStatusDao.cleanup(mailing.getMaildropStatus());
 
@@ -1100,8 +1179,20 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
             String description = String.format("%s (%s)", mailing.getShortname(), mailing.getId());
             writeUserActivityLog(AgnUtils.getAdmin(req), "do cancel mailing", "Mailing type: " + mailingTypeToString(mailing.getMailingType()) + ". " + description);
+            
+            updateStatus(mailing.getId(), companyID, "disable");
         }
     }
+    
+    
+	protected void updateStatus(int mailingId, int companyId, String status) throws Exception {
+		Mailing aMailing = mailingDao.getMailing(mailingId, companyId);
+
+		if (aMailing == null) {
+			return;
+		}
+		mailingDao.updateStatus(aMailing.getId(), status);
+	}
 
     /**
      * Generates mailing preview by given mailing format. Calls generate preview method; for mailings of HTML or text
@@ -1115,62 +1206,85 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @throws Exception
      */
     protected ActionForward getPreview(ActionMapping mapping, MailingSendForm aForm, HttpServletRequest req) throws Exception {
-		Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), AgnUtils.getCompanyID(req));
-		if (aMailing == null) {
-			return mapping.findForward("preview." + aForm.getPreviewFormat());
+        int companyId = getBulkCompanyId(req);
+        if (companyId <= 0) {
+            companyId = AgnUtils.getCompanyID(req);
+        }
+        int previewFormat = aForm.getPreviewFormat();
+    
+        Mailing aMailing = mailingDao.getMailing(aForm.getMailingID(), companyId);
+        if (aMailing == null) {
+            return mapping.findForward("preview." + previewFormat);
+        }
+        
+        ComAdmin admin = AgnUtils.getAdmin(req);
+	
+        MediaTypes mediaType = MailingPreviewHelper.castPreviewFormatToMediaType(previewFormat, mediatypeFactory);
+        if (mediaType == null) {
+            mediaType = MediaTypes.EMAIL;
+            previewFormat = MailingPreviewHelper.INPUT_TYPE_TEXT;
+            aForm.setPreviewFormat(previewFormat);
+        }
+        
+        String previewContent;
+        if (MediaTypes.EMAIL == mediaType) {
+            Preview preview = previewFactory.createPreview();
+            Page previewPage = preview.makePreview(aMailing.getId(), aForm.getPreviewCustomerID(), false);
+            preview.done();
+            if (MailingPreviewHelper.INPUT_TYPE_HTML == previewFormat) {
+                previewContent = aForm.isNoImages() ? previewPage.getStrippedHTML() : previewPage.getHTML();
+                if (previewContent != null) {
+                    previewContent = MailingPreviewHelper.replaceImagesWithMobileComponents(aMailing.getComponents(),
+                            aForm.getPreviewSize(), previewContent);
+                    aForm.setPreview(previewContent);
+                } else {
+                    analyzeErrors(admin, aMailing.getHtmlTemplate().getEmmBlock(), aForm.getMailingID(), aMailing);
+                }
+            }
+            
+            if (MailingPreviewHelper.INPUT_TYPE_TEXT == previewFormat) {
+                previewContent = previewPage.getText();
+                if (previewContent != null) {
+                    aForm.setPreview(StringUtils.defaultIfBlank(
+                            StringUtils.substringBetween(previewContent, "<pre>", "</pre>"),
+                            previewContent));
+                } else {
+                    analyzeErrors(admin, aMailing.getTextTemplate().getEmmBlock(), aForm.getMailingID(), aMailing);
+                }
+            }
+        } else if (isPostPreview(mediaType, aMailing)) {
+            aForm.setPreview("No preview available for mediatype POST");
+        } else {
+            MailingComponent component = aMailing.getTemplate(mediaType);
+            if (component != null) {
+                String template = component.getEmmBlock();
+                previewContent = aMailing.getPreview(template, previewFormat, aForm.getPreviewCustomerID(), true, applicationContext);
+                if (previewContent != null) {
+                    aForm.setPreview(previewContent);
+                }
+            }
 		}
-		String[] tmplNames = { "Text", "Html", "FAX", "PRINT", "MMS", "SMS" };
-
-		if (aForm.getPreviewFormat() == Mailing.INPUT_TYPE_HTML || aForm.getPreviewFormat() == Mailing.INPUT_TYPE_TEXT) {
-			Preview preview = previewFactory.createPreview();
-    		Page output = preview.makePreview (aMailing.getId(), aForm.getPreviewCustomerID(), false);
-    		preview.done();
-
-			if (aForm.getPreviewFormat() == Mailing.INPUT_TYPE_HTML) {
-				String previewAsString = aForm.isNoImages() ? output.getStrippedHTML() : output.getHTML();
-				
-				if (previewAsString == null) {
-					String htmlTemplate = aMailing.getHtmlTemplate().getEmmBlock();
-
-					Map<String, DynamicTag> dynTagsMap = aMailing.getDynTags();
-					int mailingID = aForm.getMailingID();
-
-					analyzePreviewError(htmlTemplate, dynTagsMap, mailingID, req);
-				} else {
-					aForm.setPreview(previewAsString);
-				}
-			} else if (aForm.getPreviewFormat() == Mailing.INPUT_TYPE_TEXT) {
-				String previewString = output.getText();
-				if (previewString == null) {
-					String htmlTemplate = aMailing.getTextTemplate().getEmmBlock();
-
-					Map<String, DynamicTag> dynTagsMap = aMailing.getDynTags();
-					int mailingID = aForm.getMailingID();
-
-					analyzePreviewError(htmlTemplate, dynTagsMap, mailingID, req);
-				} else {
-
-					if (previewString.indexOf("<pre>") > -1) {
-						previewString = previewString.substring(previewString.indexOf("<pre>") + 5, previewString.length());
-					}
-					if (previewString.lastIndexOf("</pre>") > -1) {
-						previewString = previewString.substring(0, previewString.lastIndexOf("</pre>"));
-					}
-					aForm.setPreview(previewString);
-				}
-			}
-			
-			aForm.setEmailFormat(aMailing.getEmailParam().getMailFormat());
-			aForm.setMailinglistID(aMailing.getMailinglistID());
-			
-			return mapping.findForward("preview." + aForm.getPreviewFormat());
-		} else {
-			aForm.setPreview(aMailing.getPreview(aMailing.getTemplate(tmplNames[aForm.getPreviewFormat()]).getEmmBlock(), aForm.getPreviewFormat(), aForm.getPreviewCustomerID(),
-					true, applicationContext));
-			aForm.setEmailFormat(aMailing.getEmailParam().getMailFormat());
-			aForm.setMailinglistID(aMailing.getMailinglistID());
-			return mapping.findForward("preview." + aForm.getPreviewFormat());
-		}
+		
+        aForm.setEmailFormat(aMailing.getEmailParam().getMailFormat());
+        aForm.setMailinglistID(aMailing.getMailinglistID());
+		return mapping.findForward("preview." + aForm.getPreviewFormat());
+	}
+    
+    private void analyzeErrors(ComAdmin admin, String template, int mailingId, Mailing aMailing) throws Exception {
+        Map<String, DynamicTag> dynTagsMap = aMailing.getDynTags();
+        analyzePreviewError(admin, template, dynTagsMap, mailingId);
+    }
+	
+	protected boolean isPostPreview(MediaTypes mediaType, Mailing mailing) {
+        return false;
+	}
+	
+	protected boolean isPostMailing(Mailing aMailing) {
+		return false;
+	}
+	
+	protected int getBulkCompanyId(HttpServletRequest req) {
+		return -1;
 	}
 
     /**
@@ -1334,6 +1448,9 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                                             numOffline += rset.getInt(1);
                                         }
                                         break;
+                                        
+									default:
+										break;
                                 }
                                 break;
                             default:
@@ -1366,7 +1483,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      */
     public Page generateBackEndPreview(int mailingID,int customerID) {
 		Preview preview = previewFactory.createPreview();
-		Page output = preview.makePreview (mailingID,customerID, false);
+		Page output = preview.makePreview(mailingID, customerID, false);
 		preview.done();
 		return output;
 	}
@@ -1378,7 +1495,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @param mailingID id of mailing
      * @throws Exception
      */
-	protected void analyzePreviewError(String template, Map<String, DynamicTag> dynTagsMap, int mailingID, HttpServletRequest request) throws Exception {
+	protected void analyzePreviewError(ComAdmin admin, String template, Map<String, DynamicTag> dynTagsMap, int mailingID) throws Exception {
 		List<String[]> errorReports = new ArrayList<>();
 		Vector<String> outFailures = new Vector<>();
 		TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailingID);
@@ -1399,7 +1516,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 		}
 		
 		if (errorReports.size() == 0) {
-			Locale locale = AgnUtils.getLocale(request);
+			Locale locale = admin.getLocale();
 			errorReports.add(new String[]{SafeString.getLocaleString("preview.error.empty", locale)});
 		}
 		
@@ -1521,6 +1638,11 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     }
 
     @Required
+    public void setBounceFilterService(BounceFilterService bounceFilterService) {
+        this.bounceFilterService = bounceFilterService;
+    }
+
+    @Required
     public final void setMaildropService(final MaildropService service) {
     	this.maildropService = service;
     }
@@ -1535,7 +1657,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     }
     
     protected boolean checkCanSendWorldMailing(final HttpServletRequest request, final Mailing mailing) {
-    	if (mailing.getMailingType() != Mailing.TYPE_NORMAL && mailing.getMailingType() != Mailing.TYPE_FOLLOWUP) {
+    	if (mailing.getMailingType() != MailingTypes.NORMAL.getCode()
+                && mailing.getMailingType() != MailingTypes.FOLLOW_UP.getCode()) {
     		return false;
     	} else if (this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
     		return false;
@@ -1558,6 +1681,14 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
         return recipientList;
     }
+    
+    private final int copyMailingToResume(final int companyID, final MailingSendForm form) throws Exception {
+    	return this.mailingStopService.copyMailingForResume(
+    			companyID,
+    			form.getMailingID(),
+    			form.getShortname(),
+    			"Copy of " + form.getShortname());		// TODO i18n required here
+    }
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -1573,4 +1704,23 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     public void setConfigService(final ConfigService service) {
         this.configService = service;
     }
+
+    @Required
+    public void setCompanyDao(ComCompanyDao companyDao) {
+        this.companyDao = companyDao;
+    }
+    
+    @Required
+    public final void setMailingStopService(final MailingStopService service) {
+    	this.mailingStopService = Objects.requireNonNull(service, "Mailing stop service is empty");
+    }
+    
+    @Required
+    public void setMediatypeFactory(MediatypeFactory mediatypeFactory) {
+        this.mediatypeFactory = mediatypeFactory;
+    }
+    
+    protected ComMailing getMailing(MailingSendForm aForm, HttpServletRequest request) {
+		return null;
+	}
 }

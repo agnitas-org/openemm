@@ -58,10 +58,6 @@ public interface ComAdminDao {
     	int pageNumber,
     	int pageSize);
 	
-	Double getWsRateLimit(String username);
-	Integer getWsBulkSizeLimit(String username);
-	Integer getWsMaxResultListSize(String username);
-	
 	/**
 	 * Read admin from DB.
 	 * 
@@ -82,7 +78,7 @@ public interface ComAdminDao {
 
 	void deleteFeaturePermissions(Set<String> unAllowedPremiumFeatures);
 
-	boolean updateNewsDate(ComAdmin admin, Date newsDate, NewsType type);
+	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
 	
 	boolean isAdminPassword(ComAdmin admin, String password);
 	
@@ -100,14 +96,16 @@ public interface ComAdminDao {
      * @return true
      */
 	boolean delete(ComAdmin admin);
+	
+	boolean delete(final int adminID, final int companyID);
 
 	List<AdminEntry> getAllAdminsByCompanyId( @VelocityCheck int companyID);
 
 	List<AdminEntry> getAllAdmins();
 
-	List<AdminEntry> getAllWsAdminsByCompanyId( @VelocityCheck int companyID);
+	List<AdminEntry> getAllWsAdminsByCompanyId( @VelocityCheck int companyID);			// TODO Move to webservice related class
 
-	List<AdminEntry> getAllWsAdmins();
+	List<AdminEntry> getAllWsAdmins();													// TODO Move to webservice related class
 
     /**
      * Checks the existence of any admin with given username for certain company.
@@ -116,6 +114,8 @@ public interface ComAdminDao {
      * @return true if the admin exists, and false otherwise.
      */
 	boolean adminExists(String username);
+
+	boolean isEnabled(ComAdmin admin);
 
 	boolean checkBlacklistedAdminNames(String username);
 
@@ -129,8 +129,9 @@ public interface ComAdminDao {
      * @return
      */
     int saveAdminRights(int adminID, Set<String> userRights);
-    
+
     ComAdmin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
+    String getAdminName(int adminID, @VelocityCheck int companyID);
 
 	/**
 	 * Get timezone id for an admin referenced by {@code adminId}.

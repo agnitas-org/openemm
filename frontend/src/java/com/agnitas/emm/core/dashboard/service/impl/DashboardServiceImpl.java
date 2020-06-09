@@ -19,28 +19,34 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.SafeString;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
-
 import net.sf.json.JSONObject;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.util.SafeString;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 public class DashboardServiceImpl implements DashboardService {
     private Logger logger = Logger.getLogger(DashboardServiceImpl.class);
+    
     private static final int DEFAULT_STATISTIC_VALUE = 0;
 
     private MailingSummaryDataSetFactory summaryDataSetFactory;
     private ComMailingDao mailingDao;
+    
+    private static final List<Integer> OPENERS_STATISTIC_INDEXES = new ArrayList<>(Arrays.asList(
+                CommonKeys.OPENERS_PC_INDEX, CommonKeys.OPENERS_MOBILE_INDEX, CommonKeys.OPENERS_TABLET_INDEX,
+                CommonKeys.OPENERS_SMARTTV_INDEX, CommonKeys.OPENERS_PC_AND_MOBILE_INDEX));
+    
+    private static final List<Integer> CLICKERS_STATISTIC_INDEXES = new ArrayList<>(Arrays.asList(
+                CommonKeys.CLICKER_PC_INDEX, CommonKeys.CLICKER_MOBILE_INDEX, CommonKeys.CLICKER_TABLET_INDEX,
+                CommonKeys.CLICKER_SMARTTV_INDEX, CommonKeys.CLICKER_PC_AND_MOBILE_INDEX));
 
     @Required
     public void setMailingDao(ComMailingDao mailingDao) {
@@ -53,13 +59,13 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getMailings(int companyId, String sort, String direction, int rownums) {
-        return mailingDao.getDashboardMailingList(companyId, sort, direction, rownums);
+    public PaginatedListImpl<Map<String, Object>> getMailings(ComAdmin admin, String sort, String direction, int rownums) {
+        return mailingDao.getDashboardMailingList(admin.getCompanyID(), admin.getAdminID(), sort, direction, rownums);
     }
 
     @Override
-    public List<Map<String, Object>> getLastSentWorldMailings(@VelocityCheck int companyID, int rownums) {
-        return mailingDao.getLastSentWorldMailings(companyID, rownums);
+    public List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int rownums) {
+        return mailingDao.getLastSentWorldMailings(admin.getCompanyID(), admin.getAdminID(), rownums);
     }
 
     @Override
@@ -99,14 +105,9 @@ public class DashboardServiceImpl implements DashboardService {
             List<? extends SendStatRow> rowList = mailingSummaryDataSet.getSummaryData(tempTableID);
 
             for (SendStatRow row : rowList) {
-                int value = row.getCount();
-
                 // when the value in summary data set is "-1"
                 // it's mean that the requested data is not exists in db, so we should set "0"
-                if (value < 0) {
-                    value = 0;
-                }
-
+                int value = Math.max(0, row.getCount());
                 data.put(row.getCategoryindex(), value);
             }
         } else {
@@ -159,38 +160,15 @@ public class DashboardServiceImpl implements DashboardService {
     private List<String[]> getClickersStat(Map<Integer, Integer> data, Locale locale) {
         List<String[]> clickersStat = new ArrayList<>();
 
-        List<Integer> orderedKeys = new ArrayList<>(Arrays.asList(
-                CommonKeys.CLICKER_PC_INDEX, CommonKeys.CLICKER_MOBILE_INDEX, CommonKeys.CLICKER_TABLET_INDEX,
-                CommonKeys.CLICKER_SMARTTV_INDEX, CommonKeys.CLICKER_PC_AND_MOBILE_INDEX));
-
-        for (int categoryId : orderedKeys) {
-            String messageKey = StringUtils.EMPTY;
+        for (int categoryId : CLICKERS_STATISTIC_INDEXES) {
+            String messageKey;
             Integer categoryVal = data.get(categoryId);
 
             if (Objects.isNull(categoryVal)) {
                 continue;
             }
-
-            switch (categoryId) {
-                case CommonKeys.CLICKER_PC_INDEX:
-                    messageKey = "predelivery.desktop";
-                    break;
-                case CommonKeys.CLICKER_TABLET_INDEX:
-                    messageKey = "report.openers.tablet.shortname";
-                    break;
-                case CommonKeys.CLICKER_MOBILE_INDEX:
-                    messageKey = "report.openers.mobile.shortname";
-                    break;
-                case CommonKeys.CLICKER_SMARTTV_INDEX:
-                    messageKey = "report.openers.smarttv.shortname";
-                    break;
-                case CommonKeys.CLICKER_PC_AND_MOBILE_INDEX:
-                    messageKey = "report.openers.multiple-devices.shortname";
-                    break;
-                default:
-                	messageKey = "predelivery.desktop";
-                    break;
-            }
+            
+            messageKey = getDeviceMessageKey(categoryId);
 
             int clickerTracked = data.getOrDefault(CommonKeys.CLICKER_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
             String[] items = getItems(messageKey, locale, clickerTracked, categoryVal);
@@ -200,42 +178,20 @@ public class DashboardServiceImpl implements DashboardService {
 
         return clickersStat;
     }
-
+    
+    
     private List<String[]> getOpenersStat(Map<Integer, Integer> data, Locale locale) {
         List<String[]> openersStat = new ArrayList<>();
 
-        List<Integer> orderedKeys = new ArrayList<>(Arrays.asList(
-                CommonKeys.OPENERS_PC_INDEX, CommonKeys.OPENERS_MOBILE_INDEX, CommonKeys.OPENERS_TABLET_INDEX,
-                CommonKeys.OPENERS_SMARTTV_INDEX, CommonKeys.OPENERS_PC_AND_MOBILE_INDEX));
-
-        for (Integer categoryId : orderedKeys) {
-            String messageKey = StringUtils.EMPTY;
+        for (Integer categoryId : OPENERS_STATISTIC_INDEXES) {
+            String messageKey;
             Integer categoryVal = data.get(categoryId);
 
             if (Objects.isNull(categoryVal)) {
                 continue;
             }
 
-            switch (categoryId) {
-                case CommonKeys.OPENERS_PC_INDEX:
-                    messageKey = "predelivery.desktop";
-                    break;
-                case CommonKeys.OPENERS_TABLET_INDEX:
-                    messageKey = "report.openers.tablet.shortname";
-                    break;
-                case CommonKeys.OPENERS_MOBILE_INDEX:
-                    messageKey = "report.openers.mobile.shortname";
-                    break;
-                case CommonKeys.OPENERS_SMARTTV_INDEX:
-                    messageKey = "report.openers.smarttv.shortname";
-                    break;
-                case CommonKeys.OPENERS_PC_AND_MOBILE_INDEX:
-                    messageKey = "report.openers.multiple-devices.shortname";
-                    break;
-                default:
-                	messageKey = "predelivery.desktop";
-                    break;
-            }
+            messageKey = getDeviceMessageKey(categoryId);
 
             int openersTracked = data.getOrDefault(CommonKeys.OPENERS_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
             String[] items = getItems(messageKey, locale, openersTracked, categoryVal);
@@ -252,4 +208,27 @@ public class DashboardServiceImpl implements DashboardService {
                 divider == 0 ? Double.toString(0.0) : Double.toString((double) divided / divider)
         };
     }
+    
+    private String getDeviceMessageKey(int categoryId) {
+        switch (categoryId) {
+            case CommonKeys.CLICKER_PC_INDEX:
+            case CommonKeys.OPENERS_PC_INDEX:
+                return "predelivery.desktop";
+            case CommonKeys.CLICKER_TABLET_INDEX:
+            case CommonKeys.OPENERS_TABLET_INDEX:
+                return "report.openers.tablet.shortname";
+            case CommonKeys.CLICKER_MOBILE_INDEX:
+            case CommonKeys.OPENERS_MOBILE_INDEX:
+                return "report.openers.mobile.shortname";
+            case CommonKeys.CLICKER_SMARTTV_INDEX:
+            case CommonKeys.OPENERS_SMARTTV_INDEX:
+                return "report.openers.smarttv.shortname";
+            case CommonKeys.CLICKER_PC_AND_MOBILE_INDEX:
+            case CommonKeys.OPENERS_PC_AND_MOBILE_INDEX:
+                return "report.openers.multiple-devices.shortname";
+            default:
+                return "predelivery.desktop";
+        }
+    }
+    
 }

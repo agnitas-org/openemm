@@ -13,11 +13,11 @@ package com.agnitas.web.perm;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -28,20 +28,25 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import com.agnitas.web.perm.annotations.Anonymous;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import com.agnitas.web.perm.exceptions.AuthorizationException;
 
 public class AuthorizationInterceptor extends HandlerInterceptorAdapter {
-    private static final Logger logger = Logger.getLogger(AuthorizationInterceptor.class);
+	/** The logger. */
+    private static final transient Logger logger = Logger.getLogger(AuthorizationInterceptor.class);
 
     private static final String CONTROLLER_SUFFIX = "_controller";
 
     private ActionsTokenResolver actionsTokenResolver;
+    private AdminService adminService;
 
     @Autowired
-    public AuthorizationInterceptor(ActionsTokenResolver actionsTokenResolver) {
+    public AuthorizationInterceptor(ActionsTokenResolver actionsTokenResolver, AdminService service) {
         this.actionsTokenResolver = actionsTokenResolver;
+        this.adminService = Objects.requireNonNull(service, "Admin service is null");
     }
 
     @Override
@@ -78,8 +83,14 @@ public class AuthorizationInterceptor extends HandlerInterceptorAdapter {
 
     private void checkAuthorized(HttpServletRequest request, String namespace, String method) throws Exception {
         ComAdmin admin = AgnUtils.getAdmin(request);
+
         if (admin == null) {
             logger.error("Permission denied: anonymous user is not authorized to request");
+            throw new AuthorizationException();
+        }
+
+        if (!adminService.isEnabled(admin)) {
+            request.getSession().invalidate();
             throw new AuthorizationException();
         }
 

@@ -13,18 +13,14 @@ package com.agnitas.emm.core.mailinglist.service;
 import java.util.List;
 import java.util.Set;
 
-import org.agnitas.beans.Mailing;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-
 import net.sf.json.JSONArray;
+import org.agnitas.beans.Mailing;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
 
 
 public interface ComMailinglistService {
@@ -43,11 +39,13 @@ public interface ComMailinglistService {
 
 	boolean exist(int mailinglistId, @VelocityCheck int companyId);
 
+	boolean existAndEnabled(ComAdmin admin, int mailingListId);
+
+	boolean isFrequencyCounterEnabled(ComAdmin admin, int mailingListId);
+
 	String getMailinglistName(int mailinglistId, @VelocityCheck int companyId);
 
 	List<Mailinglist> getAllMailingListsNames(@VelocityCheck int companyId);
-	
-	List<LightweightMailing> getMailingListByType(MailingTypes type, @VelocityCheck int companyId);
 	
 	PaginatedListImpl<MailinglistDto> getMailinglistPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber);
 	

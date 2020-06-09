@@ -15,36 +15,49 @@ import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import com.agnitas.beans.AgnTagAttributeDto;
+import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.factory.TagDetailsFactory;
+import com.agnitas.beans.AgnTagDto;
 import com.agnitas.service.AgnDynTagGroupResolver;
+import com.agnitas.service.AgnTagAttributeResolverRegistry;
 import com.agnitas.service.AgnTagResolver;
 import com.agnitas.service.AgnTagResolverFactory;
 import com.agnitas.service.AgnTagService;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.factory.DynamicTagFactory;
+import org.agnitas.dao.TagDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.MissingEndTagException;
 import org.agnitas.util.UnclosedTagException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 public class AgnTagServiceImpl implements AgnTagService {
     private static final Logger logger = Logger.getLogger(AgnTagServiceImpl.class);
 
-    private Pattern dynTagInQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name=\'(?<name>.*)\'\\s+/\\]");
-    private Pattern dynTagInDoubleQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name=\"(?<name>.*?)\"\\s+/\\]");
+    private Pattern dynTagInQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name='(?<name>.*)'\\s+/]");
+    private Pattern dynTagInDoubleQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name=\"(?<name>.*?)\"\\s+/]");
+    private Pattern agnTagSelectValueAttributePattern = Pattern.compile("\\{([^}]+)}");
+    private Pattern agnTagSelectNamePattern = Pattern.compile("\\[([^]]+)\\]");
 
     private DynamicTagFactory dynamicTagFactory;
     private TagDetailsFactory tagDetailsFactory;
     private AgnTagResolverFactory agnTagResolverFactory;
+    private TagDao tagDao;
+    private AgnTagAttributeResolverRegistry agnTagAttributeResolverRegistry;
 
     @Override
     public List<DynamicTag> getDynTags(String content) throws DynTagException {
@@ -144,9 +157,65 @@ public class AgnTagServiceImpl implements AgnTagService {
     }
 
     @Override
+    public List<AgnTagDto> getSupportedAgnTags(ComAdmin admin) {
+        List<AgnTagDto> tags = new ArrayList<>();
+        tagDao.getSelectValues(admin.getCompanyID()).forEach((name, selectValue) -> tags.add(getSupportedAgnTag(admin, name, selectValue)));
+        return tags;
+    }
+
+    private AgnTagDto getSupportedAgnTag(ComAdmin admin, String name, String selectValue) {
+        AgnTagDto tag = new AgnTagDto();
+
+        tag.setName(name);
+        tag.setAttributes(getSupportedAttributes(admin, name, selectValue));
+
+        return tag;
+    }
+
+    private List<AgnTagAttributeDto> getSupportedAttributes(ComAdmin admin, String name, String selectValue) {
+        return getAttributesFromSelectValue(selectValue)
+                .stream()
+                .map(attribute -> agnTagAttributeResolverRegistry.resolve(admin, name, attribute))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getAttributesFromSelectValue(String selectValue) {
+        if (StringUtils.isEmpty(selectValue)) {
+            return Collections.emptyList();
+        }
+
+        List<String> attributes = new ArrayList<>();
+
+        Matcher matcher = agnTagSelectValueAttributePattern.matcher(selectValue);
+        while (matcher.find()) {
+            attributes.add(matcher.group(1));
+        }
+
+        return attributes;
+    }
+
+    @Override
     public boolean isContainsThirdPartyText(String text) {
         return StringUtils.isNotBlank(text.replaceAll(dynTagInQuotesPattern.toString(), StringUtils.EMPTY)
                         .replaceAll(dynTagInDoubleQuotesPattern.toString(), StringUtils.EMPTY));
+    }
+
+    @Override
+    public Set<String> parseDeprecatedTagNamesFromString(String stringWithTags, int companyId) {
+        return tagDao.extractDeprecatedTags(companyId, parseTagNamesFromString(stringWithTags));
+    }
+
+    @Override
+    public Set<String> parseTagNamesFromString(String stringWithTags) {
+        Matcher matcher = agnTagSelectNamePattern.matcher(stringWithTags);
+        Set<String> tagNames = new HashSet<>();
+        while (matcher.find()) {
+            String tagName = matcher.group(1).split(" ")[0];
+            if(StringUtils.isNotBlank(tagName)) {
+                tagNames.add(tagName.replaceAll("\\W+", ""));
+            }
+        }
+        return tagNames;
     }
 
     private boolean isDynamicTagName(String name) {
@@ -294,5 +363,15 @@ public class AgnTagServiceImpl implements AgnTagService {
     @Required
     public void setAgnTagResolverFactory(AgnTagResolverFactory agnTagResolverFactory) {
         this.agnTagResolverFactory = agnTagResolverFactory;
+    }
+
+    @Required
+    public void setTagDao(TagDao tagDao) {
+        this.tagDao = tagDao;
+    }
+
+    @Required
+    public void setAgnTagAttributeResolverRegistry(AgnTagAttributeResolverRegistry agnTagAttributeResolverRegistry) {
+        this.agnTagAttributeResolverRegistry = agnTagAttributeResolverRegistry;
     }
 }

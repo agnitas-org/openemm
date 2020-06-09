@@ -1,5 +1,6 @@
-<%@ page import="com.agnitas.web.ComTargetAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ComTargetAction" %>
+<%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -14,6 +15,10 @@
 <c:set var="ACTION_VIEW" value="<%= ComTargetAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= ComTargetAction.ACTION_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= ComTargetAction.ACTION_BULK_CONFIRM_DELETE %>"/>
+
+<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
+<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
+<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
 
 <agn:agnForm action="/target" data-form="search">
     <html:hidden property="action" value="${ACTION_LIST}"/>
@@ -194,13 +199,13 @@
                         requestURI="/target.do?action=${targetForm.action}&__fromdisplaytag=true"
                         excludedParams="*">
                     <emm:ShowByPermission token="targets.delete">
-                        <display:column class="js-checkable" sortable="false"
+                        <display:column class="js-checkable" sortable="false" headerClass="squeeze-column"
                                         title="<input type='checkbox' data-form-bulk='bulkID'/>">
                             <html:checkbox property="bulkID[${targettbl.id}]" ></html:checkbox>
                         </display:column>
                     </emm:ShowByPermission>
 
-                    <display:column headerClass="js-table-sort" property="id" titleKey="MailinglistID"/>
+                    <display:column headerClass="js-table-sort squeeze-column" property="id" titleKey="MailinglistID"/>
 
                     <display:column headerClass="js-table-sort" titleKey="target.Target" sortable="true" sortProperty="targetName">
                         <c:choose>
@@ -225,11 +230,33 @@
                         <span class="multiline-xs-200 multiline-sm-250 multiline-md-max">${targettbl.targetDescription}</span>
                     </display:column>
 
+                        <display:column class="align-center bold" titleKey="target.group.complexity" sortable="false" headerClass="squeeze-column">
+                            <c:set var="complexityGrade" value="${targetForm.targetComplexities[targettbl.id]}"/>
+
+                            <c:choose>
+                                <c:when test="${complexityGrade eq COMPLEXITY_GREEN}">
+                                    <div class="form-badge complexity-green">
+                                        <bean:message key="target.group.complexity.low"/>
+                                    </div>
+                                </c:when>
+                                <c:when test="${complexityGrade eq COMPLEXITY_YELLOW}">
+                                    <div class="form-badge complexity-yellow" data-tooltip="<bean:message key="warning.target.group.performance.yellow"/>">
+                                        <bean:message key="target.group.complexity.medium"/>
+                                    </div>
+                                </c:when>
+                                <c:when test="${complexityGrade eq COMPLEXITY_RED}">
+                                    <div class="form-badge complexity-red" data-tooltip="<bean:message key="warning.target.group.performance.red"/>">
+                                        <bean:message key="target.group.complexity.high"/>
+                                    </div>
+                                </c:when>
+                            </c:choose>
+                        </display:column>
+
                     <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="creationDate"/>
+                                    format="{0, date, ${adminDateFormat}}" property="creationDate"/>
 
                     <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="changeDate"/>
+                                    format="{0, date, ${adminDateFormat}}" property="changeDate"/>
 
                     <display:column class="table-actions">
 
@@ -252,24 +279,27 @@
             </div>
 
             <emm:ShowByPermission token="mailing.send.admin.target">
-                <script language="javascript" type="text/javascript">
-                    AGN.Initializers.ShowTargetListFilters = function($scope) {
-                        if (!$scope) {
-                            $scope = $(document);
-                        }
-                        var filtersDescription = "";
-                        <c:if test="${targetForm.showWorldDelivery}">
-                        filtersDescription += "<bean:message key="target.worldDelivery"/>, ";
-                        </c:if>
-                        <c:if test="${targetForm.showTestAndAdminDelivery}">
-                        filtersDescription += "<bean:message key="target.adminAndTestDelivery"/>, ";
-                        </c:if>
-                        if (filtersDescription.length > 0) {
-                            filtersDescription = "<div class='well'><strong><bean:message key="mailing.showing"/></strong> " + filtersDescription;
-                            filtersDescription = filtersDescription.substr(0, filtersDescription.length - 2) + "</div>";
-                        }
-                        $scope.find("#filtersDescription").html(filtersDescription);
+                <emm:instantiate var="appliedFilters" type="java.util.LinkedHashMap">
+                    <c:if test="${targetForm.showWorldDelivery}">
+                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.worldDelivery"/></c:set>
+                    </c:if>
+
+                    <c:if test="${targetForm.showTestAndAdminDelivery}">
+                        <c:set target="${appliedFilters}" property="${appliedFilters.size()}"><bean:message key="target.adminAndTestDelivery"/></c:set>
+                    </c:if>
+                </emm:instantiate>
+
+                <script data-initializer="targetgroup-overview-filters" type="application/json">
+                    {
+                        "filters": ${emm:toJson(appliedFilters.values())}
                     }
+                </script>
+
+                <script id="targetgroup-overview-filters" type="text/x-mustache-template">
+                    <div class='well'>
+                        <strong><bean:message key="mailing.showing"/></strong>
+                        {{- filters.join(', ') }}
+                    </div>
                 </script>
             </emm:ShowByPermission>
 

@@ -8,20 +8,16 @@
 <%--@elvariable id="emmLayoutBase" type="org.agnitas.beans.EmmLayoutBase"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 
-<div class="col-md-offset-3 col-md-6">
-    <div class="tile">
-        <div class="tile-header">
-            <h2 class="headline"><bean:message key="import.templates.div"/>:</h2>
-        </div>
-
-        <div class="tile-content">
         	<emm:ShowByPermission token="mailing.import">
-            	<jsp:include page="../mailing/mailing-import.jsp"/>
-            	<jsp:include page="../mailing/template-import.jsp"/>
+            	<jsp:include page="../mailing/mailing-import.jsp">
+                    <jsp:param name="importFromTemplates" value="true"/>
+                </jsp:include>
+            	<jsp:include page="../mailing/template-import.jsp">
+                    <jsp:param name="importFromTemplates" value="true"/>
+                </jsp:include>
             </emm:ShowByPermission>
             <emm:ShowByPermission token="forms.import">
-            	<jsp:include page="../userform/userform-import.jsp"/>
+                <jsp:include page="../userform/userform-import.jsp">
+                    <jsp:param name="importFromTemplates" value="true"/>
+                </jsp:include>
             </emm:ShowByPermission>
-        </div>
-    </div>
-</div>

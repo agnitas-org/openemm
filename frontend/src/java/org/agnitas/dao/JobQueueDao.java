@@ -26,14 +26,12 @@ public interface JobQueueDao {
 
 	public boolean initJobStart(int id, Date nextStart, boolean manuallyOverride);
 	
-	public boolean updateJob(JobDto job);
-	
 	public int resetJobsForCurrentHost();
 	
 	/**
 	 * Update the jobs status only and ignore the parameters
 	 */
-	public boolean updateJobStatus(JobDto job);
+	public boolean updateJob(JobDto job);
 	
 	public boolean deleteJob(int id);
 	
@@ -50,4 +48,6 @@ public interface JobQueueDao {
 	public int getStartCompanyForCleanup();
 	
 	public boolean deleteCleanupStartEntry();
+
+	public boolean updateJobStatus(JobDto job);
 }

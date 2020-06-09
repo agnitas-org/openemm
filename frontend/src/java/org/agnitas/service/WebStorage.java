@@ -12,6 +12,8 @@ package org.agnitas.service;
 
 import java.util.function.Consumer;
 
+import com.agnitas.emm.core.target.dto.FilterTypesAndRowsCountWebStorageEntry;
+import org.agnitas.beans.BooleanWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.beans.WebStorageEntry;
 import org.agnitas.emm.core.mailing.dto.MailingOverviewWebStorageEntry;
@@ -23,6 +25,7 @@ public interface WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> ARCHIVE_OVERVIEW = WebStorageBundle.define("archive-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> SALUTATION_OVERVIEW = WebStorageBundle.define("salutation-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RecipientOverviewWebStorageEntry> RECIPIENT_OVERVIEW = WebStorageBundle.define("recipient-overview", RecipientOverviewWebStorageEntry.class);
+    WebStorageBundle<RecipientOverviewWebStorageEntry> RECIPIENT_DUPLICATE_OVERVIEW = WebStorageBundle.define("recipient-duplicate-overview", RecipientOverviewWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_STATUS_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-status-history-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_MAILING_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-mailing-history-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> IMPORT_PROFILE_OVERVIEW = WebStorageBundle.define("import-profile-overview", RowsCountWebStorageEntry.class);
@@ -32,6 +35,10 @@ public interface WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> ADMIN_OVERVIEW = WebStorageBundle.define("admin-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> USER_GROUP_OVERVIEW = WebStorageBundle.define("user-group-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> IMPORT_WIZARD_ERRORS_OVERVIEW = WebStorageBundle.define("import-wizard-errors-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<FilterTypesAndRowsCountWebStorageEntry> TARGET_DEPENDENTS_OVERVIEW = WebStorageBundle.define("target-dependents-overview", FilterTypesAndRowsCountWebStorageEntry.class);
+    WebStorageBundle<FilterTypesAndRowsCountWebStorageEntry> MAILING_SEND_DEPENDENTS_OVERVIEW = WebStorageBundle.define("mailing-send-dependents-overview", FilterTypesAndRowsCountWebStorageEntry.class);
+    WebStorageBundle<FilterTypesAndRowsCountWebStorageEntry> PROFILE_FIELD_DEPENDENTS_OVERVIEW = WebStorageBundle.define("profile-fields-dependents-overview", FilterTypesAndRowsCountWebStorageEntry.class);
+    WebStorageBundle<BooleanWebStorageEntry> IS_WIDE_SIDEBAR = WebStorageBundle.define("is-wide-sidebar", BooleanWebStorageEntry.class);
 
     /**
      * Clear storage, then parse {@code dataAsJson} and store all the recognized bundles in the storage. The {@code dataAsJson}

@@ -26,7 +26,7 @@ public interface AdminPreferencesDao {
      * @param adminId
      *            The id of the admin which preferences should be deleted.
      */
-    public ComAdminPreferences getAdminPreferences(int adminId);
+    ComAdminPreferences getAdminPreferences(int adminId);
 
     /**
      * Saves an admin preferences.
@@ -35,7 +35,7 @@ public interface AdminPreferencesDao {
      *            The admin preferences that should be saved.
      * @return 
      */
-    public int save(AdminPreferences adminPreferences);
+    int save(AdminPreferences adminPreferences);
 
     /**
      * Deletes an admin preferences.
@@ -44,5 +44,5 @@ public interface AdminPreferencesDao {
      *            The id of the admin which preferences should be deleted.
      * @return true
      */
-    public int delete(int adminId);
+    int delete(int adminId);
 }

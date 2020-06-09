@@ -21,7 +21,8 @@ import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.dao.ComMailingDao;
@@ -32,12 +33,33 @@ import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.EmmActionService;
 
 public class EmmActionServiceImpl implements EmmActionService {
-	
     protected EmmActionDao emmActionDao;
+    
     private EmmActionOperationDao emmActionOperationDao;
+    
     private ComMailingDao mailingDao;
     
-    private EmmActionOperationService emmActionOperationService; 
+    private EmmActionOperationService emmActionOperationService;
+
+	@Required
+	public void setEmmActionDao(EmmActionDao emmActionDao) {
+		this.emmActionDao = emmActionDao;
+	}
+
+	@Required
+	public void setEmmActionOperationDao(EmmActionOperationDao emmActionOperationDao) {
+		this.emmActionOperationDao = emmActionOperationDao;
+	}
+
+	@Required
+	public void setEmmActionOperationService(EmmActionOperationService emmActionOperationService) {
+		this.emmActionOperationService = emmActionOperationService;
+	}
+
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
 
     @Override
     public boolean actionExists(final int actionID, @VelocityCheck final int companyID) {
@@ -65,7 +87,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 	@Override
 	@Transactional
 	public int copyEmmAction(EmmAction emmAction, int toCompanyId) {
-		List<AbstractActionOperationParameters> ops 
+		List<AbstractActionOperationParameters> ops
 			= emmActionOperationDao.getOperations(emmAction.getId(), emmAction.getCompanyID());
 		for (AbstractActionOperationParameters op : ops) {
 			op.setId(0);
@@ -198,7 +220,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 				return "Forms";
 			case EmmAction.TYPE_ALL:
 				return "Links and forms";
-			default: 
+			default:
 				return "Unknown";
 		}
 	}
@@ -252,26 +274,15 @@ public class EmmActionServiceImpl implements EmmActionService {
     		for (AbstractActionOperationParameters operation : operations) {
     			if (operation instanceof ActionOperationSendMailingParameters) {
     				int mailingID = ((ActionOperationSendMailingParameters) operation).getMailingID();
-    				mailinglistIDs.add(mailingDao.getMailing(mailingID, companyID).getMailinglistID());
+    				mailinglistIDs.add(mailingDao.getMailinglistId(mailingID, companyID));
     			}
 			}
     	}
         return mailinglistIDs;
 	}
 
-	public void setEmmActionDao(EmmActionDao emmActionDao) {
-		this.emmActionDao = emmActionDao;
-	}
-
-	public void setEmmActionOperationDao(EmmActionOperationDao emmActionOperationDao) {
-		this.emmActionOperationDao = emmActionOperationDao;
-	}
-
-	public void setEmmActionOperationService(EmmActionOperationService emmActionOperationService) {
-		this.emmActionOperationService = emmActionOperationService;
-	}
-
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
+	@Override
+	public List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId) {
+		return emmActionDao.getActionListBySendMailingId(companyId, mailingId);
 	}
 }

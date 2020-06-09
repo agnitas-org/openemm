@@ -9,7 +9,7 @@
 				<entry 
 					key="{http://agnitas.com/ws/schemas}SetSubscriberBindingWithActionRequest" value-ref="setSubscriberBindingWithActionEndpoint">
 				</entry>
-
+				
 				<entry 
 					key="{http://agnitas.com/ws/schemas}MailingSummaryStatisticJobRequest" value-ref="mailingSummaryStatisticJobEndpoint">
 				</entry>
@@ -28,7 +28,7 @@
 				<entry
 					key="{http://agnitas.com/ws/schemas}UpdateMailingContentRequest" value-ref="updateMailingContentEndpoint">
 				</entry>
-
+				
 				<entry
 					key="{http://agnitas.com/ws/schemas}UpdateTargetGroupRequest" value-ref="updateTargetGroupEndpoint">
 				</entry>
@@ -54,7 +54,7 @@
 		</property>
 	</bean>
 	
-
+	
 
     <bean id="configurableCommonExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.ConfigurableCommonExceptionResolver">
         <constructor-arg>
@@ -119,7 +119,7 @@
 	<!-- Endpoints -->
 	<bean id="setSubscriberBindingWithActionEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.SetSubscriberBindingWithActionEndpoint" />
 	
-
+	
 	
 	<bean id="mailingSummaryStatisticJobEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.MailingSummaryStatisticJobEndpoint" >
 		<property name="mailingSummaryStatisticJobService" ref="MailingSummaryStatisticJobService" />
@@ -150,7 +150,7 @@
 	
 	<bean id="updateMailingContentEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.UpdateMailingContentEndpoint" />
 
-
+	
 
     <bean id="updateTargetGroupEndpoint" parent="abstractEndpoint" class="com.agnitas.emm.springws.endpoint.UpdateTargetGroupEndpoint">
         <property name="objectFactory" ref="comObjectFactory"/>
@@ -168,4 +168,6 @@
 		<property name="objectFactory" ref="comObjectFactory"/>
 		<property name="fullviewService" ref="FullviewService" />
 	</bean>
+
+
 </beans>

@@ -12,24 +12,47 @@ package org.agnitas.dao.impl.mapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
-import org.springframework.jdbc.core.RowMapper;
 
-public class MailinglistRowMapper implements RowMapper<Mailinglist> {
+public class MailinglistRowMapper extends AbstractBaseRowMapper<Mailinglist> {
 
-	@Override
-	public Mailinglist mapRow( ResultSet rs, int row) throws SQLException {
-		Mailinglist mailinglist = new MailinglistImpl();
+    public MailinglistRowMapper() {
+        super();
+    }
 
-		mailinglist.setCompanyID( rs.getInt( "company_id"));
-		mailinglist.setDescription( rs.getString( "description"));
-		mailinglist.setId( rs.getInt( "mailinglist_id"));
-		mailinglist.setShortname( rs.getString( "shortname"));
+    public MailinglistRowMapper(final String columnPrefix) {
+        super(columnPrefix);
+    }
 
-		return mailinglist;
-	}
+    @Override
+    public Mailinglist mapRow(final ResultSet resultSet, final int row) throws SQLException {
+        final Mailinglist mailinglist = new MailinglistImpl();
 
+        mailinglist.setId(getValue("mailinglist_id", resultSet::getInt));
+        mailinglist.setCompanyID(getValue("company_id", resultSet::getInt));
+        mailinglist.setShortname(getValue("shortname", resultSet::getString));
+        mailinglist.setDescription(getValue("description", resultSet::getString));
 
+        final Set<String> columnNames = getColumnNamesLowerCase(resultSet);
+
+        if(columnNames.contains(getColumnPrefix() + "creation_date")) {
+            mailinglist.setCreationDate(getValue("creation_date", resultSet::getTimestamp));
+        }
+        if(columnNames.contains(getColumnPrefix() + "change_date")) {
+            mailinglist.setChangeDate(getValue("change_date", resultSet::getTimestamp));
+        }
+        if(columnNames.contains(getColumnPrefix() + "deleted")) {
+            mailinglist.setRemoved(getValue("deleted", resultSet::getBoolean));
+        }
+
+        if(columnNames.contains(getColumnPrefix() + "freq_counter_enabled")) {
+            mailinglist.setFrequencyCounterEnabled(getValue("freq_counter_enabled", s -> resultSet.getInt(s) > 0));
+        }
+
+        return mailinglist;
+
+    }
 }

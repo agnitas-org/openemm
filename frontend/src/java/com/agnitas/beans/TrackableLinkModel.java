@@ -29,7 +29,8 @@ public class TrackableLinkModel {
     private Integer deepTracking;
     private String deepTrackingUID;
     private String deepTrackingSession;
-    private Integer relevance;
+    @SuppressWarnings("unused")
+	private Integer relevance;
     private String altText;
 
     private List<LinkProperty> linkProperties;

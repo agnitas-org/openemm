@@ -155,7 +155,7 @@ public class DBMessagesResource {
 				for(final Map.Entry<String, String> entry : messages.entrySet()) {
 					if (entry.getValue() != null) {
 						String message = entry.getValue().replace("\\n", "\n");
-						messages.put(entry.getKey(), replaceVersionPlaceholders(message, applicationVersion));
+						messages.put(entry.getKey(), AgnUtils.replaceVersionPlaceholders(message, applicationVersion));
 					}
 				}
 			}
@@ -231,24 +231,24 @@ public class DBMessagesResource {
 		return returnBundle;
 	}
 
-	private void rewritePropertiesWithVersionTag(Map<String, Map<String, String>> allMessages, Version applicationVersion) throws Exception {
+	private void rewritePropertiesWithVersionTag(Map<String, Map<String, String>> messagesToCheck, Version applicationVersion) throws Exception {
 		try {
-			String logonTitle = allMessages.get(DEFAULT_LANGUAGE_MAPKEY).get("logon.title");
+			String logonTitle = messagesToCheck.get(DEFAULT_LANGUAGE_MAPKEY).get("logon.title");
 			if (logonTitle == null) {
 				throw new Exception("Message logon.title is missing. Maybe all messages are missing?");
 			} else {
-				logonTitle = replaceVersionPlaceholders(logonTitle, applicationVersion);
+				logonTitle = AgnUtils.replaceVersionPlaceholders(logonTitle, applicationVersion);
 			}
 
 			ConfigService configService = ConfigService.getInstance();
 			
 			if (configService.getBooleanValue(ConfigValue.IsLiveInstance)) {
 				// Remove the versionsign from live server sites
-				allMessages.get(DEFAULT_LANGUAGE_MAPKEY).put("versionsign", "");
+				messagesToCheck.get(DEFAULT_LANGUAGE_MAPKEY).put("versionsign", "");
 			} else {
-				String versionsign = allMessages.get(DEFAULT_LANGUAGE_MAPKEY).get("versionsign");
+				String versionsign = messagesToCheck.get(DEFAULT_LANGUAGE_MAPKEY).get("versionsign");
 				if (versionsign != null) {
-					versionsign = replaceVersionPlaceholders(versionsign, applicationVersion);
+					versionsign = AgnUtils.replaceVersionPlaceholders(versionsign, applicationVersion);
 				}
 				String systemTypeSign = "";
 				if (configService.getBooleanValue(ConfigValue.IsBetaInstance)) {
@@ -256,25 +256,12 @@ public class DBMessagesResource {
 				} else if (configService.getBooleanValue(ConfigValue.IsLegacyInstance)) {
 					systemTypeSign = " LEGACY";
 				}
-				allMessages.get(DEFAULT_LANGUAGE_MAPKEY).put("versionsign", versionsign + systemTypeSign + " (" + applicationVersion.toString() + ")");
+				messagesToCheck.get(DEFAULT_LANGUAGE_MAPKEY).put("versionsign", versionsign + systemTypeSign + " (" + applicationVersion.toString() + ")");
 			}
 		} catch (Exception e) {
 			throw new Exception("Error while rewritePropertiesWithVersionTag: " + e.getMessage(), e);
 		}
 	}
-
-	private String replaceVersionPlaceholders(String message, Version applicationVersion) throws Exception {
-        try {
-			return message.replace("${ApplicationVersion}", applicationVersion.toString())
-			        .replace("${ApplicationMajorVersion}", Integer.toString(applicationVersion.getMajorVersion()))
-			        .replace("${ApplicationMinorVersion}", Integer.toString(applicationVersion.getMinorVersion()))
-			        .replace("${ApplicationMicroVersion}", Integer.toString(applicationVersion.getMicroVersion()))
-			        .replace("${ApplicationHotfixVersion}", Integer.toString(applicationVersion.getHotfixVersion()));
-		} catch (Exception e) {
-			logger.error("Error in replacing placeholders of message: '" + message + "'");
-			throw e;
-		}
-    }
 	
 	public List<String> getAvailableKeys() {
 		return allMessageKeys;

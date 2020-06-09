@@ -12,9 +12,9 @@ package com.agnitas.emm.core.target.eql.emm.querybuilder;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import antlr.collections.List;
 import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
 import net.sf.json.util.NewBeanInstanceStrategy;
@@ -43,6 +43,8 @@ public class DefaultQueryBuilderJsonConfig extends JsonConfig {
 		public boolean apply(Object source, String name, Object value) {
 			if (source instanceof QueryBuilderRuleNode) {
 				return "field".equals(name) || "input".equals(name);
+			} else if (source instanceof QueryBuilderGroupNode) {
+				return "valid".equals(name);
 			}
 			return false;
 		}

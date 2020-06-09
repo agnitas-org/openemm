@@ -10,10 +10,14 @@
 
 package com.agnitas.emm.core.workflow.web;
 
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_OPEN;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,50 +30,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.DeliveryStat;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComCampaignDao;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
-import com.agnitas.emm.core.workflow.service.ComSampleWorkflowFactory;
-import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowStatisticsService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
-import com.agnitas.emm.core.workflow.web.forms.WorkflowDependencyValidationForm;
-import com.agnitas.emm.core.workflow.web.forms.WorkflowForm;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.editors.IntEnumEditor;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.module.SimpleSerializers;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -93,8 +56,8 @@ import org.agnitas.web.forms.PaginationForm;
 import org.agnitas.web.forms.WorkflowParameters;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
@@ -116,10 +79,51 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_OPEN;
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.ComCampaignDao;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
+import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
+import com.agnitas.emm.core.workflow.service.ComSampleWorkflowFactory;
+import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowStatisticsService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
+import com.agnitas.emm.core.workflow.service.GenerationPDFService;
+import com.agnitas.emm.core.workflow.web.forms.WorkflowDependencyValidationForm;
+import com.agnitas.emm.core.workflow.web.forms.WorkflowForm;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.editors.IntEnumEditor;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.module.SimpleSerializers;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 @Controller
 @RequestMapping("/workflow")
@@ -168,6 +172,7 @@ public class WorkflowController {
     private UserActivityLogService userActivityLogService;
     private ConversionService conversionService;
     private MailingService mailingService;
+    private ComOptimizationService optimizationService;
 
 
     public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
@@ -176,7 +181,7 @@ public class WorkflowController {
                               ComCampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
                               GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService,
                               WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
-                              ConversionService conversionService, MailingService mailingService) {
+                              ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService) {
         this.workflowService = workflowService;
         this.validationService = validationService;
         this.workflowActivationService = workflowActivationService;
@@ -195,6 +200,7 @@ public class WorkflowController {
         this.userActivityLogService = userActivityLogService;
         this.conversionService = conversionService;
         this.mailingService = mailingService;
+        this.optimizationService = optimizationService;
     }
 
     @InitBinder
@@ -241,6 +247,7 @@ public class WorkflowController {
 
         prepareViewPage(admin, model);
         model.addAttribute("workflowForm", form);
+        setAutoOptData(admin, form, model);
         
         model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
 
@@ -251,7 +258,7 @@ public class WorkflowController {
     public String list(ComAdmin admin, @ModelAttribute("workflowForm") PaginationForm form, Model model) {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WORKFLOW_OVERVIEW, form);
 
-        JSONArray workflows = workflowService.getWorkflowListJson(admin.getCompanyID());
+        JSONArray workflows = workflowService.getWorkflowListJson(admin);
         model.addAttribute("workflowsJson", workflows);
 
         model.addAttribute("adminTimeZone", admin.getAdminTimezone());
@@ -353,22 +360,29 @@ public class WorkflowController {
             }
         }
 
-        workflowService.bulkDeactivate(workflowIdsToDeactivate, admin.getCompanyID());
+        final Map<Integer, ChangingWorkflowStatusResult> changingResults = workflowService.bulkDeactivate(workflowIdsToDeactivate, admin.getCompanyID());
 
         popups.success("default.changes_saved");
 
         for (Workflow workflow : workflows) {
-            if (workflowIdsToDeactivate.contains(workflow.getWorkflowId())) {
-                switch (workflow.getStatus()) {
-                    case STATUS_ACTIVE:
-                        writeUserActivityLog(admin, "do deactivate campaign", getWorkflowDescription(workflow));
-                        break;
+            final ChangingWorkflowStatusResult changingResult = changingResults.get(workflow.getWorkflowId());
+            if(changingResult == null || !changingResult.isChanged()) {
+                continue;
+            }
 
-                    case STATUS_TESTING:
-                        writeUserActivityLog(admin, "do stop test campaign", getWorkflowDescription(workflow));
-                        break;
-                    default:break;
-                }
+            switch (workflow.getStatus()) {
+                case STATUS_ACTIVE:
+                    writeUserActivityLog(admin, "do deactivate campaign", getWorkflowDescription(workflow));
+                    if(changingResult.isAnyMailingDeactivated()) {
+                        writeUserActivityLog(admin, "do deactivate containing mailings", getWorkflowDescription(workflow));
+                    }
+                    break;
+
+                case STATUS_TESTING:
+                    writeUserActivityLog(admin, "do stop test campaign", getWorkflowDescription(workflow));
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -428,6 +442,10 @@ public class WorkflowController {
             workflowForm.setWorkflowId(newWorkflow.getWorkflowId());
         } else {
             assert (existingWorkflow != null);
+            
+            if (existingWorkflow == null) {
+            	throw new Exception("Unexpected empty existingWorkflow");
+            }
 
             if (StringUtils.isNotEmpty(forwardName)) {
                 return getForward(forwardName, forwardParams, forwardTargetItemId, existingWorkflow.getWorkflowId(),
@@ -435,9 +453,13 @@ public class WorkflowController {
             }
 
             if (validateStatusTransition(existingStatus, newStatus, errors)) {
-                workflowService.changeWorkflowStatus(existingWorkflow.getWorkflowId(), existingWorkflow.getCompanyId(), newStatus);
+                final ChangingWorkflowStatusResult changingResult =
+                        workflowService.changeWorkflowStatus(existingWorkflow.getWorkflowId(), existingWorkflow.getCompanyId(), newStatus);
+                writeWorkflowStatusChangeLog(newWorkflow, existingWorkflow, admin);
+                if(changingResult.isAnyMailingDeactivated()) {
+                    writeUserActivityLog(admin, "do deactivate containing mailings", getWorkflowDescription(newWorkflow));
+                }
             }
-            writeWorkflowStatusChangeLog(newWorkflow, existingWorkflow, admin);
         }
 
         if (isActiveOrTesting) {
@@ -482,11 +504,13 @@ public class WorkflowController {
     }
 
     @GetMapping("/getCurrentAdminTime.action")
-    public ResponseEntity<String> getCurrentAdminTime(ComAdmin admin) {
+    public ResponseEntity<JSONObject> getCurrentAdminTime(ComAdmin admin) {
         GregorianCalendar calendar = new GregorianCalendar(AgnUtils.getTimeZone(admin));
-        int hours  = calendar.get(GregorianCalendar.HOUR_OF_DAY);
-        int minutes = calendar.get(GregorianCalendar.MINUTE);
-        return ResponseEntity.ok("{\"hour\":" + hours + ", \"minute\":" + minutes + "}");
+
+        final JSONObject resultJson = new JSONObject();
+        resultJson.element("hour", calendar.get(GregorianCalendar.HOUR_OF_DAY));
+        resultJson.element("minute",  calendar.get(GregorianCalendar.MINUTE));
+        return ResponseEntity.ok(resultJson);
     }
 
     @PostMapping("/getMailingLinks.action")
@@ -528,7 +552,7 @@ public class WorkflowController {
             List<Integer> mailingTypeList = com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(mailingTypes);
             boolean takeMailsForPeriod = Boolean.parseBoolean(takeMailsForPeriodParam);
 
-            List<Map<String, Object>> mailings = workflowService.getAllMailings(companyId, mailingTypeList,
+            List<Map<String, Object>> mailings = workflowService.getAllMailings(admin, mailingTypeList,
                     status, mailingStatus, takeMailsForPeriod, sort, order);
 
 
@@ -581,7 +605,7 @@ public class WorkflowController {
     @PostMapping("/getAllMailingSorted.action")
     public ResponseEntity<List<LightweightMailing>> getAllMailingSorted(ComAdmin admin, @RequestParam("sortField") String sortField,
                                                                         @RequestParam("sortDirection") String sortDirection) {
-        List<LightweightMailing> mailings = workflowService.getAllMailingsSorted(admin.getCompanyID(), sortField, sortDirection);
+        List<LightweightMailing> mailings = workflowService.getAllMailingsSorted(admin, sortField, sortDirection);
 
         return new ResponseEntity<>(mailings, HttpStatus.OK);
     }
@@ -673,10 +697,12 @@ public class WorkflowController {
 
     @GetMapping("/viewOnlyElements.action")
     public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, ComAdmin admin, Model model,
-                                   @RequestParam("showStatistics") String showStatistics, Popups popups) throws Exception {
+                                   @RequestParam("showStatistics") String showStatistics,
+                                   @RequestParam(value = "isWkhtmltopdfUsage", required = false) boolean isWkhtmltopdfUsage, Popups popups) throws Exception {
 
         prepareViewPage(admin, model);
         model.addAttribute("showStatistics", showStatistics);
+        model.addAttribute("isWkhtmltopdfUsage", isWkhtmltopdfUsage);
 
         loadWorkflow(form, admin, popups);
         writeUserActivityLog(admin, "view campaign", getWorkflowDescription(form));
@@ -690,7 +716,7 @@ public class WorkflowController {
                                               @RequestParam("showStatistics") String showStatistics) throws Exception {
         String jsessionid = RequestContextHolder.getRequestAttributes().getSessionId();
         String hostUrl = configService.getValue(ConfigValue.SystemUrl);
-        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&showStatistics=" + showStatistics;
+        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&showStatistics=" + showStatistics + "&isWkhtmltopdfUsage=true";
 
         String workflowName = workflowService.getWorkflow(workflowId, admin.getCompanyID()).getShortname();
         File pdfFile = generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, HttpUtils.escapeFileName(workflowName), admin, "wmLoadFinished", "Landscape", "workflow.single", WORKFLOW_CUSTOM_CSS_STYLE);
@@ -722,6 +748,17 @@ public class WorkflowController {
         int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage.getCode());
 
         return ResponseEntity.ok(componentId);
+    }
+    
+    @GetMapping("/{workflowId:\\d+}/getTotalStatistics.action")
+    public String getTotalStatistics(ComAdmin admin, @PathVariable int workflowId, Popups popups) {
+        int finalMailingId = workflowStatisticsService.getFinalMailingID(workflowId, admin.getCompanyID());
+        if (finalMailingId == 0) {
+            popups.alert("error.workflow.noStatistics.title");
+            return "messages";
+        }
+        
+        return "redirect:/statistics/mailing/" + finalMailingId + "/view.action";
     }
 
     private String getForward(String forwardName, String forwardParams, String forwardTargetItemId, int workflowId,
@@ -786,6 +823,12 @@ public class WorkflowController {
             case STATUS_COMPLETE:
                 workflowForm.setStatusMaybeChangedTo(STATUS_NONE);
                 break;
+			case STATUS_FAILED:
+				break;
+			case STATUS_TESTING_FAILED:
+				break;
+			default:
+				break;
         }
 
         List<WorkflowIcon> icons = workflow.getWorkflowIcons();
@@ -859,14 +902,14 @@ public class WorkflowController {
         model.addAttribute("campaigns", campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
         model.addAttribute("allMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("allUserForms", workflowService.getAllUserForms(companyId));
-        model.addAttribute("localeDateNTimePattern", getLocaleDateNTimeFormat(admin).toPattern());
-        model.addAttribute("localeDatePattern", ((SimpleDateFormat) SimpleDateFormat.getDateInstance(DateFormat.MEDIUM, admin.getLocale())).toPattern());
+        model.addAttribute("localeDateNTimePattern", admin.getDateTimeFormat().toPattern());
+        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimezone", admin.getAdminTimezone());
-        model.addAttribute("allWorkflows", workflowService.getWorkflowsOverview(companyId));
+        model.addAttribute("allWorkflows", workflowService.getWorkflowsOverview(admin));
         model.addAttribute("hasDeepTrackingTables", workflowService.hasCompanyDeepTrackingTables(companyId));
         model.addAttribute("allAutoImports", autoImportService == null ? new ArrayList<AutoImportLight>() : autoImportService.listAutoImports(companyId));
         model.addAttribute("allAutoExports", autoExportService == null ? new ArrayList<AutoExport>() : autoExportService.getAutoExportsOverview(admin));
-        model.addAttribute("allMailings", workflowService.getAllMailings(companyId));
+        model.addAttribute("allMailings", workflowService.getAllMailings(admin));
         model.addAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, companyId));
     }
 
@@ -896,10 +939,6 @@ public class WorkflowController {
                         return false;
                 }
         }
-    }
-
-    private SimpleDateFormat getLocaleDateNTimeFormat(ComAdmin admin) {
-        return (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, admin.getLocale());
     }
     
     protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
@@ -986,7 +1025,8 @@ public class WorkflowController {
         for (WorkflowIcon newIcon : newIcons) {
 
             if(newIcon.getType() == WorkflowIconType.Constants.START_ID ||
-                    newIcon.getType() == WorkflowIconType.Constants.STOP_ID) { // start and stop icon changes will be logged form workflow object fields in writeWorkflowChangeLog method.
+                    newIcon.getType() == WorkflowIconType.Constants.STOP_ID) {
+                // start and stop icon changes will be logged form workflow object fields in writeWorkflowChangeLog method.
                 continue;
             }
 
@@ -1145,6 +1185,10 @@ public class WorkflowController {
         Workflow.WorkflowStatus currentStatus = existedWorkflow.getStatus(), newStatus = workflow.getStatus();
         String statusAction = null;
 
+        if(currentStatus == newStatus) {
+            return false;
+        }
+
         if(currentStatus == Workflow.WorkflowStatus.STATUS_ACTIVE && newStatus == Workflow.WorkflowStatus.STATUS_INACTIVE) {
             statusAction = "do deactivate campaign";
 
@@ -1155,7 +1199,7 @@ public class WorkflowController {
         } else if (currentStatus == Workflow.WorkflowStatus.STATUS_TESTING && newStatus == Workflow.WorkflowStatus.STATUS_OPEN) {
             statusAction = "do stop test campaign";
 
-        } else if (currentStatus == Workflow.WorkflowStatus.STATUS_OPEN && newStatus == Workflow.WorkflowStatus.STATUS_TESTING) {
+        } else if (newStatus == Workflow.WorkflowStatus.STATUS_TESTING) {
             statusAction = "do start test campaign";
         }
 
@@ -1275,7 +1319,7 @@ public class WorkflowController {
 
         int mailingTrackingDataExpirationPeriod = 0;
         if (isMailtrackingActive) {
-            mailingTrackingDataExpirationPeriod = companyDao.getSuccessDataExpirePeriod(companyId);
+            mailingTrackingDataExpirationPeriod = configService.getIntegerValue(ConfigValue.ExpireSuccess, companyId);
         }
 
         if (!validationService.noLoops(icons)) {
@@ -1435,4 +1479,11 @@ public class WorkflowController {
             jsonGenerator.writeFieldName(key.toUpperCase());
         }
     }
+    
+    private void setAutoOptData(ComAdmin admin, WorkflowForm form, Model model) {
+        model.addAttribute("isTotalStatisticAvailable", workflowStatisticsService.isTotalStatisticAvailable(Workflow.WorkflowStatus.valueOf(form.getStatus().name()), form.getWorkflowIcons()));
+        model.addAttribute("autoOptData",
+                optimizationService.getOptimizationLight(admin.getCompanyID(), form.getWorkflowId()));
+    }
+    
 }

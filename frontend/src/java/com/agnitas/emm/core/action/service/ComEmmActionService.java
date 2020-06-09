@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -25,4 +26,6 @@ public interface ComEmmActionService extends EmmActionService {
     String getEmmActionName(int actionId, @VelocityCheck int companyId);
 
     boolean setActiveness(Map<Integer, Boolean> changeMap, @VelocityCheck int companyId, List<UserAction> userActions);
+	
+	List<EmmAction> getEmmNotLinkActions(@VelocityCheck int companyId, boolean includeInactive);
 }

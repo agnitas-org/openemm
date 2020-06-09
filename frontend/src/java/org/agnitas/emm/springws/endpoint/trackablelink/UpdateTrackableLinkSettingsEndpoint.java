@@ -28,7 +28,6 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 
-@SuppressWarnings("deprecation")
 public class UpdateTrackableLinkSettingsEndpoint extends AbstractMarshallingPayloadEndpoint {
 
     @Resource

@@ -23,8 +23,8 @@ import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
 import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 public class ComMailingParameterServiceImpl implements ComMailingParameterService {

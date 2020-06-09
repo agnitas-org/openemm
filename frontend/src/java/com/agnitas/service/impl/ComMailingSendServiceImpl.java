@@ -13,24 +13,7 @@ package com.agnitas.service.impl;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComMailing;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.MailingSendOptions;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.impl.ComMailingImpl;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTrackableLinkDao;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.MailingPriorityService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ComMailingSendService;
-import com.agnitas.util.ClassicTemplateGenerator;
+import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
@@ -45,10 +28,30 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.Tuple;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
+
+import com.agnitas.beans.ComMailing;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.MailingSendOptions;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.impl.ComMailingImpl;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingPriorityService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComMailingSendService;
+import com.agnitas.util.ClassicTemplateGenerator;
 
 public class ComMailingSendServiceImpl implements ComMailingSendService {
     /** The logger. */
@@ -105,6 +108,10 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
                     case ACTION_BASED:
                         drop.setStatus(MaildropStatus.ACTION_BASED.getCode());
                         break;
+					case INTERVAL:
+						break;
+					default:
+						break;
                 }
                 break;
 
@@ -118,6 +125,9 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
                 drop.setStatus(MaildropStatus.ADMIN.getCode());
                 admin = true;
                 break;
+                
+			default:
+				break;
         }
 
         if (drop.getStatus() == MaildropStatus.WORLD.getCode() || drop.getStatus() == MaildropStatus.DATE_BASED.getCode() ||
@@ -128,7 +138,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         }
 
         Mailinglist aList = mailinglistDao.getMailinglist(mailing.getMailinglistID(), companyId);
-        int maxAdminMails = companyDao.getMaxAdminMails(companyId);
+        int maxAdminMails = configService.getIntegerValue(ConfigValue.MaxAdminMails, companyId);
 
         int blocksize = options.getBlockSize();
         int stepping = 0;
@@ -167,7 +177,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             }
 
             // Check the HTML version unless mail format is "only text".
-            if (param.getMailFormat() >= ComMailing.INPUT_TYPE_HTML) {
+            if (param.getMailFormat() >= MailingPreviewHelper.INPUT_TYPE_HTML) {
                 if (isContentBlank(mailing, mailing.getHtmlTemplate())) {
                     errors.add(Message.of("error.mailing.no_html_version"));
                     return;
@@ -223,37 +233,53 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             mailingDao.saveMailing(mailing, false);
         }
 
-        if (mailing.getMailingType() != Mailing.TYPE_FOLLOWUP && world && this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
+        if (mailing.getMailingType() != MailingTypes.FOLLOW_UP.getCode() && world && this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Mailing id: " + mailing.getId() + " is already scheduled");
             }
             return;
         }
 
-        int startGen = MaildropEntry.GEN_NOW;
+        int startGen = MaildropGenerationStatus.NOW.getCode();
 
         switch (MailingTypes.getByCode(mailing.getMailingType())) {
             case NORMAL:
                 if (world && DateUtil.isDateForImmediateGeneration(genDate) && isPrioritized(companyId, mailingId)) {
-                    startGen = MaildropEntry.GEN_SCHEDULED;
+                    startGen = MaildropGenerationStatus.SCHEDULED.getCode();
                 }
                 break;
 
             case DATE_BASED:
                 if (test) {
                     // Set genstatus equals 0 to trigger WM-specific test sending mode of backend for date-based mailings.
-                    startGen = MaildropEntry.GEN_SCHEDULED;
+                    startGen = MaildropGenerationStatus.SCHEDULED.getCode();
                 }
                 break;
+			case ACTION_BASED:
+				break;
+			case FOLLOW_UP:
+				break;
+			case INTERVAL:
+				break;
+			default:
+				break;
         }
 
         if (!DateUtil.isDateForImmediateGeneration(genDate)) {
             switch (MailingTypes.getByCode(mailing.getMailingType())) {
                 case NORMAL:
                 case FOLLOW_UP:
-                    startGen = MaildropEntry.GEN_SCHEDULED;
+                    startGen = MaildropGenerationStatus.SCHEDULED.getCode();
                     updateStatusByMaildrop(mailingId, drop);
                     break;
+				case ACTION_BASED:
+					break;
+				case DATE_BASED:
+					break;
+				case INTERVAL:
+					break;
+				default:
+					break;
             }
         }
 
@@ -271,7 +297,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         mailing.getMaildropStatus().add(drop);
         mailingDao.saveMailing(mailing, false);
 
-        if (startGen == MaildropEntry.GEN_NOW && drop.getStatus() != MaildropStatus.ACTION_BASED.getCode() && drop.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
+        if (startGen == MaildropGenerationStatus.NOW.getCode() && drop.getStatus() != MaildropStatus.ACTION_BASED.getCode() && drop.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
             classicTemplateGenerator.generate(mailingId, options.getAdminId(), companyId, true, true);
             ((ComMailingImpl)mailing).triggerMailing(drop.getId());
             updateStatusByMaildrop(mailingId, drop);

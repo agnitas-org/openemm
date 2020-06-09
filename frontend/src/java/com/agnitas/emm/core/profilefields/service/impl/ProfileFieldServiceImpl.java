@@ -16,17 +16,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComProfileField;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
+import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ComTargetService;
@@ -35,17 +37,20 @@ import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.service.ComColumnInfoService;
 
 public final class ProfileFieldServiceImpl implements ProfileFieldService {
-
     /**
      * The logger.
      */
     private static final transient Logger logger = Logger.getLogger(ProfileFieldServiceImpl.class);
 
     private ComProfileFieldDao profileFieldDao;
-    private ComTargetService targetService;
     private ComColumnInfoService columnInfoService;
     private ComWorkflowService workflowService;
-    private ConfigService configService;
+    private ComTargetService targetService;
+
+    @Required
+    public void setTargetService(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
 
     @Required
     public void setColumnInfoService(ComColumnInfoService columnInfoService) {
@@ -57,18 +62,8 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         this.profileFieldDao = Objects.requireNonNull(dao, "Profile field DAO cannot be null");
     }
 
-    @Required
-    public final void setTargetService(final ComTargetService service) {
-        this.targetService = Objects.requireNonNull(service, "Target service cannot be null");
-    }
-
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
-    }
-
-    @Required
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
     }
 
     @Override
@@ -339,12 +334,28 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         return userAction;
     }
 
+    @Override
+    public List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName) {
+        List<Workflow> dependentWorkflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
+        List<TargetLight> dependentTargets = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
+
+        List<Dependent<ProfileFieldDependentType>> dependents = new ArrayList<>(dependentWorkflows.size() + dependentTargets.size());
+
+        for (Workflow workflow : dependentWorkflows) {
+            dependents.add(ProfileFieldDependentType.WORKFLOW.forId(workflow.getWorkflowId(), workflow.getShortname()));
+        }
+
+        for (TargetLight target : dependentTargets) {
+            dependents.add(ProfileFieldDependentType.TARGET_GROUP.forId(target.getId(), target.getTargetName()));
+        }
+
+        return dependents;
+    }
+
     private int compareColumn(ComProfileField field1, ComProfileField field2) {
         if (field1.isHiddenField() == field2.isHiddenField()) {
             return 0;
         }
         return field1.isHiddenField() ? -1 : 1;
     }
-
-
 }

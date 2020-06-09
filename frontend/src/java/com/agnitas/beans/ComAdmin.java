@@ -178,4 +178,7 @@ public interface ComAdmin {
 	DateTimeFormatter getDateTimeFormatterWithSeconds();
 	
 	void setCompanyPermissions(Set<Permission> companyPermissions);
+
+	int getAltgId();
+	void setAltgId(int altgId);
 }

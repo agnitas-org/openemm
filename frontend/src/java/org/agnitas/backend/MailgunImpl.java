@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
+import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -247,15 +248,15 @@ public class MailgunImpl implements Mailgun {
 				mailer.checkBlock ((mailer.blockSize > 0) && (mailer.inBlockCount > 0));
 
 				data.dbase.jdbc (query).query (query, ex);
+
 				mailer.writeMailDone ();
 			}
 			data.correctReceiver ();
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			data.updateGenerationState (4);
 			data.suspend ();
 			throw new Exception("Error during main query or mail generation:" + e.toString (), e);
 		}
-
 		mailer.done ();
 		if (! data.maildropStatus.isPreviewMailing ()) {
 			finalizeMailingToDatabase (mailer);
@@ -274,6 +275,8 @@ public class MailgunImpl implements Mailgun {
 		
 		if ((bouncelog = data.company.infoSubstituted ("bounce-log")) == null) {
 			bouncelog = StringOps.makePath ("${home}", "log", "extbounce.log");
+		} else {
+			bouncelog = StringOps.makePath (bouncelog);
 		}
 		blist.setBouncelog (bouncelog);
 		
@@ -315,31 +318,8 @@ public class MailgunImpl implements Mailgun {
 					}
 				}
 			} catch (Exception e) {
-				data.logging (Log.FATAL, "readblist", "Missing table " + table);
-				throw new Exception ("Missing blacklist table " + table + " (" + e.toString () + ")", e);
-			}
-		}
-		
-		String	robinsonATTable = data.company.info ("blacklist-robinson-at");
-		if (robinsonATTable != null) {
-			try {
-				List <Map <String, Object>>	rq;
-				Map <String, Object>		row;
-				String				query = "SELECT valid, block0, block1 FROM " + robinsonATTable;
-				
-				rq = data.dbase.query (query);
-				if (rq.size () > 0) {
-					row = rq.get (0);
-					
-					int	valid = data.dbase.asInt (row.get ("valid"));
-					byte[]	block = data.dbase.asBlob (row.get (valid == 0 ? "block0" : "block1"));
-					
-					blist.addRobinsonAT (block);
-					data.logging (Log.VERBOSE, "readblist", "Read robinson at list with " + block.length + " bytes");
-				}
-			} catch (Exception e) {
-				data.logging (Log.FATAL, "readblist", "Failed to read table " + robinsonATTable);
-				throw new Exception ("Missing robinson AT table " + robinsonATTable + " (" + e.toString () + ")", e);
+				data.logging (Log.FATAL, "readblist", "Failed reading blacklist table " + table + ": " + e);
+				throw new Exception ("Failed reading blacklist table " + table + " (" + e.toString () + ")", e);
 			}
 		}
 	}
@@ -392,6 +372,10 @@ public class MailgunImpl implements Mailgun {
 	 */
 	private static Map <Long, Object>	postlock = new HashMap<>();
 	private void finalizeMailingToDatabase (MailWriter mailer) throws Exception {
+		//
+		// EMM-4150 & EMM-7151
+		data.mailing.setWorkStatus (data.totalReceivers == 0 ? Const.Workstatus.MAILING_STATUS_NORECIPIENTS : Const.Workstatus.MAILING_STATUS_GENERATION_FINISHED);
+		
 		data.toMailtrack ();
 
 		Map <String, String>	extra = new HashMap <> ();
@@ -422,12 +406,24 @@ public class MailgunImpl implements Mailgun {
 			    data.maildropStatus.isWorldMailing ()) {
 				//
 				// 1.) AGNEMM-2952: Set last sent date, if applicated
-				String	column = "lastsend_date";
+				List <String>	profileUpdates = new ArrayList <> ();
+				
+				if (! data.company.mailtrackingExtended ()) {
+					String		column = "lastsend_date";
 
-				if (data.columnByName (column) != null) {
-					postexecs.add ("UPDATE customer_" + data.company.id () + "_tbl cust SET cust." + column + " = CURRENT_TIMESTAMP WHERE " + where);
+					if (data.columnByName (column) != null) {
+						profileUpdates.add ("cust." + column + " = CURRENT_TIMESTAMP");
+					} else {
+						data.logging (Log.INFO, "execute", "Column " + column + " not set as not present in table");
+					}
 				} else {
-					data.logging (Log.INFO, "execute", "Column " + column + " not set as not present in table");
+					data.logging (Log.DEBUG, "execute", "profile updates will occur later");
+				}
+				(new CustomProfiles (data)).add (profileUpdates);
+				if (profileUpdates.size () > 0) {
+					postexecs.add ("UPDATE customer_" + data.company.id () + "_tbl cust " + 
+						       "SET " + profileUpdates.stream ().reduce ((s, e) -> s + ", " + e).orElse (null) + " " +
+						       "WHERE " + where);
 				}
 				//
 				// 2.) If optional post execution is set in database
@@ -470,19 +466,6 @@ public class MailgunImpl implements Mailgun {
 				}
 			}
 		}
-		//
-		// EMM-4150
-		if (data.maildropStatus.isWorldMailing () && (data.totalReceivers == 0)) {
-			try {
-				if (data.mailing.workStatus ("mailing.status.norecipients")) {
-					data.logging (Log.INFO, "zero-rec", "Updated working status for zero recipients");
-				} else {
-					data.logging (Log.WARNING, "zero-rec", "Failed to update working status for zero recipients");
-				}
-			} catch (Exception e) {
-				data.logging (Log.ERROR, "zero-rec", "Failed to update working status for zero recipients due to " + e.toString (), e);
-			}
-		}
 	}
 
 	/** Optional add database hint
@@ -506,13 +489,13 @@ public class MailgunImpl implements Mailgun {
 	}
 
 	/** Build the complete big query
-	 * @param tagNames the tags
+	 * @param tagNamesParameter the tags
 	 * @return the created query
 	 */
-	private String getSelectvalue (Map <String, EMMTag> tagNames, boolean hint) throws Exception {
+	private String getSelectvalue (Map <String, EMMTag> tagNamesParameter, boolean hint) throws Exception {
 		StringBuffer	selectString = new StringBuffer ();
 		
-		selectString.append (data.getSelectExpression (tagNames != null));
+		selectString.append (data.getSelectExpression (tagNamesParameter != null));
 		selectString.append (" ");
 
 		if (hint) {
@@ -522,10 +505,10 @@ public class MailgunImpl implements Mailgun {
 				selectString.append (hstr);
 			}
 		}
-		if (tagNames != null) {
+		if (tagNamesParameter != null) {
 			// append all select string values of all tags
 			selectString.append ("cust.customer_id, bind.user_type, cust.mailtype");
-			for (EMMTag current_tag : tagNames.values ()) {
+			for (EMMTag current_tag : tagNamesParameter.values ()) {
 				if ((! current_tag.globalValue) && (! current_tag.fixedValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					selectString.append(", " + current_tag.mSelectString);
 				}

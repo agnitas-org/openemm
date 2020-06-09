@@ -32,7 +32,7 @@ import org.agnitas.beans.factory.DynamicTagFactory;
 import org.agnitas.util.AgnTagUtils;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -329,7 +329,7 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
         STANDALONE, OPENING, VALUE, CLOSING
     }
 
-    private static class Tag extends Span {
+    public static class Tag extends Span {
         private TagType type;
         private String name;
 
@@ -358,6 +358,8 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
                     return String.format("[agnDVALUE name=\"%s\"]", name);
                 case CLOSING:
                     return String.format("[/agnDYN name=\"%s\"]", name);
+				default:
+					break;
             }
 
             throw new RuntimeException("Unexpected type value (" + type + ")");

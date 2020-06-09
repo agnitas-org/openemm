@@ -196,6 +196,7 @@ __It should not be used anywhere manually and is just included here for complete
   color: #fff;
   border-radius: 2px;
   background-color: #6f7d8c;
+  cursor: default;
 
   .icon {
     display: inline-block;
@@ -378,6 +379,10 @@ __It should not be used anywhere manually and is just included here for complete
 
   .campaign\.status\.#{$state} {
     @include campaign-badge-variant($state, $color);
+  }
+
+  .campaign\.status\.background\.#{$state} {
+    @include campaign-badge-variant-background($state, $color);
   }
 }
 

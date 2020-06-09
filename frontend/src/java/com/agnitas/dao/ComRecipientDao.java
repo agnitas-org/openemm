@@ -23,10 +23,12 @@ import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.ProfileField;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.DbColumnType;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
@@ -37,6 +39,7 @@ import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComRecipientDao {
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY = "_DAY_DATE";
@@ -82,6 +85,8 @@ public interface ComRecipientDao {
 
     PaginatedListImpl<ComRecipientReaction> getRecipientReactionsHistory(int recipientID, int companyID, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending);
 
+    List<Recipient> getDuplicateRecipients(@VelocityCheck int companyId, String email, String select, Object[] queryParams) throws Exception;
+
     /**
      *  Select only a certain page of recipients with all available fields, used for dynamic paging in list views
      *
@@ -100,7 +105,13 @@ public interface ComRecipientDao {
      */
     PaginatedListImpl<Recipient> getRecipients(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
 
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns);
+    PaginatedListImpl<Recipient> getDuplicatePaginatedRecipientList(int companyID, Set<String> columns, String statement, Object[] parameters, String sortCriterion, boolean sortedAscending, int pageNumber, int pageSize) throws Exception;
+    
+    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
+
+    int getNumberOfRecipients(int companyId);
+
+    int getNumberOfRecipients(int companyId, boolean ignoreBounceLoadValue);
 
 	/**
      *  Select number of recipients with specific attributes
@@ -176,8 +187,6 @@ public interface ComRecipientDao {
      */
 	boolean updateInDB(final Recipient cust, final boolean missingFieldsToNull);
 
-    int getAllRecipientsCount(int companyID);
-
     /**
      * Find Subscriber by providing a column-name and a value. Only exact matches possible.
      *
@@ -196,8 +205,9 @@ public interface ComRecipientDao {
      * @param columnValue column value
      * @param newStatus new status
      * @param remark remark for status update
+     * @throws Exception
      */
-    void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark);
+    void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark) throws Exception;
 
     /**
      * Update binding status of all subscribers with matching email address.
@@ -208,10 +218,11 @@ public interface ComRecipientDao {
      * @param emailPattern emailPattern
      * @param newStatus new status
      * @param remark remark for status update
+     * @throws Exception
      * 
      * @see BindingService#updateBindingStatusByEmailPattern(int, String, int, String)
      */
-    void updateStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int newStatus, String remark);
+    void updateStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int newStatus, String remark) throws Exception;
     
     /**
      * Find Subscriber by providing the id of the company, a column-name and a value.
@@ -354,6 +365,8 @@ public interface ComRecipientDao {
      */
     List<Recipient> getBouncedMailingRecipients(@VelocityCheck int companyId, int mailingId);
 
+    void deleteDuplicateRecipients(@VelocityCheck int companyID, List<Integer> list, String email);
+
     /**
      * Check of existence of customer in database for given id
      *
@@ -410,10 +423,26 @@ public interface ComRecipientDao {
      * @return {@code true} if there's a recipient (other that given recipientId) having given email or {@code false} otherwise.
      */
     boolean checkAddressInUse(String email, int recipientId, @VelocityCheck int companyId);
-
-	void writeEmailAddressChangeRequest(final int companyID, final int customerID, final String newEmailAddress, final String confirmationCode);
+    
+    /**
+     * Find existing recipient ID other that given {@code recipientId} by a given email address in used.
+     *
+     * @param email an address to check.
+     * @param recipientId an identifier of a recipient to ignore (or 0).
+     * @param companyId an identifier of a current user's company.
+     * @return {@code int} recipient ID if there's a recipient (other that given recipientId) having given email or {@code 0} otherwise.
+     */
+    int getRecipientIdByAddress(String email, int recipientId, @VelocityCheck int companyId);
+    
+    void writeEmailAddressChangeRequest(final int companyID, final int customerID, final String newEmailAddress, final String confirmationCode);
 
 	String readEmailAddressForPendingChangeRequest(final int companyID, final int customerID, final String confirmationCode);
 
 	void deletePendingEmailAddressChangeRequest(final int companyID, final int customerID, final String confirmationCode);
+
+	List<Integer> getMailingRecipientIds(int companyID, int mailinglistID, MediaTypes mediaTypes, String fullTargetSql, List<UserStatus> userstatusList);
+
+	void logMailingDelivery(int companyID, int maildropStatusID, int customerID, int mailingID);
+
+	DbColumnType getColumnDataType(int companyId, String columnName) throws Exception;
 }

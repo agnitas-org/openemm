@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CompaniesConstraints {
     private final Set<Integer> includedIds;

@@ -24,19 +24,13 @@ import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 
 public class RequestParameterXssPreventerHelper {
 
-	private final HtmlXSSPreventer xssPreventer;
 	private final Function<String, Boolean> isParameterExcludedFromCheck;
 	
 	public RequestParameterXssPreventerHelper() {
-		this(new HtmlXSSPreventer(), x -> false);
+		this(x -> false);
 	}
 	
 	public RequestParameterXssPreventerHelper(final Function<String, Boolean> isParameterExcludedFromCheck) {
-		this(new HtmlXSSPreventer(), isParameterExcludedFromCheck);
-	}
-	
-	public RequestParameterXssPreventerHelper(final HtmlXSSPreventer preventer, final Function<String, Boolean> isParameterExcludedFromCheck) {
-		this.xssPreventer = Objects.requireNonNull(preventer, "XSS preventer cannot be null");
 		this.isParameterExcludedFromCheck = Objects.requireNonNull(isParameterExcludedFromCheck, "Parameter function cannot be null");
 	}
 	
@@ -64,7 +58,7 @@ public class RequestParameterXssPreventerHelper {
 	
 	private final void getHtmlCheckErrors(final String paramName, final String text, final Set<HtmlCheckError> errors) {
 		try {
-			xssPreventer.checkString(text);
+			HtmlXSSPreventer.checkString(text);
 		} catch(final XSSHtmlException e) {
 			errors.addAll(e.getErrors());
 		}

@@ -52,7 +52,6 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	}
 	
 	private static final class TargetGroupDataRowMapper implements RowMapper<TargetGroupData> {
-
 		@Override
 		public final TargetGroupData mapRow(final ResultSet resultSet, final int row) throws SQLException {
 			final int targetId = resultSet.getInt("target_id");
@@ -64,7 +63,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 		private TargetRepresentation makeTargetRepresentationFromSerializedData(final ResultSet resultSet) throws SQLException {
 			Blob targetRepresentationBlob = resultSet.getBlob("target_representation");
 			
-			if(resultSet.wasNull() || targetRepresentationBlob.length() == 0) {
+			if (resultSet.wasNull() || targetRepresentationBlob.length() == 0) {
 				return new TargetRepresentationImpl();
 			} else {
 				try {
@@ -82,7 +81,6 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 				}
 			}
 		}
-
 	}
 	
 	@Override
@@ -103,7 +101,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	private static final void migrateTargetGroupsOfMarkedCompanies(final DataSource dataSource, final EqlFacade eqlFacade) {
 		 final List<Integer> companyIds = listMarkedCompanies(dataSource);
 		 
-		 for(final int companyId : companyIds) {
+		 for (final int companyId : companyIds) {
 			 try {
 				 migrateTargetGroupsOfCompany(companyId, dataSource, eqlFacade);
 				 removeCompanyMarker(companyId, dataSource);
@@ -116,7 +114,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	private static final void migrateTargetGroupsOfCompany(final int companyId, final DataSource dataSource, final EqlFacade eqlFacade) {
 		final List<TargetGroupData> targetGroups = listTargetGroups(companyId, dataSource);
 		
-		for(final TargetGroupData targetGroup : targetGroups) {
+		for (final TargetGroupData targetGroup : targetGroups) {
 			try {
 				migrateTargetGroup(companyId, targetGroup, dataSource, eqlFacade);
 			} catch(final Exception e) {
@@ -125,10 +123,14 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 		}
 	}
 	
-	private static final void migrateTargetGroup(final int companyId, final TargetGroupData targetGroup, final DataSource dataSource, final EqlFacade eqlFacade) throws TargetRepresentationToEqlConversionException {
+	private static final void migrateTargetGroup(int companyId, final TargetGroupData targetGroup, final DataSource dataSource, final EqlFacade eqlFacade) throws TargetRepresentationToEqlConversionException {
+		if (companyId == 0) {
+			// Migrate listsplit targetgroups available for all clients
+			companyId = 1;
+		}
 		final String eql = eqlFacade.convertTargetRepresentationToEql(targetGroup.targetRepresentation, companyId);
 		
-		final String sql = "UPDATE dyn_target_tbl SET eql=?, target_representation=NULL WHERE target_id=?";
+		final String sql = "UPDATE dyn_target_tbl SET eql = ?, target_representation = NULL WHERE target_id = ?";
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 		template.update(sql,eql, targetGroup.targetID);
 		
@@ -144,7 +146,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	}
 	
 	private static final List<TargetGroupData> listTargetGroups(final int companyId, final DataSource dataSource) {
-		final String sql = "SELECT target_id, target_representation FROM dyn_target_tbl WHERE company_id=? AND (locked IS NULL OR locked=0) AND (eql IS NULL OR eql='') AND target_representation IS NOT NULL";
+		final String sql = "SELECT target_id, target_representation FROM dyn_target_tbl WHERE company_id = ? AND (locked IS NULL OR locked = 0) AND (eql IS NULL OR eql = '') AND target_representation IS NOT NULL";
 		
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 
@@ -152,7 +154,7 @@ public class TargetGroupMigrationListener implements ServletContextListener {
 	}
 	
 	private static final void removeCompanyMarker(final int companyId, final DataSource dataSource) {
-		final String sql = "UPDATE company_info_tbl SET cvalue='false', timestamp=current_timestamp, description='Migration done' WHERE cname = ? and company_id=?";
+		final String sql = "UPDATE company_info_tbl SET cvalue = 'false', timestamp = CURRENT_TIMESTAMP, description = 'Migration done' WHERE cname = ? and company_id = ?";
 		final JdbcTemplate template = new JdbcTemplate(dataSource);
 		template.update(sql, ConfigValue.MigrateTargetGroupsOnStartup.toString(), companyId);
 	}

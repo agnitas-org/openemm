@@ -9,11 +9,6 @@
 
 <script type="text/javascript">
     var baseUrl = "${pageContext.request.contextPath}";
-
-    var agntagDialogPage = '<html:rewrite page="/${CKEDITOR_PATH}/plugins/emm/dialogs/emm-tags-dialog-content-frame.jsp;jsessionid=${pageContext.session.id}"/>';
-    var agntagDialogTitle = '<bean:message key="htmled.agntagsWindowTitle" />';
-    var agntagDialogTooltip = '<bean:message key="htmled.agntagsButtonTooltip" />';
-
     var isCKEditorActive = {};
 
     function toggleEditor(textAreaId, editorWidth, editorHeight, mailingId) {
@@ -45,6 +40,8 @@
           filebrowserImageWindowWidth: '700',
           filebrowserImageWindowHeight: '600',
           resize_enabled: !isResizeNotEnabled,
+          entities_processNumerical: true,
+          entities: true,
           on: {
             toHtml: function (event) {
               if (fullPage && event.data) {

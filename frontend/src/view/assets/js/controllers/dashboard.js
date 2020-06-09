@@ -1,13 +1,43 @@
 AGN.Lib.Controller.new('dashboard', function() {
   var self = this;
   var newsCounters;
-  var config;
+  var statisticConfig;
+
+  var NEWS_DATE_URL,
+    NEW_COUNTE_URL;
+
+  this.addDomInitializer('dashboard-news-counters', function() {
+    var config = this.config;
+    NEWS_DATE_URL = config.newsDateUrl;
+    NEW_COUNTE_URL = config.newsCountersUrl;
+
+    $.ajax({
+      url: NEW_COUNTE_URL
+    }).done(function (data) {
+      if (!!data['counters']){
+        newsCounters = data['counters'];
+        // Show popup on login if there are new messages
+        updateNewsButtonNumber();
+        if (getUnreadCountSafe("MESSAGE") && !$(".modal-news").exists()) {
+          showNewsPopup();
+        }
+      }
+    });
+  });
+
+  this.addDomInitializer('dashboard-statistics', function() {
+    statisticConfig = this.config;
+
+    if (statisticConfig.mailingId > 0) {
+      updateCharts(statisticConfig.mailingId);
+    }
+  });
 
   this.addAction({
     click: 'open-mailing-statistics'
   }, function() {
-    if (config.mailingId > 0) {
-      AGN.Lib.Page.reload(config.mailingStatisticsLinkPattern.replace('{mailing-id}', config.mailingId));
+    if (statisticConfig.mailingId > 0) {
+      AGN.Lib.Page.reload(statisticConfig.mailingStatisticsLinkPattern.replace('{mailing-id}', statisticConfig.mailingId));
     }
   });
 
@@ -17,26 +47,18 @@ AGN.Lib.Controller.new('dashboard', function() {
     self.runInitializer('UpdateDashboardTemplateLinks');
   });
 
-  this.addDomInitializer('dashboard-statistics', function() {
-    config = this.config;
-
-    if (config.mailingId > 0) {
-      updateCharts(config.mailingId);
-    }
-  });
-
   this.addAction({
     'change': 'statistics-select-mailing'
   }, function() {
-    config.mailingId = this.el.val();
-    updateCharts(config.mailingId);
+    statisticConfig.mailingId = this.el.val();
+    updateCharts(statisticConfig.mailingId);
     return false;
   });
 
   function updateCharts(mailingId) {
     jQuery.ajax({
       type: "POST",
-      url: config.urls.STATISTICS,
+      url: statisticConfig.urls.STATISTICS,
       data: {
         mailingId: mailingId
       },
@@ -101,7 +123,7 @@ AGN.Lib.Controller.new('dashboard', function() {
         var viewChartTitle = roundTo(data['openersPercent'][0] * 100, 1) + '%*';
         c3.generate(AGN.Lib.DashboardStatisticsService.data.viewChartData.build(viewChartTitle, rowNames, rowValues));
 
-        AGN.Initializers.Equalizer();
+        AGN.Lib.CoreInitializer.run('equalizer');
       }
     });
   }
@@ -109,22 +131,6 @@ AGN.Lib.Controller.new('dashboard', function() {
   function roundTo(number, fractionalDigits) {
     return (parseFloat(number).toFixed(fractionalDigits)) * 1.0;
   }
-
-  this.addDomInitializer('dashboard-news-counters', function($elem) {
-    var config = AGN.Lib.Helpers.objFromString($elem.data('config'));
-    $.ajax({
-      url: config.newsCountersUrl
-    }).done(function (data) {
-      if (data['counters'] != undefined){
-        newsCounters = data['counters'];
-        // Show popup on login if there are new messages
-        updateNewsButtonNumber();
-        if (getUnreadCountSafe("MESSAGE") && !$(".modal-news").exists()) {
-          showNewsPopup();
-        }
-      }
-    });
-  });
 
   this.addAction({
     click: 'showNewsPopup'
@@ -177,14 +183,15 @@ AGN.Lib.Controller.new('dashboard', function() {
     AGN.Lib.Modal.createFromTemplate({openedNewsType:openedNewsType}, "modal-news");
     $("#buttonNewsCounter").text("");
     $(".l-news-menu-item").each(function (index) {
-      var unread = getUnreadCountSafe($(this).data("news-type"));
+      var $el = $(this);
+      var unread = getUnreadCountSafe($el.data("news-type"));
       if (unread > 0){
-        $(this).find(".l-news-menu-counter").text(unread);
+        $el.find(".l-news-menu-counter").text(unread);
       }else{
-        $(this).find(".l-news-menu-counter").html("&nbsp;");
+        $el.find(".l-news-menu-counter").html("&nbsp;");
       }
       if ($(this).hasClass("active")){
-        setNewsDate($(this).data("news-type"));
+        setNewsDate($el.data("news-type"));
       }
     });
     updateNewsButtonNumber();
@@ -198,7 +205,7 @@ AGN.Lib.Controller.new('dashboard', function() {
     if (getUnreadCountSafe(type) > 0) {
       $("#newsCounter" + type).html("&nbsp;");
       $.ajax({
-        url: AGN.Lib.Helpers.objFromString($('[data-initializer="dashboard-news-counters"]').data('config')).newsDateUrl,
+        url: NEWS_DATE_URL,
         data: {
           type: type
         }
@@ -219,17 +226,22 @@ AGN.Lib.Controller.new('dashboard', function() {
   function updateNewsButtonNumber() {
     var count = getUnreadCountSafe('NEWS');
     var buttonNewsCounter = $("#buttonNewsCounter");
+    var newsCounterBox = buttonNewsCounter.parent();
+    var paddingTop = "5px";
+    var paddingBottom = "5px";
+    var text = "";
     if (count > 0) {
-      buttonNewsCounter.parent().removeClass("hidden");
-      buttonNewsCounter.parent().parent().css("padding-top","4px");
-      buttonNewsCounter.parent().parent().css("padding-bottom","4px");
-      buttonNewsCounter.text(count);
+      newsCounterBox.removeClass("hidden");
+      paddingTop = "4px";
+      paddingBottom = "4px";
+      text = count;
     } else {
-      buttonNewsCounter.parent().addClass("hidden");
-      buttonNewsCounter.parent().parent().css("padding-top","5px");
-      buttonNewsCounter.parent().parent().css("padding-bottom","5px");
-      buttonNewsCounter.text("");
+      newsCounterBox.addClass("hidden");
     }
+
+    newsCounterBox.parent().css("padding-top", paddingTop);
+    newsCounterBox.parent().css("padding-bottom", paddingBottom);
+    buttonNewsCounter.text(text);
     return count;
   }
 
@@ -239,8 +251,7 @@ AGN.Lib.Controller.new('dashboard', function() {
    * @returns {Number} number of unread news
    */
   function getUnreadCountSafe(type){
-    if (newsCounters != undefined
-        && newsCounters[type] != undefined
+    if (!!newsCounters && !!newsCounters[type]
         && Number.isInteger(newsCounters[type]["unreadCount"])){
       return newsCounters[type]["unreadCount"];
     }
@@ -253,8 +264,8 @@ AGN.Lib.Controller.new('dashboard', function() {
    * @returns {Number} number of available news
    */
   function getAvailableCountSafe(type){
-    if (newsCounters != undefined
-        && newsCounters[type] != undefined
+    if (!!newsCounters
+        && !!newsCounters[type]
         && Number.isInteger(newsCounters[type]["availableCount"])){
       return newsCounters[type]["availableCount"];
     }
@@ -322,15 +333,12 @@ AGN.Lib.Controller.new('dashboard', function() {
             currentPage += 1;
             currentScroll.find('.js-endless-scroll-content').append(resp);
             currentScroll.find('.message-list-loader').remove();
-            AGN.Initializers.IconsDefs(currentScroll);
+            AGN.Lib.CoreInitializer.run('icons-defs', currentScroll);
           });
 
           return jqhxr;
         }
       })
     });
-
   })
-
-
 });

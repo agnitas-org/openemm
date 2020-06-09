@@ -12,4 +12,6 @@ package com.agnitas.emm.core.loginmanager.form;
 
 import org.agnitas.web.forms.PaginationForm;
 
-public class BlockedAddressListForm extends PaginationForm {}
+public class BlockedAddressListForm extends PaginationForm {
+	// nothing to do
+}

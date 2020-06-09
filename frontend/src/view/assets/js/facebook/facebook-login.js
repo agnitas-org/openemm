@@ -9,10 +9,11 @@ AGN_FACEBOOK.Login.attach_login_function = function(selector, callback, scope) {
 			FB.login(
 					function(response) {
 						callback(response.authResponse.accessToken);
-					}) 
-			};
-	},
-	{scope: scope});
+					},
+					{ scope: scope }
+	    		) 
+		};
+	});
 }
 
 AGN_FACEBOOK.Login.do_by_login_state = function(onLoggedIn, onNotLoggedIn) {

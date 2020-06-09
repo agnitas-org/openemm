@@ -104,21 +104,24 @@ public class ComWorkflowReactionJobWorker extends JobWorker {
                     final Mailing mailing = mailingDao.getMailing(mailingId, reaction.getCompanyId());
 
                     switch (getSendingType(mailing, reaction, reactionDate)) {
-                    case IMMEDIATE:
-                        // Mailing should be sent when the reaction occurs (is not preceded by deadline(s))
-                        send(mailing, reactedRecipients, reaction);
-                        reacted = true;
-                        break;
-
-                    case DEFERRED:
-                        // Mailing should be sent some time after the reaction occurs (relative deadline) or at the exact moment (fixed deadline)
-                        defer(mailing, reactedRecipients, reaction, reactionDate);
-                        reacted = true;
-                        break;
-
-                    case NONE:
-                        // Mailing is disabled (not activated) and should not be sent
-                        break;
+	                    case IMMEDIATE:
+	                        // Mailing should be sent when the reaction occurs (is not preceded by deadline(s))
+	                        send(mailing, reactedRecipients, reaction);
+	                        reacted = true;
+	                        break;
+	
+	                    case DEFERRED:
+	                        // Mailing should be sent some time after the reaction occurs (relative deadline) or at the exact moment (fixed deadline)
+	                        defer(mailing, reactedRecipients, reaction, reactionDate);
+	                        reacted = true;
+	                        break;
+	
+	                    case NONE:
+	                        // Mailing is disabled (not activated) and should not be sent
+	                        break;
+	                        
+						default:
+							break;
                     }
                 }
             }

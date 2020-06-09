@@ -12,7 +12,7 @@
   };
 
   Controller.prototype.addInitializer = function(name, initializer) {
-    AGN.Initializers[name] = initializer;
+    AGN.Lib.CoreInitializer.new(name, initializer);
   };
 
   Controller.prototype.addDomInitializer = function(name, initializer) {
@@ -20,7 +20,7 @@
   };
 
   Controller.prototype.runInitializer = function(name) {
-    AGN.Initializers[name]();
+    AGN.Lib.CoreInitializer.run(name);
   };
 
 

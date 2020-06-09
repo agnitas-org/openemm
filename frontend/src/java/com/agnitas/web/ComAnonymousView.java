@@ -19,7 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 import org.agnitas.preview.Page;
-import org.agnitas.preview.PreviewImpl;
+import org.agnitas.preview.Preview;
+import org.agnitas.preview.PreviewFactory;
 import org.agnitas.util.PubID;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -29,14 +30,11 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ComAnonymousView extends HttpServlet {
+	private static final long serialVersionUID = -8924026377915570739L;
+	
 	private static final transient Logger logger = Logger.getLogger(ComAnonymousView.class);
 
-	private static PreviewImpl preview = new PreviewImpl();
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8924026377915570739L;
+	private PreviewFactory previewFactory;
 
 	public static final String SWYN_CLICK_INSERT =
 		"INSERT INTO swyn_click_tbl (network_id, mailing_id, customer_id, ip_address, timestamp, selector) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)";
@@ -47,7 +45,8 @@ public class ComAnonymousView extends HttpServlet {
 		PubID pubId = new PubID();
 		
 		if (pubId.parseID(uid)) {
-			Page content = preview.makePreview(pubId, true);
+			Preview preview = getPreviewFactory().createPreview();
+			Page content = preview.makePreview(pubId.getMailingID (), pubId.getCustomerID (), pubId.getParm (), null, true, false, false, false, true);
 			String html = content.getHTML();
 			
 			res.setContentType( "text/html; charset=utf-8");
@@ -73,5 +72,12 @@ public class ComAnonymousView extends HttpServlet {
 		} catch( Exception e) {
 			logger.error("Error inserting into swyn_click_log: source=" + pubId.getSource() + ", mailingID=" + pubId.getMailingID() + ", customerID=" + pubId.getCustomerID() + ", ipAddress=" + ipAddress, e);
 		}
+	}
+
+    private PreviewFactory getPreviewFactory() {
+		if (previewFactory == null) {
+			previewFactory = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("PreviewFactory", PreviewFactory.class);
+		}
+		return previewFactory;
 	}
 }

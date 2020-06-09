@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.mailing.cache.MailingContentTypeCacheImpl;
+import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
@@ -38,7 +38,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	private ConfigService configService;
 	
 	/** Cache for content types of mailings. */
-	private MailingContentTypeCacheImpl mailingContentTypeCache;
+	private MailingContentTypeCache mailingContentTypeCache;
 	
 	@Override
 	public final void trackLinkClick(final ComExtensibleUID uid, final String remoteAddress, final DeviceClass deviceClass, final int deviceID, final int clientID) {
@@ -48,7 +48,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 			final TrackableLink link = trackableLinkDao.getTrackableLink(uid.getUrlID(), uid.getCompanyID());
 
 			if(link != null) {
-				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, this.configService, this.mailingContentTypeCache);
+				final TrackingLevel trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, configService, mailingContentTypeCache);
 				
 				if(trackingLevel == TrackingLevel.ANONYMOUS) {
 					if(logger.isInfoEnabled()) {
@@ -93,7 +93,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	 * @param cache cache for mailing content types
 	 */
 	@Required
-	public final void setMailingContentTypeCache(final MailingContentTypeCacheImpl cache) {
+	public final void setMailingContentTypeCache(final MailingContentTypeCache cache) {
 		this.mailingContentTypeCache = Objects.requireNonNull(cache, "Content type cache cannot be null");
 	}
 }

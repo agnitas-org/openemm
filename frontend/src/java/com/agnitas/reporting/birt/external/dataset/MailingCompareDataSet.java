@@ -41,23 +41,22 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
 import com.agnitas.reporting.birt.external.beans.CompareStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 import com.agnitas.reporting.birt.external.dao.impl.ComCompanyDaoImpl;
-
 
 
 public class MailingCompareDataSet extends ComparisonBirtDataSet  {
@@ -151,11 +150,11 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 
     public int prepareReport(String mailingIdsStr, @VelocityCheck int companyId, String targetsStr, String recipientType) throws Exception {
 		int tempTableID = createTempTable();
-        if (!org.apache.commons.lang.StringUtils.containsOnly(mailingIdsStr, "1234567890,")) {
+        if (!StringUtils.containsOnly(mailingIdsStr, "1234567890,")) {
             logger.error("Wrong format of mailing-IDs string");
             return 0;
         }
-        if (!org.apache.commons.lang.StringUtils.containsOnly(targetsStr, "1234567890,")) {
+        if (!StringUtils.containsOnly(targetsStr, "1234567890,")) {
             logger.error("Wrong format of targetGroup-IDs string");
             return 0;
         }
@@ -220,6 +219,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 		return summaryData;
 	}
 
+
     public List<CompareStatCsvRow> getCsvSummaryData(int tempTableID, Locale locale) throws Exception {
         Map<String, CompareStatCsvRow> summaryCsvData = new HashMap<>();
         List<CompareStatRow> summaryData = getResultsFromTempTable(tempTableID, locale);
@@ -238,40 +238,35 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
                     if (innerMailingId == mailingId && innerGroupId == groupId) {
                         int categoryIndex = compareStatInner.getCategoryindex();
                         switch (categoryIndex) {
-                            case CommonKeys.DELIVERED_EMAILS_INDEX: {
+                            case CommonKeys.DELIVERED_EMAILS_INDEX:
                                 statCsvRow.setEmailsSentCount(compareStatInner.getCount());
                                 break;
-                            }
-                            case CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX: {
+                            case CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX:
                                 statCsvRow.setEmailsDeliveredCount(compareStatInner.getCount());
                                 break;
-                            }
-                            case CommonKeys.OPENERS_MEASURED_INDEX: {
+                            case CommonKeys.OPENERS_MEASURED_INDEX:
                                 statCsvRow.setOpenersCount(compareStatInner.getCount());
                                 statCsvRow.setOpenersRate(compareStatInner.getRate());
                                 break;
-                            }
-                            case CommonKeys.CLICKER_INDEX: {
+                            case CommonKeys.CLICKER_INDEX:
                                 if (statCsvRow.getClickingCount() == 0) {
                                     statCsvRow.setClickingCount(compareStatInner.getCount());
                                     statCsvRow.setClickingRate(compareStatInner.getRate());
                                 }
                                 break;
-                            }
-                            case CommonKeys.OPT_OUTS_INDEX: {
+                            case CommonKeys.OPT_OUTS_INDEX:
                                 statCsvRow.setSignedoffCount(compareStatInner.getCount());
                                 statCsvRow.setSignedoffRate(compareStatInner.getRate());
                                 break;
-                            }
-                            case CommonKeys.BOUNCES_INDEX: {
+                            case CommonKeys.BOUNCES_INDEX:
                                 statCsvRow.setBouncesCount(compareStatInner.getCount());
                                 statCsvRow.setBouncesRate(compareStatInner.getRate());
                                 break;
-                            }
-                            case CommonKeys.REVENUE_INDEX: {
+                            case CommonKeys.REVENUE_INDEX:
                                 statCsvRow.setRevenueCount(compareStatInner.getCount());
                                 break;
-                            }
+							default:
+								break;
                         }
                     }
                 }
@@ -312,7 +307,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			        .append("       WHERE cust.customer_id = succ.customer_id ")
 			        .append("         AND succ.mailing_id IN (<MAILING_IDS>) ")
 			        .append("         AND succ.mailing_id = m.mailing_id ")
-			        .append("         AND m.mailing_type <> ").append(Mailing.TYPE_INTERVAL)
+			        .append("         AND m.mailing_type <> ").append(MailingTypes.INTERVAL.getCode())
 			        .append("       UNION ALL ")
 			        .append("      SELECT cust.*, x.mailing_id AS sys_mailing_id ")
 			        .append("        FROM customer_<COMPANYID>_tbl cust ")
@@ -321,7 +316,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			        .append("       WHERE cust.customer_id = x.customer_id ")
 			        .append("         AND x.mailing_id IN (<MAILING_IDS>) ")
 			        .append("         AND x.mailing_id = m.mailing_id ")
-			        .append("         AND m.mailing_type = ").append(Mailing.TYPE_INTERVAL)
+			        .append("         AND m.mailing_type = ").append(MailingTypes.INTERVAL.getCode())
 			    .append(" ) cust ) main_data GROUP BY mailing_id");
 			
             insertCategoryDataToTempTable(mailingIds, companyID, queryBuilder.toString(), tempTableID,
@@ -482,8 +477,8 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 
 	@DaoUpdateReturnValueCheck
     private void insertBouncesFromBenchmarkTable(String mailingIds, @VelocityCheck int companyID, int tempTableID, List <LightTarget> targets) throws Exception {
-        String query = "select " + getIfNull() + "(bounces_hard, 0) bounces, mailing_id from benchmark_mailing_stat_tbl " +
-                "where company_id = ? and mailing_id in (" + mailingIds + ") order by days_between desc";
+        String query = "SELECT COALESCE(bounces_hard, 0) bounces, mailing_id FROM benchmark_mailing_stat_tbl " +
+                "WHERE company_id = ? and mailing_id in (" + mailingIds + ") ORDER BY days_between DESC";
         JdbcTemplate template = new JdbcTemplate(getDataSource());
         HashMap<Integer, Integer> bounceMap = new HashMap<>();
 		List<Map<String, Object>> result = template.queryForList(query, new Object[]{companyID});
@@ -612,7 +607,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 	}
 
     private String createSendQuery(String recipientsType) {
-        String query = "SELECT mailing_id, "+getIfNull()+"(SUM(no_of_mailings),0) category_value FROM mailing_account_tbl WHERE mailing_id IN (<MAILING_IDS>) ";
+        String query = "SELECT mailing_id, COALESCE(SUM(no_of_mailings),0) category_value FROM mailing_account_tbl WHERE mailing_id IN (<MAILING_IDS>) ";
         switch (recipientsType) {
             case CommonKeys.TYPE_ALL_SUBSCRIBERS:
                 query += " AND status_field NOT IN ('A', 'T', 'V') ";
@@ -623,6 +618,8 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
             case CommonKeys.TYPE_WORLDMAILING:
                 query += " AND status_field NOT IN ('A', 'T') ";
                 break;
+			default:
+				break;
         }
         query += " GROUP BY mailing_id ";
         return query;
@@ -846,7 +843,6 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 					+ " ) main_data WHERE tg1 = 1 GROUP BY mailing_id";
     }
 
-
     private String createOpenQuery(List<LightTarget> lightTargets, String recipientsType) {
 		if (lightTargets != null && lightTargets.size() > 0) {
 			StringBuilder queryBuilder = new StringBuilder(" SELECT count(customer_id) AS category_value, mailing_id, ");
@@ -917,7 +913,6 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 				+ " END AS <TARGETGROUP>_net,";
 	}
 
-
 	private int createTempTable() throws  Exception {
 		int tempTableID = getNextTmpID();
 		executeEmbedded(logger,
@@ -934,7 +929,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			+ ")");
 		return tempTableID;
 	}
-
+	
 	private List<CompareStatRow> getResultsFromTempTable(int tempTableID, final Locale locale) throws Exception {
 		String query = "SELECT category, category_index, value, rate, mailing_id, mailing_name, targetgroup_id, targetgroup, " +
                 "targetgroup_index FROM " + getTempTableName(tempTableID) + " ORDER BY category_index ";
@@ -959,7 +954,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 		});
 	}
 
-    private String createTargetNameShort(String name) {
+    public static String createTargetNameShort(String name) {
         String shortname = name;
         if (name != null && name.length() > TARGET_NAME_LENGTH_MAX) {
             shortname = name.substring(0, TARGET_NAME_LENGTH_MAX - 3) + "...";

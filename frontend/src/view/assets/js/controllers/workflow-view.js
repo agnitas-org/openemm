@@ -192,7 +192,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         editorsHelper = campaignManager.getEditorsHelper();
         WorkflowManagerStatistics = new AGN.Lib.WM.WorkflowManagerStatistics(campaignManager);
 
-        $.datepicker.setDefaults($.datepicker.regional[locale]);
+        jQuery.datepicker.setDefaults(jQuery.datepicker.regional[locale]);
 
         campaignManager.restoreWorkflow(AGN.Lib.CampaignManagerService.icons);
         campaignManager.updateWorkflowForPdf();
@@ -200,6 +200,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         if (data.showStatistics) {
             WorkflowManagerStatistics.toggleStatistics(data.workflowId);
         }
+        window.status = 'initializerFinished';
     });
 
 
@@ -221,6 +222,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         campaignManager = new AGN.Lib.WM.CampaignManager({
             workflowId: data.workflowId,
             isActivated: data.isActivated,
+            autoOptData: data.workflowAutoOptData,
             restoreSpaceFields: ["name", "workflow_description"],
             editorPositionLeft: parseInt(data.editorPositionLeft),
             editorPositionTop: parseInt(data.editorPositionTop),
@@ -270,7 +272,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
         campaignManager.setUndoHistoryDataForSubmission(data.workflowUndoHistoryData);
 
 
-        jQuery("#legend-button-wrapper").bind({
+        jQuery("#legend-button-wrapper").on({
             mouseover: function () {
                 if (campaignManager.getCurrentState() == campaignManager.STATE_WAITING) {
                     jQuery("#legend-dopdown").show();
@@ -726,7 +728,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                         return types.split(/[\s,]+/).indexOf(fieldType) == -1;
                     });
 
-                    AGN.Initializers.Select($select);
+                    AGN.Lib.CoreInitializer.run('select', $select);
 
                     if ($select.val() == null) {
                         editorsHelper.initSelectWithFirstValue($select);
@@ -898,7 +900,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 if ($element.val() == constants.operatorIs) {
                     var $select = $(this.createIsOperatorSelect());
                     $parent.find('.primary-value').parents('td').replaceWith($select);
-                    AGN.Initializers.Select($select);
+                    AGN.Lib.CoreInitializer.run('select', $select);
                 } else if ($parent.find('.primary-value').hasClass('null-select')) {
                     var html;
                     if (index == null) {
@@ -1017,7 +1019,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
                 if (mailingId > 0) {
                     $linkSelect.attr("readonly", "readonly");
-                    $.ajax({
+                    jQuery.ajax({
                         type: "POST",
                         url: AGN.url('/workflow/getMailingLinks.action'),
                         data: {
@@ -1027,8 +1029,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
 
-                            $.each(data, function (index, itemUrl) {
-                                $linkSelect.append($('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
+                            jQuery.each(data, function (index, itemUrl) {
+                                $linkSelect.append(jQuery('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
                             });
 
                             $linkSelect.removeAttr("readonly");
@@ -1287,7 +1289,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
 
                 if (mailingId > 0) {
                     $linkSelect.attr("readonly", "readonly");
-                    $.ajax({
+                    jQuery.ajax({
                         type: "POST",
                         url: AGN.url('/workflow/getMailingLinks.action'),
                         data: {
@@ -1297,8 +1299,8 @@ AGN.Lib.Controller.new('workflow-view', function () {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
 
-                            $.each(data, function (index, itemUrl) {
-                                $linkSelect.append($('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
+                            jQuery.each(data, function (index, itemUrl) {
+                                $linkSelect.append(jQuery('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
                             });
 
                             $linkSelect.removeAttr("readonly");
@@ -1327,7 +1329,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 if ($element.val() == constants.operatorIs) {
                     var $select = $(this.createIsOperatorSelect());
                     $parent.find('.primary-value').parents('td').replaceWith($select);
-                    AGN.Initializers.Select($select);
+                    AGN.Lib.CoreInitializer.run('select', $select);
                 } else if ($parent.find('.primary-value').hasClass('null-select')) {
                     var html;
                     if (index == null) {
@@ -1435,7 +1437,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                         return types.split(/[\s,]+/).indexOf(fieldType) == -1;
                     });
 
-                    AGN.Initializers.Select($select);
+                    AGN.Lib.CoreInitializer.run('select', $select);
 
                     if ($select.val() == null) {
                         editorsHelper.initSelectWithFirstValue($select);
@@ -2041,7 +2043,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 var $messages = $("#export-editor .editor-error-messages");
                 var autoExportSelector = jQuery("form[name='" + this.formName + "'] select[name=importexportId]");
                 if (autoExportSelector.val() > 0) {
-                    $.ajax({
+                    jQuery.ajax({
                         type: 'POST',
                         url: AGN.url('/workflow/validateDependency.action'),
                         data: {
@@ -2360,7 +2362,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 var $messages = $("#import-editor .editor-error-messages");
                 var autoImportSelector = jQuery("form[name='" + this.formName + "'] select[name=importexportId]");
                 if (autoImportSelector.val() > 0) {
-                    $.ajax({
+                    jQuery.ajax({
                         type: 'POST',
                         url: AGN.url('/workflow/validateDependency.action'),
                         data: {
@@ -3741,7 +3743,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 $('#activating-campaign-mailings').html(mailings);
                 $('#activating-campaign-dialog').css('visibility', 'visible');
                 $('#activating-campaign-dialog').show();
-                $('#activating-campaign-activate-button').click(function () {
+                $('#activating-campaign-activate-button').on("click", function () {
                     saveWorkflowFormData(validateNeeded);
                     return false;
                 });
@@ -3764,7 +3766,7 @@ AGN.Lib.Controller.new('workflow-view', function () {
                 $("input[name='workflow.statusString']").val(constants.statusInactive);
                 $('#inactivating-campaign-dialog').css('visibility', 'visible');
                 $('#inactivating-campaign-dialog').show();
-                $('#inactivating-campaign-inactivate-button').click(function () {
+                $('#inactivating-campaign-inactivate-button').on("click", function () {
                     saveWorkflowFormData(validateNeeded);
                     $('#inactivating-campaign-dialog').dialog('close');
                     return false;

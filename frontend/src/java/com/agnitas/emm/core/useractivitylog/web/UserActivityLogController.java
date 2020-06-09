@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.useractivitylog.web;
 
 import java.io.File;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -40,7 +39,7 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -93,14 +92,8 @@ public class UserActivityLogController {
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
     public Pollable<ModelAndView> list(ComAdmin admin, UserActivityLogForm listForm, Model model, HttpSession session) {
         String sessionId = session.getId();
-        String datePickerFormatPattern = AgnUtils.getDatePickerFormatPattern(admin);
-        DateTimeFormatter datePickerFormatter = DateTimeFormatter.ofPattern(datePickerFormatPattern);
-        TimeZone adminTimeZone = AgnUtils.getTimeZone(admin);
-
-        SimpleDateFormat localTableFormat = DateUtilities.getDateTimeFormat(DateFormat.SHORT,
-                DateFormat.SHORT,
-                admin.getLocale(),
-                adminTimeZone);
+        DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
+        SimpleDateFormat localTableFormat = admin.getDateTimeFormat();
 
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.USERLOG_OVERVIEW, listForm);
 
@@ -110,7 +103,7 @@ public class UserActivityLogController {
         model.addAttribute("userActions", Arrays.asList(UserActivityLogActions.values()));
         model.addAttribute("admins", admins);
         model.addAttribute("localeTableFormat", localTableFormat);
-        model.addAttribute("datePickerFormatPattern", datePickerFormatPattern);
+        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         model.addAttribute("defaultDate", LocalDate.now().format(datePickerFormatter));
 
         LocalDate dateFrom = listForm.getDateFrom().get(LocalDate.now(), datePickerFormatter);
@@ -158,8 +151,7 @@ public class UserActivityLogController {
 
     @PostMapping(value = "/download.action")
     public ResponseEntity<StreamingResponseBody> download(ComAdmin admin, UserActivityLogForm form) throws Exception {
-        String datePickerFormatPattern = AgnUtils.getDatePickerFormatPattern(admin);
-        DateTimeFormatter datePickerFormatter = DateTimeFormatter.ofPattern(datePickerFormatPattern);
+        DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
 
         LocalDate localDateFrom = form.getDateFrom().get(LocalDate.now(), datePickerFormatter);
         LocalDate localDateTo = form.getDateTo().get(LocalDate.now(), datePickerFormatter);

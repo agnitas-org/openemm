@@ -113,7 +113,7 @@ public interface ImportRecipientsDao {
 
 	int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, UserStatus status);
 
-	int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int  mailingListId, int currentStatus, int updateStatus, String remark);
+	int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int  mailingListId, int currentStatus, int updateStatus, String remark) throws Exception;
 	
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
@@ -150,4 +150,6 @@ public interface ImportRecipientsDao {
 	void addErrorneousJsonObject(String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
 
 	boolean checkUnboundCustomersExist(int companyID);
+
+	int getAllRecipientsCount(int companyId);
 }

@@ -25,21 +25,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Implementation of {@link ComOptimization}.
@@ -251,6 +251,43 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 		return selectInt(logger, sql, companyID, workflowID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID);
 	}
 
+	@Override
+	public int getFinalMailingId(@VelocityCheck int companyId, int workflowId) {
+		String sql = "" +
+				"SELECT MAX(final_mailing_id) " +
+				"FROM auto_optimization_tbl " +
+				"WHERE company_id = ? " +
+				"      AND workflow_id = ? ";
+		return selectInt(logger, sql, companyId, workflowId);
+	}
+	
+	@Override
+	public AutoOptimizationLight getAutoOptimizationLight(@VelocityCheck int companyId, int workflowId) {
+		String sql = "SELECT optimization_id, final_mailing_id, result_mailing_id, group1_id, group2_id, group3_id, group4_id, group5_id" +
+				" FROM auto_optimization_tbl " +
+				" WHERE company_id = ? " +
+				"      AND workflow_id = ?";
+		
+		if (isOracleDB()) {
+			sql += " AND ROWNUM = 1";
+		} else {
+			sql += " LIMIT 1";
+		}
+		
+		return selectObjectDefaultNull(logger, sql, (resultSet, i) -> {
+			AutoOptimizationLight data = new AutoOptimizationLight();
+			data.setOptimizationId(resultSet.getInt("optimization_id"));
+			data.setFinalMailingId(resultSet.getInt("final_mailing_id"));
+			data.setResultMailingId(resultSet.getInt("result_mailing_id"));
+			data.setGroup1(resultSet.getInt("group1_id"));
+			data.setGroup2(resultSet.getInt("group2_id"));
+			data.setGroup3(resultSet.getInt("group3_id"));
+			data.setGroup4(resultSet.getInt("group4_id"));
+			data.setGroup5(resultSet.getInt("group5_id"));
+			return data;
+		}, companyId, workflowId);
+	}
+	
 	@Override
 	@DaoUpdateReturnValueCheck
     public int save(ComOptimization optimization) {
@@ -492,8 +529,14 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 
 		return select(logger, querySb.toString(), new MinimizedOptimizationRowMapper(), companyId, startDate, endDate);
 	}
-
-	private static class MinimizedOptimizationRowMapper implements RowMapper<ComOptimization> {
+    
+    @Override
+    public int getOptimizationByFinalMailingId(int finalMailingId, int companyId) {
+		return selectInt(logger, "SELECT optimization_id FROM auto_optimization_tbl WHERE final_mailing_id = ? AND company_id = ?",
+				finalMailingId, companyId);
+    }
+    
+    private static class MinimizedOptimizationRowMapper implements RowMapper<ComOptimization> {
 
 		@Override
 		public ComOptimization mapRow(ResultSet rs, int i) throws SQLException {

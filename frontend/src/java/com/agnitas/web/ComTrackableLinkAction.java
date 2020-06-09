@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +38,7 @@ import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.service.GridServiceWrapper;
 import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.Mailing;
 import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.TrackableLink;
@@ -50,9 +50,10 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.web.BaseTrackableLinkForm;
 import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.TrackableLinkForm;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -62,6 +63,8 @@ import org.apache.struts.action.ActionMessages;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+
 /**
  * Implementation of <strong>Action</strong> that validates a user logon.
  */
@@ -83,7 +86,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	public static final int ACTION_SAVE_ADMIN_LINKS = ACTION_ORG_LAST + 3;
 	
 	public static final int ACTION_DELETE_GLOBAL_AND_INDIVIDUAL_EXTENSION = ACTION_ORG_LAST + 4;
-	public static final int KEEP_UNCHANGED = -1;
 
 	private static final String EDIT_LINKS_ACTION = "edit mailing links";
 	private static final String LINK_TEMPLATE = "ID = %d. Trackable link %s. ";
@@ -399,7 +401,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         // ACTION_SAVE_COMMON_EXTENSIONS
         if (admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
             if (!aForm.isKeepExtensionsUnchanged()) {
-				List<LinkProperty> linkProperties = getLinkPropertiesForReplaceCommonExtensions(req);
+				// search for link properties
+				List<LinkProperty> linkProperties = new ArrayList<>();
+				updateLinkPropertiesParameters(req, linkProperties);
 				for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
 					ComTrackableLink comTrackableLink = (ComTrackableLink)trackableLink;
 					writeLinkExtensionsChangesLog(linkProperties, comTrackableLink, req);
@@ -523,41 +527,38 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		// ACTION_GLOBAL_USAGE
 		// saveGlobalUsage(aMailing, aForm, req);
 	}
-    
-    private List<LinkProperty> getLinkPropertiesForReplaceCommonExtensions(HttpServletRequest req) {
-        Enumeration<String> parameterNamesEnum = req.getParameterNames();
-        List<LinkProperty> linkProperties = new ArrayList<>();
-        // search for new commonLinkProperties and insert them
-        while (parameterNamesEnum.hasMoreElements()) {
-            String parameterName = parameterNamesEnum.nextElement();
-            if (parameterName.startsWith(ComTrackableLinkForm.PROPERTY_NAME_PREFIX)) {
-                int propertyID = Integer.parseInt(parameterName.substring(ComTrackableLinkForm.PROPERTY_NAME_PREFIX.length()));
-                String[] extensionNames = req.getParameterValues(parameterName);
-                String[] extensionValues = req.getParameterValues(ComTrackableLinkForm.PROPERTY_VALUE_PREFIX + propertyID);
-                if (extensionNames != null && extensionNames.length > 0 && StringUtils.isNotBlank(extensionNames[0])) {
-                    LinkProperty newProperty;
-                    if (extensionValues != null && extensionValues.length > 0 && StringUtils.isNotBlank(extensionValues[0])) {
-                        newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], extensionValues[0]);
-                    } else {
-                        newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], "");
-                    }
-                    linkProperties.add(newProperty);
-                }
-            }
-        }
-        return linkProperties;
-    }
+ 
+    private void updateLinkPropertiesParameters(HttpServletRequest request, List<LinkProperty> linkProperties) {
+		Enumeration<String> parameterNamesEnum = request.getParameterNames();
+		while (parameterNamesEnum.hasMoreElements()) {
+			String parameterName = parameterNamesEnum.nextElement();
+			if (parameterName.startsWith(BaseTrackableLinkForm.PROPERTY_NAME_PREFIX)) {
+				int propertyID = Integer.parseInt(parameterName.substring(BaseTrackableLinkForm.PROPERTY_NAME_PREFIX.length()));
+				String[] extensionNames = request.getParameterValues(parameterName);
+				String[] extensionValues = request.getParameterValues(BaseTrackableLinkForm.PROPERTY_VALUE_PREFIX + propertyID);
+				if (extensionNames != null && extensionNames.length > 0 && StringUtils.isNotBlank(extensionNames[0])) {
+					LinkProperty newProperty;
+					if (extensionValues != null && extensionValues.length > 0 && StringUtils.isNotBlank(extensionValues[0])) {
+						newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], extensionValues[0]);
+					} else {
+						newProperty = new LinkProperty(PropertyType.LinkExtension, extensionNames[0], "");
+					}
+					linkProperties.add(newProperty);
+				}
+			}
+		}
+	}
 
     private void setAdminLinks(ComTrackableLinkForm aForm, HttpServletRequest req) {
 		aForm.clearAdminLinks();
-		for (TrackableLink trackableLink : aForm.getLinks()) {
-			aForm.setAdminLink(trackableLink.getId(), trackableLink.isAdminLink());
+		for (BaseTrackableLink trackableLink : aForm.getLinks()) {
+			aForm.setAdminLink(trackableLink.getId(), ((TrackableLink)trackableLink).isAdminLink());
 		}
 	}
 
     private void setBulkID(ComTrackableLinkForm aForm) {
         aForm.clearBulkIDs();
-        for (TrackableLink trackableLink : aForm.getLinks()) {
+        for (BaseTrackableLink trackableLink : aForm.getLinks()) {
             aForm.setBulkID(trackableLink.getId(), "on");
         }
     }
@@ -568,7 +569,8 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         aForm.clearLinkItemDeepTracking();
         aForm.clearLinkItemTrackable();
         aForm.clearLinkItemName();
-        for (TrackableLink trackableLink : aForm.getLinks()) {
+        for (BaseTrackableLink link : aForm.getLinks()) {
+        	TrackableLink trackableLink = (TrackableLink) link;
             int id = trackableLink.getId();
             aForm.setLinkItemAction(id, trackableLink.getActionID());
             aForm.setLinkItemRelevance(id, trackableLink.getRelevance());
@@ -610,7 +612,8 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			// Only change link properties if adminuser is allowed to
 			if (admin != null && admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
 				// search for link properties
-				List<LinkProperty> linkProperties = getLinkPropertiesForReplaceCommonExtensions(req);
+				List<LinkProperty> linkProperties = new ArrayList<>();
+				updateLinkPropertiesParameters(req, linkProperties);
                 writeLinkExtensionsChangesLog(linkProperties, aLink, req);
 
                 for (Iterator<LinkProperty> iter = linkProperties.listIterator(); iter.hasNext(); ) {
@@ -670,18 +673,6 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         aForm.setShortname(mailing.getShortname());
 		aForm.setCommonLinkExtensions(commonLinkExtensions);
 		
-		// Fill textfield for simple changes
-		StringBuilder commonLinkExtensionsText = new StringBuilder();
-		for (LinkProperty linkProperty : commonLinkExtensions) {
-			if (commonLinkExtensionsText.length() > 0) {
-				commonLinkExtensionsText.append("&");
-			}
-			commonLinkExtensionsText.append(linkProperty.getPropertyName());
-			commonLinkExtensionsText.append("=");
-			commonLinkExtensionsText.append(linkProperty.getPropertyValue() == null ? "" : linkProperty.getPropertyValue());
-		}
-		aForm.setLinkExtension(commonLinkExtensionsText.toString());
-		
 		Mediatype mediaType = mailing.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
 		if (mediaType != null) {
 			try {
@@ -735,12 +726,14 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 
                 if (StringUtils.isBlank(newPropertyName)){
                     writeUserActivityLog(admin, "edit mailing links",
-							"ID = "+mailingId+". Trackable link " + linkName + " extension " + (counter+1) + " removed");
+							String.format("ID = %d. Trackable link %s extension %d removed",
+									mailingId, linkName, counter+1));
                 } else if ((!oldPropertyName.equals(newPropertyName)) || (!oldPropertyValue.equals(newPropertyValue)) ){
                     writeUserActivityLog(admin, "edit mailing links",
-							"ID = "+mailingId+". Trackable link " + linkName + " extension " + (counter+1) + " changed from "
-                                    + oldPropertyName + " : " + oldPropertyValue +
-                                    " to " + newPropertyName + " : " + newPropertyValue);
+							String.format("ID = %d. Trackable link %s extension %d changed from %s : %s to %s : %s",
+									mailingId, linkName, counter+1,
+									oldPropertyName, oldPropertyValue,
+									newPropertyName, newPropertyValue));
                 }
                 counter++;
             }
@@ -752,8 +745,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
             if (newSize > oldSize){
                 for (int i = oldSize; i <= newSize+1; i++){
                     writeUserActivityLog(admin, "edit mailing links",
-							"ID = "+mailingId+". Trackable link " + linkName + " extension " + (counter+1) + " added: " +
-                    newLinkProperties.get(i).getPropertyName() + " : " + newLinkProperties.get(i).getPropertyValue());
+							String.format("ID = %d. Trackable link %s extension %d added %s : %s",
+									mailingId, linkName, counter+1,
+									newLinkProperties.get(i).getPropertyName(), newLinkProperties.get(i).getPropertyValue()));
                     counter++;
                 }
             }
@@ -762,7 +756,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
                 logger.info("save Trackable links Extensions");
             }
         } catch (Exception e) {
-            logger.error("Log EMM Trackable links extensions changes error" + e);
+            logger.error("Log EMM Trackable links extensions changes error: ComTrackableUserFormLinkAction" + e);
         }
     }
 
@@ -778,9 +772,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 
 	private void writeTrackableLinkDescriptionChange(TrackableLink aLink, String newShortname, StringBuilder logMessage) {
 		String oldShortname = aLink.getShortname();
-		newShortname = !StringUtils.isBlank(newShortname) ? newShortname : EMPTY;
-		oldShortname = !StringUtils.isBlank(oldShortname) ? oldShortname : EMPTY;
-		if (!Objects.equals(oldShortname, newShortname)) {
+		newShortname = StringUtils.defaultString(newShortname);
+		oldShortname = StringUtils.defaultString(oldShortname);
+		if (!StringUtils.equals(oldShortname, newShortname)) {
 			logMessage.append(String.format(CHANGE_TEMPLATE, "Description", oldShortname, newShortname));
 		}
 	}
@@ -803,8 +797,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		}
 	}
 
-	private void writeTrackableLinkDeepTrackableChange(TrackableLink link, int newDeepTrackable, StringBuilder
-			logMessage){
+	private void writeTrackableLinkDeepTrackableChange(TrackableLink link, int newDeepTrackable, StringBuilder logMessage){
 		int oldDeepTrackable = link.getDeepTracking();
 		if (oldDeepTrackable != newDeepTrackable) {
 			logMessage.append(String.format(CHANGE_TEMPLATE, "Tracking at shop/website ",
@@ -833,7 +826,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		}
 	}
 
-	protected void  writeCommonActionChanges(Mailing mailing, TrackableLinkForm form, ComAdmin admin){
+	protected void writeCommonActionChanges(Mailing mailing, TrackableLinkForm form, ComAdmin admin){
 		try {
 			int mailingId = form.getMailingID();
 			int companyId = admin.getCompanyID();
@@ -843,8 +836,8 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			int oldOpenAction = mailing.getOpenActionID();
 			if (oldOpenAction != newOpenAction){
 				writeUserActivityLog(admin, EDIT_LINKS_ACTION,
-						"ID = "+mailingId+". Trackable links Open Action changed from " + getActionName(oldOpenAction, companyId) +
-								" to " + getActionName(newOpenAction, companyId));
+						String.format("ID = %d. Trackable links Open Action changed from %s to %s", mailingId,
+								getActionName(oldOpenAction, companyId), getActionName(newOpenAction, companyId)));
 			}
 
 			//log Open Action changes
@@ -852,8 +845,8 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 			int oldClickAction = mailing.getClickActionID();
 			if (oldClickAction != newClickAction){
 				writeUserActivityLog(admin, EDIT_LINKS_ACTION,
-						"ID = "+mailingId+". Trackable links Click Action changed from " + getActionName(oldClickAction, companyId) +
-								" to " + getActionName(newClickAction, companyId));
+						String.format("ID = %d. Trackable links Click Action changed from %s to %s", mailingId,
+								getActionName(oldClickAction, companyId), getActionName(newClickAction, companyId)));
 			}
 
 			if (logger.isInfoEnabled()){

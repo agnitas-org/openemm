@@ -10,6 +10,9 @@
 
 package com.agnitas.web;
 
+import static org.agnitas.web.StrutsActionBase.ACTION_NEW;
+import static org.agnitas.web.StrutsActionBase.ACTION_SAVE;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,17 +21,18 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.Mailing;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.RecipientForm;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 
 public class ComRecipientForm extends RecipientForm {
     private static final long serialVersionUID = -175166723099243720L;
@@ -39,6 +43,7 @@ public class ComRecipientForm extends RecipientForm {
     private String dateFormatPattern;
     private Map<String, String> bulkChange = new HashMap<>();
     private boolean trackingVeto;
+    private boolean selectAllColumns;
 
     public final boolean isTrackingVeto() {
 		return trackingVeto;
@@ -51,11 +56,11 @@ public class ComRecipientForm extends RecipientForm {
 	public static final Map<Integer, String> MAILING_TYPE_NAMES;
 	static {
 		MAILING_TYPE_NAMES = new HashMap<>();
-		MAILING_TYPE_NAMES.put(Mailing.TYPE_NORMAL, "mailing.Normal_Mailing");
-		MAILING_TYPE_NAMES.put(Mailing.TYPE_DATEBASED, "mailing.Rulebased_Mailing");
-		MAILING_TYPE_NAMES.put(Mailing.TYPE_ACTIONBASED, "mailing.action.based.mailing");
-		MAILING_TYPE_NAMES.put(Mailing.TYPE_FOLLOWUP, "mailing.Followup_Mailing");
-		MAILING_TYPE_NAMES.put(Mailing.TYPE_INTERVAL, "mailing.Interval_Mailing");
+		MAILING_TYPE_NAMES.put(MailingTypes.NORMAL.getCode(), "mailing.Normal_Mailing");
+		MAILING_TYPE_NAMES.put(MailingTypes.DATE_BASED.getCode(), "mailing.Rulebased_Mailing");
+		MAILING_TYPE_NAMES.put(MailingTypes.ACTION_BASED.getCode(), "mailing.action.based.mailing");
+		MAILING_TYPE_NAMES.put(MailingTypes.FOLLOW_UP.getCode(), "mailing.Followup_Mailing");
+		MAILING_TYPE_NAMES.put(MailingTypes.INTERVAL.getCode(), "mailing.Interval_Mailing");
 	}
 
 	/**
@@ -64,22 +69,17 @@ public class ComRecipientForm extends RecipientForm {
      * @return Value of property bindingEntry.
      */
     private BindingEntry getBindingEntry(int type, int id) {
-        Map<Integer, BindingEntry> sub=null;
-
-        sub = mailing.get(new Integer(id)); 
-        if(sub == null) {
-            sub = new HashMap<>();
-            mailing.put(new Integer(id), sub); 
-        }
-
-        if(sub.get(new Integer(type)) == null) {
-            BindingEntry entry=(BindingEntry) getWebApplicationContext().getBean("BindingEntry");
-
+        Map<Integer, BindingEntry> sub =
+                mailing.computeIfAbsent(id, unused -> new HashMap<>());
+    
+        BindingEntry bindingEntry = sub.computeIfAbsent(type, t -> {
+            BindingEntry entry = getWebApplicationContext().getBean("BindingEntry", BindingEntry.class);
             entry.setMailinglistID(id);
-            entry.setMediaType(type);
-            sub.put(new Integer(type), entry); 
-        }
-        return sub.get(new Integer(type));
+            entry.setMediaType(t);
+            return entry;
+        });
+        
+        return bindingEntry;
     }
 
     public BindingEntry getEmailEntry(int id) {
@@ -90,7 +90,7 @@ public class ComRecipientForm extends RecipientForm {
         return getBindingEntry(1, id);
     }
 
-    public BindingEntry getPrintEntry(int id) {
+    public BindingEntry getPostEntry(int id) {
         return getBindingEntry(2, id);
     }
 
@@ -103,13 +103,23 @@ public class ComRecipientForm extends RecipientForm {
     }
 
 	@Override
-	protected boolean isParameterExcludedForUnsafeHtmlTagCheck( String parameterName, HttpServletRequest request) {
-		if (AgnUtils.allowed(request, Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
-			return true;
-		} else {
-			return super.isParameterExcludedForUnsafeHtmlTagCheck(parameterName, request);
-		}
+	protected boolean isParameterExcludedForUnsafeHtmlTagCheck(String parameterName, HttpServletRequest request) {
+		if (action == ACTION_SAVE || action == ACTION_NEW) {
+		    return true;
+        }
+        
+        return AgnUtils.allowed(request, Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED) ||
+                super.isParameterExcludedForUnsafeHtmlTagCheck(parameterName, request);
 	}
+
+    @Override
+    protected ActionMessages checkForHtmlTags(HttpServletRequest request) {
+        if (action == ACTION_SAVE || action == ACTION_NEW) {
+            return null;
+        }
+
+        return super.checkForHtmlTags(request);
+    }
 
     @Override
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
@@ -117,11 +127,13 @@ public class ComRecipientForm extends RecipientForm {
         clearBulkIds();
         bulkChange = new HashMap<>();
         this.trackingVeto = false;
+        selectAllColumns = false;
     }
 
     public void setBulkID(int id, String value) {
-        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true")))
-            this.bulkIDs.add(id);
+        if (value != null && (value.equals("on") || value.equals("yes") || value.equals("true"))) {
+			this.bulkIDs.add(id);
+		}
     }
 
     public String getBulkID(int id) {
@@ -161,7 +173,9 @@ public class ComRecipientForm extends RecipientForm {
     @Override
 	protected void loadNonFormDataForErrorView(ActionMapping mapping, HttpServletRequest request) {
         ApplicationContext springContext = WebApplicationContextUtils.getWebApplicationContext(request.getServletContext());
-        request.setAttribute("mailinglists", springContext.getBean("mailinglistApprovalService", MailinglistApprovalService.class).getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
+        request.setAttribute("mailinglists",
+                springContext.getBean("MailinglistApprovalService", MailinglistApprovalService.class)
+                        .getEnabledMailinglistsForAdmin(AgnUtils.getAdmin(request)));
 	}
 	
 	public Map<String, String> getBulkChange() {
@@ -172,4 +186,22 @@ public class ComRecipientForm extends RecipientForm {
 	public void setBulkChange(String key, String value) {
 		bulkChange.put(key, value);
 	}
+	
+	private boolean deleteAllDuplicate;
+    
+    public boolean isDeleteAllDuplicate() {
+        return deleteAllDuplicate;
+    }
+    
+    public void setDeleteAllDuplicate(boolean deleteAllDuplicate) {
+        this.deleteAllDuplicate = deleteAllDuplicate;
+    }
+
+    public boolean isSelectAllColumns() {
+        return selectAllColumns;
+    }
+
+    public void setSelectAllColumns(boolean selectAllColumns) {
+        this.selectAllColumns = selectAllColumns;
+    }
 }

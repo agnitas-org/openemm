@@ -21,6 +21,7 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.beanutils.BasicDynaClass;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaProperty;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ComRecipientDao;
@@ -58,11 +59,11 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 			try {
 				throw new RuntimeException("EMM-4435: customer_id is missing");
 			} catch(Exception e) {
-				logger.error(String.format("Missing customer_id property (company ID %d, page %d, %d rows, sorting criterion \"%s\", sorting %s, sql \"%s\", column \"%s\")", 
-						companyID, 
-						pageNumber, 
-						rownums, 
-						sortCriterion, 
+				logger.error(String.format("Missing customer_id property (company ID %d, page %d, %d rows, sorting criterion \"%s\", sorting %s, sql \"%s\", column \"%s\")",
+						companyID,
+						pageNumber,
+						rownums,
+						sortCriterion,
 						sortedAscending ? "asceding" : "descending",
 						sqlStatementForData,
 						columns), e);
@@ -76,30 +77,40 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 			PaginatedListImpl<Recipient> recipientPaginatedList = recipientDao.getRecipients(companyID, columns, sqlStatementForData, sqlParametersForData, sortCriterion, sortedAscending, pageNumber, rownums);
 			
 			// Convert PaginatedListImpl of Recipient into PaginatedListImpl of DynaBean
-			List<DynaBean> partialListOfDynaBeans = new ArrayList<>();
-			if (recipientPaginatedList.getList() != null && !recipientPaginatedList.getList().isEmpty()) {
-				DynaProperty[] properties = new DynaProperty[columns.size()];
-				int i = 0;
-				for (String column : columns) {
-					properties[i++] = new DynaProperty(column.toLowerCase(), String.class);
-				}
-				BasicDynaClass dynaClass = new BasicDynaClass("recipient", null, properties);
-
-				for (Recipient recipient : recipientPaginatedList.getList()) {
-					DynaBean bean = dynaClass.newInstance();
-					for (String column : columns) {
-						bean.set(column.toLowerCase(), recipient.getCustParametersNotNull(column.toUpperCase()));
-					}
-					partialListOfDynaBeans.add(bean);
-				}
-			}
+			List<DynaBean> partialListOfDynaBeans = convertPaginatedListToDynaBean(recipientPaginatedList);
 			
-			return new PaginatedListImpl<>(partialListOfDynaBeans, recipientPaginatedList.getFullListSize(), rownums, pageNumber, sortCriterion, sortedAscending);
+			return new PaginatedListImpl<>(partialListOfDynaBeans,
+					recipientPaginatedList.getFullListSize(),
+					recipientPaginatedList.getPageSize(),
+					recipientPaginatedList.getPageNumber(),
+					recipientPaginatedList.getSortCriterion(),
+					recipientPaginatedList.getSortDirection());
 		} catch (Exception e) {
 			logger.error("Error executing RecipientBeanQueryWorker", e);
 			error = e;
 			return null;
 		}
+	}
+	
+	protected List<DynaBean> convertPaginatedListToDynaBean(PaginatedListImpl<Recipient> recipientPaginatedList) throws InstantiationException, IllegalAccessException {
+		List<DynaBean> partialListOfDynaBeans = new ArrayList<>();
+		if (CollectionUtils.isNotEmpty(recipientPaginatedList.getList())) {
+			DynaProperty[] properties = new DynaProperty[columns.size()];
+			int i = 0;
+			for (String column : columns) {
+				properties[i++] = new DynaProperty(column.toLowerCase(), String.class);
+			}
+			BasicDynaClass dynaClass = new BasicDynaClass("recipient", null, properties);
+
+			for (Recipient recipient : recipientPaginatedList.getList()) {
+				DynaBean bean = dynaClass.newInstance();
+				for (String column : columns) {
+					bean.set(column.toLowerCase(), recipient.getCustParametersNotNull(column.toUpperCase()));
+				}
+				partialListOfDynaBeans.add(bean);
+			}
+		}
+		return partialListOfDynaBeans;
 	}
 
 	public Exception getError() {

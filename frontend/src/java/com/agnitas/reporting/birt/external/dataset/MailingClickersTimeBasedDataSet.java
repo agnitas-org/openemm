@@ -127,7 +127,7 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 				" COUNT(*) AS gross, " +
 				" COUNT(CASE WHEN rlog.customer_id = 0 then 1 end) AS anonymous, " +
 				clickTimeSqlPart + " AS click_time " +
-				" FROM " + getClickLogDeviceTableName(companyID) + " rlog " +
+				" FROM " + getRdirLogTableName(companyID) + " rlog " +
 				" LEFT JOIN " + getCustomerTableName(companyID) + " cust ON (rlog.customer_id = cust.customer_id) " +
 				" WHERE rlog." + keyColumn + " = ? " +
 				positiveDeviceClassPart +

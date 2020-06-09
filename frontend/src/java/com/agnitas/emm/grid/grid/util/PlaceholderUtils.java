@@ -13,7 +13,7 @@ package com.agnitas.emm.grid.grid.util;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.grid.grid.beans.ComGridPlaceholder;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
@@ -23,9 +23,7 @@ public class PlaceholderUtils {
     public static final String PLACEHOLDER_DEFAULT_CONTENT_BIG_TEXT = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
     public static final String PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC = "assets/core/images/grid_expire_image.png";
     public static final String PLACEHOLDER_DEFAULT_CONTENT_LINK_HREF = "#";
-    public static final String PLACEHOLDER_DEFAULT_CONTENT_IMAGE_NAME = "grid_expire_image.png";
 
-    public static final String DELETE_IMAGE_MESSAGE = "__delete_image__";
     public static final String TOC_ITEM_ID_PREFIX = "toc_";
 
     private static final Map<Integer, String> defaultValues = new HashMap<>();

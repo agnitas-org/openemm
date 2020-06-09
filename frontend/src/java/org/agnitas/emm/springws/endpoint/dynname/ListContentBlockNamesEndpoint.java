@@ -25,13 +25,12 @@ import org.springframework.ws.server.endpoint.AbstractMarshallingPayloadEndpoint
 
 import com.agnitas.beans.DynamicTag;
 
-@SuppressWarnings("deprecation")
 public class ListContentBlockNamesEndpoint extends AbstractMarshallingPayloadEndpoint {
 
 	@Resource
 	private DynamicTagNameService dynamicTagNameService;
 	@Resource
-	private ObjectFactory objectFactory; 
+	private ObjectFactory objectFactory;
 
 	@Override
 	protected Object invokeInternal(Object arg0) throws Exception {

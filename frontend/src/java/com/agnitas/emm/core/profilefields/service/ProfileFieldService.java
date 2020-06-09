@@ -18,7 +18,9 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComProfileField;
+import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
+import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
 public interface ProfileFieldService {
@@ -61,4 +63,6 @@ public interface ProfileFieldService {
     UserAction getOpenEmmChangeLog(ComProfileField field, ProfileFieldForm form);
 
     UserAction getEmmChangeLog(ComProfileField field, ProfileFieldForm form);
+
+    List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
 }

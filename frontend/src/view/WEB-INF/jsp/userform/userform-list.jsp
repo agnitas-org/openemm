@@ -165,7 +165,7 @@
                     <display:column headerClass="js-table-sort" titleKey="userform.usesActions">
                         <c:if test="${userform.usesActions}">
                             <span class="badge badge-highlighted" data-tooltip="<bean:message key="default.Name"/>: ${userform.actionNames}">
-                                <bean:message key="Yes"/>
+                                <bean:message key="default.Yes"/>
                             </span>
                         </c:if>
                         <c:if test="${not userform.usesActions}">
@@ -177,11 +177,9 @@
                         <span class="multiline-auto">${userFormEditForm.formUrl}${userform.formName}</span>
                     </display:column>
 
-                    <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="creationDate"/>
+                    <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true" format="{0,date,${adminDateFormat}}" property="creationDate"/>
 
-                    <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true"
-                                    format="{0,date,yyyy-MM-dd}" property="changeDate"/>
+                    <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true" format="{0,date,${adminDateFormat}}" property="changeDate"/>
 
                         <display:column class="table-actions align-center js-checkable"
                                         headerClass="js-table-sort squeeze-column js-filter-activeness"
@@ -228,12 +226,9 @@
     </div>
 </html:form>
 
-<script language="javascript" type="text/javascript">
-  AGN.Initializers.ShowTargetListFilters = function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-    var filtersDescription = '<div class="well"><strong><bean:message key="yourCompanyID"/></strong> ${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].company.id}';
-    $scope.find("#filtersDescription").html(filtersDescription);
-  }
+<script id="userform-overview-filters" type="text/x-mustache-template" data-initializer="userform-overview-filters">
+    <div class='well'>
+        <strong><bean:message key="yourCompanyID"/></strong>
+        ${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].company.id}
+    </div>
 </script>

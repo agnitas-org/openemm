@@ -13,22 +13,20 @@ package org.agnitas.emm.company.service.impl;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.beans.Company;
-import org.agnitas.emm.company.service.CompanyService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.ComCompany;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import org.agnitas.emm.company.service.CompanyService;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.springframework.beans.factory.annotation.Required;
 
 public final class CompanyServiceImpl implements CompanyService {
 	
 	private ComCompanyDao companyDao;
 	
 	@Override
-	public final Company getCompanyOrNull(@VelocityCheck int companyId) {
+	public final ComCompany getCompanyOrNull(@VelocityCheck int companyId) {
 		return companyDao.getCompany(companyId);
 	}
 	
@@ -56,6 +54,11 @@ public final class CompanyServiceImpl implements CompanyService {
 	@Override
 	public List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId) {
 		return companyDao.getActiveOwnCompaniesLight(companyId);
+	}
+
+	@Override
+	public List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId) {
+		return companyDao.getCreatedCompanies(companyId);
 	}
 
 	@Required

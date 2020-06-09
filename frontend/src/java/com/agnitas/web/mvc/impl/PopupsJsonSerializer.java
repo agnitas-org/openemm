@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.util.GuiConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -83,7 +83,7 @@ public class PopupsJsonSerializer extends JsonSerializer<StrutsPopups> {
         }
     }
 
-    private static class PopupsDto {
+    public static class PopupsDto {
         private List<Message> success;
         private List<Message> warning;
         private List<Message> alert;

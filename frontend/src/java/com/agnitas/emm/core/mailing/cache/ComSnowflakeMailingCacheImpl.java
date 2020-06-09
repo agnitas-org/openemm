@@ -10,10 +10,12 @@
 
 package com.agnitas.emm.core.mailing.cache;
 
-
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComMailingDao;
 
@@ -21,58 +23,61 @@ import com.agnitas.dao.ComMailingDao;
  * Cache for light-weight mailing objects with DAO access.
  */
 public class ComSnowflakeMailingCacheImpl implements SnowflakeMailingCache {
-	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger( ComSnowflakeMailingCacheImpl.class);
+	private static final transient Logger logger = Logger.getLogger(ComSnowflakeMailingCacheImpl.class);
+
+	private ConfigService configService;
 	
 	/** DAO for accessing mailing data. */
 	private ComMailingDao mailingDao;
-	
+
 	/** Internal cache structure. */
-	private TimeoutLRUMap<Integer, LightweightMailing> cache;
-	
-	// -------------------------------------------------------------------- business code
+	private TimeoutLRUMap<String, LightweightMailing> cache;
+
 	@Override
-	public LightweightMailing getSnowflakeMailing(int mailingId) throws ComSnowflakeMailingCacheException {
-		LightweightMailing mailing = this.cache.get( mailingId);
-		
-		if( mailing == null) {
-			mailing = this.mailingDao.getLightweightMailing( mailingId);
-			
-			if( mailing != null && mailing.getMailingID() != 0) {
-				cache.put( mailingId, mailing);
-			} else
+	public LightweightMailing getSnowflakeMailing(int companyId, int mailingId) throws ComSnowflakeMailingCacheException {
+		LightweightMailing mailing = getCache().get(companyId + "_" + mailingId);
+
+		if (mailing == null) {
+			mailing = mailingDao.getLightweightMailing(companyId, mailingId);
+
+			if (mailing != null && mailing.getMailingID() != 0) {
+				getCache().put(companyId + "_" + mailingId, mailing);
+			} else {
 				mailing = null;
+			}
 		}
-		
-		if( mailing == null) {
-			logger.error( "Mailing ID " + mailingId + " not found");
-			
-			throw new ComSnowflakeMailingCacheException( "Mailing ID " + mailingId + " not found");
+
+		if (mailing == null) {
+			logger.error("Mailing ID " + mailingId + " not found");
+
+			throw new ComSnowflakeMailingCacheException("Mailing ID " + mailingId + " not found");
 		}
-		
+
 		return mailing;
 	}
 	
-	
-	// -------------------------------------------------------------------- dependency injection
-	
+	private TimeoutLRUMap<String, LightweightMailing> getCache() {
+		if (cache == null) {
+			cache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.MailgunMaxCache), configService.getLongValue(ConfigValue.MailgunMaxCacheTimeMillis));
+		}
+		
+		return cache;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
 	/**
 	 * Setter for ComMailingDao.
 	 * 
-	 * @param comMailingDao DAO
+	 * @param comMailingDao
+	 *            DAO
 	 */
-	public void setComMailingDao( ComMailingDao comMailingDao) {
-		this.mailingDao = comMailingDao;
+	@Required
+	public void setComMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
 	}
-	
-	/**
-	 * Setter for cache structure.
-	 * 
-	 * @param cache cache structure
-	 */
-	public void setCache( TimeoutLRUMap<Integer, LightweightMailing> cache) {
-		this.cache = cache;
-	}
-
 }

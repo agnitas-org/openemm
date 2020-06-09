@@ -74,7 +74,7 @@ public class CalendarController {
 
     @RequestMapping("/calendar.action")
     public String view(ComAdmin admin, Model model) {
-        model.addAttribute("localeDatePattern", AgnUtils.getLocaleDateFormatSpecific(admin.getLocale()).toPattern());
+        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         loadAdminData(model, admin);
 
         return "calendar_view";
@@ -89,7 +89,7 @@ public class CalendarController {
 
     @RequestMapping("/calendar/getPlannedMailings.action")
     public String getPlannedMailings(ComAdmin admin, Model model) {
-        model.addAttribute("localeDatePattern", AgnUtils.getLocaleDateFormatSpecific(admin.getLocale()).toPattern());
+        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         setPlannedMails(model, admin);
 
         return "calendar_planned_mailings_list_ajax";
@@ -201,14 +201,14 @@ public class CalendarController {
     }
 
     private void setUnsentMails(Model model, ComAdmin admin) {
-        PaginatedListImpl<Map<String, Object>> unsentList = calendarService.getUnsentMailings(admin.getCompanyID(), UNSENT_MAILS_LIST_SIZE);
+        PaginatedListImpl<Map<String, Object>> unsentList = calendarService.getUnsentMailings(admin, UNSENT_MAILS_LIST_SIZE);
 
         model.addAttribute("unsentMails", unsentList.getList());
         model.addAttribute("unsentMailsListSize", UNSENT_MAILS_LIST_SIZE);
     }
 
     private void setPlannedMails(Model model, ComAdmin admin) {
-        PaginatedListImpl<Map<String, Object>> plannedList = calendarService.getPlannedMailings(admin.getCompanyID(), PLANNED_MAILS_LIST_SIZE);
+        PaginatedListImpl<Map<String, Object>> plannedList = calendarService.getPlannedMailings(admin, PLANNED_MAILS_LIST_SIZE);
 
         model.addAttribute("plannedMails", plannedList.getList());
         model.addAttribute("plannedMailsListSize", PLANNED_MAILS_LIST_SIZE);

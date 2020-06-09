@@ -51,6 +51,7 @@ public class TargetNodeMailingRevenue extends TargetNode implements Serializable
 	private String primaryValue;
 	
 	/** Company ID. */
+	@SuppressWarnings("unused")
 	private int companyId;
 	
 	/**
@@ -78,8 +79,8 @@ public class TargetNodeMailingRevenue extends TargetNode implements Serializable
 	 * @return array of valid operators
 	 */
 	public static TargetOperator[] getValidOperators() {
-		return new TargetOperator[] { 
-				OPERATOR_YES, 
+		return new TargetOperator[] {
+				OPERATOR_YES,
 				OPERATOR_NO
 				};
 	}
@@ -106,7 +107,7 @@ public class TargetNodeMailingRevenue extends TargetNode implements Serializable
 
 	@Override
 	public void setCloseBracketAfter(boolean closeBracketAfter) {
-		this.closeBracketAfter = closeBracketAfter;		
+		this.closeBracketAfter = closeBracketAfter;
 	}
 
 	@Override

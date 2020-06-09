@@ -17,14 +17,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.http.MediaType;
 
 /**
  * Utility class dealing with files and streams.
@@ -46,7 +53,23 @@ public class FileUtils {
 		return !Pattern.compile(INVALID_FILENAME_PATTERN).matcher(originalFilename).matches();
 	}
 	
-    /**
+	public static MediaType getMediaType(File file) {
+		if (file == null) {
+			logger.error("Could not detect file media type");
+			return null;
+		}
+		
+		try {
+			String contentType = Files.probeContentType(file.toPath());
+			return MediaType.parseMediaType(contentType);
+		} catch (IOException e) {
+			logger.error("Could not detect file media type of file: " + file.getName());
+		}
+		
+		return null;
+	}
+	
+	/**
 	 * Exception indicating, that a given ZIP entry was not found in ZIP file.
 	 */
 	public static class ZipEntryNotFoundException extends Exception {
@@ -315,4 +338,59 @@ public class FileUtils {
 		}
 		return filename;
 	}
+	
+	/**
+     * Receives files of Birt statistic, writes data to temporary file and returns file handle.
+     *
+     * @param prefix name for temporary file
+     * @param suffix extension for temporary file
+     * @param dirName name for temporary directory that will be created
+     * @param birtUrl URL of BIRT
+     * @param clientInternalUrl internal url to initialize http client to be used for transfer
+     *
+     * @return file handle to temporary file containing report
+     *
+     * @throws Exception on errors reading report data
+     */
+    public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, String clientInternalUrl) throws Exception {
+		HttpClient httpClient = HttpUtils.initializeHttpClient(clientInternalUrl);
+		return downloadAsTemporaryFile(prefix, suffix, dirName, birtUrl, httpClient, logger);
+	}
+	
+    public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, HttpClient httpClient, Logger loggerParameter) throws Exception {
+        final GetMethod method = new GetMethod(birtUrl);
+		
+		try {
+            int responseCode = httpClient.executeMethod(method);
+
+            if (responseCode != HttpStatus.SC_NOT_FOUND) {
+            	File file = File.createTempFile(prefix, suffix, AgnUtils.createDirectory(dirName));
+            	
+            	try( InputStream in = method.getResponseBodyAsStream()) {
+	            	try( FileOutputStream out = new FileOutputStream( file)) {
+	            		IOUtils.copy( in, out);
+	            	}
+            	}
+            	
+            	return file;
+            } else {
+            	loggerParameter.error("downloadAsTemporaryFile received http-code " + responseCode + " for url:\n" + birtUrl);
+            	return null;
+            }
+        } catch (HttpException e) {
+        	loggerParameter.fatal("HttpClient is in trouble ! Running URL of BIRT = " + birtUrl, e);
+            
+            throw e;
+        } catch (IOException e) {
+        	loggerParameter.fatal("I/O-Error while reading from stream ! " + birtUrl, e);
+            
+            throw e;
+        } catch (Throwable t) {
+        	loggerParameter.fatal("Caught Throwable", t);
+            
+            throw t;
+        } finally {
+            method.releaseConnection();
+        }
+    }
 }

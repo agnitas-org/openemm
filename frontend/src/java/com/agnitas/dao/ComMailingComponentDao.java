@@ -42,8 +42,6 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 
     int getImageComponent(@VelocityCheck int companyId, int mailingId, int componentType);
 
-    List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<Integer> type);
-
     CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName, boolean isMobileRequest);
 
 	MailingComponent getComponentByCdnID(String cdnID);

@@ -23,12 +23,13 @@ public class MailinglistDAO {
 	private long		mailinglistID;
 	private String		shortName;
 	private String		rdirDomain;
+	private boolean		frequencyCounterEnabled;
 	public MailinglistDAO  (DBase dbase, long forMailinglistID) throws SQLException {
 		Map <String, Object>		row;
 
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
-					    "SELECT mailinglist_id, shortname, rdir_domain " +
+					    "SELECT * " +
 					    "FROM mailinglist_tbl " +
 					    "WHERE (deleted IS NULL OR deleted = 0) AND mailinglist_id = :mailinglistID",
 					    "mailinglistID", forMailinglistID);
@@ -36,6 +37,9 @@ public class MailinglistDAO {
 				mailinglistID = dbase.asLong (row.get ("mailinglist_id"));
 				shortName = dbase.asString (row.get ("shortname"));
 				rdirDomain = dbase.asString (row.get ("rdir_domain"), true);
+				if (row.containsKey ("freq_counter_enabled")) {
+					frequencyCounterEnabled = dbase.asInt (row.get ("freq_counter_enabled")) == 1;
+				}
 			} else {
 				mailinglistID = 0L;
 			}
@@ -49,5 +53,8 @@ public class MailinglistDAO {
 	}
 	public String rdirDomain () {
 		return rdirDomain;
+	}
+	public boolean frequencyCounterEnabled () {
+		return frequencyCounterEnabled;
 	}
 }

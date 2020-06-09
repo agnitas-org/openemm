@@ -56,6 +56,7 @@
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="templateID" value="${templateId}"/>
     <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingID}"/>
+    <c:set target="${agnNavHrefParams}" property="init" value="true"/>
 </emm:instantiate>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">

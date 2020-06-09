@@ -51,7 +51,7 @@
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-edit"
                       data-action="form-editor-save">
-                        <bean:message key="button.Save"/>
+                        <bean:message key="button.Apply"/>
                     </a>
                 </div>
             </div>

@@ -19,14 +19,14 @@
 
 <c:set var="agnNavigationKey" 		value="formComponentsView" 								scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&formID=${formComponentsForm.formID}&init=true" 	scope="request" />
-<c:set var="agnTitleKey" 			value="workflow.panel.forms" 											scope="request" />
-<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 											scope="request" />
-<c:set var="sidemenu_active" 		value="SiteActions" 									scope="request" />
-<c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 											scope="request" />
+<c:set var="agnTitleKey" 			value="workflow.panel.forms" 							scope="request" />
+<c:set var="agnSubtitleKey" 		value="workflow.panel.forms" 							scope="request" />
+<c:set var="sidemenu_active" 		value="Forms" 											scope="request" />
+<c:set var="sidemenu_sub_active" 	value="workflow.panel.forms" 							scope="request" />
 <c:set var="agnHighlightKey" 		value="mailing.Graphics_Components" 					scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 											scope="request" />
-<c:set var="agnBreadcrumbsRootKey" 	value="SiteActions" 									scope="request" />
-<c:set var="agnHelpKey" 			value="graphicsInForms" 								scope="request" />
+<c:set var="agnBreadcrumbsRootKey" 	value="Forms" 											scope="request" />
+<c:set var="agnHelpKey" 			value="formImages" 								        scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

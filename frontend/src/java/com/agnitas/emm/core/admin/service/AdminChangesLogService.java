@@ -12,24 +12,15 @@ package com.agnitas.emm.core.admin.service;
 
 import java.util.List;
 
-import org.agnitas.emm.core.useractivitylog.UserAction;
-
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.web.ComAdminForm;
+import com.agnitas.emm.core.admin.form.AdminForm;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 
 /**
  * Service for logging changes in {@link ComAdmin}
  */
 public interface AdminChangesLogService {
-    /**
-     * Collect all changes in admin and his preferences and represent as list of {@link org.agnitas.emm.core.useractivitylog.UserAction} entities.
-     *
-     * @param newAdminData new data which will be set to admin.
-     * @param oldAdminData old admin data.
-     * @param oldAdminPreferences old admin preferences.
-     */
-    List<UserAction> getChangesAsUserActions(ComAdminForm newAdminData, ComAdmin oldAdminData, ComAdminPreferences oldAdminPreferences);
 
     /**
      * Return Gender text representation by id
@@ -164,5 +155,7 @@ public interface AdminChangesLogService {
                 return "unknown position";
         }
     }
+
+    List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences);
 
 }

@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Date;
 
+import com.agnitas.web.ShowImageServlet;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -21,7 +22,7 @@ import org.agnitas.util.NetworkUtil;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class MailingComponentImpl implements MailingComponent {
@@ -375,8 +376,20 @@ public class MailingComponentImpl implements MailingComponent {
 	public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-
-    /**
+	
+	@Override
+	public boolean isSourceComponent() {
+		return type == MailingComponent.TYPE_IMAGE ||
+				type == MailingComponent.TYPE_HOSTED_IMAGE &&
+						!isMobileImage();
+	}
+	
+	@Override
+	public boolean isMobileImage() {
+		return StringUtils.startsWith(componentName, ShowImageServlet.MOBILE_IMAGE_PREFIX);
+	}
+	
+	/**
 	 * This method encodes some parts of a URI. If in the given URI a "[", "]", "{" or "}" are found, they
 	 * will be replaced by appropriate HEX-Identifiers.
 	 * See here for more information:

@@ -11,7 +11,7 @@
 <c:set var="agnHighlightKey" 		value="pluginmanager.install" 	scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Administration" 			scope="request" />
-<c:set var="agnHelpKey" 			value="pluginmanagerList" 		scope="request" />
+<c:set var="agnHelpKey" 			value="pluginManagerGeneral" 		scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

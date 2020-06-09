@@ -30,6 +30,7 @@ import	org.apache.commons.codec.binary.Base64;
  */
 public class DkimDAO {
 	public class DKIM {
+		@SuppressWarnings("unused")
 		private long	id;
 		private boolean	local;
 		private String	key;
@@ -91,49 +92,51 @@ public class DkimDAO {
 		companyID = forCompanyID;
 		secretKey = useSecretKey;
 		dkims = new ArrayList <> ();
-		if (dbase.tableExists ("dkim_key_tbl")) try (DBase.With with = dbase.with ()) {
-			rq = dbase.query (with.jdbc (),
-					  "SELECT * FROM dkim_key_tbl " +
-					  "WHERE company_id IN (0, :companyID) AND " +
-					  "      ((valid_start IS NULL) OR (valid_start <= CURRENT_TIMESTAMP)) AND " +
-					  "      ((valid_end IS NULL) OR (valid_end >= CURRENT_TIMESTAMP)) " + 
-					  "ORDER BY timestamp",
-					  "companyID", companyID);
-			for (int n = 0; n < rq.size (); ++n) {
-				Map <String, Object>	row = rq.get (n);
-				boolean			hasSecret = row.containsKey ("domain_key_encrypted");
-				boolean			hasPlain = row.containsKey ("domain_key");
-				long			dkimID = dbase.asLong (row.get ("dkim_id"));
-				String			dkimKeySecret = hasSecret ? dbase.asString (row.get ("domain_key_encrypted")) : null;
-				String			dkimKey = hasPlain ? dbase.asString (row.get ("domain_key")) : null;
-				DKIM			dkim;
-			
-				if (dkimKeySecret != null) {
-					try {
-						dkimKey = decrypt (dkimKeySecret);
-					} catch (Exception e) {
-						dbase.logging ((dkimKey != null ? Log.WARNING : Log.ERROR), "dkim", "Entry " + dkimID + " has invalid encrypted key (" + e.toString () + ")" + (dkimKey != null ? ", fall back to plain version" : ""));
+		if (dbase.tableExists ("dkim_key_tbl")) {
+			try (DBase.With with = dbase.with ()) {
+				rq = dbase.query (with.jdbc (),
+						  "SELECT * FROM dkim_key_tbl " +
+						  "WHERE company_id IN (0, :companyID) AND " +
+						  "      ((valid_start IS NULL) OR (valid_start <= CURRENT_TIMESTAMP)) AND " +
+						  "      ((valid_end IS NULL) OR (valid_end >= CURRENT_TIMESTAMP)) " +
+						  "ORDER BY timestamp",
+						  "companyID", companyID);
+				for (int n = 0; n < rq.size (); ++n) {
+					Map <String, Object>	row = rq.get (n);
+					boolean			hasSecret = row.containsKey ("domain_key_encrypted");
+					boolean			hasPlain = row.containsKey ("domain_key");
+					long			dkimID = dbase.asLong (row.get ("dkim_id"));
+					String			dkimKeySecret = hasSecret ? dbase.asString (row.get ("domain_key_encrypted")) : null;
+					String			dkimKey = hasPlain ? dbase.asString (row.get ("domain_key")) : null;
+					DKIM			dkim;
+				
+					if (dkimKeySecret != null) {
+						try {
+							dkimKey = decrypt (dkimKeySecret);
+						} catch (Exception e) {
+							dbase.logging ((dkimKey != null ? Log.WARNING : Log.ERROR), "dkim", "Entry " + dkimID + " has invalid encrypted key (" + e.toString () + ")" + (dkimKey != null ? ", fall back to plain version" : ""));
+						}
+					} else if ((dkimKey != null) && hasSecret) {
+						try {
+							dbase.update (with.jdbc (),
+								      "UPDATE dkim_key_tbl SET domain_key_encrypted = :domainKey WHERE dkim_id = :dkimID",
+								      "dkimID", dkimID,
+								      "domainKey", encrypt (dkimKey));
+							dbase.logging (Log.DEBUG, "dkim", "Added encrypted key to " + dkimID);
+						} catch (SQLException e) {
+							dbase.logging (Log.ERROR, "dkim", "Failed to add encrypted key to " + dkimID + ": " + e);
+						} catch (Exception e) {
+							dbase.logging (Log.WARNING, "dkim", "Failed to encrypt entry " + dkimID + ": " + e);
+						}
 					}
-				} else if ((dkimKey != null) && hasSecret) {
-					try {
-						dbase.update (with.jdbc (),
-							      "UPDATE dkim_key_tbl SET domain_key_encrypted = :domainKey WHERE dkim_id = :dkimID",
-							      "dkimID", dkimID,
-							      "domainKey", encrypt (dkimKey));
-						dbase.logging (Log.DEBUG, "dkim", "Added encrypted key to " + dkimID);
-					} catch (SQLException e) {
-						dbase.logging (Log.ERROR, "dkim", "Failed to add encrypted key to " + dkimID + ": " + e);
-					} catch (Exception e) {
-						dbase.logging (Log.WARNING, "dkim", "Failed to encrypt entry " + dkimID + ": " + e);
+					dkim = new DKIM (dkimID,
+							 dbase.asLong (row.get ("company_id")) == companyID,
+							 dkimKey,
+							 StringOps.punycodeDomain (dbase.asString (row.get ("domain"))),
+							 dbase.asString (row.get ("selector")));
+					if (dkim.valid ()) {
+						dkims.add (dkim);
 					}
-				}
-				dkim = new DKIM (dkimID,
-						 dbase.asLong (row.get ("company_id")) == companyID,
-						 dkimKey,
-						 StringOps.punycodeDomain (dbase.asString (row.get ("domain"))),
-						 dbase.asString (row.get ("selector")));
-				if (dkim.valid ()) {
-					dkims.add (dkim);
 				}
 			}
 		}

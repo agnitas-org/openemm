@@ -22,36 +22,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.springframework.jdbc.core.RowCallbackHandler;
+
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
 import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
 import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-import org.springframework.jdbc.core.RowCallbackHandler;
 
 public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	/** The logger. */
 	private static final transient Logger logger = Logger.getLogger(RecipientStatDataSet.class);
-	
-	private static String getHstCustomerBindingTblName(int companyID) {
-		return "hst_customer_" + companyID + "_binding_tbl";
-	}
-	
-	private static String getCustomerBindingTblName(int companyID) {
-		return "customer_" + companyID + "_binding_tbl";
-	}
-	
-	private static String getCustomerTblName(int companyID) {
-    	return "customer_" + companyID + "_tbl";
-	}
 
 	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetID, Integer mailinglistID, int mediaType, String language) {
 		if (StringUtils.isBlank(language)) {
@@ -61,8 +50,8 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		StringBuilder query = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
 		query.append("SELECT bind.user_status AS userstatus, COUNT(DISTINCT cust.customer_id) AS amount")
-				.append(" FROM ").append(getCustomerTblName(companyID)).append(" cust")
-				.append(" LEFT JOIN ").append(getCustomerBindingTblName(companyID)).append(" bind ON (cust.customer_id = bind.customer_id)")
+				.append(" FROM ").append(getCustomerTableName(companyID)).append(" cust")
+				.append(" LEFT JOIN ").append(getCustomerBindingTableName(companyID)).append(" bind ON (cust.customer_id = bind.customer_id)")
 				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust.bounceload = 0");
 
 		// bounceload check is NEEDED here, because we also select customers without binding table entries
@@ -133,8 +122,8 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		query.append("SELECT cust.mailtype AS mailtype, COUNT(DISTINCT cust.customer_id) AS amount ")
 				.append(" FROM ")
-				.append(getCustomerTblName(companyID)).append(" cust, ")
-				.append(getCustomerBindingTblName(companyID)).append(" bind")
+				.append(getCustomerTableName(companyID)).append(" cust, ")
+				.append(getCustomerBindingTableName(companyID)).append(" bind")
 				.append(" WHERE cust.customer_id = bind.customer_id AND bind.user_status = 1 AND cust.mailtype in (0, 1, 2)");
 
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
@@ -216,15 +205,14 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	    	}
     	}
 
-
     	StringBuilder sql = new StringBuilder("SELECT ");
 		sql.append(dateSelectPart).append(" AS time, ")
 				.append("bind.user_status AS userstatus, ")
-				.append("COUNT(DISTINCT bind.customer_id) AS amount")
-				.append(" FROM ").append(getCustomerBindingTblName(companyID)).append(" bind");
+				.append("COUNT(*) AS amount")
+				.append(" FROM ").append(getCustomerBindingTableName(companyID)).append(" bind");
 		
 		if (StringUtils.isNotBlank(target.getTargetSQL())){
-			sql.append(" JOIN ").append(getCustomerTblName(companyID)).append(" cust ON bind.customer_id = cust.customer_id");
+			sql.append(" JOIN ").append(getCustomerTableName(companyID)).append(" cust ON bind.customer_id = cust.customer_id");
 		}
 		
 		sql.append(" WHERE bind.timestamp >= ? AND bind.timestamp < ? ");
@@ -235,7 +223,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 			sql.append(" AND (").append(target.getTargetSQL()).append(")");
 		}
 
-		if (mailinglistID != null){
+		if (mailinglistID != null) {
 			sql.append(" AND bind.mailinglist_id = ?");
     		parameters.add(mailinglistID);
 		}
@@ -262,8 +250,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		
 		if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyID)) {
 			// Select additional data from history tables
-			String hstQuery = query.replace(getCustomerBindingTblName(companyID), getHstCustomerBindingTblName(companyID))
-					.replace("bind.timestamp,", "bind.timestamp_change,");
+			String hstQuery = query.replace(getCustomerBindingTableName(companyID), getHstCustomerBindingTableName(companyID));
 			
 			query(logger, hstQuery, callback, parameters.toArray(new Object[0]));
 		}
