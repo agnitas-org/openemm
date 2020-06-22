@@ -18,4 +18,4 @@ And join the OpenEMM support forum:
 
 **Compilation of OpenEMM backend**
 
-If you want to compile OpenEMM on a Linux platform that does not offer static libraries (like CentOS 8), the static libraries for _libssl_ and _libcrypto_ will be missing. To fix that edit file _Makefile_ in directory _src/c/xmlback/_ and remove parameters "-Wl,-Bstatic" and "-Wl,-Bdynamic" from the "LIBS" definition. 
+If you want to compile the OpenEMM backend on a Linux platform that does not offer static libraries (like CentOS 8), the static libraries for _libssl_ and _libcrypto_ will be missing. To fix that edit file _Makefile_ in directory _src/c/xmlback/_ and remove parameters "-Wl,-Bstatic" and "-Wl,-Bdynamic" from the "LIBS" definition. 
