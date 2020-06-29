@@ -409,6 +409,7 @@ public class ConfigValue {
 
 	public static final ConfigValue LogonIframeUrlEnglish = new ConfigValue("logon.iframe.url.en");
 	public static final ConfigValue LogonIframeUrlGerman = new ConfigValue("logon.iframe.url.de");
+	public static final ConfigValue SkipLogonIframeUrlCheck = new ConfigValue("logon.iframe.url.skipCheck", "false");
 
 	public static final ConfigValue CleanupBindingsOfDeletedMailinglists = new ConfigValue("cleanup.bindings_of_deleted_mailinglists");
 

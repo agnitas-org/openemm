@@ -40,7 +40,7 @@
         <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body data-initializer="logon" class="hidden">
-        <div class="l-logon-mask">
+        <div class="l-logon-mask" id="l-logon-mask">
             <mvc:form id="logon-form" servletRelativeAction="/logon.action" modelAttribute="form"
                       data-form="resource"
                       data-resource-selector="#logon-form"
@@ -134,12 +134,21 @@
             </mvc:form>
         </div>
 
-        <div class="l-frame-wrapper">
-            <iframe src="${iframeUrl}" class="l-frame js-fixed-iframe" border="0" frameborder="0" scrolling="auto" width="100%" height="100%">
+        <div class="l-frame-wrapper" id="l-frame-wrapper">
+            <iframe src="${iframeUrl}" class="l-frame js-fixed-iframe" id="l-frame" name="l-frame" border="0" frameborder="0" scrolling="auto" width="100%" height="100%">
                 Your Browser does not support IFRAMEs, please update!
             </iframe>
         </div>
 
         <%@include file="/WEB-INF/jsp/additional.jsp"%>
+        
+        <script>
+            window.addEventListener('load', function() {
+                if ($('#l-frame').attr('src') == '') {
+                    $('#l-frame-wrapper').css('display', 'none');
+                    $('#l-logon-mask').css('width', '100%');
+                }
+            });
+        </script>
     </body>
 </html>

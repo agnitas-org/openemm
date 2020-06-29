@@ -431,7 +431,7 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
     			int expireUploadDefault = configService.getIntegerValue(ConfigValue.ExpireUpload);
     			int expireSuccessDefault = configService.getIntegerValue(ConfigValue.ExpireSuccess);
     			int maxFieldsDefault = configService.getIntegerValue(ConfigValue.MaxFields);
-		    	for (Map<String, Object> row : jdbcTemplate.queryForList("SELECT maxadminmails, expire_cookie, expire_stat, expire_bounce, expire_onepixel, expire_recipient, expire_upload, expire_success FROM company_tbl WHERE company_id = ?", companyID)) {
+		    	for (Map<String, Object> row : jdbcTemplate.queryForList("SELECT maxadminmails, expire_cookie, expire_stat, expire_bounce, expire_onepixel, expire_recipient, expire_upload, expire_success, max_fields FROM company_tbl WHERE company_id = ?", companyID)) {
 		    		if (row.get("maxadminmails") != null) {
 			    		int maxadminmails = ((Number) row.get("maxadminmails")).intValue();
 			    		if (maxadminmailsDefault != maxadminmails) {

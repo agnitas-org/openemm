@@ -541,26 +541,31 @@ public class LogonControllerBasic {
         return "logon";
     }
 
-    private String getLogonIframeUrl() {
+    protected String getLogonIframeUrl() {
 		try {
-		    URL logonIframeUrlGerman = new URL(configService.getValue(ConfigValue.LogonIframeUrlGerman));
-		    URL logonIframeUrlEnglish = new URL(configService.getValue(ConfigValue.LogonIframeUrlEnglish));
-		    
-		    URLConnection logonIframeUrlGermanConnection = logonIframeUrlGerman.openConnection();
-		    URLConnection logonIframeUrlEnglishConnection = logonIframeUrlEnglish.openConnection();
-		    
-		    logonIframeUrlGermanConnection.connect();
-		    logonIframeUrlEnglishConnection.connect();
-		    
-		    if (AgnUtils.isGerman(LocaleContextHolder.getLocale())) {
-				return configService.getValue(ConfigValue.LogonIframeUrlGerman);
-		    } else {
-		    	return configService.getValue(ConfigValue.LogonIframeUrlEnglish);
-		    }
-		 } catch (IOException e) {
-			 return "/logonoffline.action";
-		 }
-    }
+			String connectionUrl;
+			//Check locale
+			if (AgnUtils.isGerman(LocaleContextHolder.getLocale())) {
+				//Locale german -> Set connectionUrl to german url
+				connectionUrl = "https://www.agnitas.de/openemm-login/";
+			} else {
+				//Locale english -> Set connectionUrl to english url
+				connectionUrl = "https://www.agnitas.de/en/openemm-login/";
+			}
+			//Try connection
+			URL logonIframeUrl = new URL(connectionUrl);
+			
+			URLConnection logonIframeUrlConnection = logonIframeUrl.openConnection();
+			
+			logonIframeUrlConnection.connect();
+			
+			//Connection successful -> Return normal logon
+			return connectionUrl;
+		} catch (IOException e) {
+			//Any connection attempt was not successful -> Return nothing
+			return null;
+		}
+	}
 
     private String getLogonCompletePage(ComAdmin admin, Model model) {
         model.addAttribute("isFrameShown", configService.getBooleanValue(ConfigValue.LoginIframe_Show, admin.getCompanyID()));

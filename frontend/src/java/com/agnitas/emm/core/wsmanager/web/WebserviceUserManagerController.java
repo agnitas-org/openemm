@@ -106,6 +106,7 @@ public class WebserviceUserManagerController {
 
     @PostMapping(value = "/user/new.action")
     public String create(ComAdmin admin, @Valid @ModelAttribute WebserviceUserForm userForm, Popups popups) {
+        processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups) ) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
@@ -126,6 +127,12 @@ public class WebserviceUserManagerController {
         
         popups.alert("error.webserviceuser.cannot_update");
         return "messages";
+    }
+
+    private void processCompanyId(final ComAdmin admin, final WebserviceUserForm userForm) {
+        if(!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
+            userForm.setCompanyId(admin.getCompanyID());
+        }
     }
     
     private boolean validateMaxNumberWSUsers(Popups popups) {
