@@ -48,9 +48,9 @@ class UpdatePlugin (Plugin): #{{{
 class Duplicate: #{{{
 	__slots__ = ['name', 'expiration', 'path', 'dbs']
 	unit = Unit ()
-	def __init__ (self, name: str, expiration: Unit.Parsable) -> None:
+	def __init__ (self, name: str, expiration: int) -> None:
 		self.name = name
-		self.expiration = self.unit.parse (expiration, 7 * 24 * 60 * 60)
+		self.expiration = expiration
 		self.path = os.path.join (base, 'var', 'run', f'duplicate-{name}')
 		create_path (self.path)
 		self.dbs: List[DBM] = []
@@ -219,7 +219,7 @@ class Update: #{{{
 	
 	def setup (self) -> None:
 		if self.check_for_duplicates:
-			self.duplicate = Duplicate (name = self.name, expiration = '7d')
+			self.duplicate = Duplicate (name = self.name, expiration = 7)
 
 	def done (self) -> None:
 		self.tracker.close ()

@@ -579,6 +579,10 @@ active() {
 		shift
 		cmd="$BASE/bin/activator"
 		if [ -x "$cmd" ]; then
+			varrun="$BASE/var/run"
+			if [ ! -d "$varrun" ]; then
+				mkdir -p "$varrun"
+			fi
 			"$cmd" "$service"
 			rc=$?
 			case "$rc" in

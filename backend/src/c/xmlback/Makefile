@@ -10,9 +10,9 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DVERSION="OpenEMM 20.04.000.142"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DVERSION="OpenEMM 20.04.000.181"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
-LIBS	= -lagn -lslang -lsqlite3 -llua -Wl,-Bstatic -lssl -lcrypto -Wl,-Bdynamic -lxml2 -lz -ldl -lm
+LIBS	= -lagn -lslang -lsqlite3 -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
 	  blockmail.c block.c tagpos.c tracker.c mailtypedefinition.c links.c blockspec.c fix.c \
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \

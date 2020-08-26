@@ -11,10 +11,11 @@
 #
 from	__future__ import annotations
 import	signal, socket, logging
-import	socketserver, select, urllib.parse, base64
+import	socketserver, urllib.parse, base64
 import	xmlrpc.server, xmlrpc.client
 import	aiohttp_xmlrpc.client
 from	signal import Signals
+from	threading import Thread
 from	types import FrameType, TracebackType
 from	typing import Any, Callable, Optional, Protocol, Union
 from	typing import Dict, List, NamedTuple, Tuple, Type
@@ -109,7 +110,7 @@ server.add_handler ('/', handler)	# if you use None instead of the path '/' this
 server.run ()
 
 """
-	__slots__ = ['term', 'server']
+	__slots__ = ['server']
 	class Answer (NamedTuple):
 		code: int
 		mime: str
@@ -246,7 +247,7 @@ server.run ()
 	
 	def __handler (self, sig: Signals, stack: FrameType) -> None:
 		if sig in (signal.SIGINT, signal.SIGTERM):
-			self.term = True
+			Thread (target = lambda: self.server.shutdown (), daemon = True).start ()
 
 	def __setup_signals (self) -> None:
 		signal.signal (signal.SIGTERM, self.__handler)
@@ -255,7 +256,6 @@ server.run ()
 		signal.signal (signal.SIGPIPE, signal.SIG_IGN)
 
 	def __init__ (self, cfg: Optional[Configable] = None, full: bool = False, prefix: str = 'xmlrpc', timeout: Optional[float] = None) -> None:
-		self.term = False
 		host = ''
 		port = 8080
 		allow_none = False
@@ -292,13 +292,7 @@ server.run ()
 	
 	def run (self) -> None:
 		"""start the server"""
-		while not self.term:
-			try:
-				self.server.handle_request ()
-			except select.error:
-				pass
-			except Exception as e:
-				logger.exception ('Unexpected exception caught: %s' % e)
+		self.server.serve_forever ()
 
 class XMLRPCClient (xmlrpc.client.ServerProxy):
 	"""XML-RPC Client Framework

@@ -18,7 +18,9 @@ from	typing import Dict, List, Tuple
 from	typing import cast
 from	agn3.config import Config
 from	agn3.db import DB
-from	agn3.definitions import syscfg
+from	agn3.definitions import user, syscfg
+from	agn3.ignore import Ignore
+from	agn3.process import Processentry, Processtable
 from	agn3.rpc import XMLRPC, XMLRPCClient
 from	agn3.runtime import Runtime
 from	agn3.tools import atoi
@@ -157,6 +159,74 @@ class Callback (XMLRPC.RObject):
 	def startMailing (self, statusID: int) -> Tuple[bool, str]:
 		logger.debug ('startMailing %r' % (statusID, ))
 		return self.__response (self.trigger.fire (statusID))
+
+	def startOnDemandMailing (self, mailingID: int) -> Tuple[bool, str]:
+		logger.debug ('startOnDemandMailing %r' % (mailingID, ))
+		return self.__response (self.trigger.demand (mailingID))
+	
+	def __stateCheck (self, t: Processentry) -> Optional[str]:
+		err: Optional[str] = 'Unspecified'
+		path = '/proc/%d/status' % t.stats.pid
+		try:
+			with open (path, 'r') as fd:
+				status = fd.read ()
+			for line in status.split ('\n'):
+				with Ignore (ValueError):
+					(var, val) = [_v.strip () for _v in line.split (':', 1)]
+					if var == 'State' and val:
+						state = val[0]
+						if state == 'Z':
+							err = 'is zombie'
+						elif state == 'T':
+							err = 'is stopped'
+						else:
+							err = None
+						break
+			else:
+				err = 'Failed to find state for process %s in\n%s' % (t.stats, status)
+		except IOError as e:
+			err = 'Failed to read rocess path %s: %s' % (path, str (e))
+		return err
+		
+	def isActive (self) -> bool:
+		logger.debug ('isActive')
+		rc = False
+		reason = []
+		proc = Processtable ()
+		be = proc.select (user = user, comm = 'java', rcmd = 'org.agnitas.backend.MailoutServerXMLRPC')
+		if len (be) == 1:
+			err = self.__stateCheck (be[0])
+			if err is None:
+				rc = True
+			else:
+				reason.append ('Backend: %s' % err)
+		elif len (be) > 1:
+			reason.append ('There are more than one backend running: %s' % ', '.join ([str (_t.stats.pid) for _t in be]))
+		else:
+			reason.append ('No java process is active')
+		if not rc:
+			logger.warning ('Backend activity error: %s' % ', '.join (reason))
+		elif reason:
+			logger.info ('Backend is active: %s' % ', '.join (reason))
+		return rc
+
+	def isOnhold (self, mailingID: int) -> bool:
+		logger.debug ('isOnhold')
+		with DBAccess () as dba:
+			companyID = None
+			for rq in dba.queryc ('SELECT company_id, deleted FROM mailing_tbl WHERE mailing_id = :mailingID', {'mailingID': mailingID}):
+				companyID = rq.company_id
+				if bool (rq.deleted):
+					return True
+			#
+			if companyID is not None:
+				for rq in dba.queryc ('SELECT company_id, mailing_id, priority FROM serverprio_tbl WHERE company_id = :companyID OR mailing_id = :mailingID',{'companyID': companyID, 'mailingID': mailingID}):
+					if rq.company_id:
+						if rq.company_id == companyID and (not rq.mailing_id or rq.mailing_id == mailingID):
+							return True
+					elif rq.mailing_id and rq.mailing_id == mailingID:
+						return True
+		return False
 
 class Main (Runtime):
 	__slots__ = ['port']

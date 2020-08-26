@@ -162,7 +162,7 @@ class Autoresponder:
 					raise error ('no entry in mailloop_tbl for %s found' % self.aid)
 				security_token = rq.security_token if rq.security_token else ''
 				url = ('%s/sendMailloopAutoresponder.do?'
-				       'mailloopID=%s&company_id=%d&customer_id=%d&security_token=%s'
+				       'mailloopID=%s&companyID=%d&customerID=%d&securityToken=%s'
 				       % (rdir_domain, self.aid, company_id, customer_id, urllib.parse.quote (security_token)))
 				if dryrun:
 					print ('Would trigger mail using %s' % url)
