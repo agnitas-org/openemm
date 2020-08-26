@@ -3,7 +3,6 @@
 <%@ page import="org.agnitas.beans.Mailing"%>
 <%@ page import="org.agnitas.util.AgnUtils"%>
 <%@ page import="org.agnitas.web.MailingSendAction"%>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
@@ -21,10 +20,12 @@
 
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}" />
 
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
 <c:set var="ACTION_CONFIRM_SEND_WORLD" value="<%= ComMailingSendActionBasic.ACTION_CONFIRM_SEND_WORLD %>" scope="page" />
 <c:set var="ACTION_VIEW_SEND" value="<%= MailingSendAction.ACTION_VIEW_SEND %>" scope="page" />
 
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, mailingSendForm.workflowId)}" scope="page"/>
+<c:set var="workflowId" value="${workflowParams.workflowId}" scope="page"/>
+<c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}" scope="page"/>
 <c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key="mailing.EditWithCampaignManager" /></c:set>
 
 <c:set var="aZone" value="${admin.adminTimezone}" />
@@ -124,7 +125,7 @@
 													</c:if>
 												</ul>
 											</div>
-											
+
 											<div style="border: 1px solid #cccdcd; margin-bottom: 20px;">
 												<div class="panel-body" style="border-bottom: 1px solid #cccdcd;">
 													<h2 class="headline">
@@ -199,7 +200,7 @@
 												</ul>
 											</div>
 										</c:if>
-	
+
 										<ul class="list-group">
 											<c:forEach var="sendStatKey" items="${mailingSendForm.sendStats.keySet()}">
 												<c:if test="${sendStatKey gt 0}">
@@ -217,14 +218,14 @@
 										</ul>
 								</div>
 							</div>
-	
+
 							<div class="form-group">
 								<div class="col-sm-2" style="padding-top: 10px;">
-									<label class="control-label" for="sendDate"> 
+									<label class="control-label" for="sendDate">
 										<bean:message key="Date" />
 									</label>
 								</div>
-	
+
 								<div class="col-sm-6" style="padding-top: 10px;">
 									<div class="input-group">
 										<div class="input-group-controls">
@@ -235,13 +236,13 @@
 												<i class="icon icon-calendar-o"></i>
 											</button>
 										</div>
-										<c:if test="${mailingSendForm.workflowId ne 0}">
+										<c:if test="${isWorkflowDriven}">
 											<div class="input-group-btn">
 												<button type="button" class="btn btn-regular" tabindex="-1" data-help="help_${helplanguage}/mailing/view_base/WorkflowEditorMsg.xml">
 													<i class="icon icon-help"></i>
 												</button>
-												<c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">
-													<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}" />
+												<c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
+													<c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingSendForm.mailingID}" />
 												</c:url>
 												<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
 													<i class="icon icon-linkage-campaignmanager"></i>
@@ -251,21 +252,21 @@
 										</c:if>
 									</div>
 								</div>
-								
+
 								<div class="col-sm-4" style="padding-top: 10px;">
 									<div class="input-group" data-field="split">
 										<div class="input-group-controls">
 											<input type="text" name="sendTime" value="${currentHour}:${currentMinutes}" data-value="${currentHour}:${currentMinutes}" class="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" data-field-split="sendHour, sendMinute" data-field-split-rule=":">
 										</div>
 										<div class="input-group-addon">
-											<span class="addon"> 
+											<span class="addon">
 												<i class="icon icon-clock-o"></i>
 											</span>
 										</div>
-										<c:if test="${mailingSendForm.workflowId ne 0}">
+										<c:if test="${isWorkflowDriven}">
 											<div class="input-group-btn">
-												<c:url var="workflowManagerUrl" value="/workflow/${mailingSendForm.workflowId}/view.action">
-													<c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingSendForm.mailingID}"/>
+												<c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
+													<c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
 												</c:url>
 												<a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
 													<i class="icon icon-linkage-campaignmanager"></i>
@@ -279,7 +280,7 @@
 							<%@ include file="mailing-send2-optimized-mailing-generation-close.jspf"%>
 							<div class="form-group">
 								<div class="col-sm-2" style="padding-top: 10px;">
-									<label class="control-label" for="sendDate"> 
+									<label class="control-label" for="sendDate">
 										<bean:message key="birt.Timezone" />
 									</label>
 								</div>
@@ -297,37 +298,37 @@
 				<div class="col-sm-6">
 					<div class="tile">
 						<div class="tile-header">
-							<a href="#" class="headline" data-toggle-tile="#send-report-settings"> 
-								<i class="tile-toggle icon icon-angle-down"></i> 
+							<a href="#" class="headline" data-toggle-tile="#send-report-settings">
+								<i class="tile-toggle icon icon-angle-down"></i>
 								<bean:message key="mailing.send.report" />
 							</a>
 						</div>
 						<div class="tile-content tile-content-forms hidden" id="send-report-settings">
-		
+
 							<div class="form-group">
 								<div style="border: 1px solid #cccdcd;">
-										
+
 									<div style="width: 100%; border-bottom: 1px solid #cccdcd;">
-										<label style="width: 30%; padding: 5px 10px; margin-bottom: 0px; border-right: 1px solid #cccdcd;"> 
-											<html:checkbox property="reportSendAfter24h" styleId="reportSendAfter24h" /> 
+										<label style="width: 30%; padding: 5px 10px; margin-bottom: 0px; border-right: 1px solid #cccdcd;">
+											<html:checkbox property="reportSendAfter24h" styleId="reportSendAfter24h" />
 											<span style="line-height: 24px; vertical-align: top; font-weight: normal">
 												<bean:message key="mailing.send.report.24h" />
 											</span>
 										</label>
-										<label style="width: 30%; padding: 5px 10px; margin-bottom: 0px; border-right: 1px solid #cccdcd;"> 
-											<html:checkbox property="reportSendAfter48h" styleId="reportSendAfter48h" /> 
+										<label style="width: 30%; padding: 5px 10px; margin-bottom: 0px; border-right: 1px solid #cccdcd;">
+											<html:checkbox property="reportSendAfter48h" styleId="reportSendAfter48h" />
 											<span style="line-height: 24px; vertical-align: top; font-weight: normal">
 												<bean:message key="mailing.send.report.48h" />
 											</span>
 										</label>
-										<label style="width: 33%; padding: 5px 10px; margin-bottom: 0px;"> 
-											<html:checkbox property="reportSendAfter1Week" styleId="reportSendAfter1Week" /> 
+										<label style="width: 33%; padding: 5px 10px; margin-bottom: 0px;">
+											<html:checkbox property="reportSendAfter1Week" styleId="reportSendAfter1Week" />
 											<span style="line-height: 24px; vertical-align: top; font-weight: normal">
 												<bean:message key="mailing.send.report.1week" />
 											</span>
 										</label>
 									</div>
-									
+
 									<div style="width: 100%;">
 										<div class="form-group vspace-bottom-0" style="padding: 5px 10px;">
 											<div class="col-sm-4 control-label-left col-xs-5 col-md-3">
@@ -344,35 +345,35 @@
 							</div>
 						</div>
 					</div>
-				
+
 				<%@include file="mailing-send2-recipients.jspf"%>
 						
 					<div class="tile">
 						<div class="tile-header">
-							<a href="#" class="headline" data-toggle-tile="#mailing-option-settings"> 
-								<i class="tile-toggle icon icon-angle-down"></i> 
+							<a href="#" class="headline" data-toggle-tile="#mailing-option-settings">
+								<i class="tile-toggle icon icon-angle-down"></i>
 								<bean:message key="mailing.option" />
 							</a>
 						</div>
 						<div class="tile-content tile-content-forms" id="mailing-option-settings">
 							<div class="form-group">
 								<div style="border: 1px solid #cccdcd;">
-		
+
 										<ul>
 											<li class="list-group-item" style="border: none;">
 												<div class="checkbox">
-													<label> 
-														<input type="hidden" name="__STRUTS_CHECKBOX_doublechecking" value="0" /> 
-														<html:checkbox property="doublechecking" /> 
+													<label>
+														<input type="hidden" name="__STRUTS_CHECKBOX_doublechecking" value="0" />
+														<html:checkbox property="doublechecking" />
 														<bean:message key="doublechecking.email" />
 													</label>
 												</div>
 											</li>
 											<li class="list-group-item" style="border: none;">
 												<div class="checkbox">
-													<label> 
-														<input type="hidden" name="__STRUTS_CHECKBOX_skipempty" value="0" /> 
-														<html:checkbox property="skipempty" /> 
+													<label>
+														<input type="hidden" name="__STRUTS_CHECKBOX_skipempty" value="0" />
+														<html:checkbox property="skipempty" />
 														<bean:message key="skipempty.email" />
 													</label>
 												</div>
@@ -384,7 +385,7 @@
 							<emm:ShowByPermission token="mailing.setmaxrecipients">
 								<div class="form-group">
 									<div class="col-sm-5">
-										<label class="control-label"> 
+										<label class="control-label">
 										<label for="maxRecipients">
 											<bean:message key="setMaxRecipients" />
 										</label>
@@ -397,13 +398,13 @@
 									</div>
 								</div>
 							</emm:ShowByPermission>
-		
+
 							<%@ include file="mailing-send2-optimized-mailing-generation-open.jspf"%>
-							
+
 							<emm:ShowByPermission token="mailing.send.admin.options">
 								<div class="form-group" id="blocksizeElement">
 									<div class="col-sm-5">
-										<label class="control-label" for="blocksize"> 
+										<label class="control-label" for="blocksize">
 										<bean:message key="mailing.mailsperhour" />
 										</label>
 									</div>
@@ -429,7 +430,7 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<div class="col-sm-12">
 				<div class="row">
 					<div class="tile-footer" data-sizing="bottom">
@@ -439,8 +440,8 @@
 								<i class="icon icon-reply"></i>
 								<span class="text"><bean:message key="button.Cancel" /></span>
 							</agn:agnLink>
-		
-							<c:if test="${mailingSendForm.workflowId eq 0}">
+
+							<c:if test="${not isWorkflowDriven}">
 								<button type="button" class="btn btn-large btn-primary pull-right" data-form-set="send: send" data-form-confirm="${ACTION_CONFIRM_SEND_WORLD}">
 									<i class="icon icon-send-o"></i> <span class="text"><bean:message key="button.Send" /></span>
 								</button>

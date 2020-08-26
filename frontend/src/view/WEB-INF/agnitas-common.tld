@@ -677,7 +677,7 @@
         <function-class>org.agnitas.util.AgnUtils</function-class>
         <function-signature>java.lang.String formatBytes(int,int,java.lang.String,java.util.Locale)</function-signature>
         <example>
-            &lt;span&gt;${emm:formatBytes(bytes, 0, 'iec', pageContent.request.locale)}&lt;/span&gt;
+            &lt;span&gt;${emm:formatBytes(bytes, 0, 'iec', pageContext.request.locale)}&lt;/span&gt;
         </example>
     </function>
 
@@ -689,7 +689,7 @@
         <function-class>org.agnitas.util.AgnUtils</function-class>
         <function-signature>java.util.Locale getLocale(javax.servlet.http.HttpServletRequest)</function-signature>
         <example>
-            ${emm:getLocale(pageContent.request)}
+            ${emm:getLocale(pageContext.request)}
         </example>
     </function>
 
@@ -701,7 +701,7 @@
         <function-class>com.agnitas.util.JspUtilities</function-class>
         <function-signature>java.lang.String getTimeZoneId(javax.servlet.http.HttpServletRequest)</function-signature>
         <example>
-            ${emm:getTimeZoneId(pageContent.request)}
+            ${emm:getTimeZoneId(pageContext.request)}
         </example>
     </function>
 
@@ -752,7 +752,19 @@
         <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
         <function-signature>org.agnitas.web.forms.WorkflowParameters find(javax.servlet.http.HttpServletRequest)</function-signature>
         <example>
-            ${emm:getTimeZoneId(pageContent.request)}
+            ${emm:getWorkflowParams(pageContext.request)}
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Gets workflow parameters and set default workflowID.
+        </description>
+        <name>getWorkflowParamsWithDefault</name>
+        <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
+        <function-signature>org.agnitas.web.forms.WorkflowParameters defaultIfEmpty(javax.servlet.http.HttpServletRequest, java.lang.Integer)</function-signature>
+        <example>
+            ${emm:defaultIfEmpty(pageContext.request, 0)}
         </example>
     </function>
 

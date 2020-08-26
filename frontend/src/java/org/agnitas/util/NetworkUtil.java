@@ -51,12 +51,12 @@ public class NetworkUtil {
 	public static byte[] loadUrlData(String url) throws Exception {
 		HttpClient httpClient = new HttpClient();
 		setHttpClientProxyFromSystem(httpClient, url);
-		GetMethod get = new GetMethod(url);		
+		GetMethod get = new GetMethod(url);
 		get.setFollowRedirects(true);
 		
-		try {			
+		try {
 			httpClient.getParams().setParameter("http.connection.timeout", 5000);
-			int httpReturnCode = httpClient.executeMethod(get); 
+			int httpReturnCode = httpClient.executeMethod(get);
 
 			if (httpReturnCode == 200) {
 				// Don't use get.getResponseBody, it causes a warning in log
@@ -72,11 +72,11 @@ public class NetworkUtil {
 	}
 	
 	public static void setHttpClientProxyFromSystem(HttpClient httpClient, String url) {
-		String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
+		if (StringUtils.isNotBlank(System.getProperty("http.proxyHost"))) {
+			String proxyHost = System.getProperty("http.proxyHost");
 			String proxyPort = System.getProperty("http.proxyPort");
 			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			
+		
 			if (StringUtils.isBlank(nonProxyHosts)) {
 				if (StringUtils.isNotBlank(proxyHost)) {
 					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
@@ -88,19 +88,22 @@ public class NetworkUtil {
 			} else {
 				boolean ignoreProxy = false;
 				String urlDomain = getDomainFromUrl(url);
-				for (String nonProxyHost : nonProxyHosts.split("\\|")) {
-					nonProxyHost = nonProxyHost.trim();
-					if (urlDomain == null || urlDomain.equalsIgnoreCase(url)) {
-						ignoreProxy = true;
-						break;
+				if (urlDomain != null) {
+					urlDomain = urlDomain.trim().toLowerCase();
+					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+						nonProxyHost = nonProxyHost.trim().toLowerCase();
+						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+							ignoreProxy = true;
+							break;
+						}
 					}
-				}
-				if (!ignoreProxy) {
-					if (StringUtils.isNotBlank(proxyHost)) {
-						if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-							httpClient.getHostConfiguration().setProxy(proxyHost, Integer.parseInt(proxyPort));
-						} else {
-							httpClient.getHostConfiguration().setProxy(proxyHost, 8080);
+					if (!ignoreProxy) {
+						if (StringUtils.isNotBlank(proxyHost)) {
+							if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
+								httpClient.getHostConfiguration().setProxy(proxyHost, Integer.parseInt(proxyPort));
+							} else {
+								httpClient.getHostConfiguration().setProxy(proxyHost, 8080);
+							}
 						}
 					}
 				}

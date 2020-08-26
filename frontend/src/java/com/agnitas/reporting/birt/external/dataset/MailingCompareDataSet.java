@@ -457,9 +457,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
             }
         }
         if (!newMails.isEmpty()) {
-            if (!newMails.isEmpty()) {
-            	newMails = newMails.substring(0, newMails.length() - 1);
-            }
+            newMails = newMails.substring(0, newMails.length() - 1);
             if (!targets.isEmpty()) {
                 String bouncesQuery = createBouncesQueryForTargets(recipientsType, targets);
                 insertCategoryDataToTempTable(newMails, companyID, bouncesQuery, tempTableID, BOUNCES, BOUNCES_INDEX, targets, true, false);
@@ -467,10 +465,8 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
             String bouncesQuery = createBouncesQuery(recipientsType);
             insertCategoryDataToTempTable(newMails, companyID, bouncesQuery, tempTableID, BOUNCES, BOUNCES_INDEX, targets, false, true);
         }
-        if (!oldMails.isEmpty()) {
-            if (!oldMails.isEmpty()) {
-            	oldMails = oldMails.substring(0, oldMails.length() - 1);
-            }
+        if (!oldMails.isEmpty() && DbUtilities.checkIfTableExists(getDataSource(), "benchmark_mailing_stat_tbl")) {
+            oldMails = oldMails.substring(0, oldMails.length() - 1);
             insertBouncesFromBenchmarkTable(oldMails, companyID, tempTableID, targets);
         }
     }
@@ -492,9 +488,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         String[] ids = mailingIds.split(",");
         for (String id : ids) {
             int mailingId = Integer.parseInt(id.trim());
-            if (bounceMap.get(mailingId) == null) {
-                bounceMap.put(mailingId, 0);
-            }
+            bounceMap.putIfAbsent(mailingId, 0);
         }
 
         String insertQuery = getTempInsertQuery(tempTableID);

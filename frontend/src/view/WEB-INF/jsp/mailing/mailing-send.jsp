@@ -51,15 +51,16 @@
 
 <c:set var="ACTION_BASED_MAILING_TYPE" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page" />
 <c:set var="ACTION_PRIORITIZATION_SWITCHING" value="<%=ComMailingSendActionBasic.ACTION_PRIORITIZATION_SWITCHING%>" scope="page" />
-<c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
-<c:set var="isWorkflowDriven" value="${not empty workflowParameters and workflowParameters.workflowId > 0}"/>
+
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, mailingSendForm.workflowId)}" scope="page"/>
+<c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}" scope="page"/>
 
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}" />
 <c:set var="tmpMailingID" value="${mailingSendForm.mailingID}" />
 
 <c:if test="${isWorkflowDriven}">
-    <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParameters.workflowId}/view.action">
-        <c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
+    <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParams.workflowId}/view.action" scope="page">
+        <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingSendForm.mailingID}"/>
     </c:url>
 </c:if>
 

@@ -3,7 +3,6 @@
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.beans.ComAdmin" %>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -15,20 +14,15 @@
 <c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_MAILING_EXPORT" value="<%= ComMailingBaseAction.ACTION_MAILING_EXPORT %>"/>
 
-<c:set var="SESSION_CONTEXT_WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>"/>
-<c:set var="SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>"/>
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, param.workflowId)}" scope="page"/>
+<c:set var="isWorkflowDriven" value="${not empty workflowParams and workflowParams.workflowId gt 0}" scope="page"/>
+
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>"/>
+
 <c:set var="company" value="<%= ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany() %>"/>
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
-<c:set var="workflowId" value="${sessionScope[SESSION_CONTEXT_WORKFLOW_ID]}"/>
-<c:set var="workflowForwardParams" value="${sessionScope[SESSION_CONTEXT_WORKFLOW_FORWARD_PARAMS]}"/>
 
-<c:if test="${empty workflowId or workflowId eq 0}">
-    <c:set var="workflowId" value="${param.workflowId}"/>
-</c:if>
-
-
-<c:if test="${itemActionsSettings eq null}">
+<c:if test="${empty itemActionsSettings}">
     <%-- Instantiate if it doesn't exist yet --%>
     <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request"/>
 </c:if>
@@ -70,13 +64,13 @@
     
         <%-- Return to campaign --%>
 
-        <c:if test="${not empty workflowId and workflowId ne 0}">
+        <c:if test="${isWorkflowDriven}">
             <emm:instantiate var="option" type="java.util.LinkedHashMap">
                 <c:set target="${dropDownItems}" property="0" value="${option}"/>
                 <c:set target="${option}" property="url">
-                    <c:url value="/workflow/${workflowId}/view.action">
-                        <c:if test="${not empty workflowForwardParams}">
-                            <c:param name="forwardParams" value="${workflowForwardParams};elementValue=${param.mailingId}"/>
+                    <c:url value="/workflow/${workflowParams.workflowId}/view.action">
+                        <c:if test="${not empty workflowParams.workflowForwardParams}">
+                            <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${param.mailingId}"/>
                         </c:if>
                     </c:url>
                 </c:set>

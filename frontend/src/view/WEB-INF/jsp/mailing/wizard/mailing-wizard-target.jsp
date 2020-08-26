@@ -8,13 +8,15 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="mailingWizardForm" type="org.agnitas.web.MailingWizardForm"--%>
 
 <c:set var="ACTION_TARGET" value="<%= ComMailingWizardAction.ACTION_TARGET %>" />
 <c:set var="ACTION_ADD_TARGET" value="<%= ComMailingWizardAction.ACTION_ADD_TARGET %>"/>
 <c:set var="ACTION_NEW_TARGET" value="<%= ComMailingWizardAction.ACTION_NEW_TARGET %>"/>
+
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, workflowId)}" scope="page"/>
+<c:set var="workflowId" value="${workflowParams.workflowId}" scope="page"/>
 
 <agn:agnForm action="/mwTarget" id="wizard-step-7" data-form-focus="" data-form="resource">
     <html:hidden property="action" value="${ACTION_TARGET}"/>
@@ -81,7 +83,7 @@
                             <c:if test="${workflowId ne null or workflowId gt 0}">
                                 <div class="input-group-btn">
                                     <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
-                                        <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
+                                        <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
                                     </c:url>
                                     <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                         <i class="icon icon-linkage-campaignmanager"></i>
@@ -115,7 +117,7 @@
                                 <c:if test="${workflowId ne null or workflowId gt 0}">
                                     <div class="input-group-btn">
                                         <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
-                                            <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
+                                            <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
                                         </c:url>
                                         <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                             <i class="icon icon-linkage-campaignmanager"></i>
@@ -148,7 +150,7 @@
                     <div class="col-sm-8">
                         <div class="input-group">
                             <div class="input-group-controls">
-                                <select id="assistant_step7_targetgroups_select" name="targetID" size="1" class="form-control js-select" ${workflowId > 0 ? 'disabled="disabled"' : ''}>
+                                <select id="assistant_step7_targetgroups_select" name="targetID" size="1" class="form-control js-select" ${workflowId gt 0 ? 'disabled="disabled"' : ''}>
                                     <option value="0" selected>---</option>
                                     <c:forEach var="target" items="${targets}">
                                         <c:if test="${not emm:contains(mailingWizardForm.mailing.targetGroups, target.id)}">
@@ -162,7 +164,7 @@
                                 <c:when test="${workflowId ne null or workflowId gt 0}">
                                     <div class="input-group-btn">
                                         <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
-                                            <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
+                                            <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
                                         </c:url>
                                         <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                             <i class="icon icon-linkage-campaignmanager"></i>
@@ -184,7 +186,7 @@
                 <div class="form-group">
                     <div class="col-sm-offset-4 col-sm-8">
                         <c:choose>
-                            <c:when test="${fn:length(mailingWizardForm.mailing.targetGroups) > 0}">
+                            <c:when test="${fn:length(mailingWizardForm.mailing.targetGroups) gt 0}">
                                 <c:forEach var="target" items="${targets}">
                                     <c:if test="${emm:contains(mailingWizardForm.mailing.targetGroups, target.id)}">
                                         <div class="form-group">

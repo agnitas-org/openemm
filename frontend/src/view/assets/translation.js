@@ -127,7 +127,8 @@ window.I18n = {
             errors: {
                 notMatching: '<agn:agnMessage key="error.password.mismatch"/>',
                 unsafe: '<agn:agnMessage key="insecure" />'
-            }
+            },
+            lessThen: '<agn:agnMessage key="error.password.short" arg0="%s" />'
         },
         required: {
             errors: {

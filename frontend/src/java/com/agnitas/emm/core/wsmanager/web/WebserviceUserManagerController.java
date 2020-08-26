@@ -98,6 +98,7 @@ public class WebserviceUserManagerController {
                         admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)));
 
         model.addAttribute("companyList", companyService.getActiveOwnCompanyEntries(admin.getCompanyID()));
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
         writeUserActivityLog(admin, "webservice manager", "active tab - manage webservice user");
 
@@ -105,14 +106,16 @@ public class WebserviceUserManagerController {
     }
 
     @PostMapping(value = "/user/new.action")
-    public String create(ComAdmin admin, @Valid @ModelAttribute WebserviceUserForm userForm, Popups popups) {
+    public String create(ComAdmin admin, @Valid @ModelAttribute WebserviceUserForm userForm, Popups popups, final Model model) {
         processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups) ) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
             }
         }
-    
+
+        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
+
         popups.alert("error.webserviceuser.cannot_create");
         return "forward:/administration/wsmanager/users.action";
     }
@@ -225,7 +228,8 @@ public class WebserviceUserManagerController {
         	
         	
             model.addAttribute("webserviceUserForm", userForm);
-            
+            model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
+
             if(this.configService.getBooleanValue(ConfigValue.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
             	final WebservicePermissions permissions = this.webservicePermissionService.listAllPermissions();
             	final WebservicePermissionGroups permissionGroups = this.webservicePermissionGroupService.listAllPermissionGroups();

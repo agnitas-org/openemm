@@ -10,8 +10,27 @@
 
 package com.agnitas.emm.core.bounce.web;
 
+import java.net.IDN;
 import java.util.concurrent.Callable;
+
 import javax.servlet.http.HttpSession;
+
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.web.forms.FormUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.PollingUid;
@@ -32,22 +51,6 @@ import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 @PermissionMapping("bounce.filter")
@@ -220,7 +223,18 @@ public class BounceFilterController {
     }
 
     private boolean isAllowedMailloopDomain(String mailloopDomain){
-        return mailloopDomain != null && mailloopDomain.matches("(^|(.+\\.))agnitas\\.de");
+    	if(mailloopDomain != null) {
+    		try {
+    			IDN.toASCII(mailloopDomain);
+    			return true;
+    		} catch(final IllegalArgumentException e) {
+    			// Does not conform to a RFC3490 domain name
+    			
+    			return false;
+    		}
+    	} 
+    	
+    	return false;
     }
 
     private void setFilterEmailAttributes(ComAdmin admin, Model model, int id) {

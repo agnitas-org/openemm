@@ -22,8 +22,6 @@
 
 <c:set var="isEmailSettingsDisabled" value="${not isMailingEditable or not isEmailSettingsEditable}"/>
 
-<c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
-
 <emm:ShowByPermission token="template.show">
 
     <div class="tile">

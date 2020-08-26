@@ -6,7 +6,6 @@
 <%@ page import="org.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.web.ComMailingBaseAction" %>  <%-- Required for view_base_settings-follow3.jspf --%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -23,14 +22,8 @@
 <c:set var="ACTION_VIEW" value="<%= ComTargetAction.ACTION_VIEW %>" scope="request" />
 <c:set var="ACTION_REMOVE_TARGET" value="<%= MailingBaseAction.ACTION_REMOVE_TARGET%>" scope="page"/>
 
-<c:set var="WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="page"/>
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
-
 <c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>
 <c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>
-
-<c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
-<c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
 
 <c:set var="TARGET_MODE_OR" value="<%= ComMailing.TARGET_MODE_OR %>"/>
 <c:set var="TARGET_MODE_AND" value="<%= ComMailing.TARGET_MODE_AND %>"/>
@@ -54,26 +47,10 @@
 <c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED.toString() %>" scope="page"/>
 
 <c:set var="allSubscribersMessage"><bean:message key="statistic.all_subscribers"/></c:set>
-<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key="mailing.EditWithCampaignManager"/></c:set>
 
 <c:if test="${mailingBaseForm.isTemplate}">
     <c:set target="${mailingBaseForm}" property="showTemplate" value="${true}"/>
 </c:if>
-
-<c:choose>
-    <c:when test="${sessionScope[WORKFLOW_ID] ne null and sessionScope[WORKFLOW_ID] ne 0}">
-        <c:set var="workflowId" value="${sessionScope[WORKFLOW_ID]}" scope="page"/>
-        <c:set var="usedInCampaign" value="true" scope="page"/>
-    </c:when>
-    <c:when test="${mailingBaseForm.workflowId ne 0}">
-        <c:set var="workflowId" value="${mailingBaseForm.workflowId}" scope="page"/>
-        <c:set var="usedInCampaign" value="true" scope="page"/>
-    </c:when>
-    <c:otherwise>
-        <c:set var="workflowId" value="0" scope="page"/>
-        <c:set var="usedInCampaign" value="false" scope="page"/>
-    </c:otherwise>
-</c:choose>
 
 <c:set var="isMailingEditable" value="${not mailingBaseForm.worldMailingSend}"/>
 <emm:ShowByPermission token="mailing.content.change.always">
@@ -81,14 +58,19 @@
 </emm:ShowByPermission>
 
 <c:set var="isEmailSettingsEditable" value="${mailingBaseForm.canChangeEmailSettings}"/>
-
 <c:set var="isMailinglistEditable" value="${mailingBaseForm.canChangeMailinglist}"/>
 
-<c:set var="workflowParameters" value="${emm:getWorkflowParams(pageContext.request)}"/>
+<c:set var="formWorkflowId" value="${mailingBaseForm.workflowId}"/>
 
-<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowParameters.workflowId}/view.action">
-    <c:param name="forwardParams" value="${workflowParameters.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, mailingBaseForm.workflowId)}"/>
+<c:set var="workflowId" value="${workflowParams.workflowId}"/>
+<c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}"/>
+
+<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowId}/view.action">
+    <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}" />
 </c:url>
+
+<!--XYZ: view_base_settings.jsp ${workflowParams} - ${workflowId} - ${mailingBaseForm.workflowId} - ${formWorkflowId}-->
 
 <script type="text/javascript">
     (function(){
@@ -151,7 +133,7 @@
             <div class="col-sm-8">
                 <div class="input-group">
                     <div class="input-group-controls">
-                        <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not isMailingEditable or not isEmailSettingsEditable or useInCampaign}"/>
+                        <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not isMailingEditable or not isEmailSettingsEditable or isWorkflowDriven}"/>
                         <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
                                        data-action="save-mailing-list-id"
                                        disabled="${isMailinglistDenied}" data-field-validator="required-id">
@@ -162,7 +144,7 @@
                             </logic:iterate>
                         </agn:agnSelect>
                     </div>
-                    <c:if test="${usedInCampaign}">
+                    <c:if test="${isWorkflowDriven}">
                         <div class="input-group-btn">
                             <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                 <i class="icon icon-linkage-campaignmanager"></i>
@@ -185,7 +167,7 @@
                 <div class="col-sm-4">
                     <div class="input-group">
                         <div class="input-group-controls">
-                            <html:select styleId="settings_general_campaign" styleClass="form-control js-select" property="campaignID" disabled="${usedInCampaign}">
+                            <html:select styleId="settings_general_campaign" styleClass="form-control js-select" property="campaignID" disabled="${isWorkflowDriven}">
                                 <html:option value="0"><bean:message key="mailing.NoCampaign"/></html:option>
                                 <logic:iterate id="campaign" name="mailingBaseForm" property="campaigns" length="500">
                                     <html:option value="${campaign.id}">${campaign.shortname}</html:option>
@@ -193,7 +175,7 @@
                             </html:select>
                         </div>
 
-                        <c:if test="${usedInCampaign}">
+                        <c:if test="${isWorkflowDriven}">
                             <div class="input-group-btn">
                                 <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                     <i class="icon icon-linkage-campaignmanager"></i>
@@ -230,7 +212,7 @@
                     <div class="input-group">
                         <div class="input-group-controls">
                             <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control" data-action="change-general-mailing-type"
-                                           disabled="${not isMailingEditable or usedInCampaign or not isEmailSettingsEditable}">
+                                           disabled="${not isMailingEditable or isWorkflowDriven or not isEmailSettingsEditable}">
                                 <html:option value="${MAILING_TYPE_NORMAL}">
                                     <bean:message key="Normal_Mailing"/>
                                 </html:option>
@@ -244,7 +226,7 @@
 								<%@include file="view_base_settings-interval.jspf" %>
                             </agn:agnSelect>
                         </div>
-                        <c:if test="${usedInCampaign}">
+                        <c:if test="${isWorkflowDriven}">
                             <div class="input-group-btn">
                                 <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                     <i class="icon icon-linkage-campaignmanager"></i>
@@ -270,7 +252,7 @@
     </div>
     <div id="tile-mailingTargets" class="tile-content tile-content-forms">
         <c:choose>
-            <c:when test="${mailingBaseForm.complexTargetExpression or usedInCampaign}">
+            <c:when test="${mailingBaseForm.complexTargetExpression or isWorkflowDriven}">
                 <div class="form-group ${mailingBaseForm.complexTargetExpression ? 'has-feedback has-alert' : ''}">
                     <div class="col-sm-4">
                         <label class="control-label">
@@ -296,7 +278,7 @@
                                 </c:choose>
                             </div>
 
-                            <c:if test="${usedInCampaign}">
+                            <c:if test="${isWorkflowDriven}">
                                 <div class="input-group-btn">
                                     <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                         <i class="icon icon-linkage-campaignmanager"></i>
@@ -376,7 +358,7 @@
             </c:otherwise>
         </c:choose>
 
-        <c:set var="isTargetModeCheckboxDisabled" value="${usedInCampaign or mailingBaseForm.worldMailingSend}"/>
+        <c:set var="isTargetModeCheckboxDisabled" value="${isWorkflowDriven or mailingBaseForm.worldMailingSend}"/>
 
         <c:if test="${not (mailingBaseForm.complexTargetExpression or (isTargetModeCheckboxDisabled and fn:length(mailingBaseForm.targetGroupIds) <= 1))}">
             <div class="form-group">
@@ -446,7 +428,7 @@
 
             <div class="col-sm-8">
                 <html:select styleId="settingsTargetgroupsListSplit" styleClass="form-control js-double-select-trigger"
-                             property="splitBase" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or usedInCampaign}">
+                             property="splitBase" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or isWorkflowDriven}">
                     <c:if test="${mailingBaseForm.splitId eq -1}">
                         <html:option value="yes"><bean:message key="default.Yes"/></html:option>
                     </c:if>
@@ -492,7 +474,7 @@
                 <div class="input-group">
 
                     <div class="input-group-controls">
-                        <html:select styleId="settingsTargetgroupsListSplitPart" property="splitPart" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or usedInCampaign}"
+                        <html:select styleId="settingsTargetgroupsListSplitPart" property="splitPart" disabled="${not isMailingEditable or mailingBaseForm.wmSplit or isWorkflowDriven}"
                                      styleClass="form-control js-double-select-target">
 
                             <c:choose>
@@ -517,7 +499,7 @@
                         </html:select>
                     </div>
 
-                    <c:if test="${usedInCampaign}">
+                    <c:if test="${isWorkflowDriven}">
                         <div class="input-group-btn">
                             <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                 <i class="icon icon-linkage-campaignmanager"></i>

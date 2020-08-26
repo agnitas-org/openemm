@@ -13,6 +13,7 @@ package org.agnitas.emm.core.commons.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 
 public class ConfigValue {
@@ -386,6 +387,7 @@ public class ConfigValue {
 	public static final ConfigValue ManualInstallPath = new ConfigValue("manual_install_path", "${HOME}/webapps/manual");
 
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
+	public static final ConfigValue CleanMasterCompany = new ConfigValue("clean.mastercompany", "false");
 
 	public static final ConfigValue PushNotificationsEnabled = new ConfigValue("webpush.push_notification");
 	public static final ConfigValue PushNotificationProviderCredentials = new ConfigValue("webpush.provider_credentials");

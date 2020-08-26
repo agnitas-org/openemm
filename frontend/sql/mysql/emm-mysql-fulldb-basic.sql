@@ -184,7 +184,7 @@ CREATE TABLE workflow_reminder_recp_tbl (
 CREATE TABLE workflow_report_schedule_tbl (
 	company_id                 INT(10) COMMENT 'tenant - ID (company_tbl)',
 	report_id                  INT(10) COMMENT 'report to be generated and sent - ID (birtreport_tbl)',
-	send_date                  TIMESTAMP COMMENT 'calculated date when report should be generated and sent',
+	send_date                  TIMESTAMP NULL COMMENT 'calculated date when report should be generated and sent',
 	sent                       INT(1) DEFAULT 0 COMMENT 'whether or not scheduled report is sent, 1 = yes, 0 = no',
 	workflow_id                INT(10) DEFAULT 0 NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores scheduled reports managed by workflow';
@@ -198,11 +198,11 @@ CREATE TABLE workflow_tbl (
 	editor_position_top        INT(11) DEFAULT 0 COMMENT 'scroll offset of the workflow editor viewport, Y-axis; pixels',
 	is_inner                   INT(1) DEFAULT 0 COMMENT 'deprecated, must be removed from java code first',
 	status                     INT(1) DEFAULT 1 NOT NULL COMMENT 'current state of a workflow, 1 = open, 2 = active, 3 = deactivated, 4 = complete, 5 = testing, 6 = tested',
-	general_start_date         TIMESTAMP COMMENT 'the earliest date configured by start icon(s)',
-	general_end_date           TIMESTAMP COMMENT 'the latest date configured by stop icon(s), set if a workflow is configured to end at specific date',
+	general_start_date         TIMESTAMP NULL COMMENT 'the earliest date configured by start icon(s)',
+	general_end_date           TIMESTAMP NULL COMMENT 'the latest date configured by stop icon(s), set if a workflow is configured to end at specific date',
 	general_start_reaction     INT(1) DEFAULT 0 COMMENT 'reaction (if any) configured by the earliest start icon (or null)',
 	general_start_event        INT(1) DEFAULT 0 COMMENT 'event (if any) configured by the earliest start icon (or null)',
-	created                    TIMESTAMP NULL NOT NULL COMMENT 'entry creation date',
+	created                    TIMESTAMP NULL COMMENT 'entry creation date',
 	end_type                   INT(1) DEFAULT 0 COMMENT 'type of condition to end active workflow, 1 = automatic, 2 = at specific date',
 	workflow_schema            TEXT COMMENT 'JSON representation of workflow icons, their properties and connections between them',
 	PRIMARY KEY (workflow_id)
@@ -408,7 +408,7 @@ CREATE TABLE calendar_comment_tbl (
 	comment_content            VARCHAR(1000) COMMENT 'note content',
 	comment_date               TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date (in calendar for this entry)',
 	deadline                   INT(1) DEFAULT 0 COMMENT 'Does this date have a final deadline 1= comment should be sent - to...?',
-	planned_send_date          TIMESTAMP NOT NULL COMMENT 'Remind user at this time',
+	planned_send_date          TIMESTAMP NULL COMMENT 'Remind user at this time',
 	PRIMARY KEY (comment_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'in EMM - calendar comments to a specified date could be set, this data are stored here';
 
@@ -1012,7 +1012,7 @@ CREATE TABLE mailing_backend_log_tbl (
 	total_mails                INT(10) COMMENT 'number of mailings to generate',
 	status_id                  INT(10) COMMENT 'references maildrop_status_tbl.status_id',
 	timestamp                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'entry last change',
-	creation_date              TIMESTAMP NOT NULL COMMENT 'entry creation date'
+	creation_date              TIMESTAMP NULL COMMENT 'entry creation date'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'mailing-generation process-tbl';
 
 CREATE TABLE mailing_info_tbl (
@@ -1304,7 +1304,7 @@ CREATE TABLE sourcegroup_tbl (
 	sourcegroup_type           VARCHAR(2) NOT NULL COMMENT 'sourcegroup - code',
 	description                VARCHAR(1000) NOT NULL COMMENT 'comment on sourcegroup',
 	timestamp                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'sourcegroup last change',
-	creation_date              TIMESTAMP NOT NULL COMMENT 'sourcegroup creation date',
+	creation_date              TIMESTAMP NULL COMMENT 'sourcegroup creation date',
 	PRIMARY KEY (sourcegroup_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores groups for data-sources, e.g. file, DataAgent, ...';
 
@@ -1363,8 +1363,8 @@ CREATE TABLE timestamp_tbl (
 	description                VARCHAR(250) COMMENT '[secret_data] comment (for the service using that entry!)',
 	name                       VARCHAR(64) COMMENT '[secret_data] name (of the service using that entry!)',
 	cur                        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'actuall run - timestamp of this service, set prev = cur at the end of any successfull run',
-	prev                       TIMESTAMP NOT NULL COMMENT 'last run - timestamp of this service, set prev = cur at the end of any successfull run',
-	temp                       TIMESTAMP NOT NULL COMMENT 'possibility to set another temp timestamp if needed'
+	prev                       TIMESTAMP NULL COMMENT 'last run - timestamp of this service, set prev = cur at the end of any successfull run',
+	temp                       TIMESTAMP NULL COMMENT 'possibility to set another temp timestamp if needed'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'primary used for dataAgents, stores last run of a special service in order to provide diff - selections since last run';
 
 CREATE TABLE title_gender_tbl (
@@ -1762,9 +1762,9 @@ CREATE TABLE hostauth_pending_tbl (
 CREATE TABLE authenticated_hosts_tbl (
 	admin_id                   INTEGER NOT NULL COMMENT 'references  EMM-User (admin_tbl)',
 	host_id                    VARCHAR(80) NOT NULL COMMENT 'defines requesting host',
-	expire_date                TIMESTAMP NOT NULL COMMENT 'entry expire date',
+	expire_date                TIMESTAMP NULL COMMENT 'entry expire date',
 	creation_date              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'entry creation date',
-	change_date                TIMESTAMP NOT NULL COMMENT 'entry last change',
+	change_date                TIMESTAMP NULL COMMENT 'entry last change',
 	PRIMARY KEY (admin_id, host_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'contains successfull authentification info used for 2-factor-auth.';
 
@@ -1780,7 +1780,7 @@ ALTER TABLE job_queue_result_tbl ADD CONSTRAINT jobresult$jobid$fk FOREIGN KEY (
 CREATE TABLE admin_password_reset_tbl (
 	admin_id                   INTEGER NOT NULL COMMENT 'references EMM-User (admin_tbl)',
 	time                       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'last pwsd - change',
-	valid_until                TIMESTAMP NOT NULL COMMENT 'pswd expire date',
+	valid_until                TIMESTAMP NULL COMMENT 'pswd expire date',
 	ip_address                 VARCHAR(64) NOT NULL COMMENT '[secret_data] address calling last change',
 	token_hash                 VARCHAR(64) NOT NULL COMMENT 'hashed pswd - token',
 	error_count                INTEGER NOT NULL COMMENT 'fail counter'
@@ -1798,8 +1798,8 @@ CREATE TABLE form_component_tbl (
 	height                     INTEGER COMMENT 'Image height',
 	mimetype                   VARCHAR(32) NOT NULL COMMENT 'Mimetype of component',
 	description                VARCHAR(100) COMMENT 'Description of component',
-	creation_date              TIMESTAMP NOT NULL COMMENT 'Creation date of component',
-	change_date                TIMESTAMP NOT NULL COMMENT 'Change date of component',
+	creation_date              TIMESTAMP NULL COMMENT 'Creation date of component',
+	change_date                TIMESTAMP NULL COMMENT 'Change date of component',
 	PRIMARY KEY (id),
 	UNIQUE KEY (form_id, name, type)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Images or other binary content for userforms';
@@ -1809,8 +1809,8 @@ CREATE TABLE mail_notification_buffer_tbl (
 	recipients                 VARCHAR(400) NOT NULL COMMENT 'Recipients email addresses',
 	subject                    VARCHAR(400) NOT NULL COMMENT 'Email subject',
 	text                       VARCHAR(1000) NOT NULL COMMENT 'Email text',
-	send_time                  TIMESTAMP NOT NULL COMMENT 'Last send time of this email notification',
-	last_request_time          TIMESTAMP NOT NULL COMMENT 'Latest request to send exactly this email and its text',
+	send_time                  TIMESTAMP NULL COMMENT 'Last send time of this email notification',
+	last_request_time          TIMESTAMP NULL COMMENT 'Latest request to send exactly this email and its text',
 	request_count              INTEGER NOT NULL COMMENT 'Number of send retries',
 	PRIMARY KEY (id)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Buffer for email notification on errors and events to not send spam emails to notified email';
@@ -1954,7 +1954,7 @@ CREATE TABLE auto_import_ws_tbl (
 	company_id                 INTEGER NOT NULL COMMENT 'tenant - ID (company_tbl)',
 	auto_import_id             INTEGER NOT NULL COMMENT 'auto-import - ID (auto_import_tbl)',
 	status                     INTEGER NOT NULL COMMENT 'current job status; 1=queued, 2=running, 3=transferring, 4=done, 5=failed',
-	expire_timestamp           TIMESTAMP COMMENT 'an expiration timestamp — once it''s reached a cleanup is permitted',
+	expire_timestamp           TIMESTAMP NULL COMMENT 'an expiration timestamp — once it''s reached a cleanup is permitted',
 	report                     TEXT COMMENT 'a JSON representation of extra info about job results, to be set once job is completed/failed'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores WS-triggered auto-import job state while running and some time after completion';
 

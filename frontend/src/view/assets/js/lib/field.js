@@ -562,19 +562,60 @@ The required field helps with preventing a form from submit, when its field valu
   }
 
   PasswordField.prototype.safe = function() {
+    return this._getSecurityIssues().length === 0;
+  };
+
+  PasswordField.prototype._getSecurityIssues = function() {
+    var errors = [];
     var self = this,
-        pass = this.$strength.val(),
-        checks = ["[a-z]", "[A-Z]", "[0-9]", "[^a-zA-Z0-9]" ];
+      pass = this.$strength.val();
 
+    if ( pass.length == 0 ) return errors;
 
-    if ( pass.length == 0 ) return true;
-    if ( pass.length < 8 ) return false;
+    // Decide, which rules to use
+    var ruleName = this.$strength.attr("data-rule"); // Do not use data('rule') here, because the value is read once and cached
+    var rule = PasswordField._getRule(ruleName);
+    var minLength = rule.minLength,
+      checks = rule.checks;
 
-    return _.every(checks, function(check) {
+    if (pass.length < minLength) {
+      errors.push(t('fields.password.lessThen', minLength));
+      return errors;
+    }
+
+    if(!_.every(checks, function(check) {
       return self.passesCheck(pass, check);
-    });
+    })) {
+      errors.push(t('fields.password.errors.unsafe'));
+    }
+    return errors;
+  };
 
-  }
+  PasswordField._getRule = function(ruleName) {
+    var minLength = 8;
+    var checks = ["[a-z]", "[A-Z]", "[0-9]", "[^a-zA-Z0-9]" ];
+
+    switch(ruleName) {
+      case "LENGTH_8_MIXED":
+        minLength = 8;
+        checks = ["[a-z]", "[A-Z]", "[0-9]", "[^a-zA-Z0-9]" ];
+        break;
+      case "LENGTH_12_SIMPLE":
+        minLength = 12;
+        checks = ["."];
+        break;
+      case "WEBSERVICE":
+        minLength = 32;
+        checks = ["."];
+        break;
+
+      default:
+        console.log("Don't know password policy '" + name + "'");
+        return false;
+    }
+
+    return {minLength: minLength, checks: checks};
+  };
 
   PasswordField.prototype.passesCheck = function(pass, check) {
     if (pass.match(check)) {
@@ -591,7 +632,8 @@ The required field helps with preventing a form from submit, when its field valu
   }
 
   PasswordField.prototype.errors = function() {
-    var errors = [];
+    var self = this,
+      errors = [];
 
     if ( this.valid() ) return errors;
 
@@ -602,10 +644,13 @@ The required field helps with preventing a form from submit, when its field valu
       });
     }
 
-    if (!this.safe()) {
-      errors.push({
-        field: this.$strength,
-        msg:  t('fields.password.errors.unsafe')
+    var securityErrors = this._getSecurityIssues();
+    if (securityErrors.length > 0) {
+      securityErrors.forEach(function(el) {
+        errors.push({
+          field: self.$strength,
+          msg: el
+        });
       });
     }
 

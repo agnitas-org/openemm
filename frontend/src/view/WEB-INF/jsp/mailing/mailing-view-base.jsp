@@ -21,9 +21,6 @@
 
 <c:set var="MAILING_COMPONENT_TYPE_THUMBNAIL_IMAGE" value="<%= MailingComponentType.ThumbnailImage.getCode() %>"/>
 
-<c:set var="WORKFLOW_ID" value="<%= WorkflowParametersHelper.WORKFLOW_ID %>" scope="page"/>
-<c:set var="WORKFLOW_FORWARD_PARAMS" value="<%= WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS %>" scope="page"/>
-
 <c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
 <c:set var="TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
 <c:set var="TYPE_ACTIONBASED" value="<%= MailingTypes.ACTION_BASED.getCode() %>"/>
@@ -33,15 +30,21 @@
 <c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
 
 <c:set var="isMailingGrid" value="${mailingBaseForm.isMailingGrid}" scope="request"/>
-<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
+<c:set var="editWithCampaignManagerMessage" scope="request"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
 
 <c:set var="mailingFollowUpAllowed" value="${false}"/>
 <%@include file="mailing-view-base-follow.jspf" %>
 
-<c:set var="workflowParams" value="${emm:getWorkflowParams(pageContext.request)}" />
-<c:set var="isWorkflowDriven" value="${mailingBaseForm.workflowId gt 0 or not empty workflowParams and workflowParams.workflowId gt 0}"/>
+<c:set var="formWorkflowId" value="${mailingBaseForm.workflowId}"/>
 
-<c:set var="editWithCampaignManagerMessage" scope="page"><bean:message key='mailing.EditWithCampaignManager'/></c:set>
+<c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, mailingBaseForm.workflowId)}" scope="request"/>
+<c:set var="workflowId" value="${workflowParams.workflowId}"/>
+<c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}"/>
+<c:url var="editWithCampaignManagerLink" value="/workflow/${workflowId}/view.action">
+    <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingBaseForm.mailingID}"/>
+</c:url>
+
+<!--XYZ: mailing-view-base.jsp ${workflowParams} - ${workflowId} - ${mailingBaseForm.workflowId} - ${formWorkflowId}-->
 
 <tiles:insert page="template.jsp">
     <tiles:put name="header" type="string">
@@ -123,6 +126,8 @@
                     <html:hidden property="copyFlag"/>
                     <html:hidden property="isMailingGrid"/>
                     <html:hidden property="gridTemplateId"/>
+
+                    <emm:workflowParameters/>
                     <input type="hidden" name="scrollTop" value=""/>
 
                     <div class="tile">
@@ -165,7 +170,7 @@
                                     </div>
                                     <div class="col-sm-8">
                                         <div class="input-group">
-                                            <c:set var="isReadonlyDate" value="${mailingBaseForm.worldMailingSend || sessionScope[WORKFLOW_ID] ne null || (sessionScope[WORKFLOW_ID] eq null && mailingBaseForm.workflowId ne 0)}"/>
+                                            <c:set var="isReadonlyDate" value="${mailingBaseForm.worldMailingSend || isWorkflowDriven}"/>
                                             <div class="input-group-controls">
                                                 <input type="text" name="planDate" value="${mailingBaseForm.planDate}" id="mailingPlanDate" class="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${fn:toLowerCase(localDatePattern)}'" ${isReadonlyDate ? "disabled='disabled'" : ""}/>
                                             </div>
@@ -174,19 +179,8 @@
                                                     <i class="icon icon-calendar-o"></i>
                                                 </button>
 
-                                                <c:if test="${sessionScope[WORKFLOW_ID] ne null}">
-                                                    <c:set var="workflowId" value="${sessionScope[WORKFLOW_ID]}" scope="page"/>
-                                                </c:if>
-                                                <c:if test="${sessionScope[WORKFLOW_ID] eq null && mailingBaseForm.workflowId ne 0}">
-                                                    <c:set var="workflowId" value="${mailingBaseForm.workflowId}" scope="page"/>
-                                                </c:if>
-
-                                                <c:if test="${sessionScope[WORKFLOW_ID] ne null || mailingBaseForm.workflowId ne 0}">
-                                                    <c:url var="workflowManagerUrl" value="/workflow/${workflowId}/view.action">
-                                                        <c:param name="forwardParams" value="${sessionScope[WORKFLOW_FORWARD_PARAMS]};elementValue=${mailingBaseForm.mailingID}"/>
-                                                    </c:url>
-
-                                                    <a href="${workflowManagerUrl}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
+                                                <c:if test="${isWorkflowDriven}">
+                                                    <a href="${editWithCampaignManagerLink}" class="btn btn-info btn-regular" data-tooltip="${editWithCampaignManagerMessage}">
                                                         <i class="icon icon-linkage-campaignmanager"></i>
                                                         <strong><bean:message key="campaign.manager.icon"/></strong>
                                                     </a>

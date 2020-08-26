@@ -881,7 +881,7 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
 		if (mailingBaseForm.getWorkflowId() == 0) {
 		    Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
-		    if (workflowId != null) {
+		    if (workflowId != null && workflowId > 0) {
 		        mailingBaseForm.setWorkflowId(workflowId);
 		    }
 		}
@@ -896,8 +896,8 @@ public class ComMailingBaseAction extends MailingBaseAction {
 
     protected void setMailingWorkflowParameters(HttpServletRequest request, ComMailingBaseForm aForm) {
         ComAdmin admin = AgnUtils.getAdmin(request);
-        WorkflowParameters workflowParameters = WorkflowParametersHelper.find(request);
-        if (workflowParameters != null && workflowParameters.getWorkflowId() > 0) {
+        WorkflowParameters workflowParameters = WorkflowParametersHelper.defaultIfEmpty(request, aForm.getWorkflowId());
+        if (workflowParameters.getWorkflowId() > 0) {
             int workflowId = workflowParameters.getWorkflowId();
             int mailingIconId = workflowParameters.getNodeId();
             

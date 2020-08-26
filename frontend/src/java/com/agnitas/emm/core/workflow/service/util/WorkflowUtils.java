@@ -28,6 +28,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import javax.servlet.http.HttpServletRequest;
 
+import org.agnitas.target.TargetNode;
+import org.agnitas.target.TargetOperator;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DbColumnType;
+import org.agnitas.web.forms.WorkflowParameters;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import com.agnitas.beans.ComMailing;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
@@ -312,13 +321,12 @@ public class WorkflowUtils {
 	
 	public static void updateForwardParameters(HttpServletRequest request, boolean checkKeepForward) {
 		WorkflowParameters workflowParameters = new WorkflowParameters();
-  
 		if (checkKeepForward) {
 			if (Boolean.valueOf(request.getParameter(WORKFLOW_KEEP_FORWARD))) {
 				return;
 			}
 		}
-		
+
 		String targetItemId = request.getParameter(WORKFLOW_FORWARD_TARGET_ITEM_ID);
         workflowParameters.setWorkflowForwardTargetItemId(NumberUtils.toInt(targetItemId));
 

@@ -31,10 +31,24 @@ public class WorkflowParametersHelper {
     public static final String WORKFLOW_KEEP_FORWARD = "keepForward";
     public static final String WORKFLOW_NODE_ID = "nodeId";
     public static final String WORKFLOW_PARAMS_FORM = "workflowParamsForm";
-    
+
     public static boolean isWorkflowDriven(HttpServletRequest request) {
         WorkflowParameters params = find(request);
         return params != null && params.getWorkflowId() != null && params.getWorkflowId() > 0;
+    }
+
+    public static WorkflowParameters defaultIfEmpty(HttpServletRequest request, Integer defaultId) {
+        WorkflowParameters form = find(request);
+
+        if (form == null) {
+            form = new WorkflowParameters();
+        }
+
+        if (form.getWorkflowId() == 0 && defaultId != null && defaultId > 0) {
+            form.setWorkflowId(defaultId);
+        }
+
+        return form;
     }
 
     public static WorkflowParameters find(HttpServletRequest request) {

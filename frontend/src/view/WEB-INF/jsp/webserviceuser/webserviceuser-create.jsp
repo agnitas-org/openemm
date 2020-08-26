@@ -58,14 +58,17 @@
                     <%--Password--%>
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label for="password" class="control-label" >
-                                <mvc:message code="password.new"/>
+                            <label class="control-label">
+                                <label for="password">
+                                    <mvc:message code="password.new"/>
+                                </label>
+                                <button type="button" class="icon icon-help" data-help="help_${helplanguage}/webserviceuser/AdminPasswordRules.xml"></button>
                             </label>
                         </div>
                         <div class="col-sm-8">
                             <div class="input-group">
                                 <div class="input-group-controls">
-                                    <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" maxlength="99" data-field-required=""/>
+                                    <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" maxlength="99" data-field-required="" data-rule="${PASSWORD_POLICY}"/>
                                 </div>
                                 <div class="input-group-addon">
                                     <span class="addon js-password-strength-indicator hidden">

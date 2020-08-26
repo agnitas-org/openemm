@@ -1066,49 +1066,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE_INDEX, target.getName(), target.getId(), targetGroupIndex, value);
     }
 
-	@DaoUpdateReturnValueCheck
-    private void insertBouncesFromBenchmarkTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, boolean includeSoftbounces ) throws Exception {
-        String query = "SELECT COALESCE(bounces_hard, 0) bounces_hard, COALESCE(bounces_soft, 0) bounces_soft"
-        		+ " FROM benchmark_mailing_stat_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY days_between DESC";
-		List<Map<String, Object>> result = select(logger, query, companyID, mailingID);
-        int softbounces = 0;
-        int hardbounces = 0;
-        if (result != null && result.size() > 0) {
-            Map<String, Object> bouncesMap = result.get(0);
-            softbounces = ((Number) bouncesMap.get("bounces_soft")).intValue();
-            hardbounces = ((Number) bouncesMap.get("bounces_hard")).intValue();
-        }
-        if (includeSoftbounces) {
-        	insertIntoTempTable(tempTableID,
-                    CommonKeys.SOFT_BOUNCES,
-                    CommonKeys.SOFT_BOUNCES_INDEX,
-                    CommonKeys.ALL_SUBSCRIBERS,
-                    CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
-                    CommonKeys.ALL_SUBSCRIBERS_INDEX,
-                    softbounces);
-        }
-        insertIntoTempTable(tempTableID,
-                CommonKeys.HARD_BOUNCES,
-                CommonKeys.HARD_BOUNCES_INDEX,
-                CommonKeys.ALL_SUBSCRIBERS,
-                CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
-                CommonKeys.ALL_SUBSCRIBERS_INDEX,
-                hardbounces);
-
-        // when we take data from benchmark table - we can't provide any data on target groups.
-        // so here we just insert 0 values for target groups
-        if (targets != null) {
-            int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
-            for (LightTarget target:targets) {
-                if (includeSoftbounces ) {
-                	insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES, CommonKeys.SOFT_BOUNCES_INDEX, target.getName(), target.getId(), targetGroupIndex, 0);
-                }
-                insertIntoTempTable(tempTableID, CommonKeys.HARD_BOUNCES, CommonKeys.HARD_BOUNCES_INDEX, target.getName(), target.getId(), targetGroupIndex, 0);
-                targetGroupIndex++;
-            }
-        }
-    }
-
 	protected int selectOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT(r.customer_id)) counter FROM rdirlog_" + companyID + "_tbl r");
 		List<Object> parameters = new ArrayList<>();
