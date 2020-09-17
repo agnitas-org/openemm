@@ -387,7 +387,7 @@ window.I18n = {
             testing: '<agn:agnMessage key="workflow.view.status.testing"/>',
             tested: '<agn:agnMessage key="workflow.view.status.tested"/>',
             failed: 'FAILED',
-            testing_failed: 'TESTING_FAILED'
+            testing_failed: '<agn:agnMessage key="workflow.view.status.testing.failed"/>'
         }
     },
     logon: {

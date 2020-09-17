@@ -235,7 +235,7 @@ public class WorkflowForm {
         STATUS_TESTING(5, false, "workflow.view.status.testing", "testing"),
         STATUS_TESTED(6, true, "workflow.view.status.tested", "tested"),
         STATUS_FAILED(7, true, "FAILED", "failed"),
-        STATUS_TESTING_FAILED(8, true, "TESTING FAILED", "testing_failed"); // todo: create messages for this statuses?
+        STATUS_TESTING_FAILED(8, true, "workflow.view.status.testing.failed", "testing_failed");
 
         private final int id;
         private final boolean changeable;

@@ -698,10 +698,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	@Override
 	public int getMaximumFieldCount(@VelocityCheck int companyID) throws Exception {
 		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields);
-		int companyMaxFields = selectIntWithDefaultValue(logger, "SELECT max_fields FROM company_tbl WHERE company_id = ?", 0, companyID);
-		if (companyMaxFields == 0) {
-			companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
-		}
+		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
 		int maxFields;
 		int standardFieldsCount = ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS.length;
 		
