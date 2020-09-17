@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DVERSION="OpenEMM 20.04.000.181"' -I. -I../lib -I/usr/include/libxml2
+CFLAGS	= '-DVERSION="OpenEMM 20.04.000.190"' -I. -I../lib -I/usr/include/libxml2
 LDFLAGS	= -L. -L../lib
 LIBS	= -lagn -lslang -lsqlite3 -llua -lssl -lcrypto -lxml2 -lz -ldl -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
@@ -25,11 +25,11 @@ LOBJS	= luatc.o $(shell echo $(OBJS) | tr ' ' '\n' | egrep -v 'tflua.o|xmlback.o
 
 all:	xmlback luatc
 
-xmlback:	libslang.a liblua.a $(OBJS) ../lib/libagn.a
+xmlback:	libslang.a liblua.a libssl.a libcrypto.a $(OBJS) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 	strip -s $@
 
-luatc:		libslang.a liblua.a $(LOBJS) ../lib/libagn.a
+luatc:		libslang.a liblua.a libssl.a libcrypto.a $(LOBJS) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(LOBJS) $(LIBS)
 	strip -s $@
 
@@ -42,6 +42,8 @@ libslang.a:	slang-1.4.9.tar.gz slang-1.4.9.patch
 	tar xaf slang-1.4.9.tar.gz && ( cd slang-1.4.9; patch -p1 < ../slang-1.4.9.patch; ./configure; make; mv src/objs/libslang.a src/slang.h ..; cd ..; rm -rf slang-1.4.9 )
 liblua.a:	lua-5.3.5.tar.gz
 	tar xaf lua-5.3.5.tar.gz && ( cd lua-5.3.5; make linux; mv src/liblua.a src/lauxlib.h src/lua.h src/luaconf.h src/lualib.h ..; cd ..; rm -rf lua-5.3.5 )
+libssl.a libcrypto.a:	openssl-1.0.1j.tar.gz
+	tar xzf openssl-1.0.1j.tar.gz && ( cd openssl-1.0.1j; ./config no-shared --prefix=`dirname \`pwd\`` --openssldir=/home/openemm//etc/openssl; make; mv libcrypto.a libssl.a ..; rm -rf ../openssl; mkdir ../openssl; cp include/openssl/* ../openssl; cd ..; rm -rf rm -rf openssl-1.0.1j )
 
 grammar/parse.c:	grammar/parse.y grammar/lemon
 	./grammar/lemon -c -s $<
@@ -51,4 +53,5 @@ grammar/lemon:		grammar/lemon.c
 
 clean:
 	rm -f $(OBJS) grammar/parse.c grammar/parse.h grammar/parse.out grammar/lemon xmlback luatc luatc.o
-	rm -f slang.h libslang.a lauxlib.h lua.h luaconf.h lualib.h liblua.a
+	rm -f slang.h libslang.a lauxlib.h lua.h luaconf.h lualib.h liblua.a libssl.a libcrypto.a
+	rm -rf openssl
