@@ -19,8 +19,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
@@ -31,6 +29,9 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 
 public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements RecipientsReportDao {
 
@@ -53,6 +54,10 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
 
     @Override
     public void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) {
+		if (report.getReportDate() == null) {
+			report.setReportDate(new Date());
+        }
+		
         if (isOracleDB()) {
             int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
             String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

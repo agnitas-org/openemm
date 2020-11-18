@@ -260,7 +260,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	@Override
 	public AdminGroup getAdminGroupByName(String adminGroupName, int companyToLimitPremiumPermissionsFor) {
 		try {
-			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE shortname = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), adminGroupName);
+			List<AdminGroup> groups = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE (company_id = 1 OR company_id = ?) AND shortname = ?", new AdminGroupRowMapperWithOtherCompanyId(companyToLimitPremiumPermissionsFor), companyToLimitPremiumPermissionsFor, adminGroupName);
 			if (groups.size() > 0) {
 				return groups.get(0);
 			} else {

@@ -483,7 +483,7 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
 
 		    		if (row.get("expire_success") != null) {
 			    		int expireSuccess = ((Number) row.get("expire_success")).intValue();
-			    		if (expireSuccessDefault != expireSuccess) {
+			    		if (expireSuccessDefault != expireSuccess && expireSuccess != 0) {
 			    			configService.writeValue(ConfigValue.ExpireSuccess, companyID, Integer.toString(expireSuccess));
 			    		}
 		    		}

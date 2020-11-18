@@ -16,28 +16,10 @@ import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.emm.core.commons.password.PasswordState;
-import com.agnitas.emm.core.logon.beans.LogonState;
-import com.agnitas.emm.core.logon.forms.LogonForm;
-import com.agnitas.emm.core.logon.forms.LogonHostAuthenticationForm;
-import com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm;
-import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
-import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
-import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
-import com.agnitas.emm.core.logon.service.Logon;
-import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.Anonymous;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
@@ -60,6 +42,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.logon.beans.LogonState;
+import com.agnitas.emm.core.logon.forms.LogonForm;
+import com.agnitas.emm.core.logon.forms.LogonHostAuthenticationForm;
+import com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm;
+import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
+import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
+import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
+import com.agnitas.emm.core.logon.service.Logon;
+import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
+import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.annotations.Anonymous;
 
 public class LogonControllerBasic {
     private static final Logger logger = Logger.getLogger(LogonControllerBasic.class);
@@ -552,6 +554,7 @@ public class LogonControllerBasic {
 				//Locale english -> Set connectionUrl to english url
 				connectionUrl = "https://www.agnitas.de/en/openemm-login/";
 			}
+			logger.error("No Error: checking " + connectionUrl);
 			//Try connection
 			URL logonIframeUrl = new URL(connectionUrl);
 			
@@ -562,6 +565,7 @@ public class LogonControllerBasic {
 			//Connection successful -> Return normal logon
 			return connectionUrl;
 		} catch (IOException e) {
+			logger.error("No Error: checking failed: " + e.getMessage(), e);
 			//Any connection attempt was not successful -> Return nothing
 			return null;
 		}
